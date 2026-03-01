@@ -394,10 +394,13 @@ class Dhis2Client:
         return self._get("api/analytics.json", params)
 
     def org_units_level(self, level: int) -> List[dict]:
-        params = {
-        }
-        data = self._get("api/organisationUnits.json", params)
-        return data.get("organisationUnits", [])
+    params = {
+        "filter": f"level:eq:{level}",
+        "paging": "false",
+        "fields": "id,name,level,path",
+    }
+    data = self._get("api/organisationUnits.json", params)
+    return data.get("organisationUnits", [])
 
 
 def build_ou_hierarchy(client: Dhis2Client) -> Dict[str, Dict[str, Optional[str]]]:
@@ -614,7 +617,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())            "filter": f"level:eq:{level}",
-            "paging": "false",
-            "fields": "id,name,level,path",
+    raise SystemExit(main())
 
