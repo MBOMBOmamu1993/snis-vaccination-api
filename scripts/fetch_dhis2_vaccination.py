@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import requests
-
+import math
 
 # =========================
 # 1) CONFIG: COLLER ICI
@@ -537,10 +537,6 @@ def fetch_period(
     return pivot_records(long_all, dx_expected, ou_hier, rename_map)
 
 
-def write_json(path: Path, obj: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
-
 
 def write_csv_gz(path: Path, records: List[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -555,7 +551,53 @@ def write_csv_gz(path: Path, records: List[dict]) -> None:
         w.writeheader()
         for r in records:
             w.writerow(r)
+def write_ndjson_gz_parts(
+    folder: Path,
+    records: List[dict],
+    max_part_mb: int = 80,
+) -> List[dict]:
+    """
+    Ecrit records en NDJSON compressé, découpé en plusieurs parts < max_part_mb.
+    Retourne une liste de méta: [{"file": "...", "rows": n, "bytes": b}, ...]
+    """
+    folder.mkdir(parents=True, exist_ok=True)
 
+    parts_meta: List[dict] = []
+    if not records:
+        # crée une part vide
+        part_path = folder / "part-0001.ndjson.gz"
+        with gzip.open(part_path, "wt", encoding="utf-8") as f:
+            pass
+        parts_meta.append({"file": part_path.name, "rows": 0, "bytes": part_path.stat().st_size})
+        return parts_meta
+
+    max_bytes = max_part_mb * 1024 * 1024
+
+    part_idx = 1
+    rows_in_part = 0
+    part_path = folder / f"part-{part_idx:04d}.ndjson.gz"
+    f = gzip.open(part_path, "wt", encoding="utf-8")
+
+    def close_part():
+        nonlocal f, rows_in_part, part_path
+        f.close()
+        parts_meta.append({"file": part_path.name, "rows": rows_in_part, "bytes": part_path.stat().st_size})
+
+    for rec in records:
+        line = json.dumps(rec, ensure_ascii=False) + "\n"
+        f.write(line)
+        rows_in_part += 1
+
+        # si la part dépasse la taille max, on ferme et on ouvre une nouvelle
+        if part_path.exists() and part_path.stat().st_size >= max_bytes:
+            close_part()
+            part_idx += 1
+            rows_in_part = 0
+            part_path = folder / f"part-{part_idx:04d}.ndjson.gz"
+            f = gzip.open(part_path, "wt", encoding="utf-8")
+
+    close_part()
+    return parts_meta
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -594,47 +636,51 @@ def main() -> int:
         periods = all_months[-max(1, args.months):]
 
     out_dir = Path(args.out)
-    monthly_dir = out_dir / "monthly"
+monthly_root = out_dir / "monthly"
+index_path = out_dir / "index.json"
 
-    combined: List[dict] = []
-    combined_path = out_dir / "combined.json"
+# Charger l'index existant (si présent)
+index = {"generated_at": None, "months": {}}  # months: {"YYYYMM": {"parts":[...], "rows":int}}
+if index_path.exists() and not args.backfill:
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        if "months" not in index:
+            index["months"] = {}
+    except Exception:
+        index = {"generated_at": None, "months": {}}
 
-    # Sur les runs quotidiens, on recharge l'historique et on remplace seulement les mois refresh
-    if combined_path.exists() and not args.backfill:
-        try:
-            combined = json.loads(combined_path.read_text(encoding="utf-8"))
-        except Exception:
-            combined = []
+for pe in periods:
+    records = fetch_period(
+        client=client,
+        pe=pe,
+        dx_expected=dx_expected,
+        ou_hier=ou_hier,
+        rename_map=RENAME_MAP,
+        dx_chunk_chars=args.dx_chunk_chars,
+        sleep_s=args.sleep,
+    )
 
-    refresh_prefixes = {f"{p[:4]}-{p[4:6]}" for p in periods}
-    combined = [r for r in combined if str(r.get("Period", ""))[:7] not in refresh_prefixes]
+    # Ecrire par mois en parts compressées
+    month_folder = monthly_root / pe
+    # (Option) vider l'ancien contenu du mois avant réécriture
+    if month_folder.exists():
+        for p in month_folder.glob("*"):
+            p.unlink()
 
-    for pe in periods:
-        records = fetch_period(
-            client=client,
-            pe=pe,
-            dx_expected=dx_expected,
-            ou_hier=ou_hier,
-            rename_map=RENAME_MAP,
-            dx_chunk_chars=args.dx_chunk_chars,
-            sleep_s=args.sleep,
-        )
-        write_json(monthly_dir / f"{pe}.json", records)
-        combined.extend(records)
+    parts = write_ndjson_gz_parts(month_folder, records, max_part_mb=80)
 
-    write_json(combined_path, combined)
-    write_csv_gz(out_dir / "combined.csv.gz", combined)
-
-    meta = {
-        "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "periods_refreshed": periods,
-        "records": len(combined),
+    index["months"][pe] = {
+        "parts": parts,
+        "rows": len(records),
     }
-    write_json(out_dir / "combined.meta.json", meta)
 
-    print(f"OK: {len(combined)} records; refreshed {periods}")
-    return 0
+# Mettre à jour index
+index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+index_path.parent.mkdir(parents=True, exist_ok=True)
+index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
 
+print(f"OK: refreshed {periods}; index months={len(index['months'])}")
+return 0
 
 if __name__ == "__main__":
     raise SystemExit(main())
