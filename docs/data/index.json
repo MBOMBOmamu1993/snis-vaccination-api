@@ -1,1 +1,1 @@
-{"generated_at": "2026-03-01T02:03:52Z", "months": {"202507": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21602, "bytes": 3770628}], "rows": 21602}, "202508": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21582, "bytes": 3811784}], "rows": 21582}, "202509": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21625, "bytes": 3811771}], "rows": 21625}}}
+{"generated_at": "2026-03-01T02:07:30Z", "months": {"202501": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21485, "bytes": 3536877}], "rows": 21485}}}
