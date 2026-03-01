@@ -636,53 +636,52 @@ def main() -> int:
         # ✅ Les 3 derniers mois, incluant le mois courant
         periods = all_months[-max(1, args.months):]
 
-    out_dir = Path(args.out)
-monthly_root = out_dir / "monthly"
-index_path = out_dir / "index.json"
+        out_dir = Path(args.out)
+    monthly_root = out_dir / "monthly"
+    index_path = out_dir / "index.json"
 
-# Charger l'index existant (si présent)
-index = {"generated_at": None, "months": {}}  # months: {"YYYYMM": {"parts":[...], "rows":int}}
-if index_path.exists() and not args.backfill:
-    try:
-        index = json.loads(index_path.read_text(encoding="utf-8"))
-        if "months" not in index:
-            index["months"] = {}
-    except Exception:
-        index = {"generated_at": None, "months": {}}
+    # Charger l'index existant (si présent)
+    index = {"generated_at": None, "months": {}}
+    if index_path.exists() and not args.backfill:
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            if "months" not in index:
+                index["months"] = {}
+        except Exception:
+            index = {"generated_at": None, "months": {}}
 
-for pe in periods:
-    records = fetch_period(
-        client=client,
-        pe=pe,
-        dx_expected=dx_expected,
-        ou_hier=ou_hier,
-        rename_map=RENAME_MAP,
-        dx_chunk_chars=args.dx_chunk_chars,
-        sleep_s=args.sleep,
-    )
+    for pe in periods:
+        records = fetch_period(
+            client=client,
+            pe=pe,
+            dx_expected=dx_expected,
+            ou_hier=ou_hier,
+            rename_map=RENAME_MAP,
+            dx_chunk_chars=args.dx_chunk_chars,
+            sleep_s=args.sleep,
+        )
 
-    # Ecrire par mois en parts compressées
-    month_folder = monthly_root / pe
-    # (Option) vider l'ancien contenu du mois avant réécriture
-    if month_folder.exists():
+        # Ecrire par mois en parts compressées
+        month_folder = monthly_root / pe
+        month_folder.mkdir(parents=True, exist_ok=True)
+
+        # vider l'ancien contenu du mois avant réécriture
         for p in month_folder.glob("*"):
             p.unlink()
 
-    parts = write_ndjson_gz_parts(month_folder, records, max_part_mb=80)
+        parts = write_ndjson_gz_parts(month_folder, records, max_part_mb=80)
 
-    index["months"][pe] = {
-        "parts": parts,
-        "rows": len(records),
-    }
+        index["months"][pe] = {
+            "parts": parts,
+            "rows": len(records),
+        }
 
-# Mettre à jour index
-index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
-index_path.parent.mkdir(parents=True, exist_ok=True)
-index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+    # Mettre à jour index
+    index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
 
-print(f"OK: refreshed {periods}; index months={len(index['months'])}")
-return 0
-
+    print(f"OK: refreshed {periods}; index months={len(index['months'])}")
+    return 0
 if __name__ == "__main__":
     raise SystemExit(main())
-
