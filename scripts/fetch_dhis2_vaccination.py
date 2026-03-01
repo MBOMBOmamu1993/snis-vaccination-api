@@ -365,16 +365,35 @@ def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
     return chunks
 
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 @dataclass
 class Dhis2Client:
     base_url: str
     username: str
     password: str
-    timeout_s: int = 120
+    timeout_s: int = 600  # ✅ 10 minutes
+
+    def __post_init__(self) -> None:
+        retry = Retry(
+            total=5,
+            connect=5,
+            read=5,
+            status=5,
+            backoff_factor=2,  # 2s, 4s, 8s, 16s...
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"],
+            raise_on_status=False,
+        )
+        self.session = requests.Session()
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
     def _get(self, path: str, params: Dict[str, object]) -> dict:
         url = self.base_url.rstrip("/") + "/" + path.lstrip("/")
-        r = requests.get(
+        r = self.session.get(
             url,
             params=params,
             auth=(self.username, self.password),
