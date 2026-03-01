@@ -383,6 +383,7 @@ class Dhis2Client:
         )
         r.raise_for_status()
         return r.json()
+
     def analytics(self, dx_items: List[str], pe: str, ou: str = "LEVEL-5") -> dict:
         params = {
             "dimension": [f"dx:{';'.join(dx_items)}", f"pe:{pe}", f"ou:{ou}"],
@@ -394,13 +395,13 @@ class Dhis2Client:
         return self._get("api/analytics.json", params)
 
     def org_units_level(self, level: int) -> List[dict]:
-    params = {
-        "filter": f"level:eq:{level}",
-        "paging": "false",
-        "fields": "id,name,level,path",
-    }
-    data = self._get("api/organisationUnits.json", params)
-    return data.get("organisationUnits", [])
+        params = {
+            "filter": f"level:eq:{level}",
+            "paging": "false",
+            "fields": "id,name,level,path",
+        }
+        data = self._get("api/organisationUnits.json", params)
+        return data.get("organisationUnits", [])
 
 
 def build_ou_hierarchy(client: Dhis2Client) -> Dict[str, Dict[str, Optional[str]]]:
