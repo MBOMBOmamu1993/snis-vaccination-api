@@ -607,6 +607,7 @@ def main() -> int:
     ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
     ap.add_argument("--sleep", type=float, default=0.2)
+    ap.add_argument("--end", default=None, help="YYYYMM (optional)")
     args = ap.parse_args()
 
     base_url = os.environ.get("DHIS2_BASE_URL")
@@ -626,7 +627,7 @@ def main() -> int:
     # Hiérarchie OU (L2–L5)
     ou_hier = build_ou_hierarchy(client)
 
-    end = current_yyyymm()
+    end = args.end or current_yyyymm()
     all_months = month_range(args.start, end)
 
     if args.backfill:
