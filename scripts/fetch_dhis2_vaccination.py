@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import gzip
 import json
 import os
@@ -13,7 +12,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import requests
-import math
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # =========================
 # 1) CONFIG: COLLER ICI
@@ -323,10 +323,10 @@ RENAME_MAP = {
     "GzSBTZkxSZf.oSYTyzezWif": "ROTA2 0-11 mois mobile",
 }
 
-
 # =========================
 # 2) HELPERS
 # =========================
+
 
 def current_yyyymm(today: Optional[date] = None) -> str:
     d = today or date.today()
@@ -365,23 +365,20 @@ def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
     return chunks
 
 
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
 @dataclass
 class Dhis2Client:
     base_url: str
     username: str
     password: str
-    timeout_s: int = 600  # ✅ 10 minutes
+    timeout_s: int = 600  # 10 minutes
 
     def __post_init__(self) -> None:
         retry = Retry(
-            total=5,
-            connect=5,
-            read=5,
-            status=5,
-            backoff_factor=2,  # 2s, 4s, 8s, 16s...
+            total=6,
+            connect=6,
+            read=6,
+            status=6,
+            backoff_factor=5,  # 5s,10s,20s,40s...
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["GET"],
             raise_on_status=False,
@@ -413,44 +410,6 @@ class Dhis2Client:
         }
         return self._get("api/analytics.json", params)
 
-    def org_units_level(self, level: int) -> List[dict]:
-        params = {
-            "filter": f"level:eq:{level}",
-            "paging": "false",
-            "fields": "id,name,level,path",
-        }
-        data = self._get("api/organisationUnits.json", params)
-        return data.get("organisationUnits", [])
-
-
-def build_ou_hierarchy(client: Dhis2Client) -> Dict[str, Dict[str, Optional[str]]]:
-    all_units: Dict[str, dict] = {}
-    for lvl in (2, 3, 4, 5):
-        for ou in client.org_units_level(lvl):
-            all_units[ou["id"]] = ou
-
-    out: Dict[str, Dict[str, Optional[str]]] = {}
-    for ou_id, ou in all_units.items():
-        if ou.get("level") != 5:
-            continue
-        path = ou.get("path") or ""
-        ids = [p for p in path.split("/") if p]
-
-        def name_for(level: int) -> Optional[str]:
-            for pid in ids:
-                u = all_units.get(pid)
-                if u and u.get("level") == level:
-                    return u.get("name")
-            return None
-
-        out[ou_id] = {
-            "Level 2 Org Unit": name_for(2),
-            "Level 3 Org Unit": name_for(3),
-            "Level 4 Org Unit": name_for(4),
-            "Level 5 Org Unit": ou.get("name"),
-        }
-    return out
-
 
 def rows_to_records(analytics_json: dict) -> List[dict]:
     rows = analytics_json.get("rows") or []
@@ -468,21 +427,19 @@ def rows_to_records(analytics_json: dict) -> List[dict]:
     return recs
 
 
-def pivot_records(
-    long_recs: List[dict],
-    dx_expected: List[str],
-    ou_hier: Dict[str, Dict[str, Optional[str]]],
-    rename_map: Dict[str, str],
-) -> List[dict]:
+def pivot_records(long_recs: List[dict], dx_expected: List[str], rename_map: Dict[str, str]) -> List[dict]:
+    """
+    Pivot simple: 1 ligne par (ou,pe)
+    Colonnes = dx (renommées via rename_map)
+    """
     idx: Dict[Tuple[str, str], dict] = {}
     for r in long_recs:
         key = (r["ou"], r["pe"])
         row = idx.get(key)
         if row is None:
             row = {"ou": r["ou"], "pe": r["pe"]}
-            row.update(ou_hier.get(r["ou"], {}))
             idx[key] = row
-        # En cas de doublons, on additionne
+
         old = row.get(r["dx"])
         val = r["value"]
         if old is None:
@@ -490,6 +447,7 @@ def pivot_records(
         else:
             row[r["dx"]] = (old or 0) + (val or 0)
 
+    # assurer toutes les colonnes
     for row in idx.values():
         for dx in dx_expected:
             row.setdefault(dx, None)
@@ -497,10 +455,7 @@ def pivot_records(
     out: List[dict] = []
     for row in idx.values():
         out_row: dict = {
-            "Level 2 Org Unit": row.get("Level 2 Org Unit"),
-            "Level 3 Org Unit": row.get("Level 3 Org Unit"),
-            "Level 4 Org Unit": row.get("Level 4 Org Unit"),
-            "Level 5 Org Unit": row.get("Level 5 Org Unit"),
+            "OrgUnit": row.get("ou"),
             "Period": f"{row['pe'][:4]}-{row['pe'][4:6]}-01",
         }
         for dx in dx_expected:
@@ -508,13 +463,7 @@ def pivot_records(
             out_row[col] = row.get(dx)
         out.append(out_row)
 
-    out.sort(key=lambda x: (
-        x.get("Level 2 Org Unit") or "",
-        x.get("Level 3 Org Unit") or "",
-        x.get("Level 4 Org Unit") or "",
-        x.get("Level 5 Org Unit") or "",
-        x.get("Period") or "",
-    ))
+    out.sort(key=lambda x: (x.get("OrgUnit") or "", x.get("Period") or ""))
     return out
 
 
@@ -522,92 +471,81 @@ def fetch_period(
     client: Dhis2Client,
     pe: str,
     dx_expected: List[str],
-    ou_hier: Dict[str, Dict[str, Optional[str]]],
     rename_map: Dict[str, str],
     dx_chunk_chars: int,
     sleep_s: float,
 ) -> List[dict]:
     chunks = chunk_list(dx_expected, max_chars=dx_chunk_chars)
     long_all: List[dict] = []
-    for ch in chunks:
+    for i, ch in enumerate(chunks, start=1):
+        print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
         data = client.analytics(dx_items=ch, pe=pe, ou="LEVEL-5")
         long_all.extend(rows_to_records(data))
         if sleep_s:
             time.sleep(sleep_s)
-    return pivot_records(long_all, dx_expected, ou_hier, rename_map)
+    return pivot_records(long_all, dx_expected, rename_map)
 
 
-
-def write_csv_gz(path: Path, records: List[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fixed = ["Level 2 Org Unit", "Level 3 Org Unit", "Level 4 Org Unit", "Level 5 Org Unit", "Period"]
-    rest = []
-    if records:
-        rest = sorted([k for k in records[0].keys() if k not in fixed])
-    headers = fixed + rest
-
-    with gzip.open(path, "wt", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=headers)
-        w.writeheader()
-        for r in records:
-            w.writerow(r)
-def write_ndjson_gz_parts(
-    folder: Path,
-    records: List[dict],
-    max_part_mb: int = 80,
-) -> List[dict]:
+def write_ndjson_gz_parts(folder: Path, records: List[dict], max_part_mb: int = 80) -> List[dict]:
     """
-    Ecrit records en NDJSON compressé, découpé en plusieurs parts < max_part_mb.
-    Retourne une liste de méta: [{"file": "...", "rows": n, "bytes": b}, ...]
+    Ecrit records en NDJSON compressé, découpé en parts.
+    On découpe sur la taille COMPRESSÉE (bytes) pour rester < 100MB GitHub.
     """
     folder.mkdir(parents=True, exist_ok=True)
-
-    parts_meta: List[dict] = []
-    if not records:
-        # crée une part vide
-        part_path = folder / "part-0001.ndjson.gz"
-        with gzip.open(part_path, "wt", encoding="utf-8") as f:
-            pass
-        parts_meta.append({"file": part_path.name, "rows": 0, "bytes": part_path.stat().st_size})
-        return parts_meta
-
     max_bytes = max_part_mb * 1024 * 1024
 
+    parts_meta: List[dict] = []
     part_idx = 1
     rows_in_part = 0
-    part_path = folder / f"part-{part_idx:04d}.ndjson.gz"
-    f = gzip.open(part_path, "wt", encoding="utf-8")
 
-    def close_part():
-        nonlocal f, rows_in_part, part_path
-        f.close()
-        parts_meta.append({"file": part_path.name, "rows": rows_in_part, "bytes": part_path.stat().st_size})
+    def new_path(i: int) -> Path:
+        return folder / f"part-{i:04d}.ndjson.gz"
+
+    # ouvre en binaire pour pouvoir mesurer la taille compressée
+    path = new_path(part_idx)
+    gz = gzip.open(path, "wb")
+
+    def close_part() -> None:
+        nonlocal gz, rows_in_part, path
+        gz.close()
+        parts_meta.append({"file": path.name, "rows": rows_in_part, "bytes": path.stat().st_size})
 
     for rec in records:
-        line = json.dumps(rec, ensure_ascii=False) + "\n"
-        f.write(line)
+        line = (json.dumps(rec, ensure_ascii=False) + "\n").encode("utf-8")
+        gz.write(line)
         rows_in_part += 1
 
-        # si la part dépasse la taille max, on ferme et on ouvre une nouvelle
-        if part_path.exists() and part_path.stat().st_size >= max_bytes:
+        # taille compressée actuelle
+        gz.flush()
+        if path.stat().st_size >= max_bytes:
             close_part()
             part_idx += 1
             rows_in_part = 0
-            part_path = folder / f"part-{part_idx:04d}.ndjson.gz"
-            f = gzip.open(part_path, "wt", encoding="utf-8")
+            path = new_path(part_idx)
+            gz = gzip.open(path, "wb")
 
     close_part()
+
+    # cas records vide => créer 1 part vide
+    if not records and not parts_meta:
+        path = new_path(1)
+        with gzip.open(path, "wb") as f:
+            f.write(b"")
+        parts_meta.append({"file": path.name, "rows": 0, "bytes": path.stat().st_size})
+
     return parts_meta
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default="202501", help="YYYYMM")
+    ap.add_argument("--end", default=None, help="YYYYMM (optional)")
     ap.add_argument("--months", type=int, default=3, help="Refresh last N months (scheduled runs)")
-    ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to current")
+    ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to --end/current")
     ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
     ap.add_argument("--sleep", type=float, default=0.2)
-    ap.add_argument("--end", default=None, help="YYYYMM (optional)")
+    ap.add_argument("--max_part_mb", type=int, default=80)
     args = ap.parse_args()
 
     base_url = os.environ.get("DHIS2_BASE_URL")
@@ -617,26 +555,22 @@ def main() -> int:
         print("Missing secrets: DHIS2_BASE_URL, DHIS2_USERNAME, DHIS2_PASSWORD", file=sys.stderr)
         return 2
 
-    if not DX_LIST or DX_LIST == "PASTE_YOUR_DX_LIST_HERE":
-        print("You must paste DX_LIST into the script.", file=sys.stderr)
+    if not DX_LIST.strip():
+        print("DX_LIST is empty. Paste your dx list.", file=sys.stderr)
         return 2
 
     dx_expected = [x.strip() for x in DX_LIST.split(";") if x.strip()]
     client = Dhis2Client(base_url=base_url, username=username, password=password)
 
-    # Hiérarchie OU (L2–L5)
-    ou_hier = build_ou_hierarchy(client)
-
     end = args.end or current_yyyymm()
     all_months = month_range(args.start, end)
 
     if args.backfill:
-        periods = all_months  # 202501 -> mois courant
+        periods = all_months
     else:
-        # ✅ Les 3 derniers mois, incluant le mois courant
         periods = all_months[-max(1, args.months):]
 
-        out_dir = Path(args.out)
+    out_dir = Path(args.out)  # ✅ toujours défini
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
@@ -655,7 +589,6 @@ def main() -> int:
             client=client,
             pe=pe,
             dx_expected=dx_expected,
-            ou_hier=ou_hier,
             rename_map=RENAME_MAP,
             dx_chunk_chars=args.dx_chunk_chars,
             sleep_s=args.sleep,
@@ -669,19 +602,17 @@ def main() -> int:
         for p in month_folder.glob("*"):
             p.unlink()
 
-        parts = write_ndjson_gz_parts(month_folder, records, max_part_mb=80)
+        parts = write_ndjson_gz_parts(month_folder, records, max_part_mb=args.max_part_mb)
 
-        index["months"][pe] = {
-            "parts": parts,
-            "rows": len(records),
-        }
+        index["months"][pe] = {"parts": parts, "rows": len(records)}
 
-    # Mettre à jour index
     index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
 
     print(f"OK: refreshed {periods}; index months={len(index['months'])}")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
