@@ -1,1 +1,1 @@
-{"generated_at": "2026-03-01T01:56:52Z", "months": {"202501": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21485, "bytes": 3536877}], "rows": 21485}}}
+{"generated_at": "2026-03-01T02:00:25Z", "months": {"202502": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21529, "bytes": 3593544}], "rows": 21529}, "202503": {"parts": [{"file": "part-0001.ndjson.gz", "rows": 21549, "bytes": 3642175}], "rows": 21549}}}
