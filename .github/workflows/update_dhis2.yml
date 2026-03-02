@@ -43,3 +43,11 @@ jobs:
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "Update DHIS2 data"
           git push
+      - name: Debug list files
+        run: |
+          echo "=== monthly/202501 ==="
+          ls -lah docs/data/monthly/202501 || true
+          echo "=== find ndjson ==="
+          find docs/data -maxdepth 4 -type f -name "*.ndjson" -print | head -n 50
+          echo "=== git status ==="
+          git status --porcelain
