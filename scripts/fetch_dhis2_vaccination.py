@@ -602,13 +602,13 @@ def main() -> int:
 
     # Charger l'index existant (si présent)
     index = {"generated_at": None, "months": {}}
-    if index_path.exists() and not args.backfill:
-        try:
-            index = json.loads(index_path.read_text(encoding="utf-8"))
-            if "months" not in index:
-                index["months"] = {}
-        except Exception:
-            index = {"generated_at": None, "months": {}}
+if index_path.exists():
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        if "months" not in index:
+            index["months"] = {}
+    except Exception:
+        index = {"generated_at": None, "months": {}}
 
     for pe in periods:
         records = fetch_period(
