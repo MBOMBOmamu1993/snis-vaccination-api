@@ -114,15 +114,25 @@ def main() -> int:
     ou_map = build_ou_map(client)
 
     out_dir = Path("docs/data")
-    write_gz_json(out_dir / "ou_map.json.gz", ou_map)
+out_dir.mkdir(parents=True, exist_ok=True)
 
-    meta = {
-        "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "count_ou_level5": len(ou_map),
-    }
-    (out_dir / "ou_map.meta.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+# ✅ 1) écrire la version NON compressée
+out_json = out_dir / "ou_map.json"
+out_json.write_text(json.dumps(ou_map, ensure_ascii=False), encoding="utf-8")
 
-    print(f"OK: ou_map.json.gz generated for {len(ou_map)} OU level 5")
+# ✅ 2) écrire la version compressée (.gz)
+write_gz_json(out_dir / "ou_map.json.gz", ou_map)
+# (ou si tu préfères compresser depuis le fichier plain:)
+# with gzip.open(out_dir / "ou_map.json.gz", "wb") as f:
+#     f.write(out_json.read_bytes())
+
+meta = {
+    "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    "count_ou_level5": len(ou_map),
+}
+(out_dir / "ou_map.meta.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+    print(f"OK: ou_map.json + ou_map.json.gz generated for {len(ou_map)} OU level 5")
     return 0
 
 
