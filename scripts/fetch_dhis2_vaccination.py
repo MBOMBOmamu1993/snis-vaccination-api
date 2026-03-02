@@ -486,10 +486,10 @@ def fetch_period(
     return pivot_records(long_all, dx_expected, rename_map)
 
 
-def write_ndjson_gz_parts(folder: Path, records: List[dict], max_part_mb: int = 80) -> List[dict]:
+def write_ndjson_parts_dual(folder: Path, records: List[dict], max_part_mb: int = 80) -> List[dict]:
     """
-    Ecrit records en NDJSON compressé, découpé en parts.
-    On découpe sur la taille COMPRESSÉE (bytes) pour rester < 100MB GitHub.
+    Écrit records en NDJSON non-compressé + NDJSON.GZ, découpé en parts.
+    Le découpage reste basé sur la taille COMPRESSÉE (bytes) pour rester < 100MB GitHub.
     """
     folder.mkdir(parents=True, exist_ok=True)
     max_bytes = max_part_mb * 1024 * 1024
@@ -498,40 +498,60 @@ def write_ndjson_gz_parts(folder: Path, records: List[dict], max_part_mb: int = 
     part_idx = 1
     rows_in_part = 0
 
-    def new_path(i: int) -> Path:
-        return folder / f"part-{i:04d}.ndjson.gz"
+    def paths(i: int) -> Tuple[Path, Path]:
+        plain = folder / f"part-{i:04d}.ndjson"
+        gz = folder / f"part-{i:04d}.ndjson.gz"
+        return plain, gz
 
-    # ouvre en binaire pour pouvoir mesurer la taille compressée
-    path = new_path(part_idx)
-    gz = gzip.open(path, "wb")
+    plain_path, gz_path = paths(part_idx)
+    plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
+    gz_f = gzip.open(gz_path, "wb")
 
     def close_part() -> None:
-        nonlocal gz, rows_in_part, path
-        gz.close()
-        parts_meta.append({"file": path.name, "rows": rows_in_part, "bytes": path.stat().st_size})
+        nonlocal plain_f, gz_f, rows_in_part, plain_path, gz_path
+        plain_f.close()
+        gz_f.close()
+        parts_meta.append(
+            {
+                "file": gz_path.name,          # compat: ce que ton widget utilisait déjà
+                "plain": plain_path.name,      # nouveau: version non compressée
+                "rows": rows_in_part,
+                "bytes_gz": gz_path.stat().st_size,
+                "bytes_plain": plain_path.stat().st_size,
+            }
+        )
 
     for rec in records:
-        line = (json.dumps(rec, ensure_ascii=False) + "\n").encode("utf-8")
-        gz.write(line)
+        line_str = json.dumps(rec, ensure_ascii=False) + "\n"
+        line_b = line_str.encode("utf-8")
+
+        plain_f.write(line_str)
+        gz_f.write(line_b)
+
         rows_in_part += 1
 
-        # taille compressée actuelle
-        gz.flush()
-        if path.stat().st_size >= max_bytes:
+        # taille compressée actuelle (on force un flush)
+        gz_f.flush()
+        if gz_path.exists() and gz_path.stat().st_size >= max_bytes:
             close_part()
             part_idx += 1
             rows_in_part = 0
-            path = new_path(part_idx)
-            gz = gzip.open(path, "wb")
+            plain_path, gz_path = paths(part_idx)
+            plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
+            gz_f = gzip.open(gz_path, "wb")
 
     close_part()
 
     # cas records vide => créer 1 part vide
     if not records and not parts_meta:
-        path = new_path(1)
-        with gzip.open(path, "wb") as f:
+        plain_path, gz_path = paths(1)
+        plain_path.write_text("", encoding="utf-8")
+        with gzip.open(gz_path, "wb") as f:
             f.write(b"")
-        parts_meta.append({"file": path.name, "rows": 0, "bytes": path.stat().st_size})
+        parts_meta.append(
+            {"file": gz_path.name, "plain": plain_path.name, "rows": 0,
+             "bytes_gz": gz_path.stat().st_size, "bytes_plain": plain_path.stat().st_size}
+        )
 
     return parts_meta
 
@@ -602,7 +622,7 @@ def main() -> int:
         for p in month_folder.glob("*"):
             p.unlink()
 
-        parts = write_ndjson_gz_parts(month_folder, records, max_part_mb=args.max_part_mb)
+        parts = write_ndjson_parts_dual(month_folder, records, max_part_mb=args.max_part_mb)
 
         index["months"][pe] = {"parts": parts, "rows": len(records)}
 
