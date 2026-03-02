@@ -12,6 +12,11 @@ on:
         required: true
         default: "202501"
 
+# ✅ Empêche deux workflows (update/backfill) d'écrire en même temps
+concurrency:
+  group: dhis2-data
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -19,10 +24,15 @@ jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ✅ requis pour pull --rebase
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -37,13 +47,26 @@ jobs:
           DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
           DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
         run: |
-          python scripts/fetch_dhis2_vaccination.py --start "${{ github.event.inputs.start }}" --end "${{ github.event.inputs.end }}" --backfill --out docs/data
+          python scripts/fetch_dhis2_vaccination.py \
+            --start "${{ github.event.inputs.start }}" \
+            --end "${{ github.event.inputs.end }}" \
+            --backfill \
+            --out docs/data
 
-      - name: Commit & push
+      - name: Commit & push (rebase + retry)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add docs/data
           git diff --cached --quiet && echo "No changes" && exit 0
+
           git commit -m "Backfill ${{ github.event.inputs.start }}-${{ github.event.inputs.end }}"
-          git push
+
+          # ✅ pull --rebase puis push, avec retry
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push failed (attempt $i), retrying..."
+            sleep 5
+          done
