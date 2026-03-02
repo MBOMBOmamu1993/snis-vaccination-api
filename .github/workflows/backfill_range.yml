@@ -44,5 +44,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/data
-          git commit -m "Backfill ${{ github.event.inputs.start }}-${{ github.event.inputs.end }}" || echo "No changes"
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Backfill ${{ github.event.inputs.start }}-${{ github.event.inputs.end }}"
           git push
