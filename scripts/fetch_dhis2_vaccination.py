@@ -493,6 +493,7 @@ def write_ndjson_parts_dual(folder: Path, records: List[dict], max_part_mb: int 
     """
     folder.mkdir(parents=True, exist_ok=True)
     max_bytes = max_part_mb * 1024 * 1024
+    max_plain_bytes = 95 * 1024 * 1024  # ✅ sécurité GitHub (<100MB)
 
     parts_meta: List[dict] = []
     part_idx = 1
@@ -532,7 +533,12 @@ def write_ndjson_parts_dual(folder: Path, records: List[dict], max_part_mb: int 
 
         # taille compressée actuelle (on force un flush)
         gz_f.flush()
-        if gz_path.exists() and gz_path.stat().st_size >= max_bytes:
+
+        plain_size = plain_path.stat().st_size if plain_path.exists() else 0
+        gz_size = gz_path.stat().st_size if gz_path.exists() else 0
+
+        # ✅ découpe si le .gz est trop gros OU si le .ndjson (plain) est trop gros
+        if gz_size >= max_bytes or plain_size >= max_plain_bytes:
             close_part()
             part_idx += 1
             rows_in_part = 0
