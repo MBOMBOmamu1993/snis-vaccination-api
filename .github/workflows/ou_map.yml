@@ -37,6 +37,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data/ou_map.json.gz docs/data/ou_map.meta.json
+          git add docs/data/ou_map.json docs/data/ou_map.json.gz docs/data/ou_map.meta.json
           git commit -m "Update OU map" || echo "No changes"
           git push
