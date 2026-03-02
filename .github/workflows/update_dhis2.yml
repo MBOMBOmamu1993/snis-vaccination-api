@@ -5,6 +5,11 @@ on:
     - cron: '30 1 * * *'  # quotidien 01:30 UTC
   workflow_dispatch:
 
+# ✅ Empêche deux workflows (update/backfill) d'écrire en même temps
+concurrency:
+  group: dhis2-data
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -16,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ✅ requis pour pull --rebase
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -35,14 +42,24 @@ jobs:
         run: |
           python scripts/fetch_dhis2_vaccination.py --start 202501 --months 3 --out docs/data
 
-      - name: Commit & push
+      - name: Commit & push (rebase + retry)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add docs/data
           git diff --cached --quiet && echo "No changes" && exit 0
+
           git commit -m "Update DHIS2 data"
-          git push
+
+          # ✅ pull --rebase puis push, avec retry
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push failed (attempt $i), retrying..."
+            sleep 5
+          done
+
       - name: Debug list files
         run: |
           echo "=== monthly/202501 ==="
