@@ -600,16 +600,19 @@ def main() -> int:
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
-    # Charger l'index existant (si présent)
+        # Charger l'index existant (si présent)
     index = {"generated_at": None, "months": {}}
-if index_path.exists():
-    try:
-        index = json.loads(index_path.read_text(encoding="utf-8"))
-        if "months" not in index:
-            index["months"] = {}
-    except Exception:
-        index = {"generated_at": None, "months": {}}
 
+    # ✅ On garde un index cumulatif (même en update), on recharge s'il existe
+    if index_path.exists():
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            if "months" not in index or index["months"] is None:
+                index["months"] = {}
+        except Exception:
+            index = {"generated_at": None, "months": {}}
+
+    # ✅ Boucle sur les périodes à rafraîchir
     for pe in periods:
         records = fetch_period(
             client=client,
@@ -620,7 +623,7 @@ if index_path.exists():
             sleep_s=args.sleep,
         )
 
-        # Ecrire par mois en parts compressées
+        # Ecrire par mois
         month_folder = monthly_root / pe
         month_folder.mkdir(parents=True, exist_ok=True)
 
@@ -630,6 +633,7 @@ if index_path.exists():
 
         parts = write_ndjson_parts_dual(month_folder, records, max_part_mb=args.max_part_mb)
 
+        # ✅ index cumulatif
         index["months"][pe] = {"parts": parts, "rows": len(records)}
 
     index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
