@@ -19,7 +19,7 @@ from urllib3.util.retry import Retry
 # 1) CONFIG: COLLER ICI
 # =========================
 
-# 1A) Colle ici ton dxList (séparé par ;)
+# (A) ✅ COLLER ICI ton DX_LIST (séparé par ;)
 DX_LIST = """
 "W25tOXS0rxS.dqydGQFHahb;W25tOXS0rxS.NOHlOxLczjc;W25tOXS0rxS.vbx8t4WAbR8;" 
           "W25tOXS0rxS.KPDzIsWq7JK;W25tOXS0rxS.oSYTyzezWif;W25tOXS0rxS.Dr4rWTqepnP;" 
@@ -87,9 +87,9 @@ DX_LIST = """
           "GzSBTZkxSZf.oSYTyzezWif"
 """.strip().replace("\n", "").replace(" ", "").replace('"', "")
 
-# 1B) Colle ici toutes tes paires RenamePairs converties en dict Python
-RENAME_MAP = {
-    "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
+# (B) ✅ COLLER ICI ton RENAME_MAP (dict)
+RENAME_MAP: Dict[str, str] = {
+          "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
     "W25tOXS0rxS.NOHlOxLczjc": "BCG fixe2",
     "W25tOXS0rxS.vbx8t4WAbR8": "BCG avancé1",
     "W25tOXS0rxS.KPDzIsWq7JK": "BCG avancé2",
@@ -323,10 +323,10 @@ RENAME_MAP = {
     "GzSBTZkxSZf.oSYTyzezWif": "ROTA2 0-11 mois mobile",
 }
 
+
 # =========================
 # 2) HELPERS
 # =========================
-
 
 def current_yyyymm(today: Optional[date] = None) -> str:
     d = today or date.today()
@@ -378,7 +378,7 @@ class Dhis2Client:
             connect=6,
             read=6,
             status=6,
-            backoff_factor=5,  # 5s,10s,20s,40s...
+            backoff_factor=5,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["GET"],
             raise_on_status=False,
@@ -428,10 +428,6 @@ def rows_to_records(analytics_json: dict) -> List[dict]:
 
 
 def pivot_records(long_recs: List[dict], dx_expected: List[str], rename_map: Dict[str, str]) -> List[dict]:
-    """
-    Pivot simple: 1 ligne par (ou,pe)
-    Colonnes = dx (renommées via rename_map)
-    """
     idx: Dict[Tuple[str, str], dict] = {}
     for r in long_recs:
         key = (r["ou"], r["pe"])
@@ -447,7 +443,7 @@ def pivot_records(long_recs: List[dict], dx_expected: List[str], rename_map: Dic
         else:
             row[r["dx"]] = (old or 0) + (val or 0)
 
-    # assurer toutes les colonnes
+    # assurer toutes les colonnes (dx)
     for row in idx.values():
         for dx in dx_expected:
             row.setdefault(dx, None)
@@ -486,18 +482,25 @@ def fetch_period(
     return pivot_records(long_all, dx_expected, rename_map)
 
 
-def write_ndjson_parts_dual(folder: Path, records: List[dict], max_part_mb: int = 80) -> List[dict]:
+# ==========================================================
+# ✅ Split NDJSON plain par taille (4.5MB safe) + écrire aussi .gz
+# ==========================================================
+def write_ndjson_parts_dual(
+    folder: Path,
+    records: List[dict],
+    max_plain_bytes: int = 4_500_000,  # < 5MB safe (Zoho)
+) -> List[dict]:
     """
-    Écrit records en NDJSON non-compressé + NDJSON.GZ, découpé en parts.
-    Le découpage reste basé sur la taille COMPRESSÉE (bytes) pour rester < 100MB GitHub.
+    Écrit records en NDJSON découpé en parts <= max_plain_bytes.
+    Pour chaque part, écrit aussi le .ndjson.gz.
+    Retourne meta: {plain, file(gz), rows, bytes_plain, bytes_gz}
     """
     folder.mkdir(parents=True, exist_ok=True)
-    max_bytes = max_part_mb * 1024 * 1024
-    max_plain_bytes = 95 * 1024 * 1024  # ✅ sécurité GitHub (<100MB)
 
     parts_meta: List[dict] = []
     part_idx = 1
     rows_in_part = 0
+    plain_bytes_in_part = 0
 
     def paths(i: int) -> Tuple[Path, Path]:
         plain = folder / f"part-{i:04d}.ndjson"
@@ -509,54 +512,54 @@ def write_ndjson_parts_dual(folder: Path, records: List[dict], max_part_mb: int 
     gz_f = gzip.open(gz_path, "wb")
 
     def close_part() -> None:
-        nonlocal plain_f, gz_f, rows_in_part, plain_path, gz_path
+        nonlocal plain_f, gz_f, rows_in_part, plain_bytes_in_part, plain_path, gz_path
         plain_f.close()
         gz_f.close()
         parts_meta.append(
             {
-                "file": gz_path.name,          # compat: ce que ton widget utilisait déjà
-                "plain": plain_path.name,      # nouveau: version non compressée
+                "file": gz_path.name,     # ✅ pour widget (gz)
+                "plain": plain_path.name, # ✅ pour Zoho (plain)
                 "rows": rows_in_part,
-                "bytes_gz": gz_path.stat().st_size,
-                "bytes_plain": plain_path.stat().st_size,
+                "bytes_plain": plain_path.stat().st_size if plain_path.exists() else 0,
+                "bytes_gz": gz_path.stat().st_size if gz_path.exists() else 0,
             }
         )
 
     for rec in records:
         line_str = json.dumps(rec, ensure_ascii=False) + "\n"
         line_b = line_str.encode("utf-8")
+        line_len = len(line_b)
 
-        plain_f.write(line_str)
-        gz_f.write(line_b)
-
-        rows_in_part += 1
-
-        # taille compressée actuelle (on force un flush)
-        gz_f.flush()
-
-        plain_size = plain_path.stat().st_size if plain_path.exists() else 0
-        gz_size = gz_path.stat().st_size if gz_path.exists() else 0
-
-        # ✅ découpe si le .gz est trop gros OU si le .ndjson (plain) est trop gros
-        if gz_size >= max_bytes or plain_size >= max_plain_bytes:
+        if rows_in_part > 0 and (plain_bytes_in_part + line_len) > max_plain_bytes:
             close_part()
             part_idx += 1
             rows_in_part = 0
+            plain_bytes_in_part = 0
             plain_path, gz_path = paths(part_idx)
             plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
             gz_f = gzip.open(gz_path, "wb")
 
+        plain_f.write(line_str)
+        gz_f.write(line_b)
+        rows_in_part += 1
+        plain_bytes_in_part += line_len
+
     close_part()
 
-    # cas records vide => créer 1 part vide
+    # cas records vide
     if not records and not parts_meta:
         plain_path, gz_path = paths(1)
         plain_path.write_text("", encoding="utf-8")
         with gzip.open(gz_path, "wb") as f:
             f.write(b"")
         parts_meta.append(
-            {"file": gz_path.name, "plain": plain_path.name, "rows": 0,
-             "bytes_gz": gz_path.stat().st_size, "bytes_plain": plain_path.stat().st_size}
+            {
+                "file": gz_path.name,
+                "plain": plain_path.name,
+                "rows": 0,
+                "bytes_plain": plain_path.stat().st_size,
+                "bytes_gz": gz_path.stat().st_size,
+            }
         )
 
     return parts_meta
@@ -571,7 +574,8 @@ def main() -> int:
     ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
     ap.add_argument("--sleep", type=float, default=0.2)
-    ap.add_argument("--max_part_mb", type=int, default=80)
+    ap.add_argument("--max_plain_bytes", type=int, default=4_500_000, help="Max bytes per .ndjson part (<5MB)")
+
     args = ap.parse_args()
 
     base_url = os.environ.get("DHIS2_BASE_URL")
@@ -582,7 +586,7 @@ def main() -> int:
         return 2
 
     if not DX_LIST.strip():
-        print("DX_LIST is empty. Paste your dx list.", file=sys.stderr)
+        print("DX_LIST is empty. Paste your dx list in section (A).", file=sys.stderr)
         return 2
 
     dx_expected = [x.strip() for x in DX_LIST.split(";") if x.strip()]
@@ -591,19 +595,14 @@ def main() -> int:
     end = args.end or current_yyyymm()
     all_months = month_range(args.start, end)
 
-    if args.backfill:
-        periods = all_months
-    else:
-        periods = all_months[-max(1, args.months):]
+    periods = all_months if args.backfill else all_months[-max(1, args.months):]
 
-    out_dir = Path(args.out)  # ✅ toujours défini
+    out_dir = Path(args.out)
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
-    # Charger l'index existant (si présent)
+    # index cumulatif
     index = {"generated_at": None, "months": {}}
-
-    # ✅ On garde un index cumulatif (même en update), on recharge s'il existe
     if index_path.exists():
         try:
             index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -612,7 +611,6 @@ def main() -> int:
         except Exception:
             index = {"generated_at": None, "months": {}}
 
-    # ✅ Boucle sur les périodes à rafraîchir
     for pe in periods:
         records = fetch_period(
             client=client,
@@ -623,7 +621,6 @@ def main() -> int:
             sleep_s=args.sleep,
         )
 
-        # Ecrire par mois
         month_folder = monthly_root / pe
         month_folder.mkdir(parents=True, exist_ok=True)
 
@@ -631,11 +628,16 @@ def main() -> int:
         for p in month_folder.glob("*"):
             p.unlink()
 
-        parts = write_ndjson_parts_dual(month_folder, records, max_part_mb=args.max_part_mb)
+        parts = write_ndjson_parts_dual(
+            month_folder,
+            records,
+            max_plain_bytes=args.max_plain_bytes,
+        )
 
-        # ✅ index cumulatif
+        # ✅ IMPORTANT: indexation dans la boucle
         index["months"][pe] = {"parts": parts, "rows": len(records)}
 
+    # ✅ IMPORTANT: update + write index après la boucle (une seule fois)
     index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
