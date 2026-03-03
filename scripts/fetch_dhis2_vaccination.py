@@ -600,7 +600,7 @@ def main() -> int:
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
-        # Charger l'index existant (si présent)
+    # Charger l'index existant (si présent)
     index = {"generated_at": None, "months": {}}
 
     # ✅ On garde un index cumulatif (même en update), on recharge s'il existe
