@@ -43,6 +43,7 @@ class ZohoConfig:
 
     @property
     def creator_base(self) -> str:
+        # https://www.zohoapis.<dc>/creator/v2.1
         return f"https://{zoho_apis_domain(self.dc)}/creator/v2.1"
 
     @property
@@ -51,7 +52,14 @@ class ZohoConfig:
 
 
 class ZohoCreatorClient:
-    def __init__(self, cfg: ZohoConfig, timeout_s: int = 120) -> None:
+    """
+    Zoho Creator API v2.1 uses cursor pagination:
+      - max_records (200 default, also 500/1000)
+      - record_cursor (cursor returned by previous call)
+    Not page/per_page. :contentReference[oaicite:1]{index=1}
+    """
+
+    def __init__(self, cfg: ZohoConfig, timeout_s: int = 180) -> None:
         self.cfg = cfg
         self.timeout_s = timeout_s
         self.session = requests.Session()
@@ -100,18 +108,26 @@ class ZohoCreatorClient:
                 timeout=self.timeout_s,
             )
             last_text = r.text or ""
+
+            # Retry on typical transient errors
             if r.status_code in (429, 500, 502, 503, 504):
-                sleep_s = min(30.0, 2.0 * attempt)
+                sleep_s = min(60.0, 3.0 * attempt)
                 time.sleep(sleep_s)
                 continue
+
             if r.status_code >= 400:
-                raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:700]}")
+                raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:900]}")
+
             if last_text.strip() == "":
                 return {}
-            return r.json()
-        raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:700]}")
+            try:
+                return r.json()
+            except Exception:
+                return {"_raw": last_text}
+        raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:900]}")
 
     # ---- Records APIs
+
     def add_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not records:
             return {}
@@ -119,13 +135,51 @@ class ZohoCreatorClient:
         body = {"data": records}
         return self._req("POST", url, json_body=body)
 
-    def get_records_page(self, *, criteria: str, page: int = 1, per_page: int = 200) -> Dict[str, Any]:
+    def get_records_cursor(
+        self,
+        *,
+        criteria: str = "",
+        record_cursor: str = "",
+        max_records: int = 200,
+        fields: str = "",
+    ) -> Tuple[List[Dict[str, Any]], str]:
+        """
+        Returns: (data_list, next_cursor)
+        - criteria optional (empty => fetch first max_records from report sorting)
+        - record_cursor optional for next pages
+        """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
-        params = {"page": page, "per_page": per_page}
-        # criteria vide => tout
+
+        # Zoho Creator v2.1: max_records, criteria, record_cursor (cursor pagination). :contentReference[oaicite:2]{index=2}
+        params: Dict[str, Any] = {"max_records": str(int(max_records))}
         if criteria:
             params["criteria"] = criteria
-        return self._req("GET", url, params=params)
+        if record_cursor:
+            params["record_cursor"] = record_cursor
+        if fields:
+            params["fields"] = fields
+
+        resp = self._req("GET", url, params=params)
+
+        # Robust parsing (Zoho sometimes wraps in "response")
+        data = []
+        if isinstance(resp, dict):
+            if "data" in resp and isinstance(resp["data"], list):
+                data = resp["data"]
+            elif "response" in resp and isinstance(resp["response"], dict) and isinstance(resp["response"].get("data"), list):
+                data = resp["response"]["data"]
+
+        # Cursor can be in resp["headers"]["record_cursor"] (Deluge wrapper) :contentReference[oaicite:3]{index=3}
+        next_cursor = ""
+        if isinstance(resp, dict):
+            if isinstance(resp.get("headers"), dict) and resp["headers"].get("record_cursor"):
+                next_cursor = str(resp["headers"]["record_cursor"])
+            elif resp.get("record_cursor"):
+                next_cursor = str(resp["record_cursor"])
+            elif isinstance(resp.get("response"), dict) and resp["response"].get("record_cursor"):
+                next_cursor = str(resp["response"]["record_cursor"])
+
+        return data, next_cursor
 
     def delete_record_by_id(self, record_id: str) -> Dict[str, Any]:
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
@@ -133,7 +187,7 @@ class ZohoCreatorClient:
 
     def delete_records_by_criteria(self, *, criteria: str) -> Dict[str, Any]:
         """
-        Certains DC supportent DELETE en masse sur report?criteria=...
+        Certains DC supportent DELETE report?criteria=...
         Si pas supporté => exception => fallback delete par ID.
         """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
@@ -226,7 +280,7 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     ou = str(row.get("OrgUnit") or "").strip()
     period = str(row.get("Period") or "").strip()  # déjà dd-MMM-yyyy chez toi
 
-    # ✅ BLOQUER lignes sans "Key" (donc sans OrgUnit/Period)
+    # ✅ BLOQUER lignes sans Key (donc sans OrgUnit/Period)
     if not ou or not period:
         return {}
 
@@ -256,14 +310,21 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
 # ---------------------------
 # PURGE ALL (manual one-shot)
 # ---------------------------
-def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float) -> int:
+def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, max_records: int = 200) -> int:
+    """
+    Purge by iterating cursor pages (no criteria).
+    """
     deleted = 0
-    page = 1
-    per_page = 200
+    cursor = ""
 
     while True:
-        resp = client.get_records_page(criteria="", page=page, per_page=per_page)
-        data = resp.get("data") or []
+        data, next_cursor = client.get_records_cursor(
+            criteria="",
+            record_cursor=cursor,
+            max_records=max_records,
+            fields="ID",  # lighter payload
+        )
+
         if not data:
             break
 
@@ -276,11 +337,10 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float) -> int:
             if throttle_s > 0:
                 time.sleep(throttle_s)
 
-        if len(data) < per_page:
-            break
-        page += 1
-
-        if page > 10000:
+        # move cursor
+        cursor = next_cursor
+        if not cursor:
+            # If server didn't return cursor, stop to avoid infinite loop
             break
 
     return deleted
@@ -289,7 +349,7 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float) -> int:
 # ---------------------------
 # Month operations
 # ---------------------------
-def delete_month_records(client: ZohoCreatorClient, yyyymm: str, *, throttle_s: float) -> int:
+def delete_month_records(client: ZohoCreatorClient, yyyymm: str, *, throttle_s: float, max_records: int = 200) -> int:
     period = period_yyyymm_to_zoho(yyyymm)
     criteria = f'(Period == "{period}")'
 
@@ -301,12 +361,14 @@ def delete_month_records(client: ZohoCreatorClient, yyyymm: str, *, throttle_s: 
         print(f"[{yyyymm}] bulk delete not available -> fallback per-ID delete. reason={e}")
 
     deleted = 0
-    page = 1
-    per_page = 200
-
+    cursor = ""
     while True:
-        resp = client.get_records_page(criteria=criteria, page=page, per_page=per_page)
-        data = resp.get("data") or []
+        data, next_cursor = client.get_records_cursor(
+            criteria=criteria,
+            record_cursor=cursor,
+            max_records=max_records,
+            fields="ID",
+        )
         if not data:
             break
 
@@ -319,10 +381,8 @@ def delete_month_records(client: ZohoCreatorClient, yyyymm: str, *, throttle_s: 
             if throttle_s > 0:
                 time.sleep(throttle_s)
 
-        if len(data) < per_page:
-            break
-        page += 1
-        if page > 2000:
+        cursor = next_cursor
+        if not cursor:
             break
 
     return deleted
@@ -390,6 +450,9 @@ def main() -> int:
     ap.add_argument("--purge_all", action="store_true", help="DELETE ALL Zoho records in the report (manual one-shot).")
     ap.add_argument("--purge_only", action="store_true", help="If set with --purge_all, purge then exit.")
 
+    # Cursor fetch max_records (200/500/1000) :contentReference[oaicite:4]{index=4}
+    ap.add_argument("--max_records", type=int, default=200, help="Creator getRecords max_records (200/500/1000).")
+
     args = ap.parse_args()
 
     cfg = ZohoConfig(
@@ -411,18 +474,18 @@ def main() -> int:
 
     # ✅ PURGE MODE (manual unique)
     if args.purge_all:
-        print("PURGE ALL: deleting all records in Zoho report...")
-        deleted = purge_all_records(client, throttle_s=args.throttle_seconds)
-        print(f"PURGE ALL done. deleted={deleted}")
+        print("PURGE ALL: deleting all records in Zoho report...", flush=True)
+        deleted = purge_all_records(client, throttle_s=args.throttle_seconds, max_records=args.max_records)
+        print(f"PURGE ALL done. deleted={deleted}", flush=True)
 
         # ✅ reset state so historical months can be re-imported from scratch
-        print("Resetting zoho_sync_state.json ...")
+        print("Resetting zoho_sync_state.json ...", flush=True)
         reset_state_file(state_path)
 
         if args.purge_only:
-            print("PURGE ONLY => exit.")
+            print("PURGE ONLY => exit.", flush=True)
             return 0
-        # sinon on continue (si tu veux purge+import dans le même run)
+        # else continue (purge + import same run)
 
     # ---- Read index
     index = load_index(index_path)
@@ -433,7 +496,7 @@ def main() -> int:
 
     # ✅ OU map
     ou_map = load_ou_map(repo_root)
-    print(f"OU_MAP loaded: level5={len(ou_map)}")
+    print(f"OU_MAP loaded: level5={len(ou_map)}", flush=True)
 
     last_months = last_n_months(months_sorted, args.refresh_last_n)
     months_obj = index.get("months") or {}
@@ -441,9 +504,9 @@ def main() -> int:
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
-    print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})")
-    print(f"Refresh months (delete+reinsert): {last_months}")
-    print(f"Batch size: {args.batch_size} | throttle_seconds: {args.throttle_seconds}")
+    print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
+    print(f"Refresh months (delete+reinsert): {last_months}", flush=True)
+    print(f"Batch size(add_records): {args.batch_size} | max_records(get_records): {args.max_records} | throttle_seconds: {args.throttle_seconds}", flush=True)
 
     for m in months_sorted:
         parts = (months_obj.get(m) or {}).get("parts") or []
@@ -452,34 +515,34 @@ def main() -> int:
             continue
 
         if m in last_months:
-            print(f"[{m}] refresh: deleting Zoho month records...")
-            deleted = delete_month_records(client, m, throttle_s=args.throttle_seconds)
-            print(f"[{m}] deleted={'bulk' if deleted == -1 else deleted}; inserting from parts...")
+            print(f"[{m}] refresh: deleting Zoho month records...", flush=True)
+            deleted = delete_month_records(client, m, throttle_s=args.throttle_seconds, max_records=args.max_records)
+            print(f"[{m}] deleted={'bulk' if deleted == -1 else deleted}; inserting from parts...", flush=True)
             batches, total, skipped = insert_month_from_parts(
                 client, repo_root, m, parts, ou_map,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
             )
-            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}")
+            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
             done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time()}
         else:
             if done_months.get(m, {}).get("done") is True:
                 print(f"[{m}] skip: already done (historical)")
                 continue
-            print(f"[{m}] import historical month...")
+            print(f"[{m}] import historical month...", flush=True)
             batches, total, skipped = insert_month_from_parts(
                 client, repo_root, m, parts, ou_map,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
             )
-            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}")
+            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
             done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time()}
 
     state["done_months"] = done_months
     state["last_run_at"] = time.time()
     save_state(state_path, state)
 
-    print("OK: Zoho sync completed.")
+    print("OK: Zoho sync completed.", flush=True)
     return 0
 
 
