@@ -19,7 +19,7 @@ from urllib3.util.retry import Retry
 # 1) CONFIG: COLLER ICI
 # =========================
 
-# (A) ✅ COLLER ICI ton DX_LIST (séparé par ;)
+# (A) ✅ AJOUTER TES INDICATEURS ICI (séparé par ;)
 DX_LIST = """
 "W25tOXS0rxS.dqydGQFHahb;W25tOXS0rxS.NOHlOxLczjc;W25tOXS0rxS.vbx8t4WAbR8;" 
           "W25tOXS0rxS.KPDzIsWq7JK;W25tOXS0rxS.oSYTyzezWif;W25tOXS0rxS.Dr4rWTqepnP;" 
@@ -87,15 +87,15 @@ DX_LIST = """
           "GzSBTZkxSZf.oSYTyzezWif"
 """.strip().replace("\n", "").replace(" ", "").replace('"', "")
 
-# (B) ✅ COLLER ICI ton RENAME_MAP (dict)
+# (B) ✅ AJOUTER TES INDICATEURS ICI (dx uid -> libellé humain)
 RENAME_MAP: Dict[str, str] = {
-          "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
+    "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
     "W25tOXS0rxS.NOHlOxLczjc": "BCG fixe2",
     "W25tOXS0rxS.vbx8t4WAbR8": "BCG avancé1",
     "W25tOXS0rxS.KPDzIsWq7JK": "BCG avancé2",
     "W25tOXS0rxS.oSYTyzezWif": "BCG mobile1",
     "W25tOXS0rxS.Dr4rWTqepnP": "BCG mobile2",
-
+    
     "uNdFg1eymsa.dqydGQFHahb": "Penta1 fixe1",
     "uNdFg1eymsa.NOHlOxLczjc": "Penta1 fixe2",
     "uNdFg1eymsa.vbx8t4WAbR8": "Penta1 avancé1",
@@ -323,7 +323,6 @@ RENAME_MAP: Dict[str, str] = {
     "GzSBTZkxSZf.oSYTyzezWif": "ROTA2 0-11 mois mobile",
 }
 
-
 # =========================
 # 2) HELPERS
 # =========================
@@ -482,6 +481,26 @@ def fetch_period(
     return pivot_records(long_all, dx_expected, rename_map)
 
 
+# =========================
+# ✅ NEW: appliquer rename_map.json (libellé -> link name Zoho)
+# =========================
+def apply_zoho_link_names(records: List[dict], zoho_map: Dict[str, str]) -> List[dict]:
+    """
+    Convertit les clés "humaines" (espaces/accents/ponctuation) en noms de lien Zoho.
+    Garde OrgUnit et Period.
+    """
+    out: List[dict] = []
+    for rec in records:
+        new_rec: dict = {}
+        for k, v in rec.items():
+            if k in ("OrgUnit", "Period"):
+                new_rec[k] = v
+            else:
+                new_rec[zoho_map.get(k, k)] = v
+        out.append(new_rec)
+    return out
+
+
 # ==========================================================
 # ✅ Split NDJSON plain par taille (4.5MB safe) + écrire aussi .gz
 # ==========================================================
@@ -490,11 +509,6 @@ def write_ndjson_parts_dual(
     records: List[dict],
     max_plain_bytes: int = 4_500_000,  # < 5MB safe (Zoho)
 ) -> List[dict]:
-    """
-    Écrit records en NDJSON découpé en parts <= max_plain_bytes.
-    Pour chaque part, écrit aussi le .ndjson.gz.
-    Retourne meta: {plain, file(gz), rows, bytes_plain, bytes_gz}
-    """
     folder.mkdir(parents=True, exist_ok=True)
 
     parts_meta: List[dict] = []
@@ -517,8 +531,8 @@ def write_ndjson_parts_dual(
         gz_f.close()
         parts_meta.append(
             {
-                "file": gz_path.name,     # ✅ pour widget (gz)
-                "plain": plain_path.name, # ✅ pour Zoho (plain)
+                "file": gz_path.name,
+                "plain": plain_path.name,
                 "rows": rows_in_part,
                 "bytes_plain": plain_path.stat().st_size if plain_path.exists() else 0,
                 "bytes_gz": gz_path.stat().st_size if gz_path.exists() else 0,
@@ -546,7 +560,6 @@ def write_ndjson_parts_dual(
 
     close_part()
 
-    # cas records vide
     if not records and not parts_meta:
         plain_path, gz_path = paths(1)
         plain_path.write_text("", encoding="utf-8")
@@ -589,19 +602,28 @@ def main() -> int:
         print("DX_LIST is empty. Paste your dx list in section (A).", file=sys.stderr)
         return 2
 
+    # ✅ NEW: charger le mapping libellé -> link name Zoho
+    zoho_rename_path = Path("docs/config/rename_map.json")
+    if not zoho_rename_path.exists():
+        print("Missing docs/config/rename_map.json", file=sys.stderr)
+        return 2
+    try:
+        zoho_rename_map: Dict[str, str] = json.loads(zoho_rename_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"Invalid rename_map.json: {e}", file=sys.stderr)
+        return 2
+
     dx_expected = [x.strip() for x in DX_LIST.split(";") if x.strip()]
     client = Dhis2Client(base_url=base_url, username=username, password=password)
 
     end = args.end or current_yyyymm()
     all_months = month_range(args.start, end)
-
     periods = all_months if args.backfill else all_months[-max(1, args.months):]
 
     out_dir = Path(args.out)
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
-    # index cumulatif
     index = {"generated_at": None, "months": {}}
     if index_path.exists():
         try:
@@ -621,10 +643,12 @@ def main() -> int:
             sleep_s=args.sleep,
         )
 
+        # ✅ NEW: conversion finale vers les "link names" Zoho
+        records = apply_zoho_link_names(records, zoho_rename_map)
+
         month_folder = monthly_root / pe
         month_folder.mkdir(parents=True, exist_ok=True)
 
-        # vider l'ancien contenu du mois avant réécriture
         for p in month_folder.glob("*"):
             p.unlink()
 
@@ -634,10 +658,8 @@ def main() -> int:
             max_plain_bytes=args.max_plain_bytes,
         )
 
-        # ✅ IMPORTANT: indexation dans la boucle
         index["months"][pe] = {"parts": parts, "rows": len(records)}
 
-    # ✅ IMPORTANT: update + write index après la boucle (une seule fois)
     index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
