@@ -9,17 +9,19 @@ import time
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# =========================
-# 1) CONFIG: COLLER ICI
-# =========================
+# ============================================================
+# 1) CONFIG: COLLE/EDITE ICI
+# ============================================================
 
-# (A) ✅ AJOUTER TES INDICATEURS ICI (séparé par ;)
+# (A) ✅ AJOUTE TES INDICATEURS ICI (séparés par ;)
+# Exemple:
+# DX_LIST = "dx1;dx2;dx3"
 DX_LIST = """
 "W25tOXS0rxS.dqydGQFHahb;W25tOXS0rxS.NOHlOxLczjc;W25tOXS0rxS.vbx8t4WAbR8;" 
           "W25tOXS0rxS.KPDzIsWq7JK;W25tOXS0rxS.oSYTyzezWif;W25tOXS0rxS.Dr4rWTqepnP;" 
@@ -87,8 +89,10 @@ DX_LIST = """
           "GzSBTZkxSZf.oSYTyzezWif"
 """.strip().replace("\n", "").replace(" ", "").replace('"', "")
 
-# (B) ✅ AJOUTER TES INDICATEURS ICI (dx uid -> libellé humain)
-# IMPORTANT: ici c’est dx -> "Label DHIS2"
+# (B) ✅ AJOUTE TES INDICATEURS ICI (dx uid -> libellé DHIS2)
+# IMPORTANT: dx -> "Label DHIS2" (exactement les labels utilisés dans rename_map.json)
+# Exemple:
+# RENAME_MAP = {"abc123.def456": "BCG fixe1", ...}
 RENAME_MAP: Dict[str, str] = {
     "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
     "W25tOXS0rxS.NOHlOxLczjc": "BCG fixe2",
@@ -324,9 +328,13 @@ RENAME_MAP: Dict[str, str] = {
     "GzSBTZkxSZf.oSYTyzezWif": "ROTA2 0-11 mois mobile",
 }
 
-# =========================
+# ============================================================
 # 2) HELPERS
-# =========================
+# ============================================================
+
+MMM = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
 
 def current_yyyymm(today: Optional[date] = None) -> str:
     d = today or date.today()
@@ -348,6 +356,9 @@ def month_range(start_yyyymm: str, end_yyyymm: str) -> List[str]:
 
 
 def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
+    """
+    Split une liste de dx pour ne pas dépasser la longueur max de la query DHIS2.
+    """
     chunks: List[List[str]] = []
     cur: List[str] = []
     cur_len = 0
@@ -365,12 +376,9 @@ def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
     return chunks
 
 
-# =========================
-# ✅ NEW: rename_map.json (Label DHIS2 -> Zoho Field Link Name)
-# =========================
 def load_zoho_rename_map(path: Path) -> Dict[str, str]:
     """
-    Doit être un JSON:
+    docs/config/rename_map.json:
       { "BCG avancé1": "BCG_avanc_1", ... }
     """
     try:
@@ -379,34 +387,26 @@ def load_zoho_rename_map(path: Path) -> Dict[str, str]:
         return {}
 
 
-# =========================
-# ✅ NEW: format Period + normalisation nombres
-# =========================
-MMM = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-
 def period_iso_to_zoho(period_iso: str) -> str:
     """
-    period_iso attendu: YYYY-MM-DD (ex: 2025-01-01)
-    retourne: DD-MMM-YYYY (ex: 01-Jan-2025)
+    period_iso: YYYY-MM-DD  ->  DD-MMM-YYYY
     """
-    # tolérant
     s = (period_iso or "").strip()
     if len(s) >= 10 and s[4] == "-" and s[7] == "-":
         y = int(s[0:4])
         m = int(s[5:7])
         d = int(s[8:10])
-        return f"{d:02d}-{MMM[m-1]}-{y:04d}"
+        if 1 <= m <= 12:
+            return f"{d:02d}-{MMM[m-1]}-{y:04d}"
     return s
 
 
-def normalize_number(v):
+def normalize_number(v: Any) -> Any:
     """
     - None / "" / "null" -> 0
-    - "12.0" -> 12
     - 12.0 -> 12
-    - "12,5" -> 12.5 (si jamais)
+    - "12.0" -> 12
+    - "12,5" -> 12.5
     """
     if v is None:
         return 0
@@ -414,7 +414,7 @@ def normalize_number(v):
     if isinstance(v, bool):
         return int(v)
 
-    if isinstance(v, (int,)):
+    if isinstance(v, int):
         return v
 
     if isinstance(v, float):
@@ -424,7 +424,6 @@ def normalize_number(v):
         s = v.strip()
         if s == "" or s.lower() == "null":
             return 0
-        # si virgule décimale
         s2 = s.replace(",", ".")
         try:
             f = float(s2)
@@ -435,17 +434,19 @@ def normalize_number(v):
     return v
 
 
-# =========================
-# 3) DHIS2 CLIENT
-# =========================
+# ============================================================
+# 3) DHIS2 CLIENT (robuste anti-504)
+# ============================================================
+
 @dataclass
 class Dhis2Client:
     base_url: str
     username: str
     password: str
-    timeout_s: int = 600  # 10 minutes
+    timeout_s: int = 1200  # ✅ 20 minutes (anti timeout)
 
     def __post_init__(self) -> None:
+        # Retry urllib3 (en plus du retry manuel)
         retry = Retry(
             total=6,
             connect=6,
@@ -463,15 +464,31 @@ class Dhis2Client:
 
     def _get(self, path: str, params: Dict[str, object]) -> dict:
         url = self.base_url.rstrip("/") + "/" + path.lstrip("/")
-        r = self.session.get(
-            url,
-            params=params,
-            auth=(self.username, self.password),
-            headers={"Accept": "application/json"},
-            timeout=self.timeout_s,
-        )
-        r.raise_for_status()
-        return r.json()
+
+        last_err = ""
+        # ✅ Retry manuel + backoff long sur 429/5xx
+        for attempt in range(1, 8):  # 7 essais
+            r = self.session.get(
+                url,
+                params=params,
+                auth=(self.username, self.password),
+                headers={"Accept": "application/json"},
+                timeout=self.timeout_s,
+            )
+
+            if 200 <= r.status_code < 300:
+                return r.json()
+
+            if r.status_code in (429, 500, 502, 503, 504):
+                last_err = f"{r.status_code} {r.text[:200]}"
+                sleep_s = min(180.0, 10.0 * attempt)  # 10s,20s,... max 180s
+                print(f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 sleep={sleep_s}s url={path}", flush=True)
+                time.sleep(sleep_s)
+                continue
+
+            r.raise_for_status()
+
+        raise requests.exceptions.HTTPError(f"DHIS2 API failed after retries: {url} last={last_err}")
 
     def analytics(self, dx_items: List[str], pe: str, ou: str = "LEVEL-5") -> dict:
         params = {
@@ -484,6 +501,54 @@ class Dhis2Client:
         return self._get("api/analytics.json", params)
 
 
+def _analytics_with_split(
+    client: Dhis2Client,
+    pe: str,
+    dx_items: List[str],
+    *,
+    max_split_depth: int = 4,
+    depth: int = 0,
+) -> dict:
+    """
+    Tente analytics.
+    Si timeout/504, split dx_items en 2 et retry (requêtes plus petites).
+    """
+    try:
+        return client.analytics(dx_items=dx_items, pe=pe, ou="LEVEL-5")
+    except Exception as e:
+        msg = str(e)
+        is_timeoutish = (
+            "504" in msg
+            or "Gateway" in msg
+            or "Read timed out" in msg
+            or "timeout" in msg.lower()
+        )
+
+        # si pas un timeout, ou trop deep, ou chunk déjà petit => on remonte l'erreur
+        if (not is_timeoutish) or (depth >= max_split_depth) or (len(dx_items) <= 20):
+            raise
+
+        mid = len(dx_items) // 2
+        left = dx_items[:mid]
+        right = dx_items[mid:]
+
+        print(
+            f"WARN: analytics failed depth={depth} dx={len(dx_items)} -> split {len(left)}+{len(right)} reason={msg[:140]}",
+            flush=True,
+        )
+
+        out = {"rows": []}
+        a = _analytics_with_split(client, pe, left, max_split_depth=max_split_depth, depth=depth + 1)
+        b = _analytics_with_split(client, pe, right, max_split_depth=max_split_depth, depth=depth + 1)
+        out["rows"].extend(a.get("rows") or [])
+        out["rows"].extend(b.get("rows") or [])
+        return out
+
+
+# ============================================================
+# 4) TRANSFORM: analytics rows -> records pivots Zoho-ready
+# ============================================================
+
 def rows_to_records(analytics_json: dict) -> List[dict]:
     rows = analytics_json.get("rows") or []
     recs: List[dict] = []
@@ -492,32 +557,23 @@ def rows_to_records(analytics_json: dict) -> List[dict]:
             dx, pe, ou, val = r[0], r[1], r[2], r[3]
         except Exception:
             continue
-
-        # DHIS2 renvoie souvent des strings numériques
         try:
             v = float(val)
         except Exception:
             v = None
-
         recs.append({"dx": dx, "pe": pe, "ou": ou, "value": v})
     return recs
 
 
-# =========================
-# ✅ NEW: pivot -> records "Zoho-ready"
-# - Colonnes en Zoho Link Names
-# - Period en DD-MMM-YYYY
-# - valeurs numériques normalisées (None->0, 100.0->100)
-# =========================
 def pivot_records(
     long_recs: List[dict],
     dx_expected: List[str],
     rename_map_dx_to_label: Dict[str, str],   # dx -> label DHIS2
-    zoho_map_label_to_link: Dict[str, str],   # label -> zoho link
+    zoho_map_label_to_link: Dict[str, str],   # label -> Zoho field link name
 ) -> List[dict]:
     idx: Dict[Tuple[str, str], dict] = {}
 
-    # Agrégation
+    # agrégation (si plusieurs lignes pour la même (ou,pe,dx) => somme)
     for r in long_recs:
         key = (r["ou"], r["pe"])
         row = idx.get(key)
@@ -532,7 +588,7 @@ def pivot_records(
         else:
             row[r["dx"]] = (old or 0) + (val or 0)
 
-    # Assurer toutes les colonnes dx
+    # assurer toutes les colonnes dx
     for row in idx.values():
         for dx in dx_expected:
             row.setdefault(dx, None)
@@ -544,13 +600,13 @@ def pivot_records(
 
         out_row: dict = {
             "OrgUnit": row.get("ou"),
-            "Period": period_zoho,  # ✅ Zoho date string (comme widget)
+            "Period": period_zoho,  # dd-MMM-yyyy
         }
 
         for dx in dx_expected:
-            label = rename_map_dx_to_label.get(dx, dx)         # dx -> label
-            zoho_link = zoho_map_label_to_link.get(label, label)  # label -> link
-            out_row[zoho_link] = normalize_number(row.get(dx))    # ✅ 0/int/float OK
+            label = rename_map_dx_to_label.get(dx, dx)
+            zoho_link = zoho_map_label_to_link.get(label, label)
+            out_row[zoho_link] = normalize_number(row.get(dx))
 
         out.append(out_row)
 
@@ -569,28 +625,34 @@ def fetch_period(
 ) -> List[dict]:
     chunks = chunk_list(dx_expected, max_chars=dx_chunk_chars)
     long_all: List[dict] = []
+
     for i, ch in enumerate(chunks, start=1):
         print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
-        data = client.analytics(dx_items=ch, pe=pe, ou="LEVEL-5")
+
+        # ✅ robuste: retry + split automatique si 504
+        data = _analytics_with_split(client, pe, ch)
+
         long_all.extend(rows_to_records(data))
+
         if sleep_s:
             time.sleep(sleep_s)
 
     return pivot_records(long_all, dx_expected, rename_map_dx_to_label, zoho_map_label_to_link)
 
 
-# ==========================================================
-# ✅ Split NDJSON plain par taille (4.5MB safe) + écrire aussi .gz
-# ==========================================================
+# ============================================================
+# 5) OUTPUT: NDJSON split + index.json
+# ============================================================
+
 def write_ndjson_parts_dual(
     folder: Path,
     records: List[dict],
-    max_plain_bytes: int = 4_500_000,  # < 5MB safe (Zoho)
+    max_plain_bytes: int = 800_000,  # ✅ recommandé (Zoho/Deluge & éviter truncation)
 ) -> List[dict]:
     """
     Écrit records en NDJSON découpé en parts <= max_plain_bytes.
-    Pour chaque part, écrit aussi le .ndjson.gz.
-    Retourne meta: {plain, file(gz), rows, bytes_plain, bytes_gz}
+    Pour chaque part: .ndjson + .ndjson.gz
+    Retour meta: {plain, file(gz), rows, bytes_plain, bytes_gz}
     """
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -614,8 +676,8 @@ def write_ndjson_parts_dual(
         gz_f.close()
         parts_meta.append(
             {
-                "file": gz_path.name,      # widget (gz)
-                "plain": plain_path.name,  # Zoho Deluge (plain)
+                "file": gz_path.name,
+                "plain": plain_path.name,
                 "rows": rows_in_part,
                 "bytes_plain": plain_path.stat().st_size if plain_path.exists() else 0,
                 "bytes_gz": gz_path.stat().st_size if gz_path.exists() else 0,
@@ -662,6 +724,10 @@ def write_ndjson_parts_dual(
     return parts_meta
 
 
+# ============================================================
+# 6) MAIN
+# ============================================================
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default="202501", help="YYYYMM")
@@ -670,8 +736,8 @@ def main() -> int:
     ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to --end/current")
     ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
-    ap.add_argument("--sleep", type=float, default=0.2)
-    ap.add_argument("--max_plain_bytes", type=int, default=800_000, help="Max bytes per .ndjson part (<5MB)")
+    ap.add_argument("--sleep", type=float, default=1.0, help="Sleep between DHIS2 calls (reduce 504)")
+    ap.add_argument("--max_plain_bytes", type=int, default=800_000, help="Max bytes per .ndjson part (recommend ~800k)")
 
     args = ap.parse_args()
 
@@ -686,7 +752,11 @@ def main() -> int:
         print("DX_LIST is empty. Paste your dx list in section (A).", file=sys.stderr)
         return 2
 
-    # ✅ Charger mapping Label -> Zoho Link Name
+    if not RENAME_MAP:
+        print("RENAME_MAP is empty. Paste your dx->label map in section (B).", file=sys.stderr)
+        return 2
+
+    # ✅ Load mapping Label -> Zoho Link Name
     zoho_rename_path = Path("docs/config/rename_map.json")
     zoho_map = load_zoho_rename_map(zoho_rename_path)
     if not zoho_map:
@@ -704,8 +774,8 @@ def main() -> int:
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
-    # ✅ Index cumulatif: garder ce qui existe et mettre à jour seulement les mois recalculés
-    index = {"generated_at": None, "months": {}}
+    # ✅ Index cumulatif: garder l’existant, mettre à jour seulement les mois recalculés
+    index: Dict[str, Any] = {"generated_at": None, "months": {}}
     if index_path.exists():
         try:
             index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -714,21 +784,31 @@ def main() -> int:
         except Exception:
             index = {"generated_at": None, "months": {}}
 
+    ok_months: List[str] = []
+    failed_months: List[str] = []
+
     for pe in periods:
-        records = fetch_period(
-            client=client,
-            pe=pe,
-            dx_expected=dx_expected,
-            rename_map_dx_to_label=RENAME_MAP,
-            zoho_map_label_to_link=zoho_map,
-            dx_chunk_chars=args.dx_chunk_chars,
-            sleep_s=args.sleep,
-        )
+        try:
+            records = fetch_period(
+                client=client,
+                pe=pe,
+                dx_expected=dx_expected,
+                rename_map_dx_to_label=RENAME_MAP,
+                zoho_map_label_to_link=zoho_map,
+                dx_chunk_chars=args.dx_chunk_chars,
+                sleep_s=args.sleep,
+            )
+        except Exception as e:
+            # ✅ Ne pas casser le run complet si un mois échoue (504 etc.)
+            print(f"ERROR: fetch_period failed for {pe}: {e}", flush=True)
+            print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)
+            failed_months.append(pe)
+            continue
 
         month_folder = monthly_root / pe
         month_folder.mkdir(parents=True, exist_ok=True)
 
-        # ✅ Vider l'ancien contenu du mois avant réécriture (safe)
+        # ✅ seulement si succès: on réécrit le mois
         for p in month_folder.glob("*"):
             try:
                 p.unlink()
@@ -741,15 +821,17 @@ def main() -> int:
             max_plain_bytes=args.max_plain_bytes,
         )
 
-        # ✅ Indexation correcte par mois
         index["months"][pe] = {"parts": parts, "rows": len(records)}
+        ok_months.append(pe)
 
-    # ✅ Écrire index une seule fois (fin)
     index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
 
-    print(f"OK: refreshed {periods}; index months={len(index['months'])}")
+    print(f"OK months: {ok_months}")
+    if failed_months:
+        print(f"FAILED months (skipped, will retry next run): {failed_months}")
+    print(f"Index months={len(index.get('months') or {})}")
     return 0
 
 
