@@ -89,7 +89,6 @@ class ZohoCreatorClient:
         params: Dict[str, Any] | None = None,
         json_body: Any | None = None,
     ) -> Dict[str, Any]:
-        # retry/backoff only on 429/5xx
         last_text = ""
         for attempt in range(1, 7):
             r = self.session.request(
@@ -106,12 +105,11 @@ class ZohoCreatorClient:
                 time.sleep(sleep_s)
                 continue
             if r.status_code >= 400:
-                # helpful error
-                raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:500]}")
+                raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:700]}")
             if last_text.strip() == "":
                 return {}
             return r.json()
-        raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:500]}")
+        raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:700]}")
 
     # ---- Records APIs
     def add_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -123,7 +121,10 @@ class ZohoCreatorClient:
 
     def get_records_page(self, *, criteria: str, page: int = 1, per_page: int = 200) -> Dict[str, Any]:
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
-        params = {"criteria": criteria, "page": page, "per_page": per_page}
+        params = {"page": page, "per_page": per_page}
+        # criteria vide => tout
+        if criteria:
+            params["criteria"] = criteria
         return self._req("GET", url, params=params)
 
     def delete_record_by_id(self, record_id: str) -> Dict[str, Any]:
@@ -132,8 +133,8 @@ class ZohoCreatorClient:
 
     def delete_records_by_criteria(self, *, criteria: str) -> Dict[str, Any]:
         """
-        Certains comptes Zoho supportent DELETE sur report avec criteria.
-        Si ton DC l’accepte, ça supprime en masse (beaucoup plus rapide).
+        Certains DC supportent DELETE en masse sur report?criteria=...
+        Si pas supporté => exception => fallback delete par ID.
         """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
         params = {"criteria": criteria}
@@ -158,9 +159,6 @@ def last_n_months(months_sorted: List[str], n: int = 3) -> List[str]:
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
-    """
-    Charge docs/data/ou_map.json.gz si présent, sinon ou_map.json
-    """
     gz_path = repo_root / "docs" / "data" / "ou_map.json.gz"
     js_path = repo_root / "docs" / "data" / "ou_map.json"
 
@@ -171,7 +169,7 @@ def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
     if js_path.exists():
         return json.loads(js_path.read_text(encoding="utf-8"))
 
-    raise FileNotFoundError("Missing docs/data/ou_map.json(.gz). Run build_ou_map workflow first.")
+    raise FileNotFoundError("Missing docs/data/ou_map.json(.gz). Run build_ou_map.py first.")
 
 
 def iter_ndjson_with_raw(file_path: Path) -> List[Tuple[Dict[str, Any], str]]:
@@ -210,8 +208,12 @@ def save_state(state_path: Path, state: Dict[str, Any]) -> None:
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def reset_state_file(state_path: Path) -> None:
+    save_state(state_path, {"done_months": {}, "last_run_at": None})
+
+
 # ---------------------------
-# Transform: NDJSON row -> Zoho record (IMPORTANT)
+# Transform: NDJSON row -> Zoho record
 # ---------------------------
 def md5_hex(s: str) -> str:
     return hashlib.md5(s.encode("utf-8")).hexdigest()
@@ -219,15 +221,13 @@ def md5_hex(s: str) -> str:
 
 def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
     """
-    GitHub NDJSON contient "OrgUnit" + "Period" + indicateurs.
-    Zoho attend les link names:
-      - Key, Org5_UID, Period, RowHash, Org2..Org5 + indicateurs
+    Bloque import si OrgUnit/Period absent => {}
     """
     ou = str(row.get("OrgUnit") or "").strip()
-    period = str(row.get("Period") or "").strip()  # chez toi déjà "01-Apr-2025"
+    period = str(row.get("Period") or "").strip()  # déjà dd-MMM-yyyy chez toi
 
+    # ✅ BLOQUER lignes sans "Key" (donc sans OrgUnit/Period)
     if not ou or not period:
-        # on renvoie quand même quelque chose minimal si besoin
         return {}
 
     meta = ou_map.get(ou) or {}
@@ -237,17 +237,14 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     rec["Period"] = period
     rec["Key"] = f"{ou}|{period}"
 
-    # RowHash: prendre celui du fichier si existant, sinon md5(raw_line)
     rh = row.get("RowHash")
     rec["RowHash"] = str(rh).strip() if rh else md5_hex(raw_line)
 
-    # Org2..Org5
     rec["Org2"] = meta.get("Org2", "")
     rec["Org3"] = meta.get("Org3", "")
     rec["Org4"] = meta.get("Org4", "")
     rec["Org5"] = meta.get("Org5", "")
 
-    # Copier tous les autres champs (indicateurs) tels quels
     for k, v in row.items():
         if k in ("OrgUnit", "Period", "Key", "Org5_UID", "Org2", "Org3", "Org4", "Org5", "RowHash"):
             continue
@@ -257,44 +254,77 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
 
 
 # ---------------------------
-# Main sync logic
+# PURGE ALL (manual one-shot)
 # ---------------------------
-def delete_month_records(client: ZohoCreatorClient, yyyymm: str) -> int:
-    """
-    Delete ALL records for the month.
-    1) try bulk delete by criteria (fast)
-    2) fallback per-record delete (slow but works)
-    """
-    period = period_yyyymm_to_zoho(yyyymm)
-    criteria = f'(Period == "{period}")'
-
-    # 1) bulk delete (if supported)
-    try:
-        client.delete_records_by_criteria(criteria=criteria)
-        return -1  # unknown exact count, but done
-    except Exception as e:
-        print(f"[{yyyymm}] bulk delete not available, fallback per-record delete. reason={e}")
-
-    # 2) fallback
+def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float) -> int:
     deleted = 0
     page = 1
     per_page = 200
+
     while True:
-        resp = client.get_records_page(criteria=criteria, page=page, per_page=per_page)
+        resp = client.get_records_page(criteria="", page=page, per_page=per_page)
         data = resp.get("data") or []
         if not data:
             break
+
         for r in data:
             rid = r.get("ID") or r.get("id")
             if not rid:
                 continue
             client.delete_record_by_id(str(rid))
             deleted += 1
+            if throttle_s > 0:
+                time.sleep(throttle_s)
+
         if len(data) < per_page:
             break
         page += 1
-        if page > 800:
+
+        if page > 10000:
             break
+
+    return deleted
+
+
+# ---------------------------
+# Month operations
+# ---------------------------
+def delete_month_records(client: ZohoCreatorClient, yyyymm: str, *, throttle_s: float) -> int:
+    period = period_yyyymm_to_zoho(yyyymm)
+    criteria = f'(Period == "{period}")'
+
+    # Try bulk delete (fast if supported)
+    try:
+        client.delete_records_by_criteria(criteria=criteria)
+        return -1
+    except Exception as e:
+        print(f"[{yyyymm}] bulk delete not available -> fallback per-ID delete. reason={e}")
+
+    deleted = 0
+    page = 1
+    per_page = 200
+
+    while True:
+        resp = client.get_records_page(criteria=criteria, page=page, per_page=per_page)
+        data = resp.get("data") or []
+        if not data:
+            break
+
+        for r in data:
+            rid = r.get("ID") or r.get("id")
+            if not rid:
+                continue
+            client.delete_record_by_id(str(rid))
+            deleted += 1
+            if throttle_s > 0:
+                time.sleep(throttle_s)
+
+        if len(data) < per_page:
+            break
+        page += 1
+        if page > 2000:
+            break
+
     return deleted
 
 
@@ -305,15 +335,16 @@ def insert_month_from_parts(
     parts_meta: List[Dict[str, Any]],
     ou_map: Dict[str, Dict[str, str]],
     *,
-    batch_size: int = 200,
-) -> Tuple[int, int]:
+    batch_size: int,
+    throttle_s: float,
+) -> Tuple[int, int, int]:
     """
-    Insert all records from monthly/<yyyymm>/part-xxxx.ndjson in batches.
-    Returns (batches_sent, records_total).
+    Returns (batches_sent, records_total, skipped_no_key)
     """
     month_dir = repo_root / "docs" / "data" / "monthly" / yyyymm
     batches = 0
     total = 0
+    skipped_no_key = 0
 
     for p in parts_meta:
         plain = p.get("plain")
@@ -324,19 +355,26 @@ def insert_month_from_parts(
             continue
 
         rows = iter_ndjson_with_raw(fp)
+
         zoho_recs: List[Dict[str, Any]] = []
         for obj, raw in rows:
             rec = build_zoho_record(obj, raw, ou_map)
             if rec:
                 zoho_recs.append(rec)
+            else:
+                skipped_no_key += 1
 
         total += len(zoho_recs)
 
         for batch in chunk_records(zoho_recs, batch_size):
+            if not batch:
+                continue
             client.add_records(batch)
             batches += 1
+            if throttle_s > 0:
+                time.sleep(throttle_s)
 
-    return batches, total
+    return batches, total, skipped_no_key
 
 
 def main() -> int:
@@ -346,6 +384,12 @@ def main() -> int:
     ap.add_argument("--state", default="docs/data/zoho_sync_state.json")
     ap.add_argument("--refresh_last_n", type=int, default=3)
     ap.add_argument("--batch_size", type=int, default=200)
+    ap.add_argument("--throttle_seconds", type=float, default=1.2, help="Sleep between API calls (rate limit safety)")
+
+    # ✅ Manual one-shot purge
+    ap.add_argument("--purge_all", action="store_true", help="DELETE ALL Zoho records in the report (manual one-shot).")
+    ap.add_argument("--purge_only", action="store_true", help="If set with --purge_all, purge then exit.")
+
     args = ap.parse_args()
 
     cfg = ZohoConfig(
@@ -363,13 +407,31 @@ def main() -> int:
     index_path = repo_root / args.index
     state_path = repo_root / args.state
 
+    client = ZohoCreatorClient(cfg)
+
+    # ✅ PURGE MODE (manual unique)
+    if args.purge_all:
+        print("PURGE ALL: deleting all records in Zoho report...")
+        deleted = purge_all_records(client, throttle_s=args.throttle_seconds)
+        print(f"PURGE ALL done. deleted={deleted}")
+
+        # ✅ reset state so historical months can be re-imported from scratch
+        print("Resetting zoho_sync_state.json ...")
+        reset_state_file(state_path)
+
+        if args.purge_only:
+            print("PURGE ONLY => exit.")
+            return 0
+        # sinon on continue (si tu veux purge+import dans le même run)
+
+    # ---- Read index
     index = load_index(index_path)
     months_sorted = sorted_months(index)
     if not months_sorted:
         print("No months found in index.json")
         return 0
 
-    # ✅ load ou_map
+    # ✅ OU map
     ou_map = load_ou_map(repo_root)
     print(f"OU_MAP loaded: level5={len(ou_map)}")
 
@@ -379,11 +441,9 @@ def main() -> int:
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
-    client = ZohoCreatorClient(cfg)
-
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})")
-    print(f"Refresh (delete+reinsert) months: {last_months}")
-    print(f"Batch size: {args.batch_size}")
+    print(f"Refresh months (delete+reinsert): {last_months}")
+    print(f"Batch size: {args.batch_size} | throttle_seconds: {args.throttle_seconds}")
 
     for m in months_sorted:
         parts = (months_obj.get(m) or {}).get("parts") or []
@@ -393,18 +453,26 @@ def main() -> int:
 
         if m in last_months:
             print(f"[{m}] refresh: deleting Zoho month records...")
-            deleted = delete_month_records(client, m)
+            deleted = delete_month_records(client, m, throttle_s=args.throttle_seconds)
             print(f"[{m}] deleted={'bulk' if deleted == -1 else deleted}; inserting from parts...")
-            batches, total = insert_month_from_parts(client, repo_root, m, parts, ou_map, batch_size=args.batch_size)
-            print(f"[{m}] inserted_records={total} batches={batches}")
+            batches, total, skipped = insert_month_from_parts(
+                client, repo_root, m, parts, ou_map,
+                batch_size=args.batch_size,
+                throttle_s=args.throttle_seconds,
+            )
+            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}")
             done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time()}
         else:
             if done_months.get(m, {}).get("done") is True:
                 print(f"[{m}] skip: already done (historical)")
                 continue
             print(f"[{m}] import historical month...")
-            batches, total = insert_month_from_parts(client, repo_root, m, parts, ou_map, batch_size=args.batch_size)
-            print(f"[{m}] inserted_records={total} batches={batches}")
+            batches, total, skipped = insert_month_from_parts(
+                client, repo_root, m, parts, ou_map,
+                batch_size=args.batch_size,
+                throttle_s=args.throttle_seconds,
+            )
+            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}")
             done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time()}
 
     state["done_months"] = done_months
