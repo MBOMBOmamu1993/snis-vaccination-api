@@ -671,7 +671,7 @@ def main() -> int:
     ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
     ap.add_argument("--sleep", type=float, default=0.2)
-    ap.add_argument("--max_plain_bytes", type=int, default=4_500_000, help="Max bytes per .ndjson part (<5MB)")
+    ap.add_argument("--max_plain_bytes", type=int, default=8_000_000, help="Max bytes per .ndjson part (<5MB)")
 
     args = ap.parse_args()
 
