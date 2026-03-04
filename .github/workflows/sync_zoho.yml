@@ -2,7 +2,7 @@ name: DHIS2 -> GitHub -> Zoho (batch)
 
 on:
   schedule:
-    - cron: "0 */3 * * *"   # toutes les 3 heures
+    - cron: "0 0 * * *"   # tous les jours à minuit (UTC)
   workflow_dispatch: {}
 
 permissions:
