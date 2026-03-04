@@ -1,0 +1,57 @@
+name: DHIS2 -> GitHub -> Zoho (batch)
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"   # toutes les 3 heures
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      # 1) Ton fetch DHIS2 -> génère docs/data/*
+      - name: Fetch DHIS2 and build NDJSON/index
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          python scripts/fetch_dhis2_vaccination.py --months 3 --out docs/data
+
+      # 2) Sync Zoho (delete+reinsert last 3, insert historical once)
+      - name: Sync to Zoho Creator (batch 200)
+        env:
+          ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
+          ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
+          ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
+          ZOHO_DC: ${{ secrets.ZOHO_DC }}
+          ZOHO_OWNER: drcongo
+          ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
+          ZOHO_FORM_LINK: Donn_es_PEV_FOSA
+          ZOHO_REPORT_LINK: Donn_es_PEV_FOSA_Report
+        run: |
+          python scripts/sync_zoho_creator_batch.py --index docs/data/index.json --state docs/data/zoho_sync_state.json --refresh_last_n 3 --throttle_seconds 1.5
+
+      # 3) Commit docs/data (index + state + monthly parts)
+      - name: Commit & push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet || (git commit -m "Update DHIS2 export + Zoho sync state" && git push)
