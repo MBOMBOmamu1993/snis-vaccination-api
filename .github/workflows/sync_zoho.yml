@@ -14,15 +14,24 @@ on:
         required: false
         default: "false"
 
+# ✅ Empêche 2 runs d’écrire docs/data en même temps
+concurrency:
+  group: dhis2-data
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -32,7 +41,7 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests urllib3
 
       # 0) Build OU map (Org2-Org5)
       - name: Build OU map (Org2-Org5)
@@ -51,7 +60,10 @@ jobs:
           DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
           DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
         run: |
-          python scripts/fetch_dhis2_vaccination.py --backfill --start 202501 --out docs/data
+          python scripts/fetch_dhis2_vaccination.py \
+            --backfill \
+            --start 202501 \
+            --out docs/data
 
       - name: Fetch DHIS2 and build NDJSON/index (last 3 months)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true') }}
@@ -60,7 +72,9 @@ jobs:
           DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
           DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
         run: |
-          python scripts/fetch_dhis2_vaccination.py --months 3 --out docs/data
+          python scripts/fetch_dhis2_vaccination.py \
+            --months 3 \
+            --out docs/data
 
       # 2) PURGE ALL (manual one-shot)
       - name: PURGE ALL Zoho records (manual)
@@ -81,6 +95,7 @@ jobs:
             --purge_all \
             --purge_only \
             --batch_size 200 \
+            --max_records 200 \
             --throttle_seconds 1.2
 
       # 3) Sync Zoho (normal)
@@ -101,12 +116,23 @@ jobs:
             --state docs/data/zoho_sync_state.json \
             --refresh_last_n 3 \
             --batch_size 200 \
+            --max_records 200 \
             --throttle_seconds 1.2
 
-      # 4) Commit & push
-      - name: Commit & push if changed
+      # 4) Commit & push (rebase + retry)
+      - name: Commit & push if changed (rebase + retry)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add docs/data
-          git diff --cached --quiet || (git commit -m "Update DHIS2 export + OU map + Zoho sync state" && git push)
+          git diff --cached --quiet && echo "No changes" && exit 0
+
+          git commit -m "Update DHIS2 export + OU map + Zoho sync state"
+
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push failed (attempt $i), retrying..."
+            sleep 5
+          done
