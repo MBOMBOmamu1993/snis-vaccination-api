@@ -95,7 +95,7 @@ jobs:
             --purge_all \
             --purge_only \
             --batch_size 200 \
-            --max_records 200 \
+            --purge_batch_limit 200 \
             --throttle_seconds 1.2
 
       # 3) Sync Zoho (normal)
@@ -116,7 +116,7 @@ jobs:
             --state docs/data/zoho_sync_state.json \
             --refresh_last_n 3 \
             --batch_size 200 \
-            --max_records 200 \
+            --purge_batch_limit 200 \
             --throttle_seconds 1.2
 
       # 4) Commit & push (rebase + retry)
