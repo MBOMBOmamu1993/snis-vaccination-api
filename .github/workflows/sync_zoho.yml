@@ -95,7 +95,7 @@ jobs:
             --purge_only \
             --batch_size 200 \
             --purge_batch_limit 200 \
-            --throttle_seconds 1.2
+            --throttle_seconds 1.5
 
       # 3A) Sync Zoho (full import) - seulement si backfill_all=true
       - name: Sync to Zoho Creator (full import, batch 200)
@@ -114,13 +114,13 @@ jobs:
             --index docs/data/index.json \
             --state docs/data/zoho_sync_state.json \
             --import_historical \
-            --refresh_last_n 3 \
+            --refresh_last_n 2 \
             --batch_size 200 \
-            --purge_batch_limit 200 \
-            --throttle_seconds 1.2
+            --per_page 200 \
+            --throttle_seconds 1.5
 
-      # 3B) Sync Zoho (normal) - quotidien: uniquement refresh last 3 months
-      - name: Sync to Zoho Creator (daily refresh, batch 200)
+      # 3B) Sync Zoho (daily incremental) - quotidien: uniquement 2 mois précédents, add/update via RowHash
+      - name: Sync to Zoho Creator (daily incremental, batch 200)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.purge_all == 'true' || inputs.backfill_all == 'true')) }}
         env:
           ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
@@ -135,10 +135,10 @@ jobs:
           python scripts/sync_zoho_creator_batch.py \
             --index docs/data/index.json \
             --state docs/data/zoho_sync_state.json \
-            --refresh_last_n 3 \
+            --refresh_last_n 2 \
             --batch_size 200 \
-            --purge_batch_limit 200 \
-            --throttle_seconds 1.2
+            --per_page 200 \
+            --throttle_seconds 1.5
 
       # 4) Commit & push
       - name: Commit & push if changed (rebase + retry)
