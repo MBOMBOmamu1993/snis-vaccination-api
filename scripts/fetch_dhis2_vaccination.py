@@ -91,8 +91,6 @@ DX_LIST = """
 
 # (B) ✅ AJOUTE TES INDICATEURS ICI (dx uid -> libellé DHIS2)
 # IMPORTANT: dx -> "Label DHIS2" (exactement les labels utilisés dans rename_map.json)
-# Exemple:
-# RENAME_MAP = {"abc123.def456": "BCG fixe1", ...}
 RENAME_MAP: Dict[str, str] = {
     "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
     "W25tOXS0rxS.NOHlOxLczjc": "BCG fixe2",
@@ -443,16 +441,15 @@ class Dhis2Client:
     base_url: str
     username: str
     password: str
-    timeout_s: int = 1200  # ✅ 20 minutes (anti timeout)
+    timeout_s: int = 1200  # 20 minutes (anti timeout)
 
     def __post_init__(self) -> None:
-        # Retry urllib3 (en plus du retry manuel)
         retry = Retry(
             total=6,
             connect=6,
             read=6,
             status=6,
-            backoff_factor=5,
+            backoff_factor=3,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods=["GET"],
             raise_on_status=False,
@@ -466,7 +463,6 @@ class Dhis2Client:
         url = self.base_url.rstrip("/") + "/" + path.lstrip("/")
 
         last_err = ""
-        # ✅ Retry manuel + backoff long sur 429/5xx
         for attempt in range(1, 8):  # 7 essais
             r = self.session.get(
                 url,
@@ -481,7 +477,8 @@ class Dhis2Client:
 
             if r.status_code in (429, 500, 502, 503, 504):
                 last_err = f"{r.status_code} {r.text[:200]}"
-                sleep_s = min(180.0, 10.0 * attempt)  # 10s,20s,... max 180s
+                # backoff raisonnable (évite de "traîner" trop)
+                sleep_s = min(90.0, 5.0 * attempt)  # 5s,10s,... max 90s
                 print(f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 sleep={sleep_s}s url={path}", flush=True)
                 time.sleep(sleep_s)
                 continue
@@ -522,9 +519,9 @@ def _analytics_with_split(
             or "Gateway" in msg
             or "Read timed out" in msg
             or "timeout" in msg.lower()
+            or "Max retries exceeded" in msg
         )
 
-        # si pas un timeout, ou trop deep, ou chunk déjà petit => on remonte l'erreur
         if (not is_timeoutish) or (depth >= max_split_depth) or (len(dx_items) <= 20):
             raise
 
@@ -573,7 +570,6 @@ def pivot_records(
 ) -> List[dict]:
     idx: Dict[Tuple[str, str], dict] = {}
 
-    # agrégation (si plusieurs lignes pour la même (ou,pe,dx) => somme)
     for r in long_recs:
         key = (r["ou"], r["pe"])
         row = idx.get(key)
@@ -588,7 +584,6 @@ def pivot_records(
         else:
             row[r["dx"]] = (old or 0) + (val or 0)
 
-    # assurer toutes les colonnes dx
     for row in idx.values():
         for dx in dx_expected:
             row.setdefault(dx, None)
@@ -600,7 +595,7 @@ def pivot_records(
 
         out_row: dict = {
             "OrgUnit": row.get("ou"),
-            "Period": period_zoho,  # dd-MMM-yyyy
+            "Period": period_zoho,
         }
 
         for dx in dx_expected:
@@ -628,13 +623,11 @@ def fetch_period(
 
     for i, ch in enumerate(chunks, start=1):
         print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
-
-        # ✅ robuste: retry + split automatique si 504
         data = _analytics_with_split(client, pe, ch)
-
         long_all.extend(rows_to_records(data))
 
-        if sleep_s:
+        # Petite pause (par défaut faible) pour éviter 504, sans "traîner" trop
+        if sleep_s and sleep_s > 0:
             time.sleep(sleep_s)
 
     return pivot_records(long_all, dx_expected, rename_map_dx_to_label, zoho_map_label_to_link)
@@ -647,13 +640,8 @@ def fetch_period(
 def write_ndjson_parts_dual(
     folder: Path,
     records: List[dict],
-    max_plain_bytes: int = 800_000,  # ✅ recommandé (Zoho/Deluge & éviter truncation)
+    max_plain_bytes: int = 800_000,
 ) -> List[dict]:
-    """
-    Écrit records en NDJSON découpé en parts <= max_plain_bytes.
-    Pour chaque part: .ndjson + .ndjson.gz
-    Retour meta: {plain, file(gz), rows, bytes_plain, bytes_gz}
-    """
     folder.mkdir(parents=True, exist_ok=True)
 
     parts_meta: List[dict] = []
@@ -705,7 +693,6 @@ def write_ndjson_parts_dual(
 
     close_part()
 
-    # cas records vide
     if not records and not parts_meta:
         plain_path, gz_path = paths(1)
         plain_path.write_text("", encoding="utf-8")
@@ -736,8 +723,14 @@ def main() -> int:
     ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to --end/current")
     ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
-    ap.add_argument("--sleep", type=float, default=1.0, help="Sleep between DHIS2 calls (reduce 504)")
+
+    # ✅ Pour que ça ne traîne pas : par défaut 0.2s au lieu de 1s
+    ap.add_argument("--sleep", type=float, default=0.2, help="Sleep between DHIS2 calls (reduce 504)")
     ap.add_argument("--max_plain_bytes", type=int, default=800_000, help="Max bytes per .ndjson part (recommend ~800k)")
+
+    # ✅ Retry des mois échoués (même anciens)
+    ap.add_argument("--retry_failed", action="store_true", help="Also retry previously failed months from index.json")
+    ap.add_argument("--retry_limit", type=int, default=2, help="How many failed months to retry per run")
 
     args = ap.parse_args()
 
@@ -756,7 +749,6 @@ def main() -> int:
         print("RENAME_MAP is empty. Paste your dx->label map in section (B).", file=sys.stderr)
         return 2
 
-    # ✅ Load mapping Label -> Zoho Link Name
     zoho_rename_path = Path("docs/config/rename_map.json")
     zoho_map = load_zoho_rename_map(zoho_rename_path)
     if not zoho_map:
@@ -768,24 +760,43 @@ def main() -> int:
 
     end = args.end or current_yyyymm()
     all_months = month_range(args.start, end)
-    periods = all_months if args.backfill else all_months[-max(1, args.months):]
 
     out_dir = Path(args.out)
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
     # ✅ Index cumulatif: garder l’existant, mettre à jour seulement les mois recalculés
-    index: Dict[str, Any] = {"generated_at": None, "months": {}}
+    index: Dict[str, Any] = {"generated_at": None, "months": {}, "retry_queue": []}
     if index_path.exists():
         try:
             index = json.loads(index_path.read_text(encoding="utf-8"))
             if "months" not in index or index["months"] is None:
                 index["months"] = {}
+            if "retry_queue" not in index or index["retry_queue"] is None:
+                index["retry_queue"] = []
         except Exception:
-            index = {"generated_at": None, "months": {}}
+            index = {"generated_at": None, "months": {}, "retry_queue": []}
+
+    # ---- Choix des périodes
+    if args.backfill:
+        periods = all_months
+    else:
+        periods = all_months[-max(1, args.months):]
+
+        # ✅ Ajouter des mois échoués à retenter (même si anciens)
+        if args.retry_failed:
+            rq = [m for m in (index.get("retry_queue") or []) if isinstance(m, str)]
+            extra = [m for m in rq if m not in periods]
+            periods = periods + extra[: max(0, int(args.retry_limit))]
 
     ok_months: List[str] = []
     failed_months: List[str] = []
+
+    # Petite déduplication (au cas où)
+    seen = set()
+    periods = [m for m in periods if not (m in seen or seen.add(m))]
+
+    print(f"Planned periods: {periods}", flush=True)
 
     for pe in periods:
         try:
@@ -799,10 +810,15 @@ def main() -> int:
                 sleep_s=args.sleep,
             )
         except Exception as e:
-            # ✅ Ne pas casser le run complet si un mois échoue (504 etc.)
             print(f"ERROR: fetch_period failed for {pe}: {e}", flush=True)
             print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)
             failed_months.append(pe)
+
+            # ✅ Mettre pe dans retry_queue (pour le retenter plus tard)
+            rq = index.get("retry_queue") or []
+            if pe not in rq:
+                rq.append(pe)
+            index["retry_queue"] = rq
             continue
 
         month_folder = monthly_root / pe
@@ -824,14 +840,20 @@ def main() -> int:
         index["months"][pe] = {"parts": parts, "rows": len(records)}
         ok_months.append(pe)
 
+        # ✅ retirer pe de retry_queue si succès
+        rq = index.get("retry_queue") or []
+        if pe in rq:
+            rq = [m for m in rq if m != pe]
+        index["retry_queue"] = rq
+
     index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
 
-    print(f"OK months: {ok_months}")
+    print(f"OK months: {ok_months}", flush=True)
     if failed_months:
-        print(f"FAILED months (skipped, will retry next run): {failed_months}")
-    print(f"Index months={len(index.get('months') or {})}")
+        print(f"FAILED months (added to retry_queue): {failed_months}", flush=True)
+    print(f"Index months={len(index.get('months') or {})} | retry_queue={index.get('retry_queue')}", flush=True)
     return 0
 
 
