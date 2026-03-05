@@ -91,6 +91,27 @@ class ZohoCreatorClient:
             self._refresh_access_token()
         return {"Authorization": f"Zoho-oauthtoken {self._access_token}"}
 
+    @staticmethod
+    def _is_no_records_error(payload_text: str) -> bool:
+        """
+        Zoho renvoie parfois HTTP 400 + JSON:
+          {"code":9280,"message":"No records found matching the given criteria..."}
+        => on doit traiter ça comme "liste vide", pas une erreur fatale.
+        """
+        try:
+            obj = json.loads(payload_text or "{}")
+            if isinstance(obj, dict) and str(obj.get("code")) == "9280":
+                return True
+            msg = str(obj.get("message") or "").lower()
+            if "no records found" in msg:
+                return True
+        except Exception:
+            pass
+
+        # fallback texte brut
+        t = (payload_text or "").lower()
+        return ("no records found" in t) or ('"code":9280' in t) or ("code\":9280" in t)
+
     def _req(
         self,
         method: str,
@@ -98,6 +119,7 @@ class ZohoCreatorClient:
         *,
         params: Dict[str, Any] | None = None,
         json_body: Any | None = None,
+        allow_no_records: bool = False,
     ) -> Dict[str, Any]:
         last_text = ""
         for attempt in range(1, 7):
@@ -116,6 +138,10 @@ class ZohoCreatorClient:
                 sleep_s = min(60.0, 3.0 * attempt)
                 time.sleep(sleep_s)
                 continue
+
+            # ✅ considérer "no records found" comme vide (optionnel)
+            if allow_no_records and r.status_code >= 400 and self._is_no_records_error(last_text):
+                return {"data": []}
 
             if r.status_code >= 400:
                 raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:900]}")
@@ -150,6 +176,8 @@ class ZohoCreatorClient:
         Tentatives:
           1) max_records=<limit> & fields=ID
           2) limit=<limit> & fields=ID (fallback)
+
+        ✅ Si Zoho renvoie "No records found..." (code 9280), on retourne [].
         """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
 
@@ -159,7 +187,7 @@ class ZohoCreatorClient:
             params1["criteria"] = criteria
 
         try:
-            resp = self._req("GET", url, params=params1)
+            resp = self._req("GET", url, params=params1, allow_no_records=True)
             data = self._extract_data_list(resp)
             ids = self._extract_ids(data)
             return ids
@@ -169,7 +197,7 @@ class ZohoCreatorClient:
             if criteria:
                 params2["criteria"] = criteria
             try:
-                resp = self._req("GET", url, params=params2)
+                resp = self._req("GET", url, params=params2, allow_no_records=True)
                 data = self._extract_data_list(resp)
                 ids = self._extract_ids(data)
                 return ids
@@ -224,6 +252,8 @@ def sorted_months(index: Dict[str, Any]) -> List[str]:
 
 
 def last_n_months(months_sorted: List[str], n: int = 3) -> List[str]:
+    if n <= 0:
+        return []
     return months_sorted[-n:] if len(months_sorted) >= n else months_sorted[:]
 
 
@@ -352,8 +382,19 @@ def purge_by_criteria_until_empty(
             break
 
         for rid in ids:
-            client.delete_record_by_id(rid)
-            deleted += 1
+            # si l'ID n'existe déjà plus, Zoho peut répondre "No Data Available"
+            # on laisse remonter si c'est une vraie erreur,
+            # mais souvent ce cas n'arrive que si suppression manuelle en parallèle.
+            try:
+                client.delete_record_by_id(rid)
+                deleted += 1
+            except Exception as e:
+                msg = str(e).lower()
+                if "no data available" in msg or '"code":3100' in msg or "code\":3100" in msg:
+                    # déjà supprimé => on ignore
+                    pass
+                else:
+                    raise
             if throttle_s > 0:
                 time.sleep(throttle_s)
 
@@ -527,7 +568,7 @@ def main() -> int:
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
-    print(f"Refresh months (delete+reinsert): {last_months}", flush=True)
+    print(f"Refresh candidates (last_n={args.refresh_last_n}): {last_months}", flush=True)
     print(
         f"batch_size(add_records)={args.batch_size} | "
         f"purge_batch_limit={args.purge_batch_limit} | "
@@ -541,8 +582,12 @@ def main() -> int:
             print(f"[{m}] skip: no parts", flush=True)
             continue
 
-        if m in last_months:
-            print(f"[{m}] refresh: deleting Zoho month records...", flush=True)
+        is_refresh_candidate = (m in last_months)
+        already_done = (done_months.get(m, {}).get("done") is True)
+
+        # ✅ MODIF #1: refresh seulement si le mois existe déjà dans Zoho (done=True)
+        if is_refresh_candidate and already_done:
+            print(f"[{m}] refresh (already done): deleting Zoho month records...", flush=True)
             deleted = delete_month_records(
                 client,
                 m,
@@ -558,12 +603,15 @@ def main() -> int:
             )
             print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
             done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time()}
+
         else:
-            if done_months.get(m, {}).get("done") is True:
+            if already_done:
+                # mois historique déjà chargé (et pas refresh) => skip
                 print(f"[{m}] skip: already done (historical)", flush=True)
                 continue
 
-            print(f"[{m}] import historical month...", flush=True)
+            # ✅ premier import: PAS DE DELETE (même si c'est dans last_months)
+            print(f"[{m}] import month (first time, no delete)...", flush=True)
             batches, total, skipped = insert_month_from_parts(
                 client, repo_root, m, parts, ou_map,
                 batch_size=args.batch_size,
