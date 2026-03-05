@@ -14,7 +14,6 @@ on:
         required: false
         default: "false"
 
-# ✅ Empêche 2 runs d’écrire docs/data en même temps
 concurrency:
   group: dhis2-data
   cancel-in-progress: false
@@ -43,7 +42,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests urllib3
 
-      # 0) Build OU map (Org2-Org5)
       - name: Build OU map (Org2-Org5)
         env:
           DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
@@ -52,7 +50,6 @@ jobs:
         run: |
           python scripts/build_ou_map.py
 
-      # 1) Fetch DHIS2 -> GitHub (either last 3 months or full backfill)
       - name: Fetch DHIS2 and build NDJSON/index (backfill all)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true' }}
         env:
@@ -76,7 +73,6 @@ jobs:
             --months 3 \
             --out docs/data
 
-      # 2) PURGE ALL (manual one-shot)
       - name: PURGE ALL Zoho records (manual)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.purge_all == 'true' }}
         env:
@@ -98,7 +94,6 @@ jobs:
             --purge_batch_limit 200 \
             --throttle_seconds 1.2
 
-      # 3) Sync Zoho (normal)
       - name: Sync to Zoho Creator (batch 200)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.purge_all == 'true') }}
         env:
@@ -115,11 +110,11 @@ jobs:
             --index docs/data/index.json \
             --state docs/data/zoho_sync_state.json \
             --refresh_last_n 3 \
+            --bootstrap_done_before 202601 \
             --batch_size 200 \
             --purge_batch_limit 200 \
             --throttle_seconds 1.2
 
-      # 4) Commit & push (rebase + retry)
       - name: Commit & push if changed (rebase + retry)
         run: |
           git config user.name "github-actions[bot]"
