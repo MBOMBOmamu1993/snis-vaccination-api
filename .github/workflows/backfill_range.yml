@@ -51,6 +51,8 @@ jobs:
             --start "${{ github.event.inputs.start }}" \
             --end "${{ github.event.inputs.end }}" \
             --backfill \
+            --retry_failed \
+            --retry_limit 12 \
             --out docs/data
 
       - name: Commit & push (rebase + retry)
