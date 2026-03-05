@@ -1,4 +1,80 @@
 {
-  "done_months": {},
-  "last_run_at": null
+  "done_months": {
+    "202501": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772691132.1253412
+    },
+    "202502": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772692071.8559685
+    },
+    "202503": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772692970.2782588
+    },
+    "202504": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772693877.0693824
+    },
+    "202505": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772694852.7483263
+    },
+    "202506": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772695791.96481
+    },
+    "202507": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772696728.114433
+    },
+    "202508": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772697660.633159
+    },
+    "202509": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772698636.0114923
+    },
+    "202510": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772699580.8846316
+    },
+    "202511": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772700526.0138295
+    },
+    "202512": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772701504.6650543
+    },
+    "202601": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772702488.4096909
+    },
+    "202602": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772703409.4369903
+    },
+    "202603": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1772704317.0437875
+    }
+  },
+  "last_run_at": 1772704317.0437934
 }
