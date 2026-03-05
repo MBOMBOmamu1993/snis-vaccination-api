@@ -62,19 +62,19 @@
     },
     "202601": {
       "done": true,
-      "refreshed": false,
-      "last_sync": 1772702488.4096909
+      "refreshed": true,
+      "last_sync": 1772710436.8671262
     },
     "202602": {
       "done": true,
-      "refreshed": false,
-      "last_sync": 1772703409.4369903
+      "refreshed": true,
+      "last_sync": 1772710633.6550987
     },
     "202603": {
       "done": true,
-      "refreshed": false,
-      "last_sync": 1772704317.0437875
+      "refreshed": true,
+      "last_sync": 1772710828.1224213
     }
   },
-  "last_run_at": 1772704317.0437934
+  "last_run_at": 1772710828.1224284
 }
