@@ -52,10 +52,10 @@ class ZohoConfig:
 
 class ZohoCreatorClient:
     """
-    NOTE: Certains tenants/DC Zoho Creator ont des comportements variables:
-    - DELETE report?criteria=... parfois non supporté (code 1060 "Invalid request parameter - criteria")
-    - GET report avec criteria peut renvoyer 400 code 9280 "No records found..." au lieu de data=[]
-    - Pagination parfois fragile => purge SAFE "premiers N IDs puis delete puis recommence"
+    Notes importantes (robuste):
+    - Certains DC n'acceptent pas DELETE bulk avec criteria (code 1060).
+    - Certains renvoient 400 code=9280 quand aucun record ne matche un criteria.
+    - Pagination parfois instable => purge safe: lire les N premiers IDs, supprimer, recommencer.
     """
 
     def __init__(self, cfg: ZohoConfig, timeout_s: int = 180) -> None:
@@ -89,14 +89,11 @@ class ZohoCreatorClient:
         return {"Authorization": f"Zoho-oauthtoken {self._access_token}"}
 
     @staticmethod
-    def _is_no_records_error(text: str) -> bool:
-        """
-        Zoho renvoie parfois 400 avec:
-          {"code":9280,"message":"No records found matching the given criteria..."}
-        => dans notre cas, ça doit être traité comme "0 record".
-        """
-        t = (text or "").lower()
-        return ("\"code\":9280" in t) or ("no records found" in t)
+    def _try_parse_json(text: str) -> Dict[str, Any] | None:
+        try:
+            return json.loads(text)
+        except Exception:
+            return None
 
     def _req(
         self,
@@ -105,7 +102,6 @@ class ZohoCreatorClient:
         *,
         params: Dict[str, Any] | None = None,
         json_body: Any | None = None,
-        allow_no_records_400: bool = False,
     ) -> Dict[str, Any]:
         last_text = ""
         for attempt in range(1, 7):
@@ -121,13 +117,17 @@ class ZohoCreatorClient:
 
             # retry transient
             if r.status_code in (429, 500, 502, 503, 504):
-                sleep_s = min(60.0, 3.0 * attempt)
-                time.sleep(sleep_s)
+                time.sleep(min(60.0, 3.0 * attempt))
                 continue
 
-            # special-case: "no records found" treated as empty
-            if allow_no_records_400 and r.status_code == 400 and self._is_no_records_error(last_text):
-                return {"data": []}
+            # ✅ IMPORTANT: Zoho renvoie parfois "400 code=9280" pour dire "0 résultat"
+            if r.status_code == 400 and method.upper() == "GET":
+                j = self._try_parse_json(last_text)
+                if isinstance(j, dict):
+                    code = str(j.get("code") or "")
+                    msg = (j.get("message") or j.get("description") or "")
+                    if code == "9280" and "No records found" in str(msg):
+                        return {"data": []}
 
             if r.status_code >= 400:
                 raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:900]}")
@@ -142,42 +142,35 @@ class ZohoCreatorClient:
         raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:900]}")
 
     # ---- Records APIs
-
     def add_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not records:
             return {}
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/form/{self.cfg.form_link_name}"
-        body = {"data": records}
-        return self._req("POST", url, json_body=body)
+        return self._req("POST", url, json_body={"data": records})
 
-    def fetch_ids_batch(
-        self,
-        *,
-        criteria: str = "",
-        limit: int = 200,
-    ) -> List[str]:
+    def fetch_ids_batch(self, *, criteria: str = "", limit: int = 200) -> List[str]:
         """
-        Récupère max 'limit' IDs.
-        Si Zoho renvoie 9280 (no records), on retourne [].
+        Récupère max 'limit' IDs du report.
+        Tentatives:
+          1) max_records=<limit> & fields=ID
+          2) limit=<limit> & fields=ID
         """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
 
-        # try 1: max_records
         params1: Dict[str, Any] = {"max_records": str(int(limit)), "fields": "ID"}
         if criteria:
             params1["criteria"] = criteria
 
         try:
-            resp = self._req("GET", url, params=params1, allow_no_records_400=True)
+            resp = self._req("GET", url, params=params1)
             data = self._extract_data_list(resp)
             return self._extract_ids(data)
         except Exception as e1:
-            # try 2: limit
             params2: Dict[str, Any] = {"limit": str(int(limit)), "fields": "ID"}
             if criteria:
                 params2["criteria"] = criteria
             try:
-                resp = self._req("GET", url, params=params2, allow_no_records_400=True)
+                resp = self._req("GET", url, params=params2)
                 data = self._extract_data_list(resp)
                 return self._extract_ids(data)
             except Exception as e2:
@@ -204,24 +197,15 @@ class ZohoCreatorClient:
 
     def delete_record_by_id(self, record_id: str) -> Dict[str, Any]:
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
-        # si un ID n'existe déjà plus, Zoho peut répondre "No Data Available"
-        # => on laisse remonter si c'est autre chose
-        try:
-            return self._req("DELETE", url)
-        except Exception as e:
-            msg = str(e).lower()
-            if "no data available" in msg:
-                return {}
-            raise
+        return self._req("DELETE", url)
 
     def delete_records_by_criteria(self, *, criteria: str) -> Dict[str, Any]:
         """
-        DELETE massif par criteria si supporté.
-        Sinon => exception => fallback.
+        DELETE bulk si supporté par le DC.
+        Sur ton DC ça renvoie souvent code=1060 "criteria invalid" => on laissera caller gérer fallback.
         """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
-        params = {"criteria": criteria}
-        return self._req("DELETE", url, params=params)
+        return self._req("DELETE", url, params={"criteria": criteria})
 
 
 # ---------------------------
@@ -306,7 +290,7 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     ou = str(row.get("OrgUnit") or "").strip()
     period = str(row.get("Period") or "").strip()
 
-    # bloquer lignes sans clé
+    # Bloquer lignes sans Key (OrgUnit/Period)
     if not ou or not period:
         return {}
 
@@ -368,29 +352,39 @@ def purge_by_criteria_until_empty(
 
 
 def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, batch_limit: int) -> int:
-    return purge_by_criteria_until_empty(
-        client,
-        criteria="",
-        throttle_s=throttle_s,
-        batch_limit=batch_limit,
-    )
+    return purge_by_criteria_until_empty(client, criteria="", throttle_s=throttle_s, batch_limit=batch_limit)
 
 
 # ---------------------------
 # Month operations
 # ---------------------------
-def delete_month_records(client: ZohoCreatorClient, yyyymm: str, *, throttle_s: float, batch_limit: int) -> int:
+def delete_month_records(
+    client: ZohoCreatorClient,
+    yyyymm: str,
+    *,
+    throttle_s: float,
+    batch_limit: int,
+    allow_bulk_delete: bool,
+) -> int:
     period = period_yyyymm_to_zoho(yyyymm)
     criteria = f'(Period == "{period}")'
 
-    # bulk delete si supporté
+    # ✅ Si aucun record n'existe pour ce mois => rien à supprimer
     try:
-        client.delete_records_by_criteria(criteria=criteria)
-        return -1
-    except Exception as e:
-        print(f"[{yyyymm}] bulk delete not available -> fallback safe purge. reason={e}", flush=True)
+        test_ids = client.fetch_ids_batch(criteria=criteria, limit=1)
+    except Exception:
+        test_ids = []
+    if not test_ids:
+        return 0
 
-    # fallback safe purge (si aucun record, ça retourne 0)
+    # (optionnel) bulk delete
+    if allow_bulk_delete:
+        try:
+            client.delete_records_by_criteria(criteria=criteria)
+            return -1
+        except Exception as e:
+            print(f"[{yyyymm}] bulk delete not available -> fallback safe purge. reason={e}", flush=True)
+
     return purge_by_criteria_until_empty(
         client,
         criteria=criteria,
@@ -445,41 +439,6 @@ def insert_month_from_parts(
     return batches, total, skipped_no_key
 
 
-def bootstrap_state_if_empty(
-    *,
-    done_months: Dict[str, Any],
-    months_sorted: List[str],
-    last_months: List[str],
-    bootstrap_done_before: str | None,
-) -> Tuple[Dict[str, Any], bool]:
-    """
-    Si state vide, on évite de réimporter tout l'historique.
-    - Par défaut: on marque "done" tous les mois < min(last_months)
-      => le job ne réimporte PAS 2025 et se concentre sur les derniers mois/ nouveaux mois.
-    - Option: --bootstrap_done_before=YYYYMM (marque done tous les mois < YYYYMM)
-    """
-    if done_months:
-        return done_months, False
-
-    if not months_sorted:
-        return done_months, False
-
-    cutoff = None
-    if bootstrap_done_before:
-        cutoff = bootstrap_done_before
-    else:
-        cutoff = min(last_months) if last_months else None
-
-    if not cutoff:
-        return done_months, False
-
-    boot = {}
-    for m in months_sorted:
-        if m < cutoff:
-            boot[m] = {"done": True, "refreshed": False, "last_sync": None, "bootstrapped": True}
-    return boot, True
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo_root", default=".", help="Repository root (default: .)")
@@ -489,18 +448,15 @@ def main() -> int:
     ap.add_argument("--batch_size", type=int, default=200)
     ap.add_argument("--throttle_seconds", type=float, default=1.2)
 
+    # ✅ Manual one-shot purge
     ap.add_argument("--purge_all", action="store_true")
     ap.add_argument("--purge_only", action="store_true")
 
     ap.add_argument("--purge_batch_limit", type=int, default=200)
 
-    # ✅ NOUVEAU: bootstrap state si vide pour éviter réimport historique
-    ap.add_argument(
-        "--bootstrap_done_before",
-        default=None,
-        help="If state is empty: mark all months < YYYYMM as already done (no reimport). "
-             "Default behavior (if not set): mark months < min(last_n_months).",
-    )
+    # ✅ Nouveaux flags
+    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (slow). Default: false.")
+    ap.add_argument("--allow_bulk_delete", action="store_true", help="Try DELETE bulk with criteria (often unsupported). Default: false.")
 
     args = ap.parse_args()
 
@@ -521,16 +477,20 @@ def main() -> int:
 
     client = ZohoCreatorClient(cfg)
 
-    # ---- PURGE MODE
+    # ✅ PURGE MODE
     if args.purge_all:
         print("PURGE ALL: deleting all records in Zoho report until empty...", flush=True)
-        deleted = purge_all_records(client, throttle_s=args.throttle_seconds, batch_limit=args.purge_batch_limit)
+        deleted = purge_all_records(
+            client,
+            throttle_s=args.throttle_seconds,
+            batch_limit=args.purge_batch_limit,
+        )
         print(f"PURGE ALL done. deleted={deleted}", flush=True)
 
         remaining_ids = client.fetch_ids_batch(criteria="", limit=1)
         if remaining_ids:
             raise RuntimeError(f"PURGE ALL verification failed: still found records (example ID={remaining_ids[0]}).")
-        print("PURGE ALL verification OK: report is empty (0 records).", flush=True)
+        print("PURGE ALL verification OK: report is empty.", flush=True)
 
         print("Resetting zoho_sync_state.json ...", flush=True)
         reset_state_file(state_path)
@@ -539,7 +499,6 @@ def main() -> int:
             print("PURGE ONLY => exit.", flush=True)
             return 0
 
-    # ---- Read index
     index = load_index(index_path)
     months_sorted = sorted_months(index)
     if not months_sorted:
@@ -555,24 +514,14 @@ def main() -> int:
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
-    # ✅ bootstrap si state vide (évite de repartir à 202501)
-    done_months, booted = bootstrap_state_if_empty(
-        done_months=done_months,
-        months_sorted=months_sorted,
-        last_months=last_months,
-        bootstrap_done_before=args.bootstrap_done_before,
-    )
-    if booted:
-        print(
-            f"STATE bootstrap applied (state was empty). "
-            f"Historical months marked done up to < {args.bootstrap_done_before or min(last_months)}.",
-            flush=True,
-        )
-
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
     print(f"Refresh candidates (last_n={args.refresh_last_n}): {last_months}", flush=True)
     print(
-        f"batch_size(add_records)={args.batch_size} | purge_batch_limit={args.purge_batch_limit} | throttle_seconds={args.throttle_seconds}",
+        f"batch_size(add_records)={args.batch_size} | "
+        f"purge_batch_limit={args.purge_batch_limit} | "
+        f"throttle_seconds={args.throttle_seconds} | "
+        f"import_historical={args.import_historical} | "
+        f"allow_bulk_delete={args.allow_bulk_delete}",
         flush=True,
     )
 
@@ -582,45 +531,44 @@ def main() -> int:
             print(f"[{m}] skip: no parts", flush=True)
             continue
 
-        is_done = done_months.get(m, {}).get("done") is True
-        is_refresh_window = m in last_months
+        # --- Refresh last N months
+        if m in last_months:
+            print(f"[{m}] refresh: deleting Zoho month records (if any)...", flush=True)
+            deleted = delete_month_records(
+                client,
+                m,
+                throttle_s=args.throttle_seconds,
+                batch_limit=args.purge_batch_limit,
+                allow_bulk_delete=args.allow_bulk_delete,
+            )
+            print(f"[{m}] deleted={'bulk' if deleted == -1 else deleted}; inserting from parts...", flush=True)
 
-        if is_refresh_window:
-            if is_done:
-                # ✅ refresh seulement si déjà importé
-                print(f"[{m}] refresh: deleting Zoho month records...", flush=True)
-                deleted = delete_month_records(client, m, throttle_s=args.throttle_seconds, batch_limit=args.purge_batch_limit)
-                print(f"[{m}] deleted={'bulk' if deleted == -1 else deleted}; inserting from parts...", flush=True)
-                batches, total, skipped = insert_month_from_parts(
-                    client, repo_root, m, parts, ou_map,
-                    batch_size=args.batch_size,
-                    throttle_s=args.throttle_seconds,
-                )
-                print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
-                done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time()}
-            else:
-                # ✅ nouveau mois (ex: 202601/202602/202603) => IMPORT DIRECT, PAS DE DELETE
-                print(f"[{m}] import month (first time, no delete)...", flush=True)
-                batches, total, skipped = insert_month_from_parts(
-                    client, repo_root, m, parts, ou_map,
-                    batch_size=args.batch_size,
-                    throttle_s=args.throttle_seconds,
-                )
-                print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
-                done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time()}
-        else:
-            if is_done:
-                print(f"[{m}] skip: already done (historical)", flush=True)
-                continue
-
-            print(f"[{m}] import historical month...", flush=True)
             batches, total, skipped = insert_month_from_parts(
                 client, repo_root, m, parts, ou_map,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
             )
             print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
-            done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time()}
+            done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time()}
+            continue
+
+        # --- Historical months
+        if not args.import_historical:
+            # Par défaut: on ne touche pas à l'historique
+            continue
+
+        if done_months.get(m, {}).get("done") is True:
+            print(f"[{m}] skip: already done (historical)", flush=True)
+            continue
+
+        print(f"[{m}] import historical month...", flush=True)
+        batches, total, skipped = insert_month_from_parts(
+            client, repo_root, m, parts, ou_map,
+            batch_size=args.batch_size,
+            throttle_s=args.throttle_seconds,
+        )
+        print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
+        done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time()}
 
     state["done_months"] = done_months
     state["last_run_at"] = time.time()
