@@ -2,7 +2,7 @@ name: DHIS2 -> GitHub -> Zoho (batch)
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # tous les jours à minuit (UTC)
+    - cron: "1 0 * * *"   # tous les jours à 00:01 (UTC)
   workflow_dispatch:
     inputs:
       purge_all:
@@ -95,8 +95,7 @@ jobs:
             --purge_only \
             --batch_size 200 \
             --purge_batch_limit 200 \
-            --throttle_seconds 1.5 \
-            --per_page 200
+            --throttle_seconds 1.5
 
       # 3A) Sync Zoho (full import) - seulement si backfill_all=true (et pas purge_all)
       - name: Sync to Zoho Creator (full import, batch 200)
@@ -117,11 +116,10 @@ jobs:
             --import_historical \
             --refresh_last_n 2 \
             --batch_size 200 \
-            --throttle_seconds 1.5 \
-            --per_page 200
+            --throttle_seconds 1.5
 
-      # 3B) Sync Zoho (daily incremental) - quotidien: uniquement refresh 1-2 mois
-      - name: Sync to Zoho Creator (daily incremental, batch 200)
+      # 3B) Sync Zoho (daily add-only for previous 2 months)
+      - name: Sync to Zoho Creator (daily add-only, batch 200)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.purge_all == 'true' || inputs.backfill_all == 'true')) }}
         env:
           ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
@@ -138,8 +136,7 @@ jobs:
             --state docs/data/zoho_sync_state.json \
             --refresh_last_n 2 \
             --batch_size 200 \
-            --throttle_seconds 1.5 \
-            --per_page 200
+            --throttle_seconds 1.5
 
       # 4) Commit & push
       - name: Commit & push if changed (rebase + retry)
