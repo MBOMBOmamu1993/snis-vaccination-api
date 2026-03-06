@@ -8,7 +8,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Iterable
 
 import requests
 
@@ -53,13 +53,12 @@ class ZohoConfig:
 class ZohoCreatorClient:
     """
     Robuste:
-    - Certains DC n'acceptent pas DELETE bulk avec criteria (code 1060).
-    - Certains renvoient 400 code=9280 quand aucun record ne matche un criteria (GET).
-    - Pagination parfois instable. Ici on privilégie la MAJ incrémentale => besoin de lire records existants.
-      => on tente plusieurs variantes de pagination en GET:
-         - page/per_page
-         - from/limit
-         - record_cursor (si présent)
+    - Certains DC n'acceptent pas DELETE bulk avec criteria (code 1060) => on ne l'utilise pas en routine.
+    - Certains renvoient 400 code=9280 quand aucun record ne matche un criteria (GET) => on traite comme "0 record".
+    - Pagination parfois instable:
+        * certains DC supportent record_cursor
+        * d'autres supportent page/per_page
+      => iter_records essaie cursor, sinon fallback page/per_page.
     """
 
     def __init__(self, cfg: ZohoConfig, timeout_s: int = 180) -> None:
@@ -124,14 +123,14 @@ class ZohoCreatorClient:
                 time.sleep(min(60.0, 3.0 * attempt))
                 continue
 
-            # Zoho renvoie parfois "400 code=9280" pour dire "0 résultat"
+            # Zoho: GET with criteria can return 400 code=9280 = "No records found"
             if r.status_code == 400 and method.upper() == "GET":
                 j = self._try_parse_json(last_text)
                 if isinstance(j, dict):
                     code = str(j.get("code") or "")
                     msg = (j.get("message") or j.get("description") or "")
                     if code == "9280" and "No records found" in str(msg):
-                        return {"data": []}
+                        return {"data": [], "info": {}}
 
             if r.status_code >= 400:
                 raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:900]}")
@@ -145,40 +144,53 @@ class ZohoCreatorClient:
 
         raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:900]}")
 
-    # ---- endpoints
-
-    @property
-    def _report_url(self) -> str:
-        return f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
-
-    @property
-    def _form_url(self) -> str:
-        return f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/form/{self.cfg.form_link_name}"
-
     # ---- Records APIs
-
     def add_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not records:
             return {}
-        return self._req("POST", self._form_url, json_body={"data": records})
-
-    def update_record_by_id(self, record_id: str, record: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Update (PUT) un record existant par ID.
-        On utilise l'endpoint FORM (plus stable selon tenants).
-        """
-        url = f"{self._form_url}/{record_id}"
-        return self._req("PUT", url, json_body={"data": record})
+        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/form/{self.cfg.form_link_name}"
+        return self._req("POST", url, json_body={"data": records})
 
     def delete_record_by_id(self, record_id: str) -> Dict[str, Any]:
-        url = f"{self._report_url}/{record_id}"
+        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
         return self._req("DELETE", url)
 
-    def delete_records_by_criteria(self, *, criteria: str) -> Dict[str, Any]:
-        # bulk delete si supporté (souvent non chez toi)
-        return self._req("DELETE", self._report_url, params={"criteria": criteria})
+    def fetch_records_page(
+        self,
+        *,
+        criteria: str = "",
+        fields: str = "ID",
+        per_page: int = 200,
+        page: Optional[int] = None,
+        record_cursor: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Fetch records from report.
+        Compat DC:
+          - Cursor mode: max_records + record_cursor (no page/per_page)
+          - Page mode: page + per_page (no record_cursor)
+        """
+        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
 
-    # ---- GET helpers
+        params: Dict[str, Any] = {"fields": fields}
+        if criteria:
+            params["criteria"] = criteria
+
+        # Cursor mode
+        if record_cursor is not None:
+            params["max_records"] = str(int(per_page))
+            params["record_cursor"] = record_cursor
+            return self._req("GET", url, params=params)
+
+        # First page attempt for cursor mode (some DC returns cursor without needing to pass it)
+        if page is None:
+            params["max_records"] = str(int(per_page))
+            return self._req("GET", url, params=params)
+
+        # Page/per_page mode
+        params["page"] = str(int(page))
+        params["per_page"] = str(int(per_page))
+        return self._req("GET", url, params=params)
 
     @staticmethod
     def _extract_data_list(resp: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -190,59 +202,112 @@ class ZohoCreatorClient:
             return resp["response"]["data"]
         return []
 
-    def fetch_records_page(
+    @staticmethod
+    def _extract_info(resp: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(resp, dict):
+            return {}
+        if "info" in resp and isinstance(resp["info"], dict):
+            return resp["info"]
+        if "response" in resp and isinstance(resp["response"], dict) and isinstance(resp["response"].get("info"), dict):
+            return resp["response"]["info"]
+        return {}
+
+    def iter_records(
         self,
         *,
-        criteria: str = "",
-        fields: str = "ID",
-        page: int = 1,
+        criteria: str,
+        fields: str,
         per_page: int = 200,
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        throttle_s: float = 0.0,
+        hard_max_pages: int = 2000,
+    ) -> Iterable[Dict[str, Any]]:
         """
-        Tentative pagination via page/per_page.
-        Retourne (records, raw_response).
+        Iterate all records matching criteria.
+        Strategy:
+          1) Try cursor mode
+          2) If cursor absent, fallback to page/per_page mode
         """
-        params: Dict[str, Any] = {"fields": fields, "page": str(int(page)), "per_page": str(int(per_page))}
-        if criteria:
-            params["criteria"] = criteria
-        resp = self._req("GET", self._report_url, params=params)
-        return self._extract_data_list(resp), resp
+        # --- cursor mode
+        cursor: Optional[str] = None
+        first = True
+        pages = 0
 
-    def fetch_records_from_offset(
-        self,
-        *,
-        criteria: str = "",
-        fields: str = "ID",
-        offset: int = 0,
-        limit: int = 200,
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Tentative pagination via from/limit.
-        """
-        params: Dict[str, Any] = {"fields": fields, "from": str(int(offset)), "limit": str(int(limit))}
-        if criteria:
-            params["criteria"] = criteria
-        resp = self._req("GET", self._report_url, params=params)
-        return self._extract_data_list(resp), resp
+        while True:
+            pages += 1
+            if pages > hard_max_pages:
+                raise RuntimeError("iter_records: too many pages, aborting for safety.")
 
-    def fetch_records_with_cursor(
-        self,
-        *,
-        criteria: str = "",
-        fields: str = "ID",
-        limit: int = 200,
-        record_cursor: str | None = None,
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+            resp = self.fetch_records_page(
+                criteria=criteria,
+                fields=fields,
+                per_page=per_page,
+                page=None,
+                record_cursor=cursor if not first else None,  # first call without cursor
+            )
+            data = self._extract_data_list(resp)
+            info = self._extract_info(resp)
+
+            for r in data:
+                yield r
+
+            # find next cursor
+            next_cursor = (
+                info.get("record_cursor")
+                or info.get("next_record_cursor")
+                or info.get("next_cursor")
+            )
+
+            # If we got a cursor, continue cursor mode
+            if next_cursor:
+                cursor = str(next_cursor)
+                first = False
+                if throttle_s > 0:
+                    time.sleep(throttle_s)
+                continue
+
+            # No cursor
+            # If the first call returned < per_page => we're done (no more pages)
+            if len(data) < per_page:
+                return
+
+            # If first call returned exactly per_page but no cursor => fallback to page/per_page mode
+            break
+
+        # --- fallback page/per_page
+        page = 1
+        while True:
+            pages += 1
+            if pages > hard_max_pages:
+                raise RuntimeError("iter_records(page): too many pages, aborting for safety.")
+
+            resp = self.fetch_records_page(
+                criteria=criteria,
+                fields=fields,
+                per_page=per_page,
+                page=page,
+                record_cursor=None,
+            )
+            data = self._extract_data_list(resp)
+
+            for r in data:
+                yield r
+
+            if not data or len(data) < per_page:
+                return
+
+            page += 1
+            if throttle_s > 0:
+                time.sleep(throttle_s)
+
+    def update_record_by_id(self, record_id: str, record: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Tentative via record_cursor.
+        ✅ FIX IMPORTANT:
+        Update by ID must use REPORT endpoint in v2.1:
+          PATCH .../report/<report>/<record_id>
+        (Form endpoint causes 404 "Invalid API URL format" on your tenant)
         """
-        params: Dict[str, Any] = {"fields": fields, "limit": str(int(limit))}
-        if criteria:
-            params["criteria"] = criteria
-        if record_cursor:
-            params["record_cursor"] = record_cursor
-        resp = self._req("GET", self._report_url, params=params)
-        return self._extract_data_list(resp), resp
+        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
+        return self._req("PATCH", url, json_body={"data": record})
 
 
 # ---------------------------
@@ -259,20 +324,9 @@ def sorted_months(index: Dict[str, Any]) -> List[str]:
 
 
 def last_n_months(months_sorted: List[str], n: int = 3) -> List[str]:
+    if n <= 0:
+        return []
     return months_sorted[-n:] if len(months_sorted) >= n else months_sorted[:]
-
-
-def last_n_excluding_latest(months_sorted: List[str], n: int) -> List[str]:
-    """
-    Ex: months=[...,'202601','202602','202603'] et n=2 => ['202601','202602'] (exclut le dernier).
-    Si pas assez de mois => renvoie ce qui est possible.
-    """
-    if not months_sorted:
-        return []
-    if len(months_sorted) <= 1:
-        return []
-    pool = months_sorted[:-1]  # exclure le dernier (mois courant)
-    return pool[-n:] if len(pool) >= n else pool[:]
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
@@ -340,7 +394,6 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     ou = str(row.get("OrgUnit") or "").strip()
     period = str(row.get("Period") or "").strip()
 
-    # Bloquer lignes sans Key (OrgUnit/Period)
     if not ou or not period:
         return {}
 
@@ -368,7 +421,7 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
 
 
 # ---------------------------
-# PURGE helpers (safe) - utilisé uniquement pour purge_all ou fallback exceptionnel
+# PURGE helpers (manual only)
 # ---------------------------
 def purge_by_criteria_until_empty(
     client: ZohoCreatorClient,
@@ -378,6 +431,12 @@ def purge_by_criteria_until_empty(
     batch_limit: int,
     hard_limit_loops: int = 200000,
 ) -> int:
+    """
+    Safe purge:
+      - fetch N IDs
+      - delete them
+      - repeat
+    """
     deleted = 0
     loops = 0
     while True:
@@ -385,9 +444,19 @@ def purge_by_criteria_until_empty(
         if loops > hard_limit_loops:
             raise RuntimeError("purge_by_criteria_until_empty: too many loops, aborting for safety.")
 
-        # on lit des IDs via une requête simple (sans pagination complexe),
-        # mais ici on garde la méthode historique "fetch_ids_batch" via max_records/limit.
-        ids = fetch_ids_batch_compat(client, criteria=criteria, limit=batch_limit)
+        ids: List[str] = []
+        for r in client.iter_records(
+            criteria=criteria,
+            fields="ID",
+            per_page=min(200, batch_limit),
+            throttle_s=0.0,
+        ):
+            rid = r.get("ID") or r.get("id")
+            if rid:
+                ids.append(str(rid))
+            if len(ids) >= batch_limit:
+                break
+
         if not ids:
             break
 
@@ -407,52 +476,23 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, batch_lim
     return purge_by_criteria_until_empty(client, criteria="", throttle_s=throttle_s, batch_limit=batch_limit)
 
 
-def fetch_ids_batch_compat(client: ZohoCreatorClient, *, criteria: str = "", limit: int = 200) -> List[str]:
-    """
-    Méthode compat minimale (sans pagination): récupère jusqu'à limit IDs.
-    On réutilise report GET avec max_records/limit.
-    """
-    url = client._report_url
-
-    # try 1: max_records
-    params1: Dict[str, Any] = {"max_records": str(int(limit)), "fields": "ID"}
-    if criteria:
-        params1["criteria"] = criteria
-
-    try:
-        resp = client._req("GET", url, params=params1)
-        data = client._extract_data_list(resp)
-        return [str(r.get("ID") or r.get("id")) for r in data if (r.get("ID") or r.get("id"))]
-    except Exception as e1:
-        # try 2: limit
-        params2: Dict[str, Any] = {"limit": str(int(limit)), "fields": "ID"}
-        if criteria:
-            params2["criteria"] = criteria
-        try:
-            resp = client._req("GET", url, params=params2)
-            data = client._extract_data_list(resp)
-            return [str(r.get("ID") or r.get("id")) for r in data if (r.get("ID") or r.get("id"))]
-        except Exception as e2:
-            raise RuntimeError(f"fetch_ids_batch_compat failed. e1={e1} e2={e2}")
-
-
 # ---------------------------
-# Incremental sync (RowHash)
+# Incremental sync (RowHash compare)
 # ---------------------------
-def load_month_records_from_parts(
+def load_local_month_records(
     repo_root: Path,
     yyyymm: str,
     parts_meta: List[Dict[str, Any]],
     ou_map: Dict[str, Dict[str, str]],
 ) -> Tuple[Dict[str, Dict[str, Any]], int]:
     """
-    Retourne:
-      - dict Key -> record Zoho-ready (avec RowHash)
-      - skipped_no_key
+    Returns:
+      local_by_key: Key -> ZohoRecord
+      skipped_no_key
     """
     month_dir = repo_root / "docs" / "data" / "monthly" / yyyymm
-    desired: Dict[str, Dict[str, Any]] = {}
-    skipped_no_key = 0
+    local_by_key: Dict[str, Dict[str, Any]] = {}
+    skipped = 0
 
     for p in parts_meta:
         plain = p.get("plain")
@@ -466,100 +506,42 @@ def load_month_records_from_parts(
         for obj, raw in rows:
             rec = build_zoho_record(obj, raw, ou_map)
             if not rec:
-                skipped_no_key += 1
+                skipped += 1
                 continue
             key = str(rec.get("Key") or "").strip()
             if not key:
-                skipped_no_key += 1
+                skipped += 1
                 continue
-            desired[key] = rec
+            # Key unique -> overwrite ok
+            local_by_key[key] = rec
 
-    return desired, skipped_no_key
+    return local_by_key, skipped
 
 
-def fetch_existing_key_rowhash_id_for_month(
+def fetch_remote_month_index(
     client: ZohoCreatorClient,
     yyyymm: str,
     *,
     per_page: int,
-) -> Dict[str, Dict[str, str]]:
+    throttle_s: float,
+) -> Dict[str, Tuple[str, str]]:
     """
-    Récupère pour un mois donné: Key -> {id, rowhash}
-    Essaie plusieurs méthodes de pagination.
+    Returns:
+      remote_by_key: Key -> (ID, RowHash)
     """
     period = period_yyyymm_to_zoho(yyyymm)
     criteria = f'(Period == "{period}")'
+    remote_by_key: Dict[str, Tuple[str, str]] = {}
+
     fields = "ID,Key,RowHash"
+    for r in client.iter_records(criteria=criteria, fields=fields, per_page=per_page, throttle_s=throttle_s):
+        rid = r.get("ID") or r.get("id")
+        key = r.get("Key")
+        rh = r.get("RowHash") or ""
+        if rid and key:
+            remote_by_key[str(key)] = (str(rid), str(rh))
 
-    # 1) page/per_page
-    existing: Dict[str, Dict[str, str]] = {}
-    try:
-        page = 1
-        while True:
-            recs, _raw = client.fetch_records_page(criteria=criteria, fields=fields, page=page, per_page=per_page)
-            if not recs:
-                break
-            for r in recs:
-                k = str(r.get("Key") or "").strip()
-                rid = str(r.get("ID") or r.get("id") or "").strip()
-                rh = str(r.get("RowHash") or "").strip()
-                if k and rid:
-                    existing[k] = {"id": rid, "rowhash": rh}
-            if len(recs) < per_page:
-                break
-            page += 1
-        return existing
-    except Exception:
-        pass
-
-    # 2) from/limit
-    try:
-        offset = 0
-        while True:
-            recs, _raw = client.fetch_records_from_offset(criteria=criteria, fields=fields, offset=offset, limit=per_page)
-            if not recs:
-                break
-            for r in recs:
-                k = str(r.get("Key") or "").strip()
-                rid = str(r.get("ID") or r.get("id") or "").strip()
-                rh = str(r.get("RowHash") or "").strip()
-                if k and rid:
-                    existing[k] = {"id": rid, "rowhash": rh}
-            if len(recs) < per_page:
-                break
-            offset += per_page
-        return existing
-    except Exception:
-        pass
-
-    # 3) record_cursor
-    try:
-        cursor: Optional[str] = None
-        while True:
-            recs, raw = client.fetch_records_with_cursor(criteria=criteria, fields=fields, limit=per_page, record_cursor=cursor)
-            if not recs:
-                break
-            for r in recs:
-                k = str(r.get("Key") or "").strip()
-                rid = str(r.get("ID") or r.get("id") or "").strip()
-                rh = str(r.get("RowHash") or "").strip()
-                if k and rid:
-                    existing[k] = {"id": rid, "rowhash": rh}
-
-            # trouver un cursor
-            cursor = None
-            if isinstance(raw, dict):
-                cursor = raw.get("record_cursor") or raw.get("recordCursor") or None
-                if not cursor and "info" in raw and isinstance(raw["info"], dict):
-                    cursor = raw["info"].get("record_cursor") or raw["info"].get("recordCursor") or None
-
-            if not cursor:
-                break
-        return existing
-    except Exception:
-        pass
-
-    raise RuntimeError("Unable to paginate Zoho records for month. (page/per_page, from/limit, record_cursor all failed)")
+    return remote_by_key
 
 
 def incremental_sync_month(
@@ -574,95 +556,129 @@ def incremental_sync_month(
     per_page: int,
 ) -> Dict[str, Any]:
     """
-    Incrémental:
-      - charge desired Key->record (RowHash)
-      - charge existing Key->{id,rowhash}
-      - add: keys absentes
-      - update: rowhash différent
+    Incremental:
+      - compare Key/RowHash
+      - add missing keys
+      - update changed rowhash
     """
-    desired, skipped_no_key = load_month_records_from_parts(repo_root, yyyymm, parts_meta, ou_map)
-
-    # si rien à envoyer
-    if not desired:
-        return {
-            "month": yyyymm,
-            "desired": 0,
-            "added": 0,
-            "updated": 0,
-            "unchanged": 0,
-            "skipped_no_key": skipped_no_key,
-        }
-
-    existing = fetch_existing_key_rowhash_id_for_month(client, yyyymm, per_page=per_page)
+    local_by_key, skipped_no_key = load_local_month_records(repo_root, yyyymm, parts_meta, ou_map)
+    remote_by_key = fetch_remote_month_index(client, yyyymm, per_page=per_page, throttle_s=throttle_s)
 
     to_add: List[Dict[str, Any]] = []
     to_update: List[Tuple[str, Dict[str, Any]]] = []
-    unchanged = 0
 
-    for key, rec in desired.items():
-        ex = existing.get(key)
-        if not ex:
+    for key, rec in local_by_key.items():
+        loc_rh = str(rec.get("RowHash") or "")
+        remote = remote_by_key.get(key)
+        if not remote:
             to_add.append(rec)
             continue
-        old_rh = str(ex.get("rowhash") or "").strip()
-        new_rh = str(rec.get("RowHash") or "").strip()
-        if old_rh != new_rh:
-            to_update.append((ex["id"], rec))
-        else:
-            unchanged += 1
 
-    # ADD (batches)
-    added = 0
+        rid, rem_rh = remote
+        if loc_rh and rem_rh and (loc_rh != str(rem_rh)):
+            to_update.append((rid, rec))
+
+    # Add in batches
+    add_batches = 0
+    add_records = 0
     for batch in chunk_records(to_add, batch_size):
         if not batch:
             continue
         client.add_records(batch)
-        added += len(batch)
+        add_batches += 1
+        add_records += len(batch)
         if throttle_s > 0:
             time.sleep(throttle_s)
 
-    # UPDATE (record by record; updates sont généralement moins nombreux)
-    updated = 0
+    # Update one-by-one (tenant-compatible)
+    upd_records = 0
     for rid, rec in to_update:
-        client.update_record_by_id(rid, rec)
-        updated += 1
+        rec2 = dict(rec)
+        rec2.pop("ID", None)
+        client.update_record_by_id(rid, rec2)
+        upd_records += 1
         if throttle_s > 0:
             time.sleep(throttle_s)
 
     return {
         "month": yyyymm,
-        "desired": len(desired),
-        "added": added,
-        "updated": updated,
-        "unchanged": unchanged,
+        "local_rows": len(local_by_key),
+        "remote_rows": len(remote_by_key),
+        "add_records": add_records,
+        "add_batches": add_batches,
+        "update_records": upd_records,
         "skipped_no_key": skipped_no_key,
     }
 
 
 # ---------------------------
-# MAIN
+# Full import (historical) - add only
 # ---------------------------
+def insert_month_from_parts(
+    client: ZohoCreatorClient,
+    repo_root: Path,
+    yyyymm: str,
+    parts_meta: List[Dict[str, Any]],
+    ou_map: Dict[str, Dict[str, str]],
+    *,
+    batch_size: int,
+    throttle_s: float,
+) -> Tuple[int, int, int]:
+    month_dir = repo_root / "docs" / "data" / "monthly" / yyyymm
+    batches = 0
+    total = 0
+    skipped_no_key = 0
+
+    for p in parts_meta:
+        plain = p.get("plain")
+        if not plain:
+            continue
+        fp = month_dir / str(plain)
+        if not fp.exists():
+            continue
+
+        rows = iter_ndjson_with_raw(fp)
+
+        zoho_recs: List[Dict[str, Any]] = []
+        for obj, raw in rows:
+            rec = build_zoho_record(obj, raw, ou_map)
+            if rec:
+                zoho_recs.append(rec)
+            else:
+                skipped_no_key += 1
+
+        total += len(zoho_recs)
+
+        for batch in chunk_records(zoho_recs, batch_size):
+            if not batch:
+                continue
+            client.add_records(batch)
+            batches += 1
+            if throttle_s > 0:
+                time.sleep(throttle_s)
+
+    return batches, total, skipped_no_key
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo_root", default=".", help="Repository root (default: .)")
     ap.add_argument("--index", default="docs/data/index.json")
     ap.add_argument("--state", default="docs/data/zoho_sync_state.json")
 
-    # Routine: mettre 2 (mais on EXCLUT le mois courant par défaut)
-    ap.add_argument("--refresh_last_n", type=int, default=2, help="How many previous months to refresh (incremental). Default=2")
-    ap.add_argument("--include_latest_in_refresh", action="store_true", help="If set, include latest month (current month) in refresh.")
-
+    # Routine knobs
+    ap.add_argument("--refresh_last_n", type=int, default=2, help="Incremental refresh for last N months (recommended 1-2).")
     ap.add_argument("--batch_size", type=int, default=200)
-    ap.add_argument("--throttle_seconds", type=float, default=1.5, help="Sleep between API calls (rate limit safety).")
-    ap.add_argument("--per_page", type=int, default=200, help="Zoho page size when listing existing rows.")
+    ap.add_argument("--throttle_seconds", type=float, default=1.5)
+    ap.add_argument("--per_page", type=int, default=200, help="Zoho report page size (usually <=200).")
 
     # Manual purge
     ap.add_argument("--purge_all", action="store_true")
     ap.add_argument("--purge_only", action="store_true")
     ap.add_argument("--purge_batch_limit", type=int, default=200)
 
-    # Full import historical (rare)
-    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (slow). Default false.")
+    # Full import mode (initialization)
+    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (slow). Default: false.")
 
     args = ap.parse_args()
 
@@ -683,18 +699,27 @@ def main() -> int:
 
     client = ZohoCreatorClient(cfg)
 
-    # PURGE ALL mode
+    # PURGE ALL (manual)
     if args.purge_all:
         print("PURGE ALL: deleting all records in Zoho report until empty...", flush=True)
-        deleted = purge_all_records(client, throttle_s=args.throttle_seconds, batch_limit=args.purge_batch_limit)
+        deleted = purge_all_records(
+            client,
+            throttle_s=args.throttle_seconds,
+            batch_limit=args.purge_batch_limit,
+        )
         print(f"PURGE ALL done. deleted={deleted}", flush=True)
 
         # verify empty
-        remain = fetch_ids_batch_compat(client, criteria="", limit=1)
-        if remain:
-            raise RuntimeError(f"PURGE ALL verification failed: still found records (example ID={remain[0]}).")
-        print("PURGE ALL verification OK: report is empty.", flush=True)
+        remaining = []
+        for r in client.iter_records(criteria="", fields="ID", per_page=1, throttle_s=0.0):
+            rid = r.get("ID") or r.get("id")
+            if rid:
+                remaining.append(str(rid))
+            break
+        if remaining:
+            raise RuntimeError(f"PURGE ALL verification failed: still found records (example ID={remaining[0]}).")
 
+        print("PURGE ALL verification OK: report is empty.", flush=True)
         print("Resetting zoho_sync_state.json ...", flush=True)
         reset_state_file(state_path)
 
@@ -702,7 +727,7 @@ def main() -> int:
             print("PURGE ONLY => exit.", flush=True)
             return 0
 
-    # read index
+    # Load index
     index = load_index(index_path)
     months_sorted = sorted_months(index)
     if not months_sorted:
@@ -711,18 +736,15 @@ def main() -> int:
 
     months_obj = index.get("months") or {}
 
-    # OU map
+    # Load OU map
     ou_map = load_ou_map(repo_root)
     print(f"OU_MAP loaded: level5={len(ou_map)}", flush=True)
 
+    # State
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
-    # Refresh months: previous months by default (exclude latest/current month)
-    if args.include_latest_in_refresh:
-        refresh_months = last_n_months(months_sorted, args.refresh_last_n)
-    else:
-        refresh_months = last_n_excluding_latest(months_sorted, args.refresh_last_n)
+    refresh_months = last_n_months(months_sorted, args.refresh_last_n)
 
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
     print(f"Refresh months (incremental, RowHash) = {refresh_months}", flush=True)
@@ -732,7 +754,7 @@ def main() -> int:
         flush=True,
     )
 
-    # 1) Incremental refresh for selected months (NO DELETE)
+    # 1) Incremental refresh for last N months (NO DELETE)
     for m in refresh_months:
         parts = (months_obj.get(m) or {}).get("parts") or []
         if not parts:
@@ -741,23 +763,24 @@ def main() -> int:
 
         print(f"[{m}] incremental sync (compare RowHash, add/update only)...", flush=True)
         stats = incremental_sync_month(
-            client,
-            repo_root,
-            m,
-            parts,
-            ou_map,
+            client=client,
+            repo_root=repo_root,
+            yyyymm=m,
+            parts_meta=parts,
+            ou_map=ou_map,
             batch_size=args.batch_size,
             throttle_s=args.throttle_seconds,
             per_page=args.per_page,
         )
         print(
-            f"[{m}] desired={stats['desired']} added={stats['added']} updated={stats['updated']} "
-            f"unchanged={stats['unchanged']} skipped_no_key={stats['skipped_no_key']}",
+            f"[{m}] local={stats['local_rows']} remote={stats['remote_rows']} "
+            f"add={stats['add_records']} (batches={stats['add_batches']}) "
+            f"update={stats['update_records']} skipped_no_key={stats['skipped_no_key']}",
             flush=True,
         )
         done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time(), "mode": "incremental"}
 
-    # 2) Historical import (optionnel / manuel)
+    # 2) Historical import (only if requested)
     if args.import_historical:
         for m in months_sorted:
             if m in refresh_months:
@@ -769,24 +792,15 @@ def main() -> int:
                 print(f"[{m}] skip: already done (historical)", flush=True)
                 continue
 
-            print(f"[{m}] import historical month (first time) ...", flush=True)
-            # import historique = simple insert (Key unique protège des doublons si rerun)
-            desired, skipped = load_month_records_from_parts(repo_root, m, parts, ou_map)
-            recs = list(desired.values())
-            batches = 0
-            inserted = 0
-            for batch in chunk_records(recs, args.batch_size):
-                if not batch:
-                    continue
-                client.add_records(batch)
-                batches += 1
-                inserted += len(batch)
-                if args.throttle_seconds > 0:
-                    time.sleep(args.throttle_seconds)
-            print(f"[{m}] inserted_records={inserted} batches={batches} skipped_no_key={skipped}", flush=True)
-            done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time(), "mode": "historical_insert"}
+            print(f"[{m}] import historical month (add only)...", flush=True)
+            batches, total, skipped = insert_month_from_parts(
+                client, repo_root, m, parts, ou_map,
+                batch_size=args.batch_size,
+                throttle_s=args.throttle_seconds,
+            )
+            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
+            done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time(), "mode": "historical_add_only"}
 
-    # save state
     state["done_months"] = done_months
     state["last_run_at"] = time.time()
     save_state(state_path, state)
