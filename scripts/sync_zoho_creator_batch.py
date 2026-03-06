@@ -53,12 +53,11 @@ class ZohoConfig:
 class ZohoCreatorClient:
     """
     Robuste:
-    - Certains DC n'acceptent pas DELETE bulk avec criteria (code 1060) => on ne l'utilise pas en routine.
-    - Certains renvoient 400 code=9280 quand aucun record ne matche un criteria (GET) => on traite comme "0 record".
+    - On évite DELETE bulk via API en routine (car DC parfois incompatible).
+    - GET avec criteria peut renvoyer 400 code=9280 => traité comme "0 record".
     - Pagination parfois instable:
         * certains DC supportent record_cursor
         * d'autres supportent page/per_page
-      => iter_records essaie cursor, sinon fallback page/per_page.
     """
 
     def __init__(self, cfg: ZohoConfig, timeout_s: int = 180) -> None:
@@ -164,12 +163,6 @@ class ZohoCreatorClient:
         page: Optional[int] = None,
         record_cursor: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Fetch records from report.
-        Compat DC:
-          - Cursor mode: max_records + record_cursor (no page/per_page)
-          - Page mode: page + per_page (no record_cursor)
-        """
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
 
         params: Dict[str, Any] = {"fields": fields}
@@ -182,7 +175,7 @@ class ZohoCreatorClient:
             params["record_cursor"] = record_cursor
             return self._req("GET", url, params=params)
 
-        # First page attempt for cursor mode (some DC returns cursor without needing to pass it)
+        # First call attempt (some DC returns cursor without providing it)
         if page is None:
             params["max_records"] = str(int(per_page))
             return self._req("GET", url, params=params)
@@ -221,12 +214,6 @@ class ZohoCreatorClient:
         throttle_s: float = 0.0,
         hard_max_pages: int = 2000,
     ) -> Iterable[Dict[str, Any]]:
-        """
-        Iterate all records matching criteria.
-        Strategy:
-          1) Try cursor mode
-          2) If cursor absent, fallback to page/per_page mode
-        """
         # --- cursor mode
         cursor: Optional[str] = None
         first = True
@@ -242,7 +229,7 @@ class ZohoCreatorClient:
                 fields=fields,
                 per_page=per_page,
                 page=None,
-                record_cursor=cursor if not first else None,  # first call without cursor
+                record_cursor=cursor if not first else None,
             )
             data = self._extract_data_list(resp)
             info = self._extract_info(resp)
@@ -250,14 +237,12 @@ class ZohoCreatorClient:
             for r in data:
                 yield r
 
-            # find next cursor
             next_cursor = (
                 info.get("record_cursor")
                 or info.get("next_record_cursor")
                 or info.get("next_cursor")
             )
 
-            # If we got a cursor, continue cursor mode
             if next_cursor:
                 cursor = str(next_cursor)
                 first = False
@@ -265,12 +250,9 @@ class ZohoCreatorClient:
                     time.sleep(throttle_s)
                 continue
 
-            # No cursor
-            # If the first call returned < per_page => we're done (no more pages)
             if len(data) < per_page:
                 return
 
-            # If first call returned exactly per_page but no cursor => fallback to page/per_page mode
             break
 
         # --- fallback page/per_page
@@ -299,16 +281,6 @@ class ZohoCreatorClient:
             if throttle_s > 0:
                 time.sleep(throttle_s)
 
-    def update_record_by_id(self, record_id: str, record: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        ✅ FIX IMPORTANT:
-        Update by ID must use REPORT endpoint in v2.1:
-          PATCH .../report/<report>/<record_id>
-        (Form endpoint causes 404 "Invalid API URL format" on your tenant)
-        """
-        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
-        return self._req("PATCH", url, json_body={"data": record})
-
 
 # ---------------------------
 # Local repo data helpers
@@ -323,10 +295,20 @@ def sorted_months(index: Dict[str, Any]) -> List[str]:
     return months
 
 
-def last_n_months(months_sorted: List[str], n: int = 3) -> List[str]:
+def last_n_previous_months(months_sorted: List[str], n: int) -> List[str]:
+    """
+    ✅ "Deux derniers mois précédents" = on EXCLUT le dernier mois de l'index (souvent le mois courant),
+    puis on prend les N derniers dans le reste.
+    Ex: index [..., 202601, 202602, 202603] et n=2 => [202601, 202602]
+    """
     if n <= 0:
         return []
-    return months_sorted[-n:] if len(months_sorted) >= n else months_sorted[:]
+    if len(months_sorted) <= 1:
+        return []
+    base = months_sorted[:-1]  # exclude latest
+    if not base:
+        return []
+    return base[-n:] if len(base) >= n else base[:]
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
@@ -356,13 +338,6 @@ def iter_ndjson_with_raw(file_path: Path) -> List[Tuple[Dict[str, Any], str]]:
 
 def chunk_records(records: List[Dict[str, Any]], size: int = 200) -> List[List[Dict[str, Any]]]:
     return [records[i:i + size] for i in range(0, len(records), size)]
-
-
-def period_yyyymm_to_zoho(yyyymm: str) -> str:
-    MMM = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    y = int(yyyymm[:4])
-    m = int(yyyymm[4:6])
-    return f"01-{MMM[m-1]}-{y:04d}"
 
 
 def load_state(state_path: Path) -> Dict[str, Any]:
@@ -431,12 +406,6 @@ def purge_by_criteria_until_empty(
     batch_limit: int,
     hard_limit_loops: int = 200000,
 ) -> int:
-    """
-    Safe purge:
-      - fetch N IDs
-      - delete them
-      - repeat
-    """
     deleted = 0
     loops = 0
     while True:
@@ -445,12 +414,7 @@ def purge_by_criteria_until_empty(
             raise RuntimeError("purge_by_criteria_until_empty: too many loops, aborting for safety.")
 
         ids: List[str] = []
-        for r in client.iter_records(
-            criteria=criteria,
-            fields="ID",
-            per_page=min(200, batch_limit),
-            throttle_s=0.0,
-        ):
+        for r in client.iter_records(criteria=criteria, fields="ID", per_page=min(200, batch_limit), throttle_s=0.0):
             rid = r.get("ID") or r.get("id")
             if rid:
                 ids.append(str(rid))
@@ -477,74 +441,45 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, batch_lim
 
 
 # ---------------------------
-# Incremental sync (RowHash compare)
+# ADD-only import for a month (batch) with safe fallback
 # ---------------------------
-def load_local_month_records(
-    repo_root: Path,
-    yyyymm: str,
-    parts_meta: List[Dict[str, Any]],
-    ou_map: Dict[str, Dict[str, str]],
-) -> Tuple[Dict[str, Dict[str, Any]], int]:
-    """
-    Returns:
-      local_by_key: Key -> ZohoRecord
-      skipped_no_key
-    """
-    month_dir = repo_root / "docs" / "data" / "monthly" / yyyymm
-    local_by_key: Dict[str, Dict[str, Any]] = {}
-    skipped = 0
-
-    for p in parts_meta:
-        plain = p.get("plain")
-        if not plain:
-            continue
-        fp = month_dir / str(plain)
-        if not fp.exists():
-            continue
-
-        rows = iter_ndjson_with_raw(fp)
-        for obj, raw in rows:
-            rec = build_zoho_record(obj, raw, ou_map)
-            if not rec:
-                skipped += 1
-                continue
-            key = str(rec.get("Key") or "").strip()
-            if not key:
-                skipped += 1
-                continue
-            # Key unique -> overwrite ok
-            local_by_key[key] = rec
-
-    return local_by_key, skipped
-
-
-def fetch_remote_month_index(
+def _robust_add_records(
     client: ZohoCreatorClient,
-    yyyymm: str,
+    records: List[Dict[str, Any]],
     *,
-    per_page: int,
     throttle_s: float,
-) -> Dict[str, Tuple[str, str]]:
+    depth: int = 0,
+    max_depth: int = 10,
+) -> Tuple[int, int]:
     """
-    Returns:
-      remote_by_key: Key -> (ID, RowHash)
+    Essaie d'ajouter en batch.
+    Si Zoho rejette le batch (doublons Key, validation, etc.), on split pour isoler et continuer.
+    Returns: (inserted_count_best_effort, failed_count)
     """
-    period = period_yyyymm_to_zoho(yyyymm)
-    criteria = f'(Period == "{period}")'
-    remote_by_key: Dict[str, Tuple[str, str]] = {}
+    if not records:
+        return (0, 0)
 
-    fields = "ID,Key,RowHash"
-    for r in client.iter_records(criteria=criteria, fields=fields, per_page=per_page, throttle_s=throttle_s):
-        rid = r.get("ID") or r.get("id")
-        key = r.get("Key")
-        rh = r.get("RowHash") or ""
-        if rid and key:
-            remote_by_key[str(key)] = (str(rid), str(rh))
+    try:
+        client.add_records(records)
+        if throttle_s > 0:
+            time.sleep(throttle_s)
+        return (len(records), 0)
+    except Exception as e:
+        # trop profond => abandon du lot
+        if len(records) == 1 or depth >= max_depth:
+            print(f"Add failed (record skipped). reason={e}", flush=True)
+            return (0, len(records))
 
-    return remote_by_key
+        mid = len(records) // 2
+        left = records[:mid]
+        right = records[mid:]
+
+        ins_l, fail_l = _robust_add_records(client, left, throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
+        ins_r, fail_r = _robust_add_records(client, right, throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
+        return (ins_l + ins_r, fail_l + fail_r)
 
 
-def incremental_sync_month(
+def insert_month_from_parts_add_only(
     client: ZohoCreatorClient,
     repo_root: Path,
     yyyymm: str,
@@ -553,81 +488,14 @@ def incremental_sync_month(
     *,
     batch_size: int,
     throttle_s: float,
-    per_page: int,
 ) -> Dict[str, Any]:
-    """
-    Incremental:
-      - compare Key/RowHash
-      - add missing keys
-      - update changed rowhash
-    """
-    local_by_key, skipped_no_key = load_local_month_records(repo_root, yyyymm, parts_meta, ou_map)
-    remote_by_key = fetch_remote_month_index(client, yyyymm, per_page=per_page, throttle_s=throttle_s)
-
-    to_add: List[Dict[str, Any]] = []
-    to_update: List[Tuple[str, Dict[str, Any]]] = []
-
-    for key, rec in local_by_key.items():
-        loc_rh = str(rec.get("RowHash") or "")
-        remote = remote_by_key.get(key)
-        if not remote:
-            to_add.append(rec)
-            continue
-
-        rid, rem_rh = remote
-        if loc_rh and rem_rh and (loc_rh != str(rem_rh)):
-            to_update.append((rid, rec))
-
-    # Add in batches
-    add_batches = 0
-    add_records = 0
-    for batch in chunk_records(to_add, batch_size):
-        if not batch:
-            continue
-        client.add_records(batch)
-        add_batches += 1
-        add_records += len(batch)
-        if throttle_s > 0:
-            time.sleep(throttle_s)
-
-    # Update one-by-one (tenant-compatible)
-    upd_records = 0
-    for rid, rec in to_update:
-        rec2 = dict(rec)
-        rec2.pop("ID", None)
-        client.update_record_by_id(rid, rec2)
-        upd_records += 1
-        if throttle_s > 0:
-            time.sleep(throttle_s)
-
-    return {
-        "month": yyyymm,
-        "local_rows": len(local_by_key),
-        "remote_rows": len(remote_by_key),
-        "add_records": add_records,
-        "add_batches": add_batches,
-        "update_records": upd_records,
-        "skipped_no_key": skipped_no_key,
-    }
-
-
-# ---------------------------
-# Full import (historical) - add only
-# ---------------------------
-def insert_month_from_parts(
-    client: ZohoCreatorClient,
-    repo_root: Path,
-    yyyymm: str,
-    parts_meta: List[Dict[str, Any]],
-    ou_map: Dict[str, Dict[str, str]],
-    *,
-    batch_size: int,
-    throttle_s: float,
-) -> Tuple[int, int, int]:
     month_dir = repo_root / "docs" / "data" / "monthly" / yyyymm
-    batches = 0
-    total = 0
+
+    total_local = 0
     skipped_no_key = 0
+    inserted = 0
+    failed = 0
+    batches = 0
 
     for p in parts_meta:
         plain = p.get("plain")
@@ -647,17 +515,24 @@ def insert_month_from_parts(
             else:
                 skipped_no_key += 1
 
-        total += len(zoho_recs)
+        total_local += len(zoho_recs)
 
         for batch in chunk_records(zoho_recs, batch_size):
             if not batch:
                 continue
-            client.add_records(batch)
             batches += 1
-            if throttle_s > 0:
-                time.sleep(throttle_s)
+            ins, fail = _robust_add_records(client, batch, throttle_s=throttle_s)
+            inserted += ins
+            failed += fail
 
-    return batches, total, skipped_no_key
+    return {
+        "month": yyyymm,
+        "local_rows": total_local,
+        "batches": batches,
+        "inserted": inserted,
+        "failed": failed,
+        "skipped_no_key": skipped_no_key,
+    }
 
 
 def main() -> int:
@@ -667,10 +542,14 @@ def main() -> int:
     ap.add_argument("--state", default="docs/data/zoho_sync_state.json")
 
     # Routine knobs
-    ap.add_argument("--refresh_last_n", type=int, default=2, help="Incremental refresh for last N months (recommended 1-2).")
+    ap.add_argument(
+        "--refresh_last_n",
+        type=int,
+        default=2,
+        help="ADD-ONLY for the last N PREVIOUS months (M-1..). Recommended=2.",
+    )
     ap.add_argument("--batch_size", type=int, default=200)
     ap.add_argument("--throttle_seconds", type=float, default=1.5)
-    ap.add_argument("--per_page", type=int, default=200, help="Zoho report page size (usually <=200).")
 
     # Manual purge
     ap.add_argument("--purge_all", action="store_true")
@@ -678,7 +557,7 @@ def main() -> int:
     ap.add_argument("--purge_batch_limit", type=int, default=200)
 
     # Full import mode (initialization)
-    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (slow). Default: false.")
+    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (add only).")
 
     args = ap.parse_args()
 
@@ -744,25 +623,25 @@ def main() -> int:
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
-    refresh_months = last_n_months(months_sorted, args.refresh_last_n)
+    # ✅ Routine: only ADD the last N previous months (assumes Deluge deleted them at 00:00)
+    refresh_months = last_n_previous_months(months_sorted, args.refresh_last_n)
 
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
-    print(f"Refresh months (incremental, RowHash) = {refresh_months}", flush=True)
+    print(f"ADD-only months (previous N={args.refresh_last_n}) = {refresh_months}", flush=True)
     print(
-        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} per_page={args.per_page} "
-        f"import_historical={args.import_historical}",
+        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} import_historical={args.import_historical}",
         flush=True,
     )
 
-    # 1) Incremental refresh for last N months (NO DELETE)
+    # 1) Daily add-only for previous months
     for m in refresh_months:
         parts = (months_obj.get(m) or {}).get("parts") or []
         if not parts:
             print(f"[{m}] skip: no parts", flush=True)
             continue
 
-        print(f"[{m}] incremental sync (compare RowHash, add/update only)...", flush=True)
-        stats = incremental_sync_month(
+        print(f"[{m}] add-only import (assumes Zoho month already deleted by Deluge)...", flush=True)
+        stats = insert_month_from_parts_add_only(
             client=client,
             repo_root=repo_root,
             yyyymm=m,
@@ -770,17 +649,15 @@ def main() -> int:
             ou_map=ou_map,
             batch_size=args.batch_size,
             throttle_s=args.throttle_seconds,
-            per_page=args.per_page,
         )
         print(
-            f"[{m}] local={stats['local_rows']} remote={stats['remote_rows']} "
-            f"add={stats['add_records']} (batches={stats['add_batches']}) "
-            f"update={stats['update_records']} skipped_no_key={stats['skipped_no_key']}",
+            f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
+            f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
             flush=True,
         )
-        done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time(), "mode": "incremental"}
+        done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time(), "mode": "daily_add_only_previous"}
 
-    # 2) Historical import (only if requested)
+    # 2) Historical import (manual)
     if args.import_historical:
         for m in months_sorted:
             if m in refresh_months:
@@ -793,12 +670,20 @@ def main() -> int:
                 continue
 
             print(f"[{m}] import historical month (add only)...", flush=True)
-            batches, total, skipped = insert_month_from_parts(
-                client, repo_root, m, parts, ou_map,
+            stats = insert_month_from_parts_add_only(
+                client=client,
+                repo_root=repo_root,
+                yyyymm=m,
+                parts_meta=parts,
+                ou_map=ou_map,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
             )
-            print(f"[{m}] inserted_records={total} batches={batches} skipped_no_key={skipped}", flush=True)
+            print(
+                f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
+                f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+                flush=True,
+            )
             done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time(), "mode": "historical_add_only"}
 
     state["done_months"] = done_months
