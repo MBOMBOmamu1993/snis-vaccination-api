@@ -63,13 +63,13 @@
     "202601": {
       "done": true,
       "refreshed": true,
-      "last_sync": 1772840242.979896,
+      "last_sync": 1772927231.942708,
       "mode": "daily_add_only_previous"
     },
     "202602": {
       "done": true,
       "refreshed": true,
-      "last_sync": 1772840842.3021448,
+      "last_sync": 1772927815.4401424,
       "mode": "daily_add_only_previous"
     },
     "202603": {
@@ -79,5 +79,5 @@
       "mode": "incremental"
     }
   },
-  "last_run_at": 1772840842.3021502
+  "last_run_at": 1772927815.4402106
 }
