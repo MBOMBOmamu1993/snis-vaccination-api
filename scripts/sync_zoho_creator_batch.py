@@ -13,9 +13,143 @@ from typing import Any, Dict, List, Tuple, Optional, Iterable
 import requests
 
 
-# ---------------------------
+# ============================================================
+# ✅ PAYLOAD CONTROL (IMPORTANT)
+# ============================================================
+# Objectif: réduire payload Zoho en N'ENVOYANT PAS les colonnes détaillées
+# (fixe/avancé/mobile et leurs variantes 1/2) et ne garder que:
+#   - Meta (Org2..Org5, Antenne, Key, Period, etc.)
+#   - Champs "stables" utiles (populations, séances, complétude/promptitude, etc.)
+#   - Calculs globaux 0-11 (et autres globaux) calculés ici
+#
+# IMPORTANT:
+# - Les NDJSON contiennent des "link names" Zoho (underscores, pas d'accents),
+#   pas les libellés DHIS2.
+# - On charge docs/config/rename_map.json pour convertir label -> link name.
+PASS_THROUGH_LABELS: set[str] = {
+    # --- Reporting / qualité ---
+    "Complétude",
+    "Promptitude",
+    "Rapports attendus",
+
+    # --- Sessions / planification ---
+    "Séances prévues",
+    "Séances réalisées",
+    "Séances fixes prévues",
+    "Séances fixes réalisées",
+    "Séances avancées prévues",
+    "Séances avancées réalisées",
+    "Séances mobiles prévues",
+    "Séances mobiles réalisées",
+
+    # --- Populations ---
+    "Pop. totale",
+    "Naissances vivantes",
+    "Pop. par AS",
+    "Pop. 0-11m (nv)",
+    "Pop. 0-11m (survivants)",
+    "Pop. 0-59m",
+    "Pop. 12-59m",
+
+    # --- Autres ---
+    "ECV",
+    "HPV",
+
+    # --- PV / BCU-FAE (si tu veux garder) ---
+    "Perdues de vue identifiés Penta1 0-11mois",
+    "Perdues de vue identifiés Penta1 12-23mois",
+    "Perdues de vue identifiés 24-59mois",
+    "Perdues de vue récupérés Penta1 0-11mois",
+    "Perdues de vue récupérés Penta1 12-23mois",
+    "Perdues de vue récupérés Penta1 24-59mois",
+    "Perdues de vue identifiés Penta3 0-11mois",
+    "Perdues de vue identifiés Penta3 12-23mois",
+    "Perdues de vue identifiés Penta3 24-59mois",
+    "Perdues de vue récupérés Penta3 0-11mois",
+    "Perdues de vue récupérés Penta3 12-23mois",
+    "Perdues de vue récupérés Penta3 24-59mois",
+    "Enfants récupérés Penta1 BCU-FAE",
+    "Enfants récupérés Penta3 BCU-FAE",
+    "Enfants récupérés VAR1 BCU-FAE",
+
+    # --- Disagrégations "populations spéciales" (si tu veux garder) ---
+    "AVS DTC1",
+    "AVS DTC3",
+    "AVS VAR1",
+    "AVS VAR2",
+    "OVM DTC1",
+    "OVM DTC3",
+    "OVM VAR1",
+    "OVM VAR2",
+    "Fluviale DTC1",
+    "Fluviale DTC3",
+    "Fluviale VAR1",
+    "Fluviale VAR2",
+    "IPVS DTC1",
+    "IPVS DTC3",
+    "IPVS VAR1",
+    "IPVS VAR2",
+    "Autochtones DTC1",
+    "Autochtones DTC3",
+    "Autochtones VAR1",
+    "Autochtones VAR2",
+    "Nomades DTC1",
+    "Nomades DTC3",
+    "Nomades VAR1",
+    "Nomades VAR2",
+    "Réfugiés/Déplacés DTC1",
+    "Réfugiés/Déplacés DTC3",
+    "Réfugiés/Déplacés VAR1",
+    "Réfugiés/Déplacés VAR2",
+    "Point de concentration DTC1",
+    "Point de concentration DTC3",
+    "Point de concentration VAR1",
+    "Point de concentration VAR2",
+    "Horaire adapté DTC1",
+    "Horaire adapté DTC3",
+    "Horaire adapté VAR1",
+    "Horaire adapté VAR2",
+    "Campements DTC1",
+    "Campements DTC3",
+    "Campements VAR1",
+    "Campements VAR2",
+    "Poches d'insécurité DTC1",
+    "Poches d'insécurité DTC3",
+    "Poches d'insécurité VAR1",
+    "Poches d'insécurité VAR2",
+}
+
+# Champs calculés (toujours envoyés) - déjà en "link name" (underscores)
+CALCULATED_FIELDS: set[str] = {
+    "BCG_0_11",
+    "DTC1_0_11",
+    "DTC2_0_11",
+    "DTC3_0_11",
+    "VPO3_0_11",
+    "VPI1_0_11",
+    "VPI2_0_11",
+    "ROTA3_0_11",
+    "PCV13_3_0_11",
+    "VAR1_0_11",
+    "VAR2_total",
+    "VAR2_0_11",
+    "VPO0_0_11",
+    "VPO1_0_11",
+    "VPO2_0_11",
+    "PCV13_1_0_11",
+    "PCV13_2_0_11",
+    "ROTA1_0_11",
+    "ROTA2_0_11",
+    "VAP1_0_11",
+    "VAP2_0_11",
+    "VAP3_0_11",
+    "VAP4_12_23",
+}
+
+
+# ============================================================
 # Zoho DC routing
-# ---------------------------
+# ============================================================
 def zoho_apis_domain(dc: str) -> str:
     dc = (dc or "com").strip().lower()
     if dc == "us":
@@ -91,7 +225,7 @@ class ZohoCreatorClient:
         return {"Authorization": f"Zoho-oauthtoken {self._access_token}"}
 
     @staticmethod
-    def _try_parse_json(text: str) -> Dict[str, Any] | None:
+    def _try_parse_json(text: str) -> Optional[Dict[str, Any]]:
         try:
             return json.loads(text)
         except Exception:
@@ -102,8 +236,8 @@ class ZohoCreatorClient:
         method: str,
         url: str,
         *,
-        params: Dict[str, Any] | None = None,
-        json_body: Any | None = None,
+        params: Optional[Dict[str, Any]] = None,
+        json_body: Any = None,
     ) -> Dict[str, Any]:
         last_text = ""
         for attempt in range(1, 7):
@@ -237,11 +371,7 @@ class ZohoCreatorClient:
             for r in data:
                 yield r
 
-            next_cursor = (
-                info.get("record_cursor")
-                or info.get("next_record_cursor")
-                or info.get("next_cursor")
-            )
+            next_cursor = info.get("record_cursor") or info.get("next_record_cursor") or info.get("next_cursor")
 
             if next_cursor:
                 cursor = str(next_cursor)
@@ -282,9 +412,9 @@ class ZohoCreatorClient:
                 time.sleep(throttle_s)
 
 
-# ---------------------------
+# ============================================================
 # Local repo data helpers
-# ---------------------------
+# ============================================================
 def load_index(index_path: Path) -> Dict[str, Any]:
     return json.loads(index_path.read_text(encoding="utf-8"))
 
@@ -325,6 +455,44 @@ def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
     raise FileNotFoundError("Missing docs/data/ou_map.json(.gz). Run build_ou_map.py first.")
 
 
+def load_zoho_rename_map(repo_root: Path) -> Dict[str, str]:
+    """
+    docs/config/rename_map.json:
+      { "BCG avancé1": "BCG_avanc_1", ... }
+    """
+    p = repo_root / "docs" / "config" / "rename_map.json"
+    if not p.exists():
+        return {}
+    try:
+        obj = json.loads(p.read_text(encoding="utf-8"))
+        if isinstance(obj, dict):
+            return {str(k): str(v) for k, v in obj.items()}
+        return {}
+    except Exception:
+        return {}
+
+
+def load_antenne_rules(repo_root: Path) -> Dict[str, Dict[str, str]]:
+    """
+    docs/config/antenne_rules.json
+    Format:
+      { "Org2": { "Zone de Santé": "Antenne", ... }, ... }
+    """
+    p = repo_root / "docs" / "config" / "antenne_rules.json"
+    if not p.exists():
+        return {}
+    try:
+        obj = json.loads(p.read_text(encoding="utf-8"))
+        out: Dict[str, Dict[str, str]] = {}
+        if isinstance(obj, dict):
+            for org2, m in obj.items():
+                if isinstance(m, dict):
+                    out[str(org2)] = {str(zs): str(a) for zs, a in m.items()}
+        return out
+    except Exception:
+        return {}
+
+
 def iter_ndjson_with_raw(file_path: Path) -> List[Tuple[Dict[str, Any], str]]:
     out: List[Tuple[Dict[str, Any], str]] = []
     with file_path.open("r", encoding="utf-8") as f:
@@ -358,14 +526,63 @@ def reset_state_file(state_path: Path) -> None:
     save_state(state_path, {"done_months": {}, "last_run_at": None})
 
 
-# ---------------------------
+# ============================================================
 # Transform: NDJSON row -> Zoho record
-# ---------------------------
+# ============================================================
 def md5_hex(s: str) -> str:
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
-def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
+def _num(x: Any) -> float:
+    if x is None:
+        return 0.0
+    if isinstance(x, (int, float)) and not isinstance(x, bool):
+        return float(x)
+    s = str(x).strip()
+    if s == "" or s.lower() == "null":
+        return 0.0
+    try:
+        return float(s.replace(",", "."))
+    except Exception:
+        return 0.0
+
+
+def _sum_by_link(row: Dict[str, Any], *link_fields: str) -> float:
+    return sum(_num(row.get(f)) for f in link_fields)
+
+
+def zone_de_sante_from_org3(org3_name: str) -> str:
+    """
+    équivalent PowerQuery:
+      Text.BetweenDelimiters([Level 3 Org Unit], " ", " Zone")
+    Ici Org3 ressemble à "xx <ZoneDeSante> Zone ..."
+    """
+    s = (org3_name or "").strip()
+    if not s:
+        return ""
+    i = s.find(" ")
+    j = s.find(" Zone")
+    if i >= 0 and j > i:
+        return s[i + 1: j].strip()
+    return ""
+
+
+def antenne_from(org2: str, org3: str, rules: Dict[str, Dict[str, str]]) -> str:
+    zs = zone_de_sante_from_org3(org3)
+    if not zs:
+        return "Autre"
+    m = rules.get((org2 or "").strip()) or {}
+    return m.get(zs) or "Autre"
+
+
+def build_zoho_record(
+    row: Dict[str, Any],
+    raw_line: str,
+    ou_map: Dict[str, Dict[str, str]],
+    antenne_rules: Dict[str, Dict[str, str]],
+    zoho_rename_map: Dict[str, str],  # label -> link name
+    pass_through_links: set[str],     # link names
+) -> Dict[str, Any]:
     ou = str(row.get("OrgUnit") or "").strip()
     period = str(row.get("Period") or "").strip()
 
@@ -375,6 +592,7 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     meta = ou_map.get(ou) or {}
     rec: Dict[str, Any] = {}
 
+    # --- Meta
     rec["Org5_UID"] = ou
     rec["Period"] = period
     rec["Key"] = f"{ou}|{period}"
@@ -387,17 +605,144 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     rec["Org4"] = meta.get("Org4", "")
     rec["Org5"] = meta.get("Org5", "")
 
+    # ✅ Antenne (niveau intermédiaire entre Org2 et Org3)
+    rec["Antenne"] = antenne_from(rec["Org2"], rec["Org3"], antenne_rules)
+
+    # Helper label -> link
+    def L(label: str) -> str:
+        return zoho_rename_map.get(label, label)
+
+    # ✅ PASS-THROUGH: uniquement les champs utiles (en link names)
     for k, v in row.items():
         if k in ("OrgUnit", "Period", "Key", "Org5_UID", "Org2", "Org3", "Org4", "Org5", "RowHash"):
             continue
-        rec[k] = v
+        if k in pass_through_links:
+            rec[k] = v
+
+    # ✅ Calculs globaux 0-11 mois (en lisant les colonnes link names)
+    rec["BCG_0_11"] = _sum_by_link(
+        row,
+        L("BCG fixe1"), L("BCG fixe2"),
+        L("BCG avancé1"), L("BCG avancé2"),
+        L("BCG mobile1"), L("BCG mobile2"),
+    )
+
+    rec["DTC1_0_11"] = _sum_by_link(
+        row,
+        L("Penta1 fixe1"), L("Penta1 fixe2"),
+        L("Penta1 avancé1"), L("Penta1 avancé2"),
+        L("Penta1 mobile1"), L("Penta1 mobile2"),
+    )
+
+    rec["DTC2_0_11"] = _sum_by_link(
+        row,
+        L("Penta2 fixe1"), L("Penta2 fixe2"),
+        L("Penta2 avancé1"), L("Penta2 avancé2"),
+        L("Penta2 mobile1"), L("Penta2 mobile2"),
+    )
+
+    rec["DTC3_0_11"] = _sum_by_link(
+        row,
+        L("Penta3 fixe1"), L("Penta3 fixe2"),
+        L("Penta3 avancé1"), L("Penta3 avancé2"),
+        L("Penta3 mobile1"), L("Penta3 mobile2"),
+    )
+
+    rec["VPO3_0_11"] = _sum_by_link(
+        row,
+        L("VPO3 fixe1"), L("VPO3 fixe2"),
+        L("VPO3 avancé1"), L("VPO3 avancé2"),
+        L("VPO3 mobile1"), L("VPO3 mobile2"),
+    )
+
+    rec["VPI1_0_11"] = _sum_by_link(
+        row,
+        L("VPI1 fixe1"), L("VPI1 fixe2"),
+        L("VPI1 avancé1"), L("VPI1 avancé2"),
+        L("VPI1 mobile1"), L("VPI1 mobile2"),
+    )
+
+    rec["VPI2_0_11"] = _sum_by_link(
+        row,
+        L("VPI2 fixe1"), L("VPI2 fixe2"),
+        L("VPI2 avancé1"), L("VPI2 avancé2"),
+        L("VPI2 mobile1"), L("VPI2 mobile2"),
+    )
+
+    rec["ROTA3_0_11"] = _sum_by_link(row, L("ROTA3 fixe"), L("ROTA3 avancé"), L("ROTA3 mobile"))
+
+    rec["PCV13_3_0_11"] = _sum_by_link(
+        row,
+        L("PCV13 fixe1"), L("PCV13 fixe2"),
+        L("PCV13 avancé1"), L("PCV13 avancé2"),
+        L("PCV13 mobile1"), L("PCV13 mobile2"),
+    )
+
+    rec["VAR1_0_11"] = _sum_by_link(
+        row,
+        L("VAR1 fixe1"), L("VAR1 fixe2"),
+        L("VAR1 avancé1"), L("VAR1 avancé2"),
+        L("VAR1 mobile1"), L("VAR1 mobile2"),
+    )
+
+    rec["VAR2_total"] = _sum_by_link(
+        row,
+        L("VAR2 fixe1"), L("VAR2 fixe2"),
+        L("VAR2 avancé"),
+        L("VAR2 mobile1"), L("VAR2 mobile2"),
+    )
+
+    rec["VAR2_0_11"] = _sum_by_link(row, L("VAR2 0-11 mois fixe"), L("VAR2 0-11 mois avancée"), L("VAR2 0-11 mois mobile"))
+
+    rec["VPO0_0_11"] = _sum_by_link(
+        row,
+        L("VPO0 0-11 mois fixe1"), L("VPO0 0-11 mois fixe2"),
+        L("VPO0 0-11 mois avancée1"), L("VPO0 0-11 mois avancée2"),
+        L("VPO0 0-11 mois mobile1"), L("VPO0 0-11 mois mobile2"),
+    )
+
+    rec["VPO1_0_11"] = _sum_by_link(
+        row,
+        L("VPO1 0-11 mois fixe1"), L("VPO1 0-11 mois fixe2"),
+        L("VPO1 0-11 mois avancée1"), L("VPO1 0-11 mois avancée2"),
+        L("VPO1 0-11 mois mobile1"), L("VPO1 0-11 mois mobile2"),
+    )
+
+    rec["VPO2_0_11"] = _sum_by_link(
+        row,
+        L("VPO2 0-11 mois fixe1"), L("VPO2 0-11 mois fixe2"),
+        L("VPO2 0-11 mois avancée1"), L("VPO2 0-11 mois avancée2"),
+        L("VPO2 0-11 mois mobile1"), L("VPO2 0-11 mois mobile2"),
+    )
+
+    rec["PCV13_1_0_11"] = _sum_by_link(
+        row,
+        L("PCV13(1) 0-11 mois fixe1"), L("PCV13(1) 0-11 mois fixe2"),
+        L("PCV13(1) 0-11 mois avancée1"), L("PCV13(1) 0-11 mois avancée2"),
+        L("PCV13(1) 0-11 mois mobile1"), L("PCV13(1) 0-11 mois mobile2"),
+    )
+
+    rec["PCV13_2_0_11"] = _sum_by_link(
+        row,
+        L("PCV13(2) 0-11 mois fixe1"), L("PCV13(2) 0-11 mois fixe2"),
+        L("PCV13(2) 0-11 mois avancée1"), L("PCV13(2) 0-11 mois avancée2"),
+        L("PCV13(2) 0-11 mois mobile1"), L("PCV13(2) 0-11 mois mobile2"),
+    )
+
+    rec["ROTA1_0_11"] = _sum_by_link(row, L("ROTA1 0-11 mois fixe"), L("ROTA1 0-11 mois avancée"), L("ROTA1 0-11 mois mobile"))
+    rec["ROTA2_0_11"] = _sum_by_link(row, L("ROTA2 0-11 mois fixe"), L("ROTA2 0-11 mois avancée"), L("ROTA2 0-11 mois mobile"))
+
+    rec["VAP1_0_11"] = _sum_by_link(row, L("VAP1 0-11 mois fixe"), L("VAP1 0-11 mois avancée"))
+    rec["VAP2_0_11"] = _sum_by_link(row, L("VAP2 0-11 mois fixe"), L("VAP2 0-11 mois avancée"), L("VAP2 0-11 mois mobile"))
+    rec["VAP3_0_11"] = _sum_by_link(row, L("VAP3 0-11 mois fixe"), L("VAP3 0-11 mois avancée"), L("VAP3 0-11 mois mobile"))
+    rec["VAP4_12_23"] = _sum_by_link(row, L("VAP4 12-23 mois fixe"), L("VAP4 12-23 mois avancée"), L("VAP4 12-23 mois mobile"))
 
     return rec
 
 
-# ---------------------------
+# ============================================================
 # PURGE helpers (manual only)
-# ---------------------------
+# ============================================================
 def purge_by_criteria_until_empty(
     client: ZohoCreatorClient,
     *,
@@ -440,9 +785,9 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, batch_lim
     return purge_by_criteria_until_empty(client, criteria="", throttle_s=throttle_s, batch_limit=batch_limit)
 
 
-# ---------------------------
+# ============================================================
 # ADD-only import for a month (batch) with safe fallback
-# ---------------------------
+# ============================================================
 def _robust_add_records(
     client: ZohoCreatorClient,
     records: List[Dict[str, Any]],
@@ -465,7 +810,6 @@ def _robust_add_records(
             time.sleep(throttle_s)
         return (len(records), 0)
     except Exception as e:
-        # trop profond => abandon du lot
         if len(records) == 1 or depth >= max_depth:
             print(f"Add failed (record skipped). reason={e}", flush=True)
             return (0, len(records))
@@ -485,6 +829,9 @@ def insert_month_from_parts_add_only(
     yyyymm: str,
     parts_meta: List[Dict[str, Any]],
     ou_map: Dict[str, Dict[str, str]],
+    antenne_rules: Dict[str, Dict[str, str]],
+    zoho_rename_map: Dict[str, str],
+    pass_through_links: set[str],
     *,
     batch_size: int,
     throttle_s: float,
@@ -509,7 +856,7 @@ def insert_month_from_parts_add_only(
 
         zoho_recs: List[Dict[str, Any]] = []
         for obj, raw in rows:
-            rec = build_zoho_record(obj, raw, ou_map)
+            rec = build_zoho_record(obj, raw, ou_map, antenne_rules, zoho_rename_map, pass_through_links)
             if rec:
                 zoho_recs.append(rec)
             else:
@@ -535,6 +882,9 @@ def insert_month_from_parts_add_only(
     }
 
 
+# ============================================================
+# MAIN
+# ============================================================
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo_root", default=".", help="Repository root (default: .)")
@@ -619,6 +969,20 @@ def main() -> int:
     ou_map = load_ou_map(repo_root)
     print(f"OU_MAP loaded: level5={len(ou_map)}", flush=True)
 
+    # Load Antenne rules
+    antenne_rules = load_antenne_rules(repo_root)
+    print(f"ANTENNE_RULES loaded: org2={len(antenne_rules)}", flush=True)
+
+    # Load Zoho rename map (label -> link name)
+    zoho_rename_map = load_zoho_rename_map(repo_root)
+    if not zoho_rename_map:
+        print("WARN: rename_map.json missing/empty. Pass-through + sums may not match link names.", flush=True)
+
+    # Build pass-through link names from labels
+    pass_through_links: set[str] = set()
+    for lbl in PASS_THROUGH_LABELS:
+        pass_through_links.add(zoho_rename_map.get(lbl, lbl))
+
     # State
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
@@ -630,6 +994,11 @@ def main() -> int:
     print(f"ADD-only months (previous N={args.refresh_last_n}) = {refresh_months}", flush=True)
     print(
         f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} import_historical={args.import_historical}",
+        flush=True,
+    )
+    print(
+        f"PASS_THROUGH_LABELS={len(PASS_THROUGH_LABELS)} => PASS_THROUGH_LINKS={len(pass_through_links)} | "
+        f"CALCULATED_FIELDS={len(CALCULATED_FIELDS)}",
         flush=True,
     )
 
@@ -647,6 +1016,9 @@ def main() -> int:
             yyyymm=m,
             parts_meta=parts,
             ou_map=ou_map,
+            antenne_rules=antenne_rules,
+            zoho_rename_map=zoho_rename_map,
+            pass_through_links=pass_through_links,
             batch_size=args.batch_size,
             throttle_s=args.throttle_seconds,
         )
@@ -676,6 +1048,9 @@ def main() -> int:
                 yyyymm=m,
                 parts_meta=parts,
                 ou_map=ou_map,
+                antenne_rules=antenne_rules,
+                zoho_rename_map=zoho_rename_map,
+                pass_through_links=pass_through_links,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
             )
