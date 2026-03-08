@@ -94,13 +94,7 @@ class Dhis2Client:
         return units if isinstance(units, list) else []
 
 
-def build_ou_map(client: Dhis2Client) -> Dict[str, Dict[str, str]]:
-    """
-    Retourne une map mixte:
-      - OU niveau 4  -> {Org2, Org3, Org4, Org5=""}
-      - OU niveau 5  -> {Org2, Org3, Org4, Org5}
-    Clé = UID de l'OU source.
-    """
+def build_all_units(client: Dhis2Client) -> Dict[str, dict]:
     all_units: Dict[str, dict] = {}
 
     for lvl in (2, 3, 4, 5):
@@ -111,31 +105,24 @@ def build_ou_map(client: Dhis2Client) -> Dict[str, Dict[str, str]]:
             if ou_id:
                 all_units[ou_id] = ou
 
+    return all_units
+
+
+def _name_for(path_ids: List[str], level: int, all_units: Dict[str, dict]) -> str:
+    for pid in path_ids:
+        u = all_units.get(pid)
+        if u and u.get("level") == level:
+            return str(u.get("name") or "").strip()
+    return ""
+
+
+def build_ou_map_fosa(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
+    """
+    Retourne:
+      { ou5_id: {Org2, Org3, Org4, Org5} }
+    """
     out: Dict[str, Dict[str, str]] = {}
 
-    def name_for(path_ids: List[str], level: int) -> str:
-        for pid in path_ids:
-            u = all_units.get(pid)
-            if u and u.get("level") == level:
-                return str(u.get("name") or "").strip()
-        return ""
-
-    # ---- Niveau 4 (AS)
-    for ou_id, ou in all_units.items():
-        if ou.get("level") != 4:
-            continue
-
-        path = str(ou.get("path") or "").strip()
-        ids = [p for p in path.split("/") if p]
-
-        out[ou_id] = {
-            "Org2": name_for(ids, 2),
-            "Org3": name_for(ids, 3),
-            "Org4": str(ou.get("name") or "").strip(),
-            "Org5": "",
-        }
-
-    # ---- Niveau 5 (FOSA)
     for ou_id, ou in all_units.items():
         if ou.get("level") != 5:
             continue
@@ -144,10 +131,34 @@ def build_ou_map(client: Dhis2Client) -> Dict[str, Dict[str, str]]:
         ids = [p for p in path.split("/") if p]
 
         out[ou_id] = {
-            "Org2": name_for(ids, 2),
-            "Org3": name_for(ids, 3),
-            "Org4": name_for(ids, 4),
+            "Org2": _name_for(ids, 2, all_units),
+            "Org3": _name_for(ids, 3, all_units),
+            "Org4": _name_for(ids, 4, all_units),
             "Org5": str(ou.get("name") or "").strip(),
+        }
+
+    return out
+
+
+def build_ou_map_as(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
+    """
+    Retourne:
+      { ou4_id: {Org2, Org3, Org4, Org5=""} }
+    """
+    out: Dict[str, Dict[str, str]] = {}
+
+    for ou_id, ou in all_units.items():
+        if ou.get("level") != 4:
+            continue
+
+        path = str(ou.get("path") or "").strip()
+        ids = [p for p in path.split("/") if p]
+
+        out[ou_id] = {
+            "Org2": _name_for(ids, 2, all_units),
+            "Org3": _name_for(ids, 3, all_units),
+            "Org4": str(ou.get("name") or "").strip(),
+            "Org5": "",
         }
 
     return out
@@ -160,43 +171,43 @@ def write_gz_json(path: Path, obj: object) -> None:
         f.write(raw)
 
 
-def load_existing_ou_map(out_dir: Path) -> Optional[Dict[str, Dict[str, str]]]:
-    gz_path = out_dir / "ou_map.json.gz"
-    js_path = out_dir / "ou_map.json"
-
+def load_existing_json_pair(json_path: Path, gz_path: Path) -> Optional[Dict[str, Dict[str, str]]]:
     try:
         if gz_path.exists():
             with gzip.open(gz_path, "rb") as f:
                 return json.loads(f.read().decode("utf-8"))
-        if js_path.exists():
-            return json.loads(js_path.read_text(encoding="utf-8"))
+        if json_path.exists():
+            return json.loads(json_path.read_text(encoding="utf-8"))
     except Exception as e:
-        print(f"WARN: existing ou_map unreadable: {e}", flush=True)
+        print(f"WARN: existing map unreadable: {e}", flush=True)
 
     return None
 
 
-def save_ou_map(out_dir: Path, ou_map: Dict[str, Dict[str, str]]) -> None:
+def save_map_with_meta(
+    *,
+    out_dir: Path,
+    json_name: str,
+    gz_name: str,
+    meta_name: str,
+    payload: Dict[str, Dict[str, str]],
+    kind: str,
+) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    out_json = out_dir / "ou_map.json"
-    out_json.write_text(json.dumps(ou_map, ensure_ascii=False), encoding="utf-8")
+    json_path = out_dir / json_name
+    gz_path = out_dir / gz_name
+    meta_path = out_dir / meta_name
 
-    write_gz_json(out_dir / "ou_map.json.gz", ou_map)
-
-    count_level4 = sum(1 for v in ou_map.values() if not v.get("Org5"))
-    count_level5 = sum(1 for v in ou_map.values() if v.get("Org5"))
+    json_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    write_gz_json(gz_path, payload)
 
     meta = {
         "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "count_total": len(ou_map),
-        "count_org4": count_level4,
-        "count_org5": count_level5,
+        "kind": kind,
+        "count": len(payload),
     }
-    (out_dir / "ou_map.meta.json").write_text(
-        json.dumps(meta, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
 
 
 def main() -> int:
@@ -204,14 +215,29 @@ def main() -> int:
     username = os.environ.get("DHIS2_USERNAME")
     password = os.environ.get("DHIS2_PASSWORD")
 
-    out_dir = Path("docs/data")
+    fosa_dir = Path("docs/data")
+    as_dir = Path("docs/data_as")
+
+    fosa_json = fosa_dir / "ou_map.json"
+    fosa_gz = fosa_dir / "ou_map.json.gz"
+
+    as_json = as_dir / "ou_map_as.json"
+    as_gz = as_dir / "ou_map_as.json.gz"
 
     if not (base_url and username and password):
         print("Missing secrets: DHIS2_BASE_URL, DHIS2_USERNAME, DHIS2_PASSWORD", file=sys.stderr)
-        existing = load_existing_ou_map(out_dir)
-        if existing:
-            print(f"FALLBACK: using existing cached ou_map (count={len(existing)})", flush=True)
+
+        existing_fosa = load_existing_json_pair(fosa_json, fosa_gz)
+        existing_as = load_existing_json_pair(as_json, as_gz)
+
+        if existing_fosa or existing_as:
+            print(
+                "FALLBACK: using existing cached OU maps "
+                f"(fosa={len(existing_fosa or {})}, as={len(existing_as or {})})",
+                flush=True,
+            )
             return 0
+
         return 2
 
     client = Dhis2Client(
@@ -225,27 +251,63 @@ def main() -> int:
     )
 
     try:
-        ou_map = build_ou_map(client)
-        if not ou_map:
-            raise RuntimeError("build_ou_map returned empty mapping")
+        all_units = build_all_units(client)
 
-        save_ou_map(out_dir, ou_map)
-        print(f"OK: ou_map.json + ou_map.json.gz generated for {len(ou_map)} source OUs", flush=True)
+        if not all_units:
+            raise RuntimeError("No organisation units returned from DHIS2")
+
+        fosa_map = build_ou_map_fosa(all_units)
+        as_map = build_ou_map_as(all_units)
+
+        if not fosa_map:
+            raise RuntimeError("build_ou_map_fosa returned empty mapping")
+        if not as_map:
+            raise RuntimeError("build_ou_map_as returned empty mapping")
+
+        save_map_with_meta(
+            out_dir=fosa_dir,
+            json_name="ou_map.json",
+            gz_name="ou_map.json.gz",
+            meta_name="ou_map.meta.json",
+            payload=fosa_map,
+            kind="fosa_org5",
+        )
+
+        save_map_with_meta(
+            out_dir=as_dir,
+            json_name="ou_map_as.json",
+            gz_name="ou_map_as.json.gz",
+            meta_name="ou_map_as.meta.json",
+            payload=as_map,
+            kind="as_org4",
+        )
+
+        print(
+            f"OK: FOSA map generated for {len(fosa_map)} OU level 5 | "
+            f"AS map generated for {len(as_map)} OU level 4",
+            flush=True,
+        )
         return 0
 
     except Exception as e:
         print(f"WARN: build_ou_map failed from DHIS2: {e}", flush=True)
 
-        existing = load_existing_ou_map(out_dir)
-        if existing:
+        existing_fosa = load_existing_json_pair(fosa_json, fosa_gz)
+        existing_as = load_existing_json_pair(as_json, as_gz)
+
+        if existing_fosa or existing_as:
             print(
-                f"FALLBACK: using existing cached docs/data/ou_map.* "
-                f"(count={len(existing)}) and continuing workflow.",
+                "FALLBACK: using existing cached OU maps "
+                f"(fosa={len(existing_fosa or {})}, as={len(existing_as or {})}) "
+                "and continuing workflow.",
                 flush=True,
             )
             return 0
 
-        print("ERROR: no cached docs/data/ou_map.json(.gz) available for fallback.", file=sys.stderr)
+        print(
+            "ERROR: no cached docs/data/ou_map.json(.gz) or docs/data_as/ou_map_as.json(.gz) available.",
+            file=sys.stderr,
+        )
         return 1
 
 
