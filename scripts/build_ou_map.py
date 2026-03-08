@@ -96,7 +96,10 @@ class Dhis2Client:
 
 def build_ou_map(client: Dhis2Client) -> Dict[str, Dict[str, str]]:
     """
-    Retourne: { ou5_id: {Org2, Org3, Org4, Org5} }
+    Retourne une map mixte:
+      - OU niveau 4  -> {Org2, Org3, Org4, Org5=""}
+      - OU niveau 5  -> {Org2, Org3, Org4, Org5}
+    Clé = UID de l'OU source.
     """
     all_units: Dict[str, dict] = {}
 
@@ -110,6 +113,29 @@ def build_ou_map(client: Dhis2Client) -> Dict[str, Dict[str, str]]:
 
     out: Dict[str, Dict[str, str]] = {}
 
+    def name_for(path_ids: List[str], level: int) -> str:
+        for pid in path_ids:
+            u = all_units.get(pid)
+            if u and u.get("level") == level:
+                return str(u.get("name") or "").strip()
+        return ""
+
+    # ---- Niveau 4 (AS)
+    for ou_id, ou in all_units.items():
+        if ou.get("level") != 4:
+            continue
+
+        path = str(ou.get("path") or "").strip()
+        ids = [p for p in path.split("/") if p]
+
+        out[ou_id] = {
+            "Org2": name_for(ids, 2),
+            "Org3": name_for(ids, 3),
+            "Org4": str(ou.get("name") or "").strip(),
+            "Org5": "",
+        }
+
+    # ---- Niveau 5 (FOSA)
     for ou_id, ou in all_units.items():
         if ou.get("level") != 5:
             continue
@@ -117,17 +143,10 @@ def build_ou_map(client: Dhis2Client) -> Dict[str, Dict[str, str]]:
         path = str(ou.get("path") or "").strip()
         ids = [p for p in path.split("/") if p]
 
-        def name_for(level: int) -> str:
-            for pid in ids:
-                u = all_units.get(pid)
-                if u and u.get("level") == level:
-                    return str(u.get("name") or "").strip()
-            return ""
-
         out[ou_id] = {
-            "Org2": name_for(2),
-            "Org3": name_for(3),
-            "Org4": name_for(4),
+            "Org2": name_for(ids, 2),
+            "Org3": name_for(ids, 3),
+            "Org4": name_for(ids, 4),
             "Org5": str(ou.get("name") or "").strip(),
         }
 
@@ -165,9 +184,14 @@ def save_ou_map(out_dir: Path, ou_map: Dict[str, Dict[str, str]]) -> None:
 
     write_gz_json(out_dir / "ou_map.json.gz", ou_map)
 
+    count_level4 = sum(1 for v in ou_map.values() if not v.get("Org5"))
+    count_level5 = sum(1 for v in ou_map.values() if v.get("Org5"))
+
     meta = {
         "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "count_ou_level5": len(ou_map),
+        "count_total": len(ou_map),
+        "count_org4": count_level4,
+        "count_org5": count_level5,
     }
     (out_dir / "ou_map.meta.json").write_text(
         json.dumps(meta, ensure_ascii=False),
@@ -206,7 +230,7 @@ def main() -> int:
             raise RuntimeError("build_ou_map returned empty mapping")
 
         save_ou_map(out_dir, ou_map)
-        print(f"OK: ou_map.json + ou_map.json.gz generated for {len(ou_map)} OU level 5", flush=True)
+        print(f"OK: ou_map.json + ou_map.json.gz generated for {len(ou_map)} source OUs", flush=True)
         return 0
 
     except Exception as e:
