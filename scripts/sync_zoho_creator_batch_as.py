@@ -287,17 +287,30 @@ def load_json_file(path: Path) -> Dict[str, Any]:
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
-    gz_path = repo_root / "docs" / "data" / "ou_map.json.gz"
-    js_path = repo_root / "docs" / "data" / "ou_map.json"
+    as_gz_path = repo_root / "docs" / "data_as" / "ou_map_as.json.gz"
+    as_js_path = repo_root / "docs" / "data_as" / "ou_map_as.json"
 
-    if gz_path.exists():
-        raw = gzip.open(gz_path, "rb").read()
+    if as_gz_path.exists():
+        raw = gzip.open(as_gz_path, "rb").read()
         return json.loads(raw.decode("utf-8"))
 
-    if js_path.exists():
-        return json.loads(js_path.read_text(encoding="utf-8"))
+    if as_js_path.exists():
+        return json.loads(as_js_path.read_text(encoding="utf-8"))
 
-    raise FileNotFoundError("Missing docs/data/ou_map.json(.gz). Run build_ou_map.py first.")
+    fosa_gz_path = repo_root / "docs" / "data" / "ou_map.json.gz"
+    fosa_js_path = repo_root / "docs" / "data" / "ou_map.json"
+
+    if fosa_gz_path.exists():
+        raw = gzip.open(fosa_gz_path, "rb").read()
+        return json.loads(raw.decode("utf-8"))
+
+    if fosa_js_path.exists():
+        return json.loads(fosa_js_path.read_text(encoding="utf-8"))
+
+    raise FileNotFoundError(
+        "Missing docs/data_as/ou_map_as.json(.gz) and docs/data/ou_map.json(.gz). "
+        "Run build_ou_map.py first."
+    )
 
 
 def iter_ndjson_with_raw(file_path: Path) -> List[Tuple[Dict[str, Any], str]]:
@@ -466,8 +479,7 @@ def build_zoho_record(
     meta = ou_map.get(ou) or {}
     rec: Dict[str, Any] = {}
 
-    # compatibilité avec un formulaire dupliqué depuis FOSA
-    rec["Org5_UID"] = ou
+    rec["Org4_UID"] = ou
     rec["Period"] = period
     rec["Key"] = f"{ou}|{period}"
 
@@ -482,7 +494,7 @@ def build_zoho_record(
     rec["Antenne"] = antenne_from(rec["Org2"], rec["Org3"], antenne_rules)
 
     for k, v in row.items():
-        if k in ("OrgUnit", "Period", "Key", "Org5_UID", "Org2", "Org3", "Org4", "Org5", "RowHash"):
+        if k in ("OrgUnit", "Period", "Key", "Org4_UID", "Org2", "Org3", "Org4", "Org5", "RowHash"):
             continue
         if k in excluded_raw_links:
             continue
