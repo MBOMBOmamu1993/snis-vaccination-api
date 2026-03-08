@@ -392,9 +392,33 @@ def _sum_by_link(row: Dict[str, Any], *links: str) -> int | float:
     return _number_out(total)
 
 
+def _normalize_org3_name(org3: str) -> str:
+    s = str(org3 or "").strip()
+    if not s:
+        return ""
+
+    # retire le préfixe type "eq ", "kc ", "sn "
+    if len(s) > 3 and s[2] == " ":
+        s = s[3:].strip()
+
+    # retire les suffixes DHIS2 fréquents
+    suffixes = [
+        " Zone de Santé",
+        " Zone de Sante",
+    ]
+    for suf in suffixes:
+        if s.endswith(suf):
+            s = s[: -len(suf)].strip()
+            break
+
+    return s
+
+
 def antenne_from(org2: str, org3: str, antenne_rules: Dict[str, Dict[str, str]]) -> str:
     province = str(org2 or "").strip()
-    zone = str(org3 or "").strip()
+    zone_raw = str(org3 or "").strip()
+    zone = _normalize_org3_name(zone_raw)
+
     if not province or not zone:
         return ""
 
@@ -402,7 +426,15 @@ def antenne_from(org2: str, org3: str, antenne_rules: Dict[str, Dict[str, str]])
     if not isinstance(province_rules, dict):
         return ""
 
-    return str(province_rules.get(zone) or "").strip()
+    val = province_rules.get(zone)
+    if val:
+        return str(val).strip()
+
+    val = province_rules.get(zone_raw)
+    if val:
+        return str(val).strip()
+
+    return ""
 
 
 GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
@@ -494,7 +526,7 @@ GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
         "ROTA2 0-11 mois fixe", "ROTA2 0-11 mois avancée", "ROTA2 0-11 mois mobile",
     ],
     "VAP1_0_11": [
-        "VAP1 0-11 mois fixe", "VAP1 0-11 mois avancée",
+        "VAP1 0-11 mois fixe", "VAP1 0-11 mois avancée", "VAP1 0-11 mois mobile",
     ],
     "VAP2_0_11": [
         "VAP2 0-11 mois fixe", "VAP2 0-11 mois avancée", "VAP2 0-11 mois mobile",
@@ -504,6 +536,14 @@ GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
     ],
     "VAP4_12_23": [
         "VAP4 12-23 mois fixe", "VAP4 12-23 mois avancée", "VAP4 12-23 mois mobile",
+    ],
+    "VAA_0_11": [
+        "VAA fixe1", "VAA fixe2",
+        "VAA avancé1", "VAA avancé2",
+        "VAA mobile1", "VAA mobile2",
+    ],
+    "Td_2_plus": [
+        "Td 2", "Td 3", "Td 4", "Td 5",
     ],
 }
 
