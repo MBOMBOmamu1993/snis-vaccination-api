@@ -287,25 +287,25 @@ def load_json_file(path: Path) -> Dict[str, Any]:
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
-    as_gz_path = repo_root / "docs" / "data_as" / "ou_map_as.json.gz"
-    as_js_path = repo_root / "docs" / "data_as" / "ou_map_as.json"
+    candidates = [
+        repo_root / "docs" / "data_as" / "ou_map_as.json.gz",
+        repo_root / "docs" / "data_as" / "ou_map_as.json",
+        repo_root / "docs" / "data_as" / "ou_map.json.gz",
+        repo_root / "docs" / "data_as" / "ou_map.json",
+        repo_root / "docs" / "data" / "ou_map.json.gz",
+        repo_root / "docs" / "data" / "ou_map.json",
+    ]
 
-    if as_gz_path.exists():
-        raw = gzip.open(as_gz_path, "rb").read()
-        return json.loads(raw.decode("utf-8"))
-
-    if as_js_path.exists():
-        return json.loads(as_js_path.read_text(encoding="utf-8"))
-
-    fosa_gz_path = repo_root / "docs" / "data" / "ou_map.json.gz"
-    fosa_js_path = repo_root / "docs" / "data" / "ou_map.json"
-
-    if fosa_gz_path.exists():
-        raw = gzip.open(fosa_gz_path, "rb").read()
-        return json.loads(raw.decode("utf-8"))
-
-    if fosa_js_path.exists():
-        return json.loads(fosa_js_path.read_text(encoding="utf-8"))
+    for p in candidates:
+        if not p.exists():
+            continue
+        try:
+            if p.suffix == ".gz":
+                raw = gzip.open(p, "rb").read()
+                return json.loads(raw.decode("utf-8"))
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
 
     raise FileNotFoundError(
         "Missing docs/data_as/ou_map_as.json(.gz) and docs/data/ou_map.json(.gz). "
