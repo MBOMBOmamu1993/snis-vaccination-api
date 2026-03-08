@@ -302,8 +302,12 @@ def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
         try:
             if p.suffix == ".gz":
                 raw = gzip.open(p, "rb").read()
-                return json.loads(raw.decode("utf-8"))
-            return json.loads(p.read_text(encoding="utf-8"))
+                data = json.loads(raw.decode("utf-8"))
+            else:
+                data = json.loads(p.read_text(encoding="utf-8"))
+
+            if isinstance(data, dict) and data:
+                return data
         except Exception:
             continue
 
@@ -599,6 +603,7 @@ def insert_month_from_parts_add_only(
     inserted = 0
     failed = 0
     batches = 0
+    missing_ou_map = 0
 
     for p in parts_meta:
         plain = p.get("plain")
@@ -612,6 +617,10 @@ def insert_month_from_parts_add_only(
 
         zoho_recs: List[Dict[str, Any]] = []
         for obj, raw in rows:
+            org_uid = str(obj.get("OrgUnit") or "").strip()
+            if org_uid and org_uid not in ou_map:
+                missing_ou_map += 1
+
             rec = build_zoho_record(
                 row=obj,
                 raw_line=raw,
@@ -642,6 +651,7 @@ def insert_month_from_parts_add_only(
         "inserted": inserted,
         "failed": failed,
         "skipped_no_key": skipped_no_key,
+        "missing_ou_map": missing_ou_map,
     }
 
 
@@ -732,7 +742,8 @@ def main() -> int:
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
     print(f"ADD-only months (previous N={args.refresh_last_n}) = {refresh_months}", flush=True)
     print(
-        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} import_historical={args.import_historical}",
+        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} "
+        f"import_historical={args.import_historical}",
         flush=True,
     )
 
@@ -757,7 +768,8 @@ def main() -> int:
         )
         print(
             f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
-            f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+            f"inserted={stats['inserted']} failed={stats['failed']} "
+            f"skipped_no_key={stats['skipped_no_key']} missing_ou_map={stats['missing_ou_map']}",
             flush=True,
         )
         done_months[m] = {
@@ -793,7 +805,8 @@ def main() -> int:
             )
             print(
                 f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
-                f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+                f"inserted={stats['inserted']} failed={stats['failed']} "
+                f"skipped_no_key={stats['skipped_no_key']} missing_ou_map={stats['missing_ou_map']}",
                 flush=True,
             )
             done_months[m] = {
