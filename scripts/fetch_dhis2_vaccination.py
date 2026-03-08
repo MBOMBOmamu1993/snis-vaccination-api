@@ -86,7 +86,11 @@ DX_LIST = """
           "WGu60o5mePq.vbx8t4WAbR8;WGu60o5mePq.KPDzIsWq7JK;WGu60o5mePq.oSYTyzezWif;" 
           "WGu60o5mePq.Dr4rWTqepnP;TLKusYaKY5A.dqydGQFHahb;TLKusYaKY5A.vbx8t4WAbR8;" 
           "TLKusYaKY5A.oSYTyzezWif;GzSBTZkxSZf.dqydGQFHahb;GzSBTZkxSZf.vbx8t4WAbR8;" 
-          "GzSBTZkxSZf.oSYTyzezWif"
+          "GzSBTZkxSZf.oSYTyzezWif;"
+          "Nyke8sWJbn9.dqydGQFHahb;"
+          "bzD4QxaNkJm.dqydGQFHahb;bzD4QxaNkJm.NOHlOxLczjc;bzD4QxaNkJm.vbx8t4WAbR8;"
+          "bzD4QxaNkJm.KPDzIsWq7JK;bzD4QxaNkJm.oSYTyzezWif;bzD4QxaNkJm.Dr4rWTqepnP;"
+          "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv"
 """.strip().replace("\n", "").replace(" ", "").replace('"', "")
 
 # (B) ✅ AJOUTE TES INDICATEURS ICI (dx uid -> libellé DHIS2)
@@ -202,9 +206,10 @@ RENAME_MAP: Dict[str, str] = {
 
     "SnhwwhcaDRS": "Enfants récupérés Penta1 BCU-FAE",
     "fycXkvxPUjH": "Enfants récupérés Penta3 BCU-FAE",
-
-    "Nyke8sWJbn9.oSYTyzezWif": "VAP1 0-11 mois fixe",
+ 
+    "Nyke8sWJbn9.dqydGQFHahb": "VAP1 0-11 mois fixe",
     "Nyke8sWJbn9.vbx8t4WAbR8": "VAP1 0-11 mois avancée",
+    "Nyke8sWJbn9.oSYTyzezWif": "VAP1 0-11 mois mobile",
 
     "slj1Yy0YgAc.dqydGQFHahb": "VAP2 0-11 mois fixe",
     "slj1Yy0YgAc.vbx8t4WAbR8": "VAP2 0-11 mois avancée",
@@ -324,6 +329,18 @@ RENAME_MAP: Dict[str, str] = {
     "GzSBTZkxSZf.dqydGQFHahb": "ROTA2 0-11 mois fixe",
     "GzSBTZkxSZf.vbx8t4WAbR8": "ROTA2 0-11 mois avancée",
     "GzSBTZkxSZf.oSYTyzezWif": "ROTA2 0-11 mois mobile",
+
+    "bzD4QxaNkJm.dqydGQFHahb": "VAA fixe1",
+    "bzD4QxaNkJm.NOHlOxLczjc": "VAA fixe2",
+    "bzD4QxaNkJm.vbx8t4WAbR8": "VAA avancé1",
+    "bzD4QxaNkJm.KPDzIsWq7JK": "VAA avancé2",
+    "bzD4QxaNkJm.oSYTyzezWif": "VAA mobile1",
+    "bzD4QxaNkJm.Dr4rWTqepnP": "VAA mobile2",
+
+    "RGW61lyyusM": "Td 2",
+    "hGBtbI7kjvb": "Td 3",
+    "bZDbSvdUcPC": "Td 4",
+    "lXsTq1MDSv": "Td 5",
 }
 
 # ============================================================
