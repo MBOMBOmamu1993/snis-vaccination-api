@@ -10,7 +10,7 @@ on:
         required: false
         default: "false"
       backfill_all:
-        description: "Backfill AS months from 202501 to 202503 (initialisation)."
+        description: "Backfill ALL AS months from 202501 to now."
         required: false
         default: "false"
 
@@ -51,7 +51,7 @@ jobs:
         run: |
           python scripts/build_ou_map.py
 
-      - name: Fetch DHIS2 AS and build NDJSON/index (backfill init 202501-202503)
+      - name: Fetch DHIS2 AS and build NDJSON/index (backfill all)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true' }}
         env:
           DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
@@ -61,7 +61,6 @@ jobs:
           python scripts/fetch_dhis2_as.py \
             --backfill \
             --start 202501 \
-            --end 202503 \
             --out docs/data_as
 
       - name: Fetch DHIS2 AS and build NDJSON/index (last 3 months)
