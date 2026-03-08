@@ -16,10 +16,10 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # ============================================================
-# 1) CONFIG: COLLE/EDITE ICI
+# 1) CONFIG: AJOUTE TES INDICATEURS ICI
 # ============================================================
 
-# (A) COLLE ICI TON DX_LIST COMPLET
+# (A) AJOUTE ICI TON DX_LIST COMPLET
 # Exemple:
 # DX_LIST = "dx1;dx2;dx3"
 DX_LIST = """
@@ -93,7 +93,7 @@ DX_LIST = """
           "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv"
 """.strip().replace("\n", "").replace(" ", "").replace('"', "")
 
-# (B) COLLE ICI TON RENAME_MAP COMPLET
+# (B) AJOUTE ICI TON RENAME_MAP COMPLET
 # IMPORTANT: dx -> "Label DHIS2" (exactement les labels utilisés dans rename_map.json)
 RENAME_MAP: Dict[str, str] = {
     "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
@@ -402,7 +402,7 @@ def period_iso_to_zoho(period_iso: str) -> str:
         m = int(s[5:7])
         d = int(s[8:10])
         if 1 <= m <= 12:
-            return f"{d:02d}-{MMM[m-1]}-{y:04d}"
+            return f"{d:02d}-{MMM[m - 1]}-{y:04d}"
     return s
 
 
@@ -434,7 +434,7 @@ def normalize_number(v: Any) -> Any:
 
 
 # ============================================================
-# 3) DHIS2 CLIENT (org level 4)
+# 3) DHIS2 CLIENT (AS = ORG LEVEL 4)
 # ============================================================
 
 @dataclass
@@ -479,13 +479,19 @@ class Dhis2Client:
             if r.status_code in (429, 500, 502, 503, 504):
                 last_err = f"{r.status_code} {r.text[:200]}"
                 sleep_s = min(90.0, 5.0 * attempt)
-                print(f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 sleep={sleep_s}s url={path}", flush=True)
+                print(
+                    f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 "
+                    f"sleep={sleep_s}s url={path}",
+                    flush=True,
+                )
                 time.sleep(sleep_s)
                 continue
 
             r.raise_for_status()
 
-        raise requests.exceptions.HTTPError(f"DHIS2 API failed after retries: {url} last={last_err}")
+        raise requests.exceptions.HTTPError(
+            f"DHIS2 API failed after retries: {url} last={last_err}"
+        )
 
     def analytics(self, dx_items: List[str], pe: str, ou: str = "LEVEL-4") -> dict:
         params = {
@@ -526,13 +532,26 @@ def _analytics_with_split(
         right = dx_items[mid:]
 
         print(
-            f"WARN: analytics failed depth={depth} dx={len(dx_items)} -> split {len(left)}+{len(right)} reason={msg[:140]}",
+            f"WARN: analytics failed depth={depth} dx={len(dx_items)} "
+            f"-> split {len(left)}+{len(right)} reason={msg[:140]}",
             flush=True,
         )
 
         out = {"rows": []}
-        a = _analytics_with_split(client, pe, left, max_split_depth=max_split_depth, depth=depth + 1)
-        b = _analytics_with_split(client, pe, right, max_split_depth=max_split_depth, depth=depth + 1)
+        a = _analytics_with_split(
+            client,
+            pe,
+            left,
+            max_split_depth=max_split_depth,
+            depth=depth + 1,
+        )
+        b = _analytics_with_split(
+            client,
+            pe,
+            right,
+            max_split_depth=max_split_depth,
+            depth=depth + 1,
+        )
         out["rows"].extend(a.get("rows") or [])
         out["rows"].extend(b.get("rows") or [])
         return out
@@ -586,7 +605,8 @@ def pivot_records(
 
     out: List[dict] = []
     for row in idx.values():
-        period_iso = f"{row['pe'][:4]}-{row['pe'][4:6]}-01"
+        pe = str(row["pe"])
+        period_iso = f"{pe[:4]}-{pe[4:6]}-01"
         period_zoho = period_iso_to_zoho(period_iso)
 
         out_row: dict = {
@@ -773,7 +793,7 @@ def main() -> int:
         if args.retry_failed:
             rq = [m for m in (index.get("retry_queue") or []) if isinstance(m, str)]
             extra = [m for m in rq if m not in periods]
-            periods = periods + extra[: max(0, int(args.retry_limit))]
+            periods = periods + extra[:max(0, int(args.retry_limit))]
 
     ok_months: List[str] = []
     failed_months: List[str] = []
