@@ -302,12 +302,8 @@ def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
         try:
             if p.suffix == ".gz":
                 raw = gzip.open(p, "rb").read()
-                data = json.loads(raw.decode("utf-8"))
-            else:
-                data = json.loads(p.read_text(encoding="utf-8"))
-
-            if isinstance(data, dict) and data:
-                return data
+                return json.loads(raw.decode("utf-8"))
+            return json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             continue
 
@@ -466,6 +462,36 @@ def build_excluded_raw_links(zoho_rename_map: Dict[str, str]) -> set[str]:
     return excluded
 
 
+def _looks_like_success(item: Dict[str, Any]) -> bool:
+    status = str(item.get("status") or item.get("code") or "").lower()
+    message = str(item.get("message") or item.get("description") or "").lower()
+    return (
+        "success" in status
+        or status in {"3000", "data_added_successfully"}
+        or "added successfully" in message
+        or "updated successfully" in message
+    )
+
+
+def _extract_batch_results(resp: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if not isinstance(resp, dict):
+        return []
+
+    for key in ("result", "data", "details"):
+        val = resp.get(key)
+        if isinstance(val, list):
+            return [x for x in val if isinstance(x, dict)]
+
+    response = resp.get("response")
+    if isinstance(response, dict):
+        for key in ("result", "data", "details"):
+            val = response.get(key)
+            if isinstance(val, list):
+                return [x for x in val if isinstance(x, dict)]
+
+    return []
+
+
 def build_zoho_record(
     row: Dict[str, Any],
     raw_line: str,
@@ -473,14 +499,17 @@ def build_zoho_record(
     zoho_rename_map: Dict[str, str],
     antenne_rules: Dict[str, Dict[str, str]],
     excluded_raw_links: set[str],
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], bool]:
     ou = str(row.get("OrgUnit") or "").strip()
     period = str(row.get("Period") or "").strip()
 
     if not ou or not period:
-        return {}
+        return ({}, False)
 
     meta = ou_map.get(ou) or {}
+    if not meta:
+        return ({}, True)
+
     rec: Dict[str, Any] = {}
 
     rec["Org4_UID"] = ou
@@ -508,7 +537,7 @@ def build_zoho_record(
         source_links = [zoho_rename_map.get(label, label) for label in source_labels]
         rec[out_field] = _sum_by_link(row, *source_links)
 
-    return rec
+    return (rec, False)
 
 
 def purge_by_criteria_until_empty(
@@ -565,10 +594,39 @@ def _robust_add_records(
         return (0, 0)
 
     try:
-        client.add_records(records)
+        resp = client.add_records(records)
+        results = _extract_batch_results(resp)
+
+        if results:
+            inserted = sum(1 for x in results if _looks_like_success(x))
+            failed = max(0, len(records) - inserted)
+
+            if failed > 0:
+                sample_errors = []
+                for x in results:
+                    if not _looks_like_success(x):
+                        sample_errors.append(
+                            {
+                                "code": x.get("code"),
+                                "message": x.get("message") or x.get("description"),
+                                "details": x.get("details"),
+                            }
+                        )
+                    if len(sample_errors) >= 3:
+                        break
+                print(
+                    f"Zoho partial batch result: inserted={inserted} failed={failed} sample_errors={sample_errors}",
+                    flush=True,
+                )
+
+            if throttle_s > 0:
+                time.sleep(throttle_s)
+            return (inserted, failed)
+
         if throttle_s > 0:
             time.sleep(throttle_s)
         return (len(records), 0)
+
     except Exception as e:
         if len(records) == 1 or depth >= max_depth:
             print(f"Add failed (record skipped). reason={e}", flush=True)
@@ -600,10 +658,10 @@ def insert_month_from_parts_add_only(
 
     total_local = 0
     skipped_no_key = 0
+    missing_ou_map = 0
     inserted = 0
     failed = 0
     batches = 0
-    missing_ou_map = 0
 
     for p in parts_meta:
         plain = p.get("plain")
@@ -617,11 +675,7 @@ def insert_month_from_parts_add_only(
 
         zoho_recs: List[Dict[str, Any]] = []
         for obj, raw in rows:
-            org_uid = str(obj.get("OrgUnit") or "").strip()
-            if org_uid and org_uid not in ou_map:
-                missing_ou_map += 1
-
-            rec = build_zoho_record(
+            rec, missing_map = build_zoho_record(
                 row=obj,
                 raw_line=raw,
                 ou_map=ou_map,
@@ -629,6 +683,9 @@ def insert_month_from_parts_add_only(
                 antenne_rules=antenne_rules,
                 excluded_raw_links=excluded_raw_links,
             )
+            if missing_map:
+                missing_ou_map += 1
+                continue
             if rec:
                 zoho_recs.append(rec)
             else:
@@ -742,8 +799,7 @@ def main() -> int:
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
     print(f"ADD-only months (previous N={args.refresh_last_n}) = {refresh_months}", flush=True)
     print(
-        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} "
-        f"import_historical={args.import_historical}",
+        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} import_historical={args.import_historical}",
         flush=True,
     )
 
