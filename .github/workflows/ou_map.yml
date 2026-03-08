@@ -1,9 +1,9 @@
-name: Build OU map (Org2-Org5)
+name: Build OU maps (FOSA + AS)
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "15 2 * * 1"  # chaque lundi 02:15 UTC (1 fois/semaine)
+    - cron: "15 2 * * 1"  # chaque lundi 02:15 UTC
 
 permissions:
   contents: write
@@ -15,6 +15,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -25,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests urllib3
 
-      - name: Build ou_map.json.gz
+      - name: Build OU maps (FOSA + AS)
         env:
           DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
           DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
@@ -37,6 +39,22 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data/ou_map.json docs/data/ou_map.json.gz docs/data/ou_map.meta.json
-          git commit -m "Update OU map" || echo "No changes"
-          git push
+
+          git add \
+            docs/data/ou_map.json \
+            docs/data/ou_map.json.gz \
+            docs/data/ou_map.meta.json \
+            docs/data_as/ou_map_as.json \
+            docs/data_as/ou_map_as.json.gz \
+            docs/data_as/ou_map_as.meta.json
+
+          git diff --cached --quiet && echo "No changes" && exit 0
+
+          git commit -m "Update OU maps (FOSA + AS)"
+
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push failed (attempt $i), retrying..."
+            sleep 5
+          done
