@@ -1,0 +1,843 @@
+from __future__ import annotations
+
+import argparse
+import gzip
+import json
+import os
+import sys
+import time
+from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# ============================================================
+# 1) CONFIG: COLLE/EDITE ICI
+# ============================================================
+
+# (A) COLLE ICI TON DX_LIST COMPLET
+# Exemple:
+# DX_LIST = "dx1;dx2;dx3"
+DX_LIST = """
+"W25tOXS0rxS.dqydGQFHahb;W25tOXS0rxS.NOHlOxLczjc;W25tOXS0rxS.vbx8t4WAbR8;" 
+          "W25tOXS0rxS.KPDzIsWq7JK;W25tOXS0rxS.oSYTyzezWif;W25tOXS0rxS.Dr4rWTqepnP;" 
+          "uNdFg1eymsa.dqydGQFHahb;uNdFg1eymsa.NOHlOxLczjc;uNdFg1eymsa.vbx8t4WAbR8;" 
+          "uNdFg1eymsa.KPDzIsWq7JK;uNdFg1eymsa.oSYTyzezWif;uNdFg1eymsa.Dr4rWTqepnP;" 
+          "YYKXOc7xBUi.dqydGQFHahb;YYKXOc7xBUi.NOHlOxLczjc;YYKXOc7xBUi.vbx8t4WAbR8;" 
+          "YYKXOc7xBUi.KPDzIsWq7JK;YYKXOc7xBUi.oSYTyzezWif;YYKXOc7xBUi.Dr4rWTqepnP;" 
+          "WWxqaHSeiwd.dqydGQFHahb;WWxqaHSeiwd.NOHlOxLczjc;WWxqaHSeiwd.vbx8t4WAbR8;" 
+          "WWxqaHSeiwd.KPDzIsWq7JK;WWxqaHSeiwd.oSYTyzezWif;WWxqaHSeiwd.Dr4rWTqepnP;" 
+          "SPGaDDw2JzG.dqydGQFHahb;SPGaDDw2JzG.NOHlOxLczjc;SPGaDDw2JzG.vbx8t4WAbR8;" 
+          "SPGaDDw2JzG.KPDzIsWq7JK;SPGaDDw2JzG.oSYTyzezWif;SPGaDDw2JzG.Dr4rWTqepnP;" 
+          "I6tLH3nk9tw.dqydGQFHahb;I6tLH3nk9tw.NOHlOxLczjc;I6tLH3nk9tw.vbx8t4WAbR8;" 
+          "I6tLH3nk9tw.KPDzIsWq7JK;I6tLH3nk9tw.oSYTyzezWif;I6tLH3nk9tw.Dr4rWTqepnP;" 
+          "wwde2QtlIRN.dqydGQFHahb;wwde2QtlIRN.NOHlOxLczjc;wwde2QtlIRN.vbx8t4WAbR8;" 
+          "wwde2QtlIRN.KPDzIsWq7JK;wwde2QtlIRN.oSYTyzezWif;wwde2QtlIRN.Dr4rWTqepnP;" 
+          "c4VvzI5zTep.dqydGQFHahb;c4VvzI5zTep.vbx8t4WAbR8;c4VvzI5zTep.oSYTyzezWif;" 
+          "J8R3WFpMAZI.dqydGQFHahb;J8R3WFpMAZI.NOHlOxLczjc;J8R3WFpMAZI.vbx8t4WAbR8;" 
+          "J8R3WFpMAZI.KPDzIsWq7JK;J8R3WFpMAZI.oSYTyzezWif;J8R3WFpMAZI.Dr4rWTqepnP;" 
+          "pak21wvkWJC.dqydGQFHahb;cTLKwfG8pSv.NOHlOxLczjc;pak21wvkWJC.vbx8t4WAbR8;" 
+          "cTLKwfG8pSv.KPDzIsWq7JK;pak21wvkWJC.oSYTyzezWif;cTLKwfG8pSv.Dr4rWTqepnP;" 
+          "i5zmivDIHN8.g6mIyKoGIh2;i5zmivDIHN8.QRyK6yxKBU3;i5zmivDIHN8.Rby9Jdri29F;" 
+          "i5zmivDIHN8.FCXzheCQXtr;i5zmivDIHN8.VrEj0UVVGr4;M2JQW0H44dI;" 
+          "s5EUr8GznWY;lHB57kjRtUz;h7bxqdKWYCa;" 
+          "gDnbubwzuts;WLSKVyA8LoY;IRuHNExvC4m;" 
+          "pVOrmIskonM;nGZz4qgNal7;YvO03GnK1oQ;" 
+          "E4BX1ea2iDJ.REPORTING_RATE;E4BX1ea2iDJ.REPORTING_RATE_ON_TIME;s5EUr8GznWY.HVViCmJi85w;" 
+          "lHB57kjRtUz.HVViCmJi85w;s5EUr8GznWY.TG2PxzbbIjT;lHB57kjRtUz.TG2PxzbbIjT;" 
+          "s5EUr8GznWY.aE55ruo9YeU;lHB57kjRtUz.aE55ruo9YeU;ppMFLxX6NvU.FGpuKKTof4X;" 
+          "ppMFLxX6NvU.RD9Iut5kjja;ppMFLxX6NvU.LnwvJBIlzxk;ppMFLxX6NvU.RMMpx7TBreP;" 
+          "ppMFLxX6NvU.ZYkCdGglDmr;ppMFLxX6NvU.aZmhNMRCrmZ;DZ2xt2mgVzQ.FGpuKKTof4X;" 
+          "DZ2xt2mgVzQ.RD9Iut5kjja;DZ2xt2mgVzQ.LnwvJBIlzxk;DZ2xt2mgVzQ.RMMpx7TBreP;" 
+          "DZ2xt2mgVzQ.ZYkCdGglDmr;DZ2xt2mgVzQ.aZmhNMRCrmZ;SnhwwhcaDRS;fycXkvxPUjH;" 
+          "Nyke8sWJbn9.oSYTyzezWif;Nyke8sWJbn9.vbx8t4WAbR8;slj1Yy0YgAc.dqydGQFHahb;" 
+          "slj1Yy0YgAc.vbx8t4WAbR8;slj1Yy0YgAc.oSYTyzezWif;OnKbxNJzsCw.dqydGQFHahb;" 
+          "OnKbxNJzsCw.vbx8t4WAbR8;OnKbxNJzsCw.oSYTyzezWif;KVjtJyNKcYQ.g6mIyKoGIh2;" 
+          "KVjtJyNKcYQ.Rby9Jdri29F;KVjtJyNKcYQ.FCXzheCQXtr;WzOgzB6fLCW;" 
+          "E4BX1ea2iDJ;i5zmivDIHN8.dqydGQFHahb;i5zmivDIHN8.vbx8t4WAbR8;" 
+          "i5zmivDIHN8.oSYTyzezWif;SnhwwhcaDRS.M7I3dsr9L5Z;fycXkvxPUjH.M7I3dsr9L5Z;" 
+          "CKhvpizB7wo.M7I3dsr9L5Z;OkgUUlDsGAN.M7I3dsr9L5Z;SnhwwhcaDRS.eX294IHIRVM;" 
+          "fycXkvxPUjH.eX294IHIRVM;CKhvpizB7wo.eX294IHIRVM;OkgUUlDsGAN.eX294IHIRVM;" 
+          "SnhwwhcaDRS.QeTSJLfbwEw;fycXkvxPUjH.QeTSJLfbwEw;CKhvpizB7wo.QeTSJLfbwEw;" 
+          "OkgUUlDsGAN.QeTSJLfbwEw;SnhwwhcaDRS.rJgTQZ63hnO;fycXkvxPUjH.rJgTQZ63hnO;" 
+          "CKhvpizB7wo.rJgTQZ63hnO;OkgUUlDsGAN.rJgTQZ63hnO;SnhwwhcaDRS.YWikHnhDAXE;" 
+          "fycXkvxPUjH.YWikHnhDAXE;CKhvpizB7wo.YWikHnhDAXE;OkgUUlDsGAN.YWikHnhDAXE;" 
+          "SnhwwhcaDRS.lvDrwyxXMq2;fycXkvxPUjH.lvDrwyxXMq2;CKhvpizB7wo.lvDrwyxXMq2;" 
+          "OkgUUlDsGAN.lvDrwyxXMq2;SnhwwhcaDRS.QOXbI3fshPV;fycXkvxPUjH.QOXbI3fshPV;" 
+          "CKhvpizB7wo.QOXbI3fshPV;OkgUUlDsGAN.QOXbI3fshPV;SnhwwhcaDRS.IdjExsz3izf;" 
+          "fycXkvxPUjH.IdjExsz3izf;CKhvpizB7wo.IdjExsz3izf;OkgUUlDsGAN.IdjExsz3izf;" 
+          "SnhwwhcaDRS.OdTBbi5jfhb;fycXkvxPUjH.OdTBbi5jfhb;CKhvpizB7wo.OdTBbi5jfhb;" 
+          "OkgUUlDsGAN.OdTBbi5jfhb;SnhwwhcaDRS.WbtfH2Deu6j;fycXkvxPUjH.WbtfH2Deu6j;" 
+          "CKhvpizB7wo.WbtfH2Deu6j;OkgUUlDsGAN.WbtfH2Deu6j;SnhwwhcaDRS.hiiCMvb0tTp;" 
+          "fycXkvxPUjH.hiiCMvb0tTp;CKhvpizB7wo.hiiCMvb0tTp;OkgUUlDsGAN.hiiCMvb0tTp;" 
+          "CKhvpizB7wo;f1MiAAIu366.dqydGQFHahb;f1MiAAIu366.NOHlOxLczjc;" 
+          "f1MiAAIu366.vbx8t4WAbR8;f1MiAAIu366.KPDzIsWq7JK;f1MiAAIu366.oSYTyzezWif;" 
+          "f1MiAAIu366.Dr4rWTqepnP;j3P9bSnwF12.dqydGQFHahb;j3P9bSnwF12.NOHlOxLczjc;" 
+          "j3P9bSnwF12.vbx8t4WAbR8;j3P9bSnwF12.KPDzIsWq7JK;j3P9bSnwF12.oSYTyzezWif;" 
+          "j3P9bSnwF12.Dr4rWTqepnP;ozVdkud4F03.dqydGQFHahb;ozVdkud4F03.NOHlOxLczjc;" 
+          "ozVdkud4F03.vbx8t4WAbR8;ozVdkud4F03.KPDzIsWq7JK;ozVdkud4F03.oSYTyzezWif;" 
+          "ozVdkud4F03.Dr4rWTqepnP;CgR8kWNdK3W.dqydGQFHahb;CgR8kWNdK3W.NOHlOxLczjc;" 
+          "CgR8kWNdK3W.vbx8t4WAbR8;CgR8kWNdK3W.KPDzIsWq7JK;CgR8kWNdK3W.oSYTyzezWif;" 
+          "CgR8kWNdK3W.Dr4rWTqepnP;WGu60o5mePq.dqydGQFHahb;WGu60o5mePq.NOHlOxLczjc;" 
+          "WGu60o5mePq.vbx8t4WAbR8;WGu60o5mePq.KPDzIsWq7JK;WGu60o5mePq.oSYTyzezWif;" 
+          "WGu60o5mePq.Dr4rWTqepnP;TLKusYaKY5A.dqydGQFHahb;TLKusYaKY5A.vbx8t4WAbR8;" 
+          "TLKusYaKY5A.oSYTyzezWif;GzSBTZkxSZf.dqydGQFHahb;GzSBTZkxSZf.vbx8t4WAbR8;" 
+          "GzSBTZkxSZf.oSYTyzezWif;"
+          "Nyke8sWJbn9.dqydGQFHahb;"
+          "bzD4QxaNkJm.dqydGQFHahb;bzD4QxaNkJm.NOHlOxLczjc;bzD4QxaNkJm.vbx8t4WAbR8;"
+          "bzD4QxaNkJm.KPDzIsWq7JK;bzD4QxaNkJm.oSYTyzezWif;bzD4QxaNkJm.Dr4rWTqepnP;"
+          "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv"
+""".strip().replace("\n", "").replace(" ", "").replace('"', "")
+
+# (B) COLLE ICI TON RENAME_MAP COMPLET
+# IMPORTANT: dx -> "Label DHIS2" (exactement les labels utilisés dans rename_map.json)
+RENAME_MAP: Dict[str, str] = {
+    "W25tOXS0rxS.dqydGQFHahb": "BCG fixe1",
+    "W25tOXS0rxS.NOHlOxLczjc": "BCG fixe2",
+    "W25tOXS0rxS.vbx8t4WAbR8": "BCG avancé1",
+    "W25tOXS0rxS.KPDzIsWq7JK": "BCG avancé2",
+    "W25tOXS0rxS.oSYTyzezWif": "BCG mobile1",
+    "W25tOXS0rxS.Dr4rWTqepnP": "BCG mobile2",
+    
+    "uNdFg1eymsa.dqydGQFHahb": "Penta1 fixe1",
+    "uNdFg1eymsa.NOHlOxLczjc": "Penta1 fixe2",
+    "uNdFg1eymsa.vbx8t4WAbR8": "Penta1 avancé1",
+    "uNdFg1eymsa.KPDzIsWq7JK": "Penta1 avancé2",
+    "uNdFg1eymsa.oSYTyzezWif": "Penta1 mobile1",
+    "uNdFg1eymsa.Dr4rWTqepnP": "Penta1 mobile2",
+
+    "YYKXOc7xBUi.dqydGQFHahb": "Penta2 fixe1",
+    "YYKXOc7xBUi.NOHlOxLczjc": "Penta2 fixe2",
+    "YYKXOc7xBUi.vbx8t4WAbR8": "Penta2 avancé1",
+    "YYKXOc7xBUi.KPDzIsWq7JK": "Penta2 avancé2",
+    "YYKXOc7xBUi.oSYTyzezWif": "Penta2 mobile1",
+    "YYKXOc7xBUi.Dr4rWTqepnP": "Penta2 mobile2",
+
+    "WWxqaHSeiwd.dqydGQFHahb": "Penta3 fixe1",
+    "WWxqaHSeiwd.NOHlOxLczjc": "Penta3 fixe2",
+    "WWxqaHSeiwd.vbx8t4WAbR8": "Penta3 avancé1",
+    "WWxqaHSeiwd.KPDzIsWq7JK": "Penta3 avancé2",
+    "WWxqaHSeiwd.oSYTyzezWif": "Penta3 mobile1",
+    "WWxqaHSeiwd.Dr4rWTqepnP": "Penta3 mobile2",
+
+    "SPGaDDw2JzG.dqydGQFHahb": "VPO3 fixe1",
+    "SPGaDDw2JzG.NOHlOxLczjc": "VPO3 fixe2",
+    "SPGaDDw2JzG.vbx8t4WAbR8": "VPO3 avancé1",
+    "SPGaDDw2JzG.KPDzIsWq7JK": "VPO3 avancé2",
+    "SPGaDDw2JzG.oSYTyzezWif": "VPO3 mobile1",
+    "SPGaDDw2JzG.Dr4rWTqepnP": "VPO3 mobile2",
+
+    "I6tLH3nk9tw.dqydGQFHahb": "VPI1 fixe1",
+    "I6tLH3nk9tw.NOHlOxLczjc": "VPI1 fixe2",
+    "I6tLH3nk9tw.vbx8t4WAbR8": "VPI1 avancé1",
+    "I6tLH3nk9tw.KPDzIsWq7JK": "VPI1 avancé2",
+    "I6tLH3nk9tw.oSYTyzezWif": "VPI1 mobile1",
+    "I6tLH3nk9tw.Dr4rWTqepnP": "VPI1 mobile2",
+
+    "wwde2QtlIRN.dqydGQFHahb": "VPI2 fixe1",
+    "wwde2QtlIRN.NOHlOxLczjc": "VPI2 fixe2",
+    "wwde2QtlIRN.vbx8t4WAbR8": "VPI2 avancé1",
+    "wwde2QtlIRN.KPDzIsWq7JK": "VPI2 avancé2",
+    "wwde2QtlIRN.oSYTyzezWif": "VPI2 mobile1",
+    "wwde2QtlIRN.Dr4rWTqepnP": "VPI2 mobile2",
+
+    "c4VvzI5zTep.dqydGQFHahb": "ROTA3 fixe",
+    "c4VvzI5zTep.vbx8t4WAbR8": "ROTA3 avancé",
+    "c4VvzI5zTep.oSYTyzezWif": "ROTA3 mobile",
+
+    "J8R3WFpMAZI.dqydGQFHahb": "PCV13 fixe1",
+    "J8R3WFpMAZI.NOHlOxLczjc": "PCV13 fixe2",
+    "J8R3WFpMAZI.vbx8t4WAbR8": "PCV13 avancé1",
+    "J8R3WFpMAZI.KPDzIsWq7JK": "PCV13 avancé2",
+    "J8R3WFpMAZI.oSYTyzezWif": "PCV13 mobile1",
+    "J8R3WFpMAZI.Dr4rWTqepnP": "PCV13 mobile2",
+
+    "pak21wvkWJC.dqydGQFHahb": "VAR1 fixe1",
+    "cTLKwfG8pSv.NOHlOxLczjc": "VAR1 fixe2",
+    "pak21wvkWJC.vbx8t4WAbR8": "VAR1 avancé1",
+    "cTLKwfG8pSv.KPDzIsWq7JK": "VAR1 avancé2",
+    "pak21wvkWJC.oSYTyzezWif": "VAR1 mobile1",
+    "cTLKwfG8pSv.Dr4rWTqepnP": "VAR1 mobile2",
+
+    "i5zmivDIHN8.g6mIyKoGIh2": "VAR2 fixe1",
+    "i5zmivDIHN8.QRyK6yxKBU3": "VAR2 fixe2",
+    "i5zmivDIHN8.Rby9Jdri29F": "VAR2 avancé",
+    "i5zmivDIHN8.FCXzheCQXtr": "VAR2 mobile1",
+    "i5zmivDIHN8.VrEj0UVVGr4": "VAR2 mobile2",
+
+    "M2JQW0H44dI": "ECV",
+    "s5EUr8GznWY": "Séances prévues",
+    "lHB57kjRtUz": "Séances réalisées",
+    "h7bxqdKWYCa": "Pop. totale",
+    "gDnbubwzuts": "Naissances vivantes",
+    "WLSKVyA8LoY": "Pop. par AS",
+    "IRuHNExvC4m": "Pop. 0-11m (nv)",
+    "pVOrmIskonM": "Pop. 0-11m (survivants)",
+    "nGZz4qgNal7": "Pop. 0-59m",
+    "YvO03GnK1oQ": "Pop. 12-59m",
+
+    "E4BX1ea2iDJ.REPORTING_RATE": "Complétude",
+    "E4BX1ea2iDJ.REPORTING_RATE_ON_TIME": "Promptitude",
+
+    "s5EUr8GznWY.HVViCmJi85w": "Séances fixes prévues",
+    "lHB57kjRtUz.HVViCmJi85w": "Séances fixes réalisées",
+    "s5EUr8GznWY.TG2PxzbbIjT": "Séances avancées prévues",
+    "lHB57kjRtUz.TG2PxzbbIjT": "Séances avancées réalisées",
+    "s5EUr8GznWY.aE55ruo9YeU": "Séances mobiles prévues",
+    "lHB57kjRtUz.aE55ruo9YeU": "Séances mobiles réalisées",
+
+    "ppMFLxX6NvU.FGpuKKTof4X": "Perdues de vue identifiés Penta1 0-11mois",
+    "ppMFLxX6NvU.RD9Iut5kjja": "Perdues de vue identifiés Penta1 12-23mois",
+    "ppMFLxX6NvU.LnwvJBIlzxk": "Perdues de vue identifiés 24-59mois",
+    "ppMFLxX6NvU.RMMpx7TBreP": "Perdues de vue récupérés Penta1 0-11mois",
+    "ppMFLxX6NvU.ZYkCdGglDmr": "Perdues de vue récupérés Penta1 12-23mois",
+    "ppMFLxX6NvU.aZmhNMRCrmZ": "Perdues de vue récupérés Penta1 24-59mois",
+
+    "DZ2xt2mgVzQ.FGpuKKTof4X": "Perdues de vue identifiés Penta3 0-11mois",
+    "DZ2xt2mgVzQ.RD9Iut5kjja": "Perdues de vue identifiés Penta3 12-23mois",
+    "DZ2xt2mgVzQ.LnwvJBIlzxk": "Perdues de vue identifiés Penta3 24-59mois",
+    "DZ2xt2mgVzQ.RMMpx7TBreP": "Perdues de vue récupérés Penta3 0-11mois",
+    "DZ2xt2mgVzQ.ZYkCdGglDmr": "Perdues de vue récupérés Penta3 12-23mois",
+    "DZ2xt2mgVzQ.aZmhNMRCrmZ": "Perdues de vue récupérés Penta3 24-59mois",
+
+    "SnhwwhcaDRS": "Enfants récupérés Penta1 BCU-FAE",
+    "fycXkvxPUjH": "Enfants récupérés Penta3 BCU-FAE",
+ 
+    "Nyke8sWJbn9.dqydGQFHahb": "VAP1 0-11 mois fixe",
+    "Nyke8sWJbn9.vbx8t4WAbR8": "VAP1 0-11 mois avancée",
+    "Nyke8sWJbn9.oSYTyzezWif": "VAP1 0-11 mois mobile",
+
+    "slj1Yy0YgAc.dqydGQFHahb": "VAP2 0-11 mois fixe",
+    "slj1Yy0YgAc.vbx8t4WAbR8": "VAP2 0-11 mois avancée",
+    "slj1Yy0YgAc.oSYTyzezWif": "VAP2 0-11 mois mobile",
+
+    "OnKbxNJzsCw.dqydGQFHahb": "VAP3 0-11 mois fixe",
+    "OnKbxNJzsCw.vbx8t4WAbR8": "VAP3 0-11 mois avancée",
+    "OnKbxNJzsCw.oSYTyzezWif": "VAP3 0-11 mois mobile",
+
+    "KVjtJyNKcYQ.g6mIyKoGIh2": "VAP4 12-23 mois fixe",
+    "KVjtJyNKcYQ.Rby9Jdri29F": "VAP4 12-23 mois avancée",
+    "KVjtJyNKcYQ.FCXzheCQXtr": "VAP4 12-23 mois mobile",
+
+    "WzOgzB6fLCW": "HPV",
+    "E4BX1ea2iDJ": "Rapports attendus",
+
+    "i5zmivDIHN8.dqydGQFHahb": "VAR2 0-11 mois fixe",
+    "i5zmivDIHN8.vbx8t4WAbR8": "VAR2 0-11 mois avancée",
+    "i5zmivDIHN8.oSYTyzezWif": "VAR2 0-11 mois mobile",
+
+    "SnhwwhcaDRS.M7I3dsr9L5Z": "AVS DTC1",
+    "fycXkvxPUjH.M7I3dsr9L5Z": "AVS DTC3",
+    "CKhvpizB7wo.M7I3dsr9L5Z": "AVS VAR1",
+    "OkgUUlDsGAN.M7I3dsr9L5Z": "AVS VAR2",
+
+    "SnhwwhcaDRS.eX294IHIRVM": "OVM DTC1",
+    "fycXkvxPUjH.eX294IHIRVM": "OVM DTC3",
+    "CKhvpizB7wo.eX294IHIRVM": "OVM VAR1",
+    "OkgUUlDsGAN.eX294IHIRVM": "OVM VAR2",
+
+    "SnhwwhcaDRS.QeTSJLfbwEw": "Fluviale DTC1",
+    "fycXkvxPUjH.QeTSJLfbwEw": "Fluviale DTC3",
+    "CKhvpizB7wo.QeTSJLfbwEw": "Fluviale VAR1",
+    "OkgUUlDsGAN.QeTSJLfbwEw": "Fluviale VAR2",
+
+    "SnhwwhcaDRS.rJgTQZ63hnO": "IPVS DTC1",
+    "fycXkvxPUjH.rJgTQZ63hnO": "IPVS DTC3",
+    "CKhvpizB7wo.rJgTQZ63hnO": "IPVS VAR1",
+    "OkgUUlDsGAN.rJgTQZ63hnO": "IPVS VAR2",
+
+    "SnhwwhcaDRS.YWikHnhDAXE": "Autochtones DTC1",
+    "fycXkvxPUjH.YWikHnhDAXE": "Autochtones DTC3",
+    "CKhvpizB7wo.YWikHnhDAXE": "Autochtones VAR1",
+    "OkgUUlDsGAN.YWikHnhDAXE": "Autochtones VAR2",
+
+    "SnhwwhcaDRS.lvDrwyxXMq2": "Nomades DTC1",
+    "fycXkvxPUjH.lvDrwyxXMq2": "Nomades DTC3",
+    "CKhvpizB7wo.lvDrwyxXMq2": "Nomades VAR1",
+    "OkgUUlDsGAN.lvDrwyxXMq2": "Nomades VAR2",
+
+    "SnhwwhcaDRS.QOXbI3fshPV": "Réfugiés/Déplacés DTC1",
+    "fycXkvxPUjH.QOXbI3fshPV": "Réfugiés/Déplacés DTC3",
+    "CKhvpizB7wo.QOXbI3fshPV": "Réfugiés/Déplacés VAR1",
+    "OkgUUlDsGAN.QOXbI3fshPV": "Réfugiés/Déplacés VAR2",
+
+    "SnhwwhcaDRS.IdjExsz3izf": "Point de concentration DTC1",
+    "fycXkvxPUjH.IdjExsz3izf": "Point de concentration DTC3",
+    "CKhvpizB7wo.IdjExsz3izf": "Point de concentration VAR1",
+    "OkgUUlDsGAN.IdjExsz3izf": "Point de concentration VAR2",
+
+    "SnhwwhcaDRS.OdTBbi5jfhb": "Horaire adapté DTC1",
+    "fycXkvxPUjH.OdTBbi5jfhb": "Horaire adapté DTC3",
+    "CKhvpizB7wo.OdTBbi5jfhb": "Horaire adapté VAR1",
+    "OkgUUlDsGAN.OdTBbi5jfhb": "Horaire adapté VAR2",
+
+    "SnhwwhcaDRS.WbtfH2Deu6j": "Campements DTC1",
+    "fycXkvxPUjH.WbtfH2Deu6j": "Campements DTC3",
+    "CKhvpizB7wo.WbtfH2Deu6j": "Campements VAR1",
+    "OkgUUlDsGAN.WbtfH2Deu6j": "Campements VAR2",
+
+    "SnhwwhcaDRS.hiiCMvb0tTp": "Poches d'insécurité DTC1",
+    "fycXkvxPUjH.hiiCMvb0tTp": "Poches d'insécurité DTC3",
+    "CKhvpizB7wo.hiiCMvb0tTp": "Poches d'insécurité VAR1",
+    "OkgUUlDsGAN.hiiCMvb0tTp": "Poches d'insécurité VAR2",
+
+    "CKhvpizB7wo": "Enfants récupérés VAR1 BCU-FAE",
+
+    "f1MiAAIu366.dqydGQFHahb": "VPO0 0-11 mois fixe1",
+    "f1MiAAIu366.NOHlOxLczjc": "VPO0 0-11 mois fixe2",
+    "f1MiAAIu366.vbx8t4WAbR8": "VPO0 0-11 mois avancée1",
+    "f1MiAAIu366.KPDzIsWq7JK": "VPO0 0-11 mois avancée2",
+    "f1MiAAIu366.oSYTyzezWif": "VPO0 0-11 mois mobile1",
+    "f1MiAAIu366.Dr4rWTqepnP": "VPO0 0-11 mois mobile2",
+
+    "j3P9bSnwF12.dqydGQFHahb": "VPO1 0-11 mois fixe1",
+    "j3P9bSnwF12.NOHlOxLczjc": "VPO1 0-11 mois fixe2",
+    "j3P9bSnwF12.vbx8t4WAbR8": "VPO1 0-11 mois avancée1",
+    "j3P9bSnwF12.KPDzIsWq7JK": "VPO1 0-11 mois avancée2",
+    "j3P9bSnwF12.oSYTyzezWif": "VPO1 0-11 mois mobile1",
+    "j3P9bSnwF12.Dr4rWTqepnP": "VPO1 0-11 mois mobile2",
+
+    "ozVdkud4F03.dqydGQFHahb": "VPO2 0-11 mois fixe1",
+    "ozVdkud4F03.NOHlOxLczjc": "VPO2 0-11 mois fixe2",
+    "ozVdkud4F03.vbx8t4WAbR8": "VPO2 0-11 mois avancée1",
+    "ozVdkud4F03.KPDzIsWq7JK": "VPO2 0-11 mois avancée2",
+    "ozVdkud4F03.oSYTyzezWif": "VPO2 0-11 mois mobile1",
+    "ozVdkud4F03.Dr4rWTqepnP": "VPO2 0-11 mois mobile2",
+
+    "CgR8kWNdK3W.dqydGQFHahb": "PCV13(1) 0-11 mois fixe1",
+    "CgR8kWNdK3W.NOHlOxLczjc": "PCV13(1) 0-11 mois fixe2",
+    "CgR8kWNdK3W.vbx8t4WAbR8": "PCV13(1) 0-11 mois avancée1",
+    "CgR8kWNdK3W.KPDzIsWq7JK": "PCV13(1) 0-11 mois avancée2",
+    "CgR8kWNdK3W.oSYTyzezWif": "PCV13(1) 0-11 mois mobile1",
+    "CgR8kWNdK3W.Dr4rWTqepnP": "PCV13(1) 0-11 mois mobile2",
+
+    "WGu60o5mePq.dqydGQFHahb": "PCV13(2) 0-11 mois fixe1",
+    "WGu60o5mePq.NOHlOxLczjc": "PCV13(2) 0-11 mois fixe2",
+    "WGu60o5mePq.vbx8t4WAbR8": "PCV13(2) 0-11 mois avancée1",
+    "WGu60o5mePq.KPDzIsWq7JK": "PCV13(2) 0-11 mois avancée2",
+    "WGu60o5mePq.oSYTyzezWif": "PCV13(2) 0-11 mois mobile1",
+    "WGu60o5mePq.Dr4rWTqepnP": "PCV13(2) 0-11 mois mobile2",
+
+    "TLKusYaKY5A.dqydGQFHahb": "ROTA1 0-11 mois fixe",
+    "TLKusYaKY5A.vbx8t4WAbR8": "ROTA1 0-11 mois avancée",
+    "TLKusYaKY5A.oSYTyzezWif": "ROTA1 0-11 mois mobile",
+
+    "GzSBTZkxSZf.dqydGQFHahb": "ROTA2 0-11 mois fixe",
+    "GzSBTZkxSZf.vbx8t4WAbR8": "ROTA2 0-11 mois avancée",
+    "GzSBTZkxSZf.oSYTyzezWif": "ROTA2 0-11 mois mobile",
+
+    "bzD4QxaNkJm.dqydGQFHahb": "VAA fixe1",
+    "bzD4QxaNkJm.NOHlOxLczjc": "VAA fixe2",
+    "bzD4QxaNkJm.vbx8t4WAbR8": "VAA avancé1",
+    "bzD4QxaNkJm.KPDzIsWq7JK": "VAA avancé2",
+    "bzD4QxaNkJm.oSYTyzezWif": "VAA mobile1",
+    "bzD4QxaNkJm.Dr4rWTqepnP": "VAA mobile2",
+
+    "RGW61lyyusM": "Td 2",
+    "hGBtbI7kjvb": "Td 3",
+    "bZDbSvdUcPC": "Td 4",
+    "lXsTq1MDSv": "Td 5",
+}
+
+# ============================================================
+# 2) HELPERS
+# ============================================================
+
+MMM = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def current_yyyymm(today: Optional[date] = None) -> str:
+    d = today or date.today()
+    return f"{d.year:04d}{d.month:02d}"
+
+
+def month_range(start_yyyymm: str, end_yyyymm: str) -> List[str]:
+    sy, sm = int(start_yyyymm[:4]), int(start_yyyymm[4:6])
+    ey, em = int(end_yyyymm[:4]), int(end_yyyymm[4:6])
+    months: List[str] = []
+    y, m = sy, sm
+    while (y, m) <= (ey, em):
+        months.append(f"{y:04d}{m:02d}")
+        m += 1
+        if m == 13:
+            y += 1
+            m = 1
+    return months
+
+
+def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
+    chunks: List[List[str]] = []
+    cur: List[str] = []
+    cur_len = 0
+    for it in items:
+        add = len(it) + (1 if cur else 0)
+        if cur and cur_len + add > max_chars:
+            chunks.append(cur)
+            cur = [it]
+            cur_len = len(it)
+        else:
+            cur.append(it)
+            cur_len += add
+    if cur:
+        chunks.append(cur)
+    return chunks
+
+
+def load_zoho_rename_map(path: Path) -> Dict[str, str]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def period_iso_to_zoho(period_iso: str) -> str:
+    s = (period_iso or "").strip()
+    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+        y = int(s[0:4])
+        m = int(s[5:7])
+        d = int(s[8:10])
+        if 1 <= m <= 12:
+            return f"{d:02d}-{MMM[m-1]}-{y:04d}"
+    return s
+
+
+def normalize_number(v: Any) -> Any:
+    if v is None:
+        return 0
+
+    if isinstance(v, bool):
+        return int(v)
+
+    if isinstance(v, int):
+        return v
+
+    if isinstance(v, float):
+        return int(v) if v.is_integer() else v
+
+    if isinstance(v, str):
+        s = v.strip()
+        if s == "" or s.lower() == "null":
+            return 0
+        s2 = s.replace(",", ".")
+        try:
+            f = float(s2)
+            return int(f) if f.is_integer() else f
+        except Exception:
+            return v
+
+    return v
+
+
+# ============================================================
+# 3) DHIS2 CLIENT (org level 4)
+# ============================================================
+
+@dataclass
+class Dhis2Client:
+    base_url: str
+    username: str
+    password: str
+    timeout_s: int = 1200
+
+    def __post_init__(self) -> None:
+        retry = Retry(
+            total=6,
+            connect=6,
+            read=6,
+            status=6,
+            backoff_factor=3,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"],
+            raise_on_status=False,
+        )
+        self.session = requests.Session()
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
+    def _get(self, path: str, params: Dict[str, object]) -> dict:
+        url = self.base_url.rstrip("/") + "/" + path.lstrip("/")
+        last_err = ""
+
+        for attempt in range(1, 8):
+            r = self.session.get(
+                url,
+                params=params,
+                auth=(self.username, self.password),
+                headers={"Accept": "application/json"},
+                timeout=self.timeout_s,
+            )
+
+            if 200 <= r.status_code < 300:
+                return r.json()
+
+            if r.status_code in (429, 500, 502, 503, 504):
+                last_err = f"{r.status_code} {r.text[:200]}"
+                sleep_s = min(90.0, 5.0 * attempt)
+                print(f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 sleep={sleep_s}s url={path}", flush=True)
+                time.sleep(sleep_s)
+                continue
+
+            r.raise_for_status()
+
+        raise requests.exceptions.HTTPError(f"DHIS2 API failed after retries: {url} last={last_err}")
+
+    def analytics(self, dx_items: List[str], pe: str, ou: str = "LEVEL-4") -> dict:
+        params = {
+            "dimension": [f"dx:{';'.join(dx_items)}", f"pe:{pe}", f"ou:{ou}"],
+            "displayProperty": "NAME",
+            "outputIdScheme": "UID",
+            "skipMeta": "true",
+            "paging": "false",
+        }
+        return self._get("api/analytics.json", params)
+
+
+def _analytics_with_split(
+    client: Dhis2Client,
+    pe: str,
+    dx_items: List[str],
+    *,
+    max_split_depth: int = 4,
+    depth: int = 0,
+) -> dict:
+    try:
+        return client.analytics(dx_items=dx_items, pe=pe, ou="LEVEL-4")
+    except Exception as e:
+        msg = str(e)
+        is_timeoutish = (
+            "504" in msg
+            or "Gateway" in msg
+            or "Read timed out" in msg
+            or "timeout" in msg.lower()
+            or "Max retries exceeded" in msg
+        )
+
+        if (not is_timeoutish) or (depth >= max_split_depth) or (len(dx_items) <= 20):
+            raise
+
+        mid = len(dx_items) // 2
+        left = dx_items[:mid]
+        right = dx_items[mid:]
+
+        print(
+            f"WARN: analytics failed depth={depth} dx={len(dx_items)} -> split {len(left)}+{len(right)} reason={msg[:140]}",
+            flush=True,
+        )
+
+        out = {"rows": []}
+        a = _analytics_with_split(client, pe, left, max_split_depth=max_split_depth, depth=depth + 1)
+        b = _analytics_with_split(client, pe, right, max_split_depth=max_split_depth, depth=depth + 1)
+        out["rows"].extend(a.get("rows") or [])
+        out["rows"].extend(b.get("rows") or [])
+        return out
+
+
+# ============================================================
+# 4) TRANSFORM
+# ============================================================
+
+def rows_to_records(analytics_json: dict) -> List[dict]:
+    rows = analytics_json.get("rows") or []
+    recs: List[dict] = []
+    for r in rows:
+        try:
+            dx, pe, ou, val = r[0], r[1], r[2], r[3]
+        except Exception:
+            continue
+        try:
+            v = float(val)
+        except Exception:
+            v = None
+        recs.append({"dx": dx, "pe": pe, "ou": ou, "value": v})
+    return recs
+
+
+def pivot_records(
+    long_recs: List[dict],
+    dx_expected: List[str],
+    rename_map_dx_to_label: Dict[str, str],
+    zoho_map_label_to_link: Dict[str, str],
+) -> List[dict]:
+    idx: Dict[Tuple[str, str], dict] = {}
+
+    for r in long_recs:
+        key = (r["ou"], r["pe"])
+        row = idx.get(key)
+        if row is None:
+            row = {"ou": r["ou"], "pe": r["pe"]}
+            idx[key] = row
+
+        old = row.get(r["dx"])
+        val = r["value"]
+        if old is None:
+            row[r["dx"]] = val
+        else:
+            row[r["dx"]] = (old or 0) + (val or 0)
+
+    for row in idx.values():
+        for dx in dx_expected:
+            row.setdefault(dx, None)
+
+    out: List[dict] = []
+    for row in idx.values():
+        period_iso = f"{row['pe'][:4]}-{row['pe'][4:6]}-01"
+        period_zoho = period_iso_to_zoho(period_iso)
+
+        out_row: dict = {
+            "OrgUnit": row.get("ou"),
+            "Period": period_zoho,
+        }
+
+        for dx in dx_expected:
+            label = rename_map_dx_to_label.get(dx, dx)
+            zoho_link = zoho_map_label_to_link.get(label, label)
+            out_row[zoho_link] = normalize_number(row.get(dx))
+
+        out.append(out_row)
+
+    out.sort(key=lambda x: (x.get("OrgUnit") or "", x.get("Period") or ""))
+    return out
+
+
+def fetch_period(
+    client: Dhis2Client,
+    pe: str,
+    dx_expected: List[str],
+    rename_map_dx_to_label: Dict[str, str],
+    zoho_map_label_to_link: Dict[str, str],
+    dx_chunk_chars: int,
+    sleep_s: float,
+) -> List[dict]:
+    chunks = chunk_list(dx_expected, max_chars=dx_chunk_chars)
+    long_all: List[dict] = []
+
+    for i, ch in enumerate(chunks, start=1):
+        print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
+        data = _analytics_with_split(client, pe, ch)
+        long_all.extend(rows_to_records(data))
+        if sleep_s and sleep_s > 0:
+            time.sleep(sleep_s)
+
+    return pivot_records(long_all, dx_expected, rename_map_dx_to_label, zoho_map_label_to_link)
+
+
+# ============================================================
+# 5) OUTPUT
+# ============================================================
+
+def write_ndjson_parts_dual(
+    folder: Path,
+    records: List[dict],
+    max_plain_bytes: int = 800_000,
+) -> List[dict]:
+    folder.mkdir(parents=True, exist_ok=True)
+
+    parts_meta: List[dict] = []
+    part_idx = 1
+    rows_in_part = 0
+    plain_bytes_in_part = 0
+
+    def paths(i: int) -> Tuple[Path, Path]:
+        plain = folder / f"part-{i:04d}.ndjson"
+        gz = folder / f"part-{i:04d}.ndjson.gz"
+        return plain, gz
+
+    plain_path, gz_path = paths(part_idx)
+    plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
+    gz_f = gzip.open(gz_path, "wb")
+
+    def close_part() -> None:
+        nonlocal plain_f, gz_f, rows_in_part, plain_path, gz_path
+        plain_f.close()
+        gz_f.close()
+        parts_meta.append(
+            {
+                "file": gz_path.name,
+                "plain": plain_path.name,
+                "rows": rows_in_part,
+                "bytes_plain": plain_path.stat().st_size if plain_path.exists() else 0,
+                "bytes_gz": gz_path.stat().st_size if gz_path.exists() else 0,
+            }
+        )
+
+    for rec in records:
+        line_str = json.dumps(rec, ensure_ascii=False) + "\n"
+        line_b = line_str.encode("utf-8")
+        line_len = len(line_b)
+
+        if rows_in_part > 0 and (plain_bytes_in_part + line_len) > max_plain_bytes:
+            close_part()
+            part_idx += 1
+            rows_in_part = 0
+            plain_bytes_in_part = 0
+            plain_path, gz_path = paths(part_idx)
+            plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
+            gz_f = gzip.open(gz_path, "wb")
+
+        plain_f.write(line_str)
+        gz_f.write(line_b)
+        rows_in_part += 1
+        plain_bytes_in_part += line_len
+
+    close_part()
+
+    if not records and not parts_meta:
+        plain_path, gz_path = paths(1)
+        plain_path.write_text("", encoding="utf-8")
+        with gzip.open(gz_path, "wb") as f:
+            f.write(b"")
+        parts_meta.append(
+            {
+                "file": gz_path.name,
+                "plain": plain_path.name,
+                "rows": 0,
+                "bytes_plain": plain_path.stat().st_size,
+                "bytes_gz": gz_path.stat().st_size,
+            }
+        )
+
+    return parts_meta
+
+
+# ============================================================
+# 6) MAIN
+# ============================================================
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--start", default="202501", help="YYYYMM")
+    ap.add_argument("--end", default=None, help="YYYYMM (optional)")
+    ap.add_argument("--months", type=int, default=3, help="Refresh last N months")
+    ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to --end/current")
+    ap.add_argument("--out", default="docs/data_as", help="Output folder")
+    ap.add_argument("--dx_chunk_chars", type=int, default=6500)
+    ap.add_argument("--sleep", type=float, default=0.2, help="Sleep between DHIS2 calls")
+    ap.add_argument("--max_plain_bytes", type=int, default=800_000)
+    ap.add_argument("--retry_failed", action="store_true")
+    ap.add_argument("--retry_limit", type=int, default=2)
+
+    args = ap.parse_args()
+
+    base_url = os.environ.get("DHIS2_BASE_URL")
+    username = os.environ.get("DHIS2_USERNAME")
+    password = os.environ.get("DHIS2_PASSWORD")
+    if not (base_url and username and password):
+        print("Missing secrets: DHIS2_BASE_URL, DHIS2_USERNAME, DHIS2_PASSWORD", file=sys.stderr)
+        return 2
+
+    if not DX_LIST.strip():
+        print("DX_LIST is empty. Paste your dx list in section (A).", file=sys.stderr)
+        return 2
+
+    if not RENAME_MAP:
+        print("RENAME_MAP is empty. Paste your dx->label map in section (B).", file=sys.stderr)
+        return 2
+
+    zoho_rename_path = Path("docs/config/rename_map.json")
+    zoho_map = load_zoho_rename_map(zoho_rename_path)
+    if not zoho_map:
+        print(f"Missing/invalid docs/config/rename_map.json at {zoho_rename_path}", file=sys.stderr)
+        return 2
+
+    dx_expected = [x.strip() for x in DX_LIST.split(";") if x.strip()]
+    client = Dhis2Client(base_url=base_url, username=username, password=password)
+
+    end = args.end or current_yyyymm()
+    all_months = month_range(args.start, end)
+
+    out_dir = Path(args.out)
+    monthly_root = out_dir / "monthly"
+    index_path = out_dir / "index.json"
+
+    index: Dict[str, Any] = {"generated_at": None, "months": {}, "retry_queue": []}
+    if index_path.exists():
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            if "months" not in index or index["months"] is None:
+                index["months"] = {}
+            if "retry_queue" not in index or index["retry_queue"] is None:
+                index["retry_queue"] = []
+        except Exception:
+            index = {"generated_at": None, "months": {}, "retry_queue": []}
+
+    if args.backfill:
+        periods = all_months
+    else:
+        periods = all_months[-max(1, args.months):]
+        if args.retry_failed:
+            rq = [m for m in (index.get("retry_queue") or []) if isinstance(m, str)]
+            extra = [m for m in rq if m not in periods]
+            periods = periods + extra[: max(0, int(args.retry_limit))]
+
+    ok_months: List[str] = []
+    failed_months: List[str] = []
+
+    seen = set()
+    periods = [m for m in periods if not (m in seen or seen.add(m))]
+
+    print(f"Planned periods: {periods}", flush=True)
+
+    for pe in periods:
+        try:
+            records = fetch_period(
+                client=client,
+                pe=pe,
+                dx_expected=dx_expected,
+                rename_map_dx_to_label=RENAME_MAP,
+                zoho_map_label_to_link=zoho_map,
+                dx_chunk_chars=args.dx_chunk_chars,
+                sleep_s=args.sleep,
+            )
+        except Exception as e:
+            print(f"ERROR: fetch_period failed for {pe}: {e}", flush=True)
+            print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)
+            failed_months.append(pe)
+
+            rq = index.get("retry_queue") or []
+            if pe not in rq:
+                rq.append(pe)
+            index["retry_queue"] = rq
+            continue
+
+        month_folder = monthly_root / pe
+        month_folder.mkdir(parents=True, exist_ok=True)
+
+        for p in month_folder.glob("*"):
+            try:
+                p.unlink()
+            except Exception:
+                pass
+
+        parts = write_ndjson_parts_dual(
+            month_folder,
+            records,
+            max_plain_bytes=args.max_plain_bytes,
+        )
+
+        index["months"][pe] = {"parts": parts, "rows": len(records)}
+        ok_months.append(pe)
+
+        rq = index.get("retry_queue") or []
+        if pe in rq:
+            rq = [m for m in rq if m != pe]
+        index["retry_queue"] = rq
+
+    index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+
+    print(f"OK months: {ok_months}", flush=True)
+    if failed_months:
+        print(f"FAILED months (added to retry_queue): {failed_months}", flush=True)
+    print(f"Index months={len(index.get('months') or {})} | retry_queue={index.get('retry_queue')}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
