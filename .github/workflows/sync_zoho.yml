@@ -43,7 +43,10 @@ jobs:
           pip install requests urllib3
 
       # 0) Build OU map (Org2-Org5)
+      # ✅ On saute cette étape pendant le backfill manuel pour éviter d'être bloqué
+      # si DHIS2 ne répond pas. Le sync utilisera alors le ou_map déjà présent dans docs/data.
       - name: Build OU map (Org2-Org5)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true') }}
         env:
           DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
           DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
