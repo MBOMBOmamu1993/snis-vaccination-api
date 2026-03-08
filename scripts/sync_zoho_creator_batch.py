@@ -8,7 +8,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
@@ -117,12 +117,10 @@ class ZohoCreatorClient:
             )
             last_text = r.text or ""
 
-            # retry transient
             if r.status_code in (429, 500, 502, 503, 504):
                 time.sleep(min(60.0, 3.0 * attempt))
                 continue
 
-            # Zoho: GET with criteria can return 400 code=9280 = "No records found"
             if r.status_code == 400 and method.upper() == "GET":
                 j = self._try_parse_json(last_text)
                 if isinstance(j, dict):
@@ -143,7 +141,6 @@ class ZohoCreatorClient:
 
         raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:900]}")
 
-    # ---- Records APIs
     def add_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not records:
             return {}
@@ -169,18 +166,15 @@ class ZohoCreatorClient:
         if criteria:
             params["criteria"] = criteria
 
-        # Cursor mode
         if record_cursor is not None:
             params["max_records"] = str(int(per_page))
             params["record_cursor"] = record_cursor
             return self._req("GET", url, params=params)
 
-        # First call attempt (some DC returns cursor without providing it)
         if page is None:
             params["max_records"] = str(int(per_page))
             return self._req("GET", url, params=params)
 
-        # Page/per_page mode
         params["page"] = str(int(page))
         params["per_page"] = str(int(per_page))
         return self._req("GET", url, params=params)
@@ -214,7 +208,6 @@ class ZohoCreatorClient:
         throttle_s: float = 0.0,
         hard_max_pages: int = 2000,
     ) -> Iterable[Dict[str, Any]]:
-        # --- cursor mode
         cursor: Optional[str] = None
         first = True
         pages = 0
@@ -237,11 +230,7 @@ class ZohoCreatorClient:
             for r in data:
                 yield r
 
-            next_cursor = (
-                info.get("record_cursor")
-                or info.get("next_record_cursor")
-                or info.get("next_cursor")
-            )
+            next_cursor = info.get("record_cursor") or info.get("next_record_cursor") or info.get("next_cursor")
 
             if next_cursor:
                 cursor = str(next_cursor)
@@ -255,7 +244,6 @@ class ZohoCreatorClient:
 
             break
 
-        # --- fallback page/per_page
         page = 1
         while True:
             pages += 1
@@ -297,18 +285,25 @@ def sorted_months(index: Dict[str, Any]) -> List[str]:
 
 def last_n_previous_months(months_sorted: List[str], n: int) -> List[str]:
     """
-    ✅ "Deux derniers mois précédents" = on EXCLUT le dernier mois de l'index (souvent le mois courant),
+    "Deux derniers mois précédents" = on EXCLUT le dernier mois de l'index,
     puis on prend les N derniers dans le reste.
-    Ex: index [..., 202601, 202602, 202603] et n=2 => [202601, 202602]
+    Ex: [..., 202601, 202602, 202603] et n=2 => [202601, 202602]
     """
     if n <= 0:
         return []
     if len(months_sorted) <= 1:
         return []
-    base = months_sorted[:-1]  # exclude latest
+    base = months_sorted[:-1]
     if not base:
         return []
     return base[-n:] if len(base) >= n else base[:]
+
+
+def load_json_file(path: Path) -> Dict[str, Any]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise RuntimeError(f"Unable to load JSON file: {path} ({e})") from e
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
@@ -359,13 +354,176 @@ def reset_state_file(state_path: Path) -> None:
 
 
 # ---------------------------
-# Transform: NDJSON row -> Zoho record
+# Transform helpers
 # ---------------------------
 def md5_hex(s: str) -> str:
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
-def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
+def _to_number(v: Any) -> float:
+    if v is None:
+        return 0.0
+    if isinstance(v, bool):
+        return float(int(v))
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, str):
+        s = v.strip()
+        if not s or s.lower() == "null":
+            return 0.0
+        s = s.replace(",", ".")
+        try:
+            return float(s)
+        except Exception:
+            return 0.0
+    return 0.0
+
+
+def _number_out(v: float) -> int | float:
+    if float(v).is_integer():
+        return int(v)
+    return v
+
+
+def _sum_by_link(row: Dict[str, Any], *links: str) -> int | float:
+    total = 0.0
+    for link in links:
+        total += _to_number(row.get(link))
+    return _number_out(total)
+
+
+def antenne_from(org2: str, org3: str, antenne_rules: Dict[str, Dict[str, str]]) -> str:
+    province = str(org2 or "").strip()
+    zone = str(org3 or "").strip()
+    if not province or not zone:
+        return ""
+
+    province_rules = antenne_rules.get(province)
+    if not isinstance(province_rules, dict):
+        return ""
+
+    return str(province_rules.get(zone) or "").strip()
+
+
+GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
+    "BCG_0_11": [
+        "BCG fixe1", "BCG fixe2",
+        "BCG avancé1", "BCG avancé2",
+        "BCG mobile1", "BCG mobile2",
+    ],
+    "DTC1_0_11": [
+        "Penta1 fixe1", "Penta1 fixe2",
+        "Penta1 avancé1", "Penta1 avancé2",
+        "Penta1 mobile1", "Penta1 mobile2",
+    ],
+    "DTC2_0_11": [
+        "Penta2 fixe1", "Penta2 fixe2",
+        "Penta2 avancé1", "Penta2 avancé2",
+        "Penta2 mobile1", "Penta2 mobile2",
+    ],
+    "DTC3_0_11": [
+        "Penta3 fixe1", "Penta3 fixe2",
+        "Penta3 avancé1", "Penta3 avancé2",
+        "Penta3 mobile1", "Penta3 mobile2",
+    ],
+    "VPO3_0_11": [
+        "VPO3 fixe1", "VPO3 fixe2",
+        "VPO3 avancé1", "VPO3 avancé2",
+        "VPO3 mobile1", "VPO3 mobile2",
+    ],
+    "VPI1_0_11": [
+        "VPI1 fixe1", "VPI1 fixe2",
+        "VPI1 avancé1", "VPI1 avancé2",
+        "VPI1 mobile1", "VPI1 mobile2",
+    ],
+    "VPI2_0_11": [
+        "VPI2 fixe1", "VPI2 fixe2",
+        "VPI2 avancé1", "VPI2 avancé2",
+        "VPI2 mobile1", "VPI2 mobile2",
+    ],
+    "ROTA3_0_11": [
+        "ROTA3 fixe", "ROTA3 avancé", "ROTA3 mobile",
+    ],
+    "PCV13_3_0_11": [
+        "PCV13 fixe1", "PCV13 fixe2",
+        "PCV13 avancé1", "PCV13 avancé2",
+        "PCV13 mobile1", "PCV13 mobile2",
+    ],
+    "VAR1_0_11": [
+        "VAR1 fixe1", "VAR1 fixe2",
+        "VAR1 avancé1", "VAR1 avancé2",
+        "VAR1 mobile1", "VAR1 mobile2",
+    ],
+    "VAR2_total": [
+        "VAR2 fixe1", "VAR2 fixe2",
+        "VAR2 avancé",
+        "VAR2 mobile1", "VAR2 mobile2",
+    ],
+    "VAR2_0_11": [
+        "VAR2 0-11 mois fixe", "VAR2 0-11 mois avancée", "VAR2 0-11 mois mobile",
+    ],
+    "VPO0_0_11": [
+        "VPO0 0-11 mois fixe1", "VPO0 0-11 mois fixe2",
+        "VPO0 0-11 mois avancée1", "VPO0 0-11 mois avancée2",
+        "VPO0 0-11 mois mobile1", "VPO0 0-11 mois mobile2",
+    ],
+    "VPO1_0_11": [
+        "VPO1 0-11 mois fixe1", "VPO1 0-11 mois fixe2",
+        "VPO1 0-11 mois avancée1", "VPO1 0-11 mois avancée2",
+        "VPO1 0-11 mois mobile1", "VPO1 0-11 mois mobile2",
+    ],
+    "VPO2_0_11": [
+        "VPO2 0-11 mois fixe1", "VPO2 0-11 mois fixe2",
+        "VPO2 0-11 mois avancée1", "VPO2 0-11 mois avancée2",
+        "VPO2 0-11 mois mobile1", "VPO2 0-11 mois mobile2",
+    ],
+    "PCV13_1_0_11": [
+        "PCV13(1) 0-11 mois fixe1", "PCV13(1) 0-11 mois fixe2",
+        "PCV13(1) 0-11 mois avancée1", "PCV13(1) 0-11 mois avancée2",
+        "PCV13(1) 0-11 mois mobile1", "PCV13(1) 0-11 mois mobile2",
+    ],
+    "PCV13_2_0_11": [
+        "PCV13(2) 0-11 mois fixe1", "PCV13(2) 0-11 mois fixe2",
+        "PCV13(2) 0-11 mois avancée1", "PCV13(2) 0-11 mois avancée2",
+        "PCV13(2) 0-11 mois mobile1", "PCV13(2) 0-11 mois mobile2",
+    ],
+    "ROTA1_0_11": [
+        "ROTA1 0-11 mois fixe", "ROTA1 0-11 mois avancée", "ROTA1 0-11 mois mobile",
+    ],
+    "ROTA2_0_11": [
+        "ROTA2 0-11 mois fixe", "ROTA2 0-11 mois avancée", "ROTA2 0-11 mois mobile",
+    ],
+    "VAP1_0_11": [
+        "VAP1 0-11 mois fixe", "VAP1 0-11 mois avancée",
+    ],
+    "VAP2_0_11": [
+        "VAP2 0-11 mois fixe", "VAP2 0-11 mois avancée", "VAP2 0-11 mois mobile",
+    ],
+    "VAP3_0_11": [
+        "VAP3 0-11 mois fixe", "VAP3 0-11 mois avancée", "VAP3 0-11 mois mobile",
+    ],
+    "VAP4_12_23": [
+        "VAP4 12-23 mois fixe", "VAP4 12-23 mois avancée", "VAP4 12-23 mois mobile",
+    ],
+}
+
+
+def build_excluded_raw_links(zoho_rename_map: Dict[str, str]) -> set[str]:
+    excluded: set[str] = set()
+    for labels in GLOBAL_SUM_SPECS.values():
+        for label in labels:
+            excluded.add(zoho_rename_map.get(label, label))
+    return excluded
+
+
+def build_zoho_record(
+    row: Dict[str, Any],
+    raw_line: str,
+    ou_map: Dict[str, Dict[str, str]],
+    zoho_rename_map: Dict[str, str],
+    antenne_rules: Dict[str, Dict[str, str]],
+    excluded_raw_links: set[str],
+) -> Dict[str, Any]:
     ou = str(row.get("OrgUnit") or "").strip()
     period = str(row.get("Period") or "").strip()
 
@@ -387,10 +545,18 @@ def build_zoho_record(row: Dict[str, Any], raw_line: str, ou_map: Dict[str, Dict
     rec["Org4"] = meta.get("Org4", "")
     rec["Org5"] = meta.get("Org5", "")
 
+    rec["Antenne"] = antenne_from(rec["Org2"], rec["Org3"], antenne_rules)
+
     for k, v in row.items():
         if k in ("OrgUnit", "Period", "Key", "Org5_UID", "Org2", "Org3", "Org4", "Org5", "RowHash"):
             continue
+        if k in excluded_raw_links:
+            continue
         rec[k] = v
+
+    for out_field, source_labels in GLOBAL_SUM_SPECS.items():
+        source_links = [zoho_rename_map.get(label, label) for label in source_labels]
+        rec[out_field] = _sum_by_link(row, *source_links)
 
     return rec
 
@@ -451,11 +617,6 @@ def _robust_add_records(
     depth: int = 0,
     max_depth: int = 10,
 ) -> Tuple[int, int]:
-    """
-    Essaie d'ajouter en batch.
-    Si Zoho rejette le batch (doublons Key, validation, etc.), on split pour isoler et continuer.
-    Returns: (inserted_count_best_effort, failed_count)
-    """
     if not records:
         return (0, 0)
 
@@ -465,7 +626,6 @@ def _robust_add_records(
             time.sleep(throttle_s)
         return (len(records), 0)
     except Exception as e:
-        # trop profond => abandon du lot
         if len(records) == 1 or depth >= max_depth:
             print(f"Add failed (record skipped). reason={e}", flush=True)
             return (0, len(records))
@@ -485,6 +645,9 @@ def insert_month_from_parts_add_only(
     yyyymm: str,
     parts_meta: List[Dict[str, Any]],
     ou_map: Dict[str, Dict[str, str]],
+    zoho_rename_map: Dict[str, str],
+    antenne_rules: Dict[str, Dict[str, str]],
+    excluded_raw_links: set[str],
     *,
     batch_size: int,
     throttle_s: float,
@@ -509,7 +672,14 @@ def insert_month_from_parts_add_only(
 
         zoho_recs: List[Dict[str, Any]] = []
         for obj, raw in rows:
-            rec = build_zoho_record(obj, raw, ou_map)
+            rec = build_zoho_record(
+                row=obj,
+                raw_line=raw,
+                ou_map=ou_map,
+                zoho_rename_map=zoho_rename_map,
+                antenne_rules=antenne_rules,
+                excluded_raw_links=excluded_raw_links,
+            )
             if rec:
                 zoho_recs.append(rec)
             else:
@@ -541,7 +711,6 @@ def main() -> int:
     ap.add_argument("--index", default="docs/data/index.json")
     ap.add_argument("--state", default="docs/data/zoho_sync_state.json")
 
-    # Routine knobs
     ap.add_argument(
         "--refresh_last_n",
         type=int,
@@ -551,12 +720,10 @@ def main() -> int:
     ap.add_argument("--batch_size", type=int, default=200)
     ap.add_argument("--throttle_seconds", type=float, default=1.5)
 
-    # Manual purge
     ap.add_argument("--purge_all", action="store_true")
     ap.add_argument("--purge_only", action="store_true")
     ap.add_argument("--purge_batch_limit", type=int, default=200)
 
-    # Full import mode (initialization)
     ap.add_argument("--import_historical", action="store_true", help="Import all historical months (add only).")
 
     args = ap.parse_args()
@@ -576,9 +743,15 @@ def main() -> int:
     index_path = repo_root / args.index
     state_path = repo_root / args.state
 
+    rename_map_path = repo_root / "docs" / "config" / "rename_map.json"
+    antenne_rules_path = repo_root / "docs" / "config" / "antenne_rules.json"
+
+    zoho_rename_map = load_json_file(rename_map_path)
+    antenne_rules = load_json_file(antenne_rules_path)
+    excluded_raw_links = build_excluded_raw_links(zoho_rename_map)
+
     client = ZohoCreatorClient(cfg)
 
-    # PURGE ALL (manual)
     if args.purge_all:
         print("PURGE ALL: deleting all records in Zoho report until empty...", flush=True)
         deleted = purge_all_records(
@@ -588,7 +761,6 @@ def main() -> int:
         )
         print(f"PURGE ALL done. deleted={deleted}", flush=True)
 
-        # verify empty
         remaining = []
         for r in client.iter_records(criteria="", fields="ID", per_page=1, throttle_s=0.0):
             rid = r.get("ID") or r.get("id")
@@ -606,7 +778,6 @@ def main() -> int:
             print("PURGE ONLY => exit.", flush=True)
             return 0
 
-    # Load index
     index = load_index(index_path)
     months_sorted = sorted_months(index)
     if not months_sorted:
@@ -615,15 +786,15 @@ def main() -> int:
 
     months_obj = index.get("months") or {}
 
-    # Load OU map
     ou_map = load_ou_map(repo_root)
     print(f"OU_MAP loaded: level5={len(ou_map)}", flush=True)
+    print(f"rename_map loaded: {len(zoho_rename_map)} fields", flush=True)
+    print(f"antenne_rules loaded: {len(antenne_rules)} provinces", flush=True)
+    print(f"excluded raw links for Zoho payload: {len(excluded_raw_links)}", flush=True)
 
-    # State
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
 
-    # ✅ Routine: only ADD the last N previous months (assumes Deluge deleted them at 00:00)
     refresh_months = last_n_previous_months(months_sorted, args.refresh_last_n)
 
     print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
@@ -633,7 +804,6 @@ def main() -> int:
         flush=True,
     )
 
-    # 1) Daily add-only for previous months
     for m in refresh_months:
         parts = (months_obj.get(m) or {}).get("parts") or []
         if not parts:
@@ -647,6 +817,9 @@ def main() -> int:
             yyyymm=m,
             parts_meta=parts,
             ou_map=ou_map,
+            zoho_rename_map=zoho_rename_map,
+            antenne_rules=antenne_rules,
+            excluded_raw_links=excluded_raw_links,
             batch_size=args.batch_size,
             throttle_s=args.throttle_seconds,
         )
@@ -655,9 +828,13 @@ def main() -> int:
             f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
             flush=True,
         )
-        done_months[m] = {"done": True, "refreshed": True, "last_sync": time.time(), "mode": "daily_add_only_previous"}
+        done_months[m] = {
+            "done": True,
+            "refreshed": True,
+            "last_sync": time.time(),
+            "mode": "daily_add_only_previous",
+        }
 
-    # 2) Historical import (manual)
     if args.import_historical:
         for m in months_sorted:
             if m in refresh_months:
@@ -676,6 +853,9 @@ def main() -> int:
                 yyyymm=m,
                 parts_meta=parts,
                 ou_map=ou_map,
+                zoho_rename_map=zoho_rename_map,
+                antenne_rules=antenne_rules,
+                excluded_raw_links=excluded_raw_links,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
             )
@@ -684,7 +864,12 @@ def main() -> int:
                 f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
                 flush=True,
             )
-            done_months[m] = {"done": True, "refreshed": False, "last_sync": time.time(), "mode": "historical_add_only"}
+            done_months[m] = {
+                "done": True,
+                "refreshed": False,
+                "last_sync": time.time(),
+                "mode": "historical_add_only",
+            }
 
     state["done_months"] = done_months
     state["last_run_at"] = time.time()
