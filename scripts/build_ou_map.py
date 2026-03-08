@@ -117,10 +117,6 @@ def _name_for(path_ids: List[str], level: int, all_units: Dict[str, dict]) -> st
 
 
 def build_ou_map_fosa(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
-    """
-    Retourne:
-      { ou5_id: {Org2, Org3, Org4, Org5} }
-    """
     out: Dict[str, Dict[str, str]] = {}
 
     for ou_id, ou in all_units.items():
@@ -141,10 +137,6 @@ def build_ou_map_fosa(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
 
 
 def build_ou_map_as(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
-    """
-    Retourne:
-      { ou4_id: {Org2, Org3, Org4, Org5=""} }
-    """
     out: Dict[str, Dict[str, str]] = {}
 
     for ou_id, ou in all_units.items():
