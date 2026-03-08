@@ -17,7 +17,79 @@
       "refreshed": false,
       "last_sync": 1773003222.6938603,
       "mode": "historical_add_only"
+    },
+    "202601": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773006276.0808566,
+      "mode": "daily_add_only_previous"
+    },
+    "202602": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773006426.8117328,
+      "mode": "daily_add_only_previous"
+    },
+    "202504": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773006579.4705877,
+      "mode": "historical_add_only"
+    },
+    "202505": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773006731.4701452,
+      "mode": "historical_add_only"
+    },
+    "202506": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773006884.4700382,
+      "mode": "historical_add_only"
+    },
+    "202507": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007037.974226,
+      "mode": "historical_add_only"
+    },
+    "202508": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007190.358231,
+      "mode": "historical_add_only"
+    },
+    "202509": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007343.0532455,
+      "mode": "historical_add_only"
+    },
+    "202510": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007495.372685,
+      "mode": "historical_add_only"
+    },
+    "202511": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007647.8826303,
+      "mode": "historical_add_only"
+    },
+    "202512": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007799.7937644,
+      "mode": "historical_add_only"
+    },
+    "202603": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773007950.928809,
+      "mode": "historical_add_only"
     }
   },
-  "last_run_at": 1773003222.693864
+  "last_run_at": 1773007950.9288144
 }
