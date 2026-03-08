@@ -1,4 +1,23 @@
 {
-  "done_months": {},
-  "last_run_at": null
+  "done_months": {
+    "202501": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773002919.2511818,
+      "mode": "daily_add_only_previous"
+    },
+    "202502": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773003071.9016306,
+      "mode": "daily_add_only_previous"
+    },
+    "202503": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773003222.6938603,
+      "mode": "historical_add_only"
+    }
+  },
+  "last_run_at": 1773003222.693864
 }
