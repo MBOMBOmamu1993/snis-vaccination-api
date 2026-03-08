@@ -1,0 +1,153 @@
+name: DHIS2 -> GitHub -> Zoho AS (batch)
+
+on:
+  schedule:
+    - cron: "5 23 * * *"   # tous les jours à 00:05 (UTC+1)
+  workflow_dispatch:
+    inputs:
+      purge_all:
+        description: "PURGE ALL Zoho AS records (one-shot). Also resets docs/data_as/zoho_sync_state.json."
+        required: false
+        default: "false"
+      backfill_all:
+        description: "Backfill AS months from 202501 to 202503 (initialisation)."
+        required: false
+        default: "false"
+
+concurrency:
+  group: dhis2-data-as
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests urllib3
+
+      - name: Build OU map (Org2-Org5 + Org4 sources)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true') }}
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          python scripts/build_ou_map.py
+
+      - name: Fetch DHIS2 AS and build NDJSON/index (backfill init 202501-202503)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true' }}
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          python scripts/fetch_dhis2_as.py \
+            --backfill \
+            --start 202501 \
+            --end 202503 \
+            --out docs/data_as
+
+      - name: Fetch DHIS2 AS and build NDJSON/index (last 3 months)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true') }}
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          python scripts/fetch_dhis2_as.py \
+            --months 3 \
+            --out docs/data_as
+
+      - name: PURGE ALL Zoho AS records (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.purge_all == 'true' }}
+        env:
+          ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
+          ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
+          ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
+          ZOHO_DC: ${{ secrets.ZOHO_DC }}
+          ZOHO_OWNER: drcongo
+          ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
+          ZOHO_FORM_LINK: Donn_es_PEV_AS
+          ZOHO_REPORT_LINK: Donn_es_PEV_AS_Report
+        run: |
+          python scripts/sync_zoho_creator_batch_as.py \
+            --index docs/data_as/index.json \
+            --state docs/data_as/zoho_sync_state.json \
+            --purge_all \
+            --purge_only \
+            --batch_size 200 \
+            --purge_batch_limit 200 \
+            --throttle_seconds 1.5
+
+      - name: Sync AS to Zoho Creator (full import, batch 200)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill_all == 'true' && inputs.purge_all != 'true' }}
+        env:
+          ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
+          ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
+          ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
+          ZOHO_DC: ${{ secrets.ZOHO_DC }}
+          ZOHO_OWNER: drcongo
+          ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
+          ZOHO_FORM_LINK: Donn_es_PEV_AS
+          ZOHO_REPORT_LINK: Donn_es_PEV_AS_Report
+        run: |
+          python scripts/sync_zoho_creator_batch_as.py \
+            --index docs/data_as/index.json \
+            --state docs/data_as/zoho_sync_state.json \
+            --import_historical \
+            --refresh_last_n 2 \
+            --batch_size 200 \
+            --throttle_seconds 1.5
+
+      - name: Sync AS to Zoho Creator (daily add-only, batch 200)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.purge_all == 'true' || inputs.backfill_all == 'true')) }}
+        env:
+          ZOHO_CLIENT_ID: ${{ secrets.ZOHO_CLIENT_ID }}
+          ZOHO_CLIENT_SECRET: ${{ secrets.ZOHO_CLIENT_SECRET }}
+          ZOHO_REFRESH_TOKEN: ${{ secrets.ZOHO_REFRESH_TOKEN }}
+          ZOHO_DC: ${{ secrets.ZOHO_DC }}
+          ZOHO_OWNER: drcongo
+          ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
+          ZOHO_FORM_LINK: Donn_es_PEV_AS
+          ZOHO_REPORT_LINK: Donn_es_PEV_AS_Report
+        run: |
+          python scripts/sync_zoho_creator_batch_as.py \
+            --index docs/data_as/index.json \
+            --state docs/data_as/zoho_sync_state.json \
+            --refresh_last_n 2 \
+            --batch_size 200 \
+            --throttle_seconds 1.5
+
+      - name: Commit & push if changed (rebase + retry)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add docs/data docs/data_as
+          git diff --cached --quiet && echo "No changes" && exit 0
+
+          git commit -m "Update DHIS2 AS export + OU map + Zoho AS sync state"
+
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push failed (attempt $i), retrying..."
+            sleep 5
+          done
