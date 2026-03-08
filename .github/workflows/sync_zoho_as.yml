@@ -140,10 +140,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add docs/data docs/data_as
+          git add docs/data_as
           git diff --cached --quiet && echo "No changes" && exit 0
 
-          git commit -m "Update DHIS2 AS export + OU map + Zoho AS sync state"
+          git commit -m "Update DHIS2 AS export + Zoho AS sync state"
 
           for i in 1 2 3; do
             git pull --rebase origin main || true
