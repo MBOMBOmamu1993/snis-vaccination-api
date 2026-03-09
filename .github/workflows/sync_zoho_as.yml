@@ -84,6 +84,7 @@ jobs:
           ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
           ZOHO_FORM_LINK: Donn_es_PEV_AS
           ZOHO_REPORT_LINK: Donn_es_PEV_AS_Report
+          ZOHO_ERROR_LOG_FORM_LINK: API_Error_Log
         run: |
           python scripts/sync_zoho_creator_batch_as.py \
             --index docs/data_as/index.json \
@@ -105,6 +106,7 @@ jobs:
           ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
           ZOHO_FORM_LINK: Donn_es_PEV_AS
           ZOHO_REPORT_LINK: Donn_es_PEV_AS_Report
+          ZOHO_ERROR_LOG_FORM_LINK: API_Error_Log
         run: |
           python scripts/sync_zoho_creator_batch_as.py \
             --index docs/data_as/index.json \
@@ -125,6 +127,7 @@ jobs:
           ZOHO_APP_LINK: vaccination-de-routine-dhis2-rdc
           ZOHO_FORM_LINK: Donn_es_PEV_AS
           ZOHO_REPORT_LINK: Donn_es_PEV_AS_Report
+          ZOHO_ERROR_LOG_FORM_LINK: API_Error_Log
         run: |
           python scripts/sync_zoho_creator_batch_as.py \
             --index docs/data_as/index.json \
