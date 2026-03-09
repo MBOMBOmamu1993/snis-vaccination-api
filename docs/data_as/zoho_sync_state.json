@@ -1,4 +1,95 @@
 {
-  "done_months": {},
-  "last_run_at": null
+  "done_months": {
+    "202601": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773013109.7240384,
+      "mode": "daily_add_only_previous"
+    },
+    "202602": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773013255.278465,
+      "mode": "daily_add_only_previous"
+    },
+    "202501": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773013402.8654392,
+      "mode": "historical_add_only"
+    },
+    "202502": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773013550.5476577,
+      "mode": "historical_add_only"
+    },
+    "202503": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773013698.5414724,
+      "mode": "historical_add_only"
+    },
+    "202504": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773013846.1171272,
+      "mode": "historical_add_only"
+    },
+    "202505": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773013993.2461898,
+      "mode": "historical_add_only"
+    },
+    "202506": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773014140.9301968,
+      "mode": "historical_add_only"
+    },
+    "202507": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773014288.6951323,
+      "mode": "historical_add_only"
+    },
+    "202508": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773014436.6476498,
+      "mode": "historical_add_only"
+    },
+    "202509": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773014584.965502,
+      "mode": "historical_add_only"
+    },
+    "202510": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773014732.9899147,
+      "mode": "historical_add_only"
+    },
+    "202511": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773014880.5583217,
+      "mode": "historical_add_only"
+    },
+    "202512": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773015028.0179849,
+      "mode": "historical_add_only"
+    },
+    "202603": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773015173.9464767,
+      "mode": "historical_add_only"
+    }
+  },
+  "last_run_at": 1773015173.9464808
 }
