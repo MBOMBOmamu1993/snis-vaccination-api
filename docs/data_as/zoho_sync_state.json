@@ -1,4 +1,110 @@
 {
-  "done_months": {},
-  "last_run_at": null
+  "done_months": {
+    "202601": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773018011.8501594,
+      "mode": "daily_add_only_previous",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202602": {
+      "done": true,
+      "refreshed": true,
+      "last_sync": 1773018144.9577038,
+      "mode": "daily_add_only_previous",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202501": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773018280.1952903,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202502": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773018415.1325884,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202503": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773018550.1790216,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202504": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773018685.2886739,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202505": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773018820.289543,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202506": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773018955.718894,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202507": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019090.645784,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202508": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019225.3790758,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202509": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019360.6530592,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202510": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019495.7154553,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202511": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019630.6537673,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202512": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019765.8836238,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    },
+    "202603": {
+      "done": true,
+      "refreshed": false,
+      "last_sync": 1773019906.8471444,
+      "mode": "historical_add_only",
+      "run_id": "AS-86c113e567b2"
+    }
+  },
+  "last_run_at": 1773019906.847148
 }
