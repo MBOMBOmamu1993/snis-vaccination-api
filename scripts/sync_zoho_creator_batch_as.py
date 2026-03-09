@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -40,6 +41,7 @@ class ZohoConfig:
     app_link_name: str
     form_link_name: str
     report_link_name: str
+    error_log_form_link_name: str = "API_Error_Log"
 
     @property
     def creator_base(self) -> str:
@@ -51,15 +53,6 @@ class ZohoConfig:
 
 
 class ZohoCreatorClient:
-    """
-    Robuste:
-    - On évite DELETE bulk via API en routine.
-    - GET avec criteria peut renvoyer 400 code=9280 => traité comme "0 record".
-    - Pagination parfois instable:
-        * certains DC supportent record_cursor
-        * d'autres supportent page/per_page
-    """
-
     def __init__(self, cfg: ZohoConfig, timeout_s: int = 180) -> None:
         self.cfg = cfg
         self.timeout_s = timeout_s
@@ -125,12 +118,12 @@ class ZohoCreatorClient:
                 j = self._try_parse_json(last_text)
                 if isinstance(j, dict):
                     code = str(j.get("code") or "")
-                    msg = (j.get("message") or j.get("description") or "")
-                    if code == "9280" and "No records found" in str(msg):
+                    msg = str(j.get("message") or j.get("description") or "")
+                    if code == "9280" and "No records found" in msg:
                         return {"data": [], "info": {}}
 
             if r.status_code >= 400:
-                raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:900]}")
+                raise RuntimeError(f"Zoho API error {r.status_code} {method} {url}: {last_text[:1200]}")
 
             if last_text.strip() == "":
                 return {}
@@ -140,16 +133,31 @@ class ZohoCreatorClient:
             except Exception:
                 return {"_raw": last_text}
 
-        raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:900]}")
+        raise RuntimeError(f"Zoho API failed after retries: {method} {url}: {last_text[:1200]}")
 
     def add_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not records:
             return {}
-        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/form/{self.cfg.form_link_name}"
+        url = (
+            f"{self.cfg.creator_base}/data/"
+            f"{self.cfg.owner}/{self.cfg.app_link_name}/form/{self.cfg.form_link_name}"
+        )
+        return self._req("POST", url, json_body={"data": records})
+
+    def add_error_logs(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
+        if not records:
+            return {}
+        url = (
+            f"{self.cfg.creator_base}/data/"
+            f"{self.cfg.owner}/{self.cfg.app_link_name}/form/{self.cfg.error_log_form_link_name}"
+        )
         return self._req("POST", url, json_body={"data": records})
 
     def delete_record_by_id(self, record_id: str) -> Dict[str, Any]:
-        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
+        url = (
+            f"{self.cfg.creator_base}/data/"
+            f"{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}/{record_id}"
+        )
         return self._req("DELETE", url)
 
     def fetch_records_page(
@@ -161,7 +169,10 @@ class ZohoCreatorClient:
         page: Optional[int] = None,
         record_cursor: Optional[str] = None,
     ) -> Dict[str, Any]:
-        url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
+        url = (
+            f"{self.cfg.creator_base}/data/"
+            f"{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
+        )
 
         params: Dict[str, Any] = {"fields": fields}
         if criteria:
@@ -186,8 +197,10 @@ class ZohoCreatorClient:
             return []
         if "data" in resp and isinstance(resp["data"], list):
             return resp["data"]
-        if "response" in resp and isinstance(resp["response"], dict) and isinstance(resp["response"].get("data"), list):
-            return resp["response"]["data"]
+        if "response" in resp and isinstance(resp["response"], dict):
+            data = resp["response"].get("data")
+            if isinstance(data, list):
+                return data
         return []
 
     @staticmethod
@@ -196,8 +209,10 @@ class ZohoCreatorClient:
             return {}
         if "info" in resp and isinstance(resp["info"], dict):
             return resp["info"]
-        if "response" in resp and isinstance(resp["response"], dict) and isinstance(resp["response"].get("info"), dict):
-            return resp["response"]["info"]
+        if "response" in resp and isinstance(resp["response"], dict):
+            info = resp["response"].get("info")
+            if isinstance(info, dict):
+                return info
         return {}
 
     def iter_records(
@@ -232,7 +247,6 @@ class ZohoCreatorClient:
                 yield r
 
             next_cursor = info.get("record_cursor") or info.get("next_record_cursor") or info.get("next_cursor")
-
             if next_cursor:
                 cursor = str(next_cursor)
                 first = False
@@ -285,11 +299,6 @@ def sorted_months(index: Dict[str, Any]) -> List[str]:
 
 
 def last_n_previous_months(months_sorted: List[str], n: int) -> List[str]:
-    """
-    "Deux derniers mois précédents" = on EXCLUT le dernier mois de l'index,
-    puis on prend les N derniers dans le reste.
-    Ex: [..., 202601, 202602, 202603] et n=2 => [202601, 202602]
-    """
     if n <= 0:
         return []
     if len(months_sorted) <= 1:
@@ -450,113 +459,31 @@ def antenne_from(org2: str, org3: str, antenne_rules: Dict[str, Dict[str, str]])
 
 
 GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
-    "BCG_0_11": [
-        "BCG fixe1", "BCG fixe2",
-        "BCG avancé1", "BCG avancé2",
-        "BCG mobile1", "BCG mobile2",
-    ],
-    "DTC1_0_11": [
-        "Penta1 fixe1", "Penta1 fixe2",
-        "Penta1 avancé1", "Penta1 avancé2",
-        "Penta1 mobile1", "Penta1 mobile2",
-    ],
-    "DTC2_0_11": [
-        "Penta2 fixe1", "Penta2 fixe2",
-        "Penta2 avancé1", "Penta2 avancé2",
-        "Penta2 mobile1", "Penta2 mobile2",
-    ],
-    "DTC3_0_11": [
-        "Penta3 fixe1", "Penta3 fixe2",
-        "Penta3 avancé1", "Penta3 avancé2",
-        "Penta3 mobile1", "Penta3 mobile2",
-    ],
-    "VPO3_0_11": [
-        "VPO3 fixe1", "VPO3 fixe2",
-        "VPO3 avancé1", "VPO3 avancé2",
-        "VPO3 mobile1", "VPO3 mobile2",
-    ],
-    "VPI1_0_11": [
-        "VPI1 fixe1", "VPI1 fixe2",
-        "VPI1 avancé1", "VPI1 avancé2",
-        "VPI1 mobile1", "VPI1 mobile2",
-    ],
-    "VPI2_0_11": [
-        "VPI2 fixe1", "VPI2 fixe2",
-        "VPI2 avancé1", "VPI2 avancé2",
-        "VPI2 mobile1", "VPI2 mobile2",
-    ],
-    "ROTA3_0_11": [
-        "ROTA3 fixe", "ROTA3 avancé", "ROTA3 mobile",
-    ],
-    "PCV13_3_0_11": [
-        "PCV13 fixe1", "PCV13 fixe2",
-        "PCV13 avancé1", "PCV13 avancé2",
-        "PCV13 mobile1", "PCV13 mobile2",
-    ],
-    "VAR1_0_11": [
-        "VAR1 fixe1", "VAR1 fixe2",
-        "VAR1 avancé1", "VAR1 avancé2",
-        "VAR1 mobile1", "VAR1 mobile2",
-    ],
-    "VAR2_total": [
-        "VAR2 fixe1", "VAR2 fixe2",
-        "VAR2 avancé",
-        "VAR2 mobile1", "VAR2 mobile2",
-    ],
-    "VAR2_0_11": [
-        "VAR2 0-11 mois fixe", "VAR2 0-11 mois avancée", "VAR2 0-11 mois mobile",
-    ],
-    "VPO0_0_11": [
-        "VPO0 0-11 mois fixe1", "VPO0 0-11 mois fixe2",
-        "VPO0 0-11 mois avancée1", "VPO0 0-11 mois avancée2",
-        "VPO0 0-11 mois mobile1", "VPO0 0-11 mois mobile2",
-    ],
-    "VPO1_0_11": [
-        "VPO1 0-11 mois fixe1", "VPO1 0-11 mois fixe2",
-        "VPO1 0-11 mois avancée1", "VPO1 0-11 mois avancée2",
-        "VPO1 0-11 mois mobile1", "VPO1 0-11 mois mobile2",
-    ],
-    "VPO2_0_11": [
-        "VPO2 0-11 mois fixe1", "VPO2 0-11 mois fixe2",
-        "VPO2 0-11 mois avancée1", "VPO2 0-11 mois avancée2",
-        "VPO2 0-11 mois mobile1", "VPO2 0-11 mois mobile2",
-    ],
-    "PCV13_1_0_11": [
-        "PCV13(1) 0-11 mois fixe1", "PCV13(1) 0-11 mois fixe2",
-        "PCV13(1) 0-11 mois avancée1", "PCV13(1) 0-11 mois avancée2",
-        "PCV13(1) 0-11 mois mobile1", "PCV13(1) 0-11 mois mobile2",
-    ],
-    "PCV13_2_0_11": [
-        "PCV13(2) 0-11 mois fixe1", "PCV13(2) 0-11 mois fixe2",
-        "PCV13(2) 0-11 mois avancée1", "PCV13(2) 0-11 mois avancée2",
-        "PCV13(2) 0-11 mois mobile1", "PCV13(2) 0-11 mois mobile2",
-    ],
-    "ROTA1_0_11": [
-        "ROTA1 0-11 mois fixe", "ROTA1 0-11 mois avancée", "ROTA1 0-11 mois mobile",
-    ],
-    "ROTA2_0_11": [
-        "ROTA2 0-11 mois fixe", "ROTA2 0-11 mois avancée", "ROTA2 0-11 mois mobile",
-    ],
-    "VAP1_0_11": [
-        "VAP1 0-11 mois fixe", "VAP1 0-11 mois avancée", "VAP1 0-11 mois mobile",
-    ],
-    "VAP2_0_11": [
-        "VAP2 0-11 mois fixe", "VAP2 0-11 mois avancée", "VAP2 0-11 mois mobile",
-    ],
-    "VAP3_0_11": [
-        "VAP3 0-11 mois fixe", "VAP3 0-11 mois avancée", "VAP3 0-11 mois mobile",
-    ],
-    "VAP4_12_23": [
-        "VAP4 12-23 mois fixe", "VAP4 12-23 mois avancée", "VAP4 12-23 mois mobile",
-    ],
-    "VAA_0_11": [
-        "VAA fixe1", "VAA fixe2",
-        "VAA avancé1", "VAA avancé2",
-        "VAA mobile1", "VAA mobile2",
-    ],
-    "Td_2_plus": [
-        "Td 2", "Td 3", "Td 4", "Td 5",
-    ],
+    "BCG_0_11": ["BCG fixe1", "BCG fixe2", "BCG avancé1", "BCG avancé2", "BCG mobile1", "BCG mobile2"],
+    "DTC1_0_11": ["Penta1 fixe1", "Penta1 fixe2", "Penta1 avancé1", "Penta1 avancé2", "Penta1 mobile1", "Penta1 mobile2"],
+    "DTC2_0_11": ["Penta2 fixe1", "Penta2 fixe2", "Penta2 avancé1", "Penta2 avancé2", "Penta2 mobile1", "Penta2 mobile2"],
+    "DTC3_0_11": ["Penta3 fixe1", "Penta3 fixe2", "Penta3 avancé1", "Penta3 avancé2", "Penta3 mobile1", "Penta3 mobile2"],
+    "VPO3_0_11": ["VPO3 fixe1", "VPO3 fixe2", "VPO3 avancé1", "VPO3 avancé2", "VPO3 mobile1", "VPO3 mobile2"],
+    "VPI1_0_11": ["VPI1 fixe1", "VPI1 fixe2", "VPI1 avancé1", "VPI1 avancé2", "VPI1 mobile1", "VPI1 mobile2"],
+    "VPI2_0_11": ["VPI2 fixe1", "VPI2 fixe2", "VPI2 avancé1", "VPI2 avancé2", "VPI2 mobile1", "VPI2 mobile2"],
+    "ROTA3_0_11": ["ROTA3 fixe", "ROTA3 avancé", "ROTA3 mobile"],
+    "PCV13_3_0_11": ["PCV13 fixe1", "PCV13 fixe2", "PCV13 avancé1", "PCV13 avancé2", "PCV13 mobile1", "PCV13 mobile2"],
+    "VAR1_0_11": ["VAR1 fixe1", "VAR1 fixe2", "VAR1 avancé1", "VAR1 avancé2", "VAR1 mobile1", "VAR1 mobile2"],
+    "VAR2_total": ["VAR2 fixe1", "VAR2 fixe2", "VAR2 avancé", "VAR2 mobile1", "VAR2 mobile2"],
+    "VAR2_0_11": ["VAR2 0-11 mois fixe", "VAR2 0-11 mois avancée", "VAR2 0-11 mois mobile"],
+    "VPO0_0_11": ["VPO0 0-11 mois fixe1", "VPO0 0-11 mois fixe2", "VPO0 0-11 mois avancée1", "VPO0 0-11 mois avancée2", "VPO0 0-11 mois mobile1", "VPO0 0-11 mois mobile2"],
+    "VPO1_0_11": ["VPO1 0-11 mois fixe1", "VPO1 0-11 mois fixe2", "VPO1 0-11 mois avancée1", "VPO1 0-11 mois avancée2", "VPO1 0-11 mois mobile1", "VPO1 0-11 mois mobile2"],
+    "VPO2_0_11": ["VPO2 0-11 mois fixe1", "VPO2 0-11 mois fixe2", "VPO2 0-11 mois avancée1", "VPO2 0-11 mois avancée2", "VPO2 0-11 mois mobile1", "VPO2 0-11 mois mobile2"],
+    "PCV13_1_0_11": ["PCV13(1) 0-11 mois fixe1", "PCV13(1) 0-11 mois fixe2", "PCV13(1) 0-11 mois avancée1", "PCV13(1) 0-11 mois avancée2", "PCV13(1) 0-11 mois mobile1", "PCV13(1) 0-11 mois mobile2"],
+    "PCV13_2_0_11": ["PCV13(2) 0-11 mois fixe1", "PCV13(2) 0-11 mois fixe2", "PCV13(2) 0-11 mois avancée1", "PCV13(2) 0-11 mois avancée2", "PCV13(2) 0-11 mois mobile1", "PCV13(2) 0-11 mois mobile2"],
+    "ROTA1_0_11": ["ROTA1 0-11 mois fixe", "ROTA1 0-11 mois avancée", "ROTA1 0-11 mois mobile"],
+    "ROTA2_0_11": ["ROTA2 0-11 mois fixe", "ROTA2 0-11 mois avancée", "ROTA2 0-11 mois mobile"],
+    "VAP1_0_11": ["VAP1 0-11 mois fixe", "VAP1 0-11 mois avancée", "VAP1 0-11 mois mobile"],
+    "VAP2_0_11": ["VAP2 0-11 mois fixe", "VAP2 0-11 mois avancée", "VAP2 0-11 mois mobile"],
+    "VAP3_0_11": ["VAP3 0-11 mois fixe", "VAP3 0-11 mois avancée", "VAP3 0-11 mois mobile"],
+    "VAP4_12_23": ["VAP4 12-23 mois fixe", "VAP4 12-23 mois avancée", "VAP4 12-23 mois mobile"],
+    "VAA_0_11": ["VAA fixe1", "VAA fixe2", "VAA avancé1", "VAA avancé2", "VAA mobile1", "VAA mobile2"],
+    "Td_2_plus": ["Td 2", "Td 3", "Td 4", "Td 5"],
 }
 
 
@@ -595,6 +522,7 @@ def build_zoho_record(
     rec["Org2"] = meta.get("Org2", "")
     rec["Org3"] = meta.get("Org3", "")
     rec["Org4"] = meta.get("Org4", "")
+
     rec["Antenne"] = antenne_from(rec["Org2"], rec["Org3"], antenne_rules)
 
     for k, v in row.items():
@@ -612,7 +540,103 @@ def build_zoho_record(
 
 
 # ---------------------------
-# PURGE helpers (manual only)
+# Error log helpers
+# ---------------------------
+def _truncate_text(v: Any, max_len: int = 5000) -> str:
+    s = "" if v is None else str(v)
+    return s[:max_len]
+
+
+def extract_zoho_row_errors(resp: Dict[str, Any]) -> List[Dict[str, Any]]:
+    errors: List[Dict[str, Any]] = []
+
+    if not isinstance(resp, dict):
+        return errors
+
+    data = resp.get("data")
+    if isinstance(data, list):
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            code = str(item.get("code") or "")
+            status = str(item.get("status") or "").lower()
+            if code and code != "3000":
+                errors.append(item)
+            elif status in ("error", "failed", "failure"):
+                errors.append(item)
+
+    response = resp.get("response")
+    if isinstance(response, dict):
+        data2 = response.get("data")
+        if isinstance(data2, list):
+            for item in data2:
+                if not isinstance(item, dict):
+                    continue
+                code = str(item.get("code") or "")
+                status = str(item.get("status") or "").lower()
+                if code and code != "3000":
+                    errors.append(item)
+                elif status in ("error", "failed", "failure"):
+                    errors.append(item)
+
+    return errors
+
+
+def build_error_log_records(
+    *,
+    run_id: str,
+    month: str,
+    batch_no: int,
+    failed_records: List[Dict[str, Any]],
+    row_errors: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+
+    if not failed_records:
+        return out
+
+    if not row_errors:
+        row_errors = [{} for _ in failed_records]
+
+    if len(row_errors) < len(failed_records):
+        row_errors = row_errors + ([row_errors[-1]] * (len(failed_records) - len(row_errors)))
+
+    for rec, err in zip(failed_records, row_errors):
+        out.append(
+            {
+                "Run_ID": run_id,
+                "Month": month,
+                "Batch_No": batch_no,
+                "Key_Value": _truncate_text(rec.get("Key"), 255),
+                "Org4_UID_Value": _truncate_text(rec.get("Org4_UID"), 255),
+                "Zoho_Code": _truncate_text(err.get("code"), 255),
+                "Zoho_Message": _truncate_text(err.get("message"), 5000),
+                "Zoho_Details": _truncate_text(err.get("details"), 5000),
+                "Payload_JSON": _truncate_text(json.dumps(rec, ensure_ascii=False), 10000),
+            }
+        )
+
+    return out
+
+
+def _flush_error_log_buffer(
+    client: ZohoCreatorClient,
+    error_log_buffer: List[Dict[str, Any]],
+) -> None:
+    if not error_log_buffer:
+        return
+
+    for part in chunk_records(error_log_buffer, 200):
+        try:
+            client.add_error_logs(part)
+        except Exception as e:
+            print(f"WARN: unable to write API_Error_Log batch: {e}", flush=True)
+
+    error_log_buffer.clear()
+
+
+# ---------------------------
+# PURGE helpers
 # ---------------------------
 def purge_by_criteria_until_empty(
     client: ZohoCreatorClient,
@@ -657,36 +681,111 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, batch_lim
 
 
 # ---------------------------
-# ADD-only import for a month (batch) with safe fallback
+# Add helpers
 # ---------------------------
 def _robust_add_records(
     client: ZohoCreatorClient,
     records: List[Dict[str, Any]],
     *,
     throttle_s: float,
+    run_id: str,
+    month: str,
+    batch_no_start: int,
+    log_errors_to_zoho: bool,
+    error_log_buffer: List[Dict[str, Any]],
     depth: int = 0,
     max_depth: int = 10,
-) -> Tuple[int, int]:
+) -> Tuple[int, int, int]:
     if not records:
-        return (0, 0)
+        return (0, 0, batch_no_start)
+
+    current_batch_no = batch_no_start
 
     try:
-        client.add_records(records)
+        resp = client.add_records(records)
+        row_errors = extract_zoho_row_errors(resp)
+
+        if not row_errors:
+            if throttle_s > 0:
+                time.sleep(throttle_s)
+            return (len(records), 0, current_batch_no + 1)
+
+        failed_count = len(row_errors)
+        inserted_count = max(0, len(records) - failed_count)
+
+        print(
+            f"[{month}] Zoho partial batch #{current_batch_no}: "
+            f"inserted={inserted_count} failed={failed_count}",
+            flush=True,
+        )
+
+        if log_errors_to_zoho:
+            failed_records = records[-failed_count:] if failed_count <= len(records) else records
+            error_log_buffer.extend(
+                build_error_log_records(
+                    run_id=run_id,
+                    month=month,
+                    batch_no=current_batch_no,
+                    failed_records=failed_records,
+                    row_errors=row_errors,
+                )
+            )
+
         if throttle_s > 0:
             time.sleep(throttle_s)
-        return (len(records), 0)
+
+        return (inserted_count, failed_count, current_batch_no + 1)
+
     except Exception as e:
         if len(records) == 1 or depth >= max_depth:
-            print(f"Add failed (record skipped). reason={e}", flush=True)
-            return (0, len(records))
+            print(
+                f"[{month}] Add failed batch #{current_batch_no} (record skipped). "
+                f"reason={e}",
+                flush=True,
+            )
+
+            if log_errors_to_zoho:
+                error_log_buffer.extend(
+                    build_error_log_records(
+                        run_id=run_id,
+                        month=month,
+                        batch_no=current_batch_no,
+                        failed_records=records,
+                        row_errors=[{"code": "EXCEPTION", "message": str(e), "details": ""}],
+                    )
+                )
+
+            return (0, len(records), current_batch_no + 1)
 
         mid = len(records) // 2
         left = records[:mid]
         right = records[mid:]
 
-        ins_l, fail_l = _robust_add_records(client, left, throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
-        ins_r, fail_r = _robust_add_records(client, right, throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
-        return (ins_l + ins_r, fail_l + fail_r)
+        ins_l, fail_l, next_batch = _robust_add_records(
+            client,
+            left,
+            throttle_s=throttle_s,
+            run_id=run_id,
+            month=month,
+            batch_no_start=current_batch_no,
+            log_errors_to_zoho=log_errors_to_zoho,
+            error_log_buffer=error_log_buffer,
+            depth=depth + 1,
+            max_depth=max_depth,
+        )
+        ins_r, fail_r, next_batch = _robust_add_records(
+            client,
+            right,
+            throttle_s=throttle_s,
+            run_id=run_id,
+            month=month,
+            batch_no_start=next_batch,
+            log_errors_to_zoho=log_errors_to_zoho,
+            error_log_buffer=error_log_buffer,
+            depth=depth + 1,
+            max_depth=max_depth,
+        )
+        return (ins_l + ins_r, fail_l + fail_r, next_batch)
 
 
 def insert_month_from_parts_add_only(
@@ -701,6 +800,8 @@ def insert_month_from_parts_add_only(
     *,
     batch_size: int,
     throttle_s: float,
+    run_id: str,
+    log_errors_to_zoho: bool,
 ) -> Dict[str, Any]:
     month_dir = repo_root / "docs" / "data_as" / "monthly" / yyyymm
 
@@ -708,21 +809,32 @@ def insert_month_from_parts_add_only(
     skipped_no_key = 0
     inserted = 0
     failed = 0
+    missing_ou_map = 0
     batches = 0
+    next_batch_no = 1
+    error_log_buffer: List[Dict[str, Any]] = []
 
     for p in parts_meta:
         plain = p.get("plain")
         if not plain:
             continue
-
         fp = month_dir / str(plain)
         if not fp.exists():
             continue
 
         rows = iter_ndjson_with_raw(fp)
-
         zoho_recs: List[Dict[str, Any]] = []
+
         for obj, raw in rows:
+            ou = str(obj.get("OrgUnit") or "").strip()
+            if not ou:
+                skipped_no_key += 1
+                continue
+
+            if ou not in ou_map:
+                missing_ou_map += 1
+                continue
+
             rec = build_zoho_record(
                 row=obj,
                 raw_line=raw,
@@ -742,9 +854,25 @@ def insert_month_from_parts_add_only(
             if not batch:
                 continue
             batches += 1
-            ins, fail = _robust_add_records(client, batch, throttle_s=throttle_s)
+
+            ins, fail, next_batch_no = _robust_add_records(
+                client,
+                batch,
+                throttle_s=throttle_s,
+                run_id=run_id,
+                month=yyyymm,
+                batch_no_start=next_batch_no,
+                log_errors_to_zoho=log_errors_to_zoho,
+                error_log_buffer=error_log_buffer,
+            )
             inserted += ins
             failed += fail
+
+            if log_errors_to_zoho and len(error_log_buffer) >= 200:
+                _flush_error_log_buffer(client, error_log_buffer)
+
+    if log_errors_to_zoho and error_log_buffer:
+        _flush_error_log_buffer(client, error_log_buffer)
 
     return {
         "month": yyyymm,
@@ -753,6 +881,7 @@ def insert_month_from_parts_add_only(
         "inserted": inserted,
         "failed": failed,
         "skipped_no_key": skipped_no_key,
+        "missing_ou_map": missing_ou_map,
     }
 
 
@@ -761,21 +890,14 @@ def main() -> int:
     ap.add_argument("--repo_root", default=".", help="Repository root (default: .)")
     ap.add_argument("--index", default="docs/data_as/index.json")
     ap.add_argument("--state", default="docs/data_as/zoho_sync_state.json")
-
-    ap.add_argument(
-        "--refresh_last_n",
-        type=int,
-        default=2,
-        help="ADD-ONLY for the last N PREVIOUS months (M-1..). Recommended=2.",
-    )
+    ap.add_argument("--refresh_last_n", type=int, default=2)
     ap.add_argument("--batch_size", type=int, default=200)
     ap.add_argument("--throttle_seconds", type=float, default=1.5)
-
     ap.add_argument("--purge_all", action="store_true")
     ap.add_argument("--purge_only", action="store_true")
     ap.add_argument("--purge_batch_limit", type=int, default=200)
-
-    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (add only).")
+    ap.add_argument("--import_historical", action="store_true")
+    ap.add_argument("--disable_error_log_form", action="store_true")
 
     args = ap.parse_args()
 
@@ -788,6 +910,7 @@ def main() -> int:
         app_link_name=os.environ.get("ZOHO_APP_LINK", "vaccination-de-routine-dhis2-rdc"),
         form_link_name=os.environ.get("ZOHO_FORM_LINK", "Donn_es_PEV_AS"),
         report_link_name=os.environ.get("ZOHO_REPORT_LINK", "Donn_es_PEV_AS_Report"),
+        error_log_form_link_name=os.environ.get("ZOHO_ERROR_LOG_FORM_LINK", "API_Error_Log"),
     )
 
     repo_root = Path(args.repo_root).resolve()
@@ -802,6 +925,8 @@ def main() -> int:
     excluded_raw_links = build_excluded_raw_links(zoho_rename_map)
 
     client = ZohoCreatorClient(cfg)
+    run_id = f"AS-{uuid.uuid4().hex[:12]}"
+    log_errors_to_zoho = not args.disable_error_log_form
 
     if args.purge_all:
         print("PURGE ALL: deleting all records in Zoho report until empty...", flush=True)
@@ -832,16 +957,18 @@ def main() -> int:
     index = load_index(index_path)
     months_sorted = sorted_months(index)
     if not months_sorted:
-        print("No months found in index.json")
+        print("No months found in index.json", flush=True)
         return 0
 
     months_obj = index.get("months") or {}
-
     ou_map = load_ou_map(repo_root)
-    print(f"OU_MAP loaded: org4={len(ou_map)}", flush=True)
+
+    print(f"RUN_ID={run_id}", flush=True)
+    print(f"OU_MAP loaded: source_units={len(ou_map)}", flush=True)
     print(f"rename_map loaded: {len(zoho_rename_map)} fields", flush=True)
     print(f"antenne_rules loaded: {len(antenne_rules)} provinces", flush=True)
     print(f"excluded raw links for Zoho payload: {len(excluded_raw_links)}", flush=True)
+    print(f"error_log_form_enabled={log_errors_to_zoho} form={cfg.error_log_form_link_name}", flush=True)
 
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
@@ -873,10 +1000,13 @@ def main() -> int:
             excluded_raw_links=excluded_raw_links,
             batch_size=args.batch_size,
             throttle_s=args.throttle_seconds,
+            run_id=run_id,
+            log_errors_to_zoho=log_errors_to_zoho,
         )
         print(
             f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
-            f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+            f"inserted={stats['inserted']} failed={stats['failed']} "
+            f"skipped_no_key={stats['skipped_no_key']} missing_ou_map={stats['missing_ou_map']}",
             flush=True,
         )
         done_months[m] = {
@@ -884,17 +1014,16 @@ def main() -> int:
             "refreshed": True,
             "last_sync": time.time(),
             "mode": "daily_add_only_previous",
+            "run_id": run_id,
         }
 
     if args.import_historical:
         for m in months_sorted:
             if m in refresh_months:
                 continue
-
             parts = (months_obj.get(m) or {}).get("parts") or []
             if not parts:
                 continue
-
             if done_months.get(m, {}).get("done") is True:
                 print(f"[{m}] skip: already done (historical)", flush=True)
                 continue
@@ -911,10 +1040,13 @@ def main() -> int:
                 excluded_raw_links=excluded_raw_links,
                 batch_size=args.batch_size,
                 throttle_s=args.throttle_seconds,
+                run_id=run_id,
+                log_errors_to_zoho=log_errors_to_zoho,
             )
             print(
                 f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
-                f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+                f"inserted={stats['inserted']} failed={stats['failed']} "
+                f"skipped_no_key={stats['skipped_no_key']} missing_ou_map={stats['missing_ou_map']}",
                 flush=True,
             )
             done_months[m] = {
@@ -922,6 +1054,7 @@ def main() -> int:
                 "refreshed": False,
                 "last_sync": time.time(),
                 "mode": "historical_add_only",
+                "run_id": run_id,
             }
 
     state["done_months"] = done_months
