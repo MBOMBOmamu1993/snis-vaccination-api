@@ -393,17 +393,41 @@ def _to_number(v: Any) -> float:
     return 0.0
 
 
-def _number_out(v: float) -> int | float:
-    if float(v).is_integer():
-        return int(v)
-    return v
+def _number_out(v: float) -> int:
+    return int(round(float(v)))
 
 
-def _sum_by_link(row: Dict[str, Any], *links: str) -> int | float:
+def _sum_by_link(row: Dict[str, Any], *links: str) -> int:
     total = 0.0
     for link in links:
         total += _to_number(row.get(link))
     return _number_out(total)
+
+
+def _sanitize_record_numbers(rec: Dict[str, Any]) -> Dict[str, Any]:
+    keep_as_text = {
+        "Key",
+        "RowHash",
+        "Org2",
+        "Org3",
+        "Org4",
+        "Org4_UID",
+        "Period",
+        "Antenne",
+    }
+
+    out: Dict[str, Any] = {}
+    for k, v in rec.items():
+        if k in keep_as_text:
+            out[k] = v
+            continue
+
+        if isinstance(v, (int, float, bool)) or v is None or isinstance(v, str):
+            out[k] = _number_out(_to_number(v))
+        else:
+            out[k] = v
+
+    return out
 
 
 def _normalize_org3_name(org3: str) -> str:
@@ -608,7 +632,7 @@ def build_zoho_record(
         source_links = [zoho_rename_map.get(label, label) for label in source_labels]
         rec[out_field] = _sum_by_link(row, *source_links)
 
-    return rec
+    return _sanitize_record_numbers(rec)
 
 
 # ---------------------------
