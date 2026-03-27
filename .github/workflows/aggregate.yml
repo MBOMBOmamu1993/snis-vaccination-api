@@ -1,0 +1,27 @@
+name: Aggregate data for dashboard
+on:
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Generate aggregated dashboard data
+        run: python scripts/aggregate_dashboard.py
+      
+      - name: Commit aggregated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/dashboard_agg.json
+          git diff --staged --quiet || git commit -m "auto: refresh dashboard aggregated data"
+          git push
