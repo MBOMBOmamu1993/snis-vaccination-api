@@ -10,16 +10,12 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font-size:13px}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#999;border-radius:3px}
-
-/* HEADER */
 .hdr{background:linear-gradient(135deg,#002b55 0%,#0b3a6f 45%,#1a5fa8 100%);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:1200;box-shadow:0 3px 18px rgba(0,0,0,.22)}
 .hdr .logo{display:flex;align-items:center;gap:10px}
 .hdr .logo img,.hdr .logo svg{height:42px;width:42px}
 .hdr h1{font-size:21px;font-weight:800;letter-spacing:.4px;text-shadow:0 1px 4px rgba(0,0,0,.2)}
 .ibtn{border:2px solid rgba(255,255,255,.45);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-style:italic;font-size:18px;color:#fff;transition:.2s}
 .ibtn:hover{background:rgba(255,255,255,.15)}
-
-/* NAV */
 .nav{background:linear-gradient(135deg,#0b3a6f,#0d4888);display:flex;padding-left:16px;border-top:1px solid rgba(255,255,255,.07);position:sticky;top:60px;z-index:1100;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .mi{position:relative;padding:13px 20px;color:rgba(255,255,255,.82);cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;border-bottom:3px solid transparent;transition:.2s;user-select:none}
 .mi:hover,.mi.act{color:#fff;background:rgba(255,255,255,.09);border-bottom-color:#64b5f6}
@@ -28,15 +24,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
 .dd .di:last-child{border:none}.dd .di:hover{background:#e3f2fd;color:#0b3a6f;padding-left:24px}
 .dd .di.as{background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;font-weight:700}
 .mi:hover>.dd{display:block}
-
-/* LOAD BAR */
 .lb{background:linear-gradient(135deg,#e3ecf7,#d6e3f5);padding:9px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #c5d4e8;font-size:12px;flex-wrap:wrap}
 .lb .st{font-weight:700;min-width:160px;color:#0b3a6f}
 .lb .pw{flex:1;min-width:180px;height:6px;background:#c5d4e8;border-radius:3px;overflow:hidden}
 .lb .pf{height:100%;background:linear-gradient(90deg,#0b3a6f,#2196f3);border-radius:3px;transition:width .4s}
 .lb .pt{font-size:11px;color:#555;min-width:100px}
-
-/* FILTERS */
 .fs{background:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;border-bottom:2px solid #e3ecf7;box-shadow:0 2px 6px rgba(0,0,0,.02)}
 .fg{position:relative}
 .fg label{display:block;font-size:9.5px;font-weight:700;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
@@ -51,25 +43,17 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
 .fi:hover{background:#e3f2fd}
 .fi input[type=checkbox]{accent-color:#0b3a6f;width:14px;height:14px}
 .fa{border-bottom:2px solid #e3ecf7;font-weight:700;padding:7px 12px;background:#fafbfc}
-
-/* MAIN */
 .ct{padding:18px 22px}
 .db{background:#fff;border-radius:13px;padding:22px;min-height:480px;box-shadow:0 4px 18px rgba(0,0,0,.05);border:1px solid #e5e7eb}
-
-/* KPI */
 .kr{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
 .kc{flex:1;min-width:170px;background:#fff;border-radius:13px;padding:18px;box-shadow:0 3px 16px rgba(0,0,0,.05);border-left:5px solid #0b3a6f;text-align:center;transition:transform .2s,box-shadow .2s}
 .kc:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(0,0,0,.1)}
 .kc.gn{border-left-color:#27ae60}.kc.rd{border-left-color:#e74c3c}.kc.or{border-left-color:#f39c12}.kc.bl{border-left-color:#2196f3}.kc.pu{border-left-color:#9b59b6}
 .kv{font-size:28px;font-weight:800;color:#0b3a6f}
 .kl{font-size:11px;font-weight:600;color:#666;margin-top:4px}
-
-/* CHARTS */
 .cb{background:#fff;border-radius:13px;padding:18px;box-shadow:0 3px 14px rgba(0,0,0,.04);margin-bottom:18px;border:1px solid #eef1f5}
 .cb h4{font-size:14px;font-weight:700;color:#0b3a6f;margin-bottom:12px;padding-bottom:9px;border-bottom:2px solid #e3ecf7;display:flex;align-items:center;gap:7px}
 .cr{display:flex;gap:16px;flex-wrap:wrap}.ch{flex:1;min-width:370px}
-
-/* TABLES */
 .tw{overflow-x:auto;margin-bottom:16px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.06);max-height:480px;overflow-y:auto}
 .dt{width:100%;border-collapse:collapse;font-size:11px}
 .dt thead{background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;position:sticky;top:0;z-index:10}
@@ -79,44 +63,36 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
 .cg{background:#d4edda!important;color:#155724}.crd{background:#fee2e2!important;color:#991b1b}
 .cy{background:#fff3cd!important;color:#856404}.co{background:#ffe0b2!important;color:#e65100}
 .tr{color:#e74c3c!important;font-weight:700}
-
-/* SECTION TITLE */
 .st{font-size:15px;font-weight:800;color:#0b3a6f;margin-bottom:16px;padding:13px 18px;background:linear-gradient(135deg,#e3ecf7,#dce8fa);border-radius:11px;display:flex;align-items:center;gap:9px;border-left:5px solid #0b3a6f}
-
-/* SUB TABS */
 .stt{display:flex;margin-bottom:18px;border-bottom:3px solid #0b3a6f;background:#fff;border-radius:11px 11px 0 0;overflow-x:auto}
 .stb{padding:12px 20px;cursor:pointer;font-size:12.5px;font-weight:600;color:#666;border-bottom:4px solid transparent;white-space:nowrap;transition:.2s}
 .stb:hover{background:#e3f2fd;color:#0b3a6f}.stb.act{color:#0b3a6f;border-bottom-color:#0b3a6f;font-weight:800;background:#f0f7ff}
-
-/* PAGINATION */
 .pg{display:flex;justify-content:center;align-items:center;gap:16px;padding:14px;margin-top:10px}
 .pg button{padding:9px 22px;border:none;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;transition:.2s;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .pg button:disabled{opacity:.3;cursor:not-allowed;box-shadow:none}
 .pg button:not(:disabled):hover{background:linear-gradient(135deg,#1565c0,#1976d2)}
 .pg span{font-size:13px;font-weight:700;color:#0b3a6f;background:#e3ecf7;padding:7px 14px;border-radius:18px}
-
-/* LEGEND */
 .lgb{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:11px}
 .lgi{display:flex;align-items:center;gap:4px}
 .lgd{width:13px;height:13px;border-radius:2px;display:inline-block}
-
+.wn{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#856404;display:flex;align-items:center;gap:8px}
 @media(max-width:900px){.nav{flex-wrap:wrap}.ch{min-width:100%}.kr{flex-direction:column}.hdr{padding:0 10px}.hdr h1{font-size:15px}.fs{padding:8px 10px}}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div class="logo">
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="2.5"/>
-      <path d="M35 25L35 75M65 25L65 75M35 50L65 50M25 38L75 38M25 62L75 62" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
-      <circle cx="50" cy="18" r="5" fill="#64b5f6"/><circle cx="50" cy="82" r="5" fill="#64b5f6"/>
-      <text x="50" y="98" text-anchor="middle" fill="#64b5f6" font-size="9" font-weight="bold">PEV</text>
-    </svg>
-    <span style="font-weight:700;font-size:14px">PEV</span>
-  </div>
-  <h1>Dashboard PEV de routine</h1>
-  <div class="ibtn" title="Info"><i>i</i></div>
+ <div class="logo">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+   <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="2.5"/>
+   <path d="M35 25L35 75M65 25L65 75M35 50L65 50M25 38L75 38M25 62L75 62" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+   <circle cx="50" cy="18" r="5" fill="#64b5f6"/><circle cx="50" cy="82" r="5" fill="#64b5f6"/>
+   <text x="50" y="98" text-anchor="middle" fill="#64b5f6" font-size="9" font-weight="bold">PEV</text>
+  </svg>
+  <span style="font-weight:700;font-size:14px">PEV</span>
+ </div>
+ <h1>Dashboard PEV de routine</h1>
+ <div class="ibtn" title="Info"><i>i</i></div>
 </div>
 
 <div class="nav" id="NAV"></div>
@@ -130,41 +106,71 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
    CONFIGURATION
    ═══════════════════════════════════════════════ */
 var C={
-  MA:11,            // Moyenne mobile: 11 mois
-  CT:0.33,          // Cohérence temps ±33%
-  CD:0.10,          // Cohérence données ±10%
-  VAP_PROV:['Kongo Central','Kwango','Kwilu','Maindombe','Equateur','Tshuapa','Mongala','Sud-Ubangi','Nord-Ubangi','Bas-Uele','Haut-Uele','Tshopo','Maniema','Lomami','Haut-Lomami','Kasai Central'],
-  BR:[[90,20],[80,16],[70,12],[60,8],[50,4],[0,0]],  // barème rapportage & exhaustivité
-  BA:[[0,20],[5.01,16],[10.01,12],[20.01,8],[30.01,4],[50.01,0]] // barème atypiques
+ MA:11,
+ CT:0.33,
+ CD:0.10,
+ VAP_PROV:['Kongo Central','Kwango','Kwilu','Maindombe','Equateur','Tshuapa','Mongala','Sud-Ubangi','Nord-Ubangi','Bas-Uele','Haut-Uele','Tshopo','Maniema','Lomami','Haut-Lomami','Kasai Central'],
+ BR:[[90,20],[80,16],[70,12],[60,8],[50,4],[0,0]],
+ BA:[[0,20],[5.01,16],[10.01,12],[20.01,8],[30.01,4],[50.01,0]]
 };
 
-var AG=['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2','DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2','HPV'];
-var AG_VAP=['VAP1','VAP2','VAP3','VAP4'];
-var AG_ALL=AG.concat(AG_VAP);
-var AG_LBL={BCG:'BCG',VPO0:'VPO0',DTC1:'DTC1/Penta1',VPO1:'VPO1',ROTA1:'ROTA1',PCV13_1:'PCV13-1',DTC2:'DTC2/Penta2',VPO2:'VPO2',ROTA2:'ROTA2',PCV13_2:'PCV13-2',DTC3:'DTC3/Penta3',VPO3:'VPO3',VPI1:'VPI1',ROTA3:'ROTA3',PCV13_3:'PCV13-3',VAR1:'VAR1',VPI2:'VPI2',VAA:'VAA',VAR2:'VAR2',HPV:'HPV',VAP1:'VAP1',VAP2:'VAP2',VAP3:'VAP3',VAP4:'VAP4'};
-var SAME_AGE=[
-  {age:'Naissance',v:['BCG','VPO0']},
-  {age:'6 semaines',v:['DTC1','VPO1','ROTA1','PCV13_1']},
-  {age:'10 semaines',v:['DTC2','VPO2','ROTA2','PCV13_2']},
-  {age:'14 semaines',v:['DTC3','VPO3','VPI1','ROTA3','PCV13_3']},
-  {age:'9 mois',v:['VAR1','VPI2','VAA']}
-];
-  var AG_FIELD_MAP = { BCG: 'BCG_0_11', VPO0: 'VPO0_0_11', DTC1: 'DTC1_0_11', VPO1: 'VPO1_0_11', ROTA1: 'ROTA1_0_11', PCV13_1: 'PCV13_1_0_11', DTC2: 'DTC2_0_11', VPO2: 'VPO2_0_11', ROTA2: 'ROTA2_0_11', PCV13_2: 'PCV13_2_0_11', DTC3: 'DTC3_0_11', VPO3: 'VPO3_0_11', VPI1: 'VPI1_0_11', ROTA3: 'ROTA3_0_11', PCV13_3: 'PCV13_3_0_11', VAR1: 'VAR1_0_11', VPI2: 'VPI2_0_11', VAA: 'VAA_0_11', VAR2: 'VAR2_0_11' };
+/* ─── ANTIGÈNES : liste complète attendue ─── */
+var AG_FULL=['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2','DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2','TD','HPV'];
+var AG_VAP_FULL=['VAP1','VAP2','VAP3','VAP4'];
 
+/* Copies dynamiques — seront filtrées après chargement */
+var AG=AG_FULL.slice();
+var AG_VAP=AG_VAP_FULL.slice();
+var AG_ALL=AG.concat(AG_VAP);
+
+var AG_LBL={
+ BCG:'BCG',VPO0:'VPO0',DTC1:'DTC1/Penta1',VPO1:'VPO1',ROTA1:'ROTA1',
+ PCV13_1:'PCV13-1',DTC2:'DTC2/Penta2',VPO2:'VPO2',ROTA2:'ROTA2',
+ PCV13_2:'PCV13-2',DTC3:'DTC3/Penta3',VPO3:'VPO3',VPI1:'VPI1',ROTA3:'ROTA3',
+ PCV13_3:'PCV13-3',VAR1:'VAR1',VPI2:'VPI2',
+ VAA:'VAA',VAR2:'VAR2',TD:'TD',HPV:'HPV',
+ VAP1:'VAP1',VAP2:'VAP2',VAP3:'VAP3',VAP4:'VAP4'
+};
+
+var SAME_AGE_FULL=[
+ {age:'Naissance',v:['BCG','VPO0']},
+ {age:'6 semaines',v:['DTC1','VPO1','ROTA1','PCV13_1']},
+ {age:'10 semaines',v:['DTC2','VPO2','ROTA2','PCV13_2']},
+ {age:'14 semaines',v:['DTC3','VPO3','VPI1','ROTA3','PCV13_3']},
+ {age:'9 mois',v:['VAR1','VPI2','VAA']},
+ {age:'15 mois',v:['VAR2']}
+];
+var SAME_AGE=SAME_AGE_FULL.slice();
+
+/* ─── MAPPING champ JSON → antigène (COMPLET) ─── */
+var AG_FIELD_MAP={
+ BCG:'BCG_0_11', VPO0:'VPO0_0_11',
+ DTC1:'DTC1_0_11', VPO1:'VPO1_0_11', ROTA1:'ROTA1_0_11', PCV13_1:'PCV13_1_0_11',
+ DTC2:'DTC2_0_11', VPO2:'VPO2_0_11', ROTA2:'ROTA2_0_11', PCV13_2:'PCV13_2_0_11',
+ DTC3:'DTC3_0_11', VPO3:'VPO3_0_11', VPI1:'VPI1_0_11', ROTA3:'ROTA3_0_11', PCV13_3:'PCV13_3_0_11',
+ VAR1:'VAR1_0_11', VPI2:'VPI2_0_11',
+ VAA:'VAA_0_11', VAR2:'VAR2_0_11',
+ TD:'TD_0_11', HPV:'HPV_0_11',
+ VAP1:'VAP1_0_11', VAP2:'VAP2_0_11', VAP3:'VAP3_0_11', VAP4:'VAP4_0_11'
+};
+
+/* ─── TABS ─── */
 var TABS=[
-  {id:'oqd',lb:'Outil qualité données',fl:['province','antenne','zs','as','fosa','period'],
-   pp:[{t:'1. Complétude et Promptitude',ic:'📋'},{t:'2. Cohérence-temps',ic:'📈'},{t:'3. Cohérence-donnée',ic:'🔗'},{t:'4. Valeurs atypiques',ic:'⚠️'},{t:'5. Score qualité des données',ic:'🏆'}]},
-  {id:'fosa',lb:'FOSA',fl:['province','antenne','zs','as','fosa','period'],pp:[{t:'Tableau de bord FOSA',ic:'🏥'}]},
-  {id:'as',lb:'Aire de Santé',fl:['province','antenne','zs','as','period'],pp:[{t:'Tableau de bord AS',ic:'📍'}]},
-  {id:'zs',lb:'Zone de Santé',fl:['province','antenne','zs','period'],pp:[{t:'Tableau de bord ZS',ic:'🗺️'}]},
-  {id:'ant',lb:'Antenne PEV',fl:['province','antenne','period'],pp:[{t:'Tableau de bord Antenne',ic:'📡'}]},
-  {id:'nat',lb:'National',fl:['province','period'],pp:[{t:'Tableau de bord National',ic:'🇨🇩'}]},
-  {id:'gen',lb:'Aperçu général',fl:['province','antenne','zs','as','fosa','period'],pp:[{t:'Aperçu général',ic:'👁️'}]}
+ {id:'oqd',lb:'Outil qualité données',fl:['province','antenne','zs','as','fosa','period'],
+  pp:[{t:'1. Complétude et Promptitude',ic:'📋'},{t:'2. Cohérence-temps',ic:'📈'},{t:'3. Cohérence-donnée',ic:'🔗'},{t:'4. Valeurs atypiques',ic:'⚠️'},{t:'5. Score qualité des données',ic:'🏆'}]},
+ {id:'fosa',lb:'FOSA',fl:['province','antenne','zs','as','fosa','period'],pp:[{t:'Tableau de bord FOSA',ic:'🏥'}]},
+ {id:'as',lb:'Aire de Santé',fl:['province','antenne','zs','as','period'],pp:[{t:'Tableau de bord AS',ic:'📍'}]},
+ {id:'zs',lb:'Zone de Santé',fl:['province','antenne','zs','period'],pp:[{t:'Tableau de bord ZS',ic:'🗺️'}]},
+ {id:'ant',lb:'Antenne PEV',fl:['province','antenne','period'],pp:[{t:'Tableau de bord Antenne',ic:'📡'}]},
+ {id:'nat',lb:'National',fl:['province','period'],pp:[{t:'Tableau de bord National',ic:'🇨🇩'}]},
+ {id:'gen',lb:'Aperçu général',fl:['province','antenne','zs','as','fosa','period'],pp:[{t:'Aperçu général',ic:'🎯'}]}
 ];
 
 /* ═══ STATE ═══ */
-  var BASE = './data/dashboard';
-  var S = { tab: 0, pg: 0, data: [], flt: [], charts: {}, filters: {}, vals: {}, loaded: false, meta: null, hmIndex: {}, hmCache: {}, heatmap: {} };
+var BASE='./data/dashboard';
+var S={tab:0,pg:0,data:[],flt:[],charts:{},filters:{},vals:{},loaded:false,meta:null,hmIndex:{},hmCache:{},heatmap:{}};
+var DATA_HAS_AS=false, DATA_HAS_FOSA=false;
+var AG_MISSING=[];
 
 /* ═══ UTILITIES ═══ */
 function mL(ym){if(!ym||ym.length<6)return ym||'';var n=['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];return n[parseInt(ym.substr(4,2),10)-1]+' '+ym.substr(0,4);}
@@ -178,9 +184,9 @@ function E(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cl
 function isRep(r){return r.completude>0;}
 function isVAP(r){return r.isVAP;}
 function obAg(r){return isVAP(r)?AG.concat(AG_VAP):AG;}
-function obTotal(r){return isVAP(r)?24:20;}
+function obTotal(r){return obAg(r).length;}   /* ← dynamique maintenant */
 function cntRens(r){var c=0;obAg(r).forEach(function(a){if((Number(r[a+'_f'])||0)>0)c++;});return c;}
-function exh(r){return pct(cntRens(r),obTotal(r));}
+function exh(r){var t=obTotal(r);return t>0?pct(cntRens(r),t):0;}
 function missAg(r){return obAg(r).filter(function(a){return!(Number(r[a+'_f'])||0);});}
 function mAvg(fosa,ag,per,data,N){var d=data.filter(function(r){return r.org5===fosa&&r.period<per&&(Number(r[ag])||0)>0;});d.sort(function(a,b){return b.period<a.period?-1:1;});var sub=d.slice(0,N);if(!sub.length)return null;return sub.reduce(function(s,r){return s+(Number(r[ag])||0);},0)/sub.length;}
 function chkCoh(r){var ok=true;SAME_AGE.forEach(function(g){for(var i=0;i<g.v.length-1;i++){var a=Number(r[g.v[i]])||0,b=Number(r[g.v[i+1]])||0;var den=b||a||1;if(Math.abs((a-b)/den)>C.CD)ok=false;}});return ok;}
@@ -190,491 +196,631 @@ function sB(val,bar){for(var i=0;i<bar.length;i++){if(val>=bar[i][0])return bar[
 function sBA(v){if(v<=5)return 20;if(v<=10)return 16;if(v<=20)return 12;if(v<=30)return 8;if(v<=50)return 4;return 0;}
 function sp(p,t,s){var a=document.getElementById('PF'),b=document.getElementById('PT'),c=document.getElementById('LS');if(a)a.style.width=p+'%';if(b&&t)b.textContent=t;if(c&&s)c.textContent=s;}
 
-  /* ═══ TRANSFORM RECORD ═══ */
-  function transformRecord(r) {
-    var rec = { org2: r._Province || '', org3: r._ZS || '', org4: r._AS || '', org5: r._FOSA || r.orgUnit || '', antenne: r._Antenne || '', period: r._YM || '', completude: r.comp || 0, promptitude: r.prompt || 0, isVAP: C.VAP_PROV.indexOf(r._Province) >= 0, _n: r.n || 0, _rap: r.rap || 0 };
-    AG_ALL.forEach(function (ag) { var src = AG_FIELD_MAP[ag]; var val = src ? (Number(r[src]) || 0) : 0; rec[ag] = val; rec[ag + '_f'] = val; });
-    return rec;
+/* ═══ TRANSFORM RECORD ═══ */
+function transformRecord(r){
+ var rec={
+  org2:r._Province||'',
+  org3:r._ZS||'',
+  org4:r._AS||'',           /* vide si absent */
+  org5:r._FOSA||r.orgUnit||'', /* vide si absent */
+  antenne:r._Antenne||'',
+  period:r._YM||'',
+  completude:r.comp||0,
+  promptitude:r.prompt||0,
+  isVAP:C.VAP_PROV.indexOf(r._Province)>=0,
+  _n:r.n||0, _rap:r.rap||0
+ };
+ /* Si AS/FOSA absents, on utilise ZS comme fallback pour que
+    les regroupements/filtres ne soient pas tous vides */
+ if(!rec.org4) rec.org4=rec.org3;
+ if(!rec.org5) rec.org5=rec.org3;
+
+ AG_ALL.forEach(function(ag){
+  var src=AG_FIELD_MAP[ag];
+  var val=src?(Number(r[src])||0):0;
+  rec[ag]=val; rec[ag+'_f']=val;
+ });
+ return rec;
+}
+
+/* ═══ DATA LOADING ═══ */
+async function loadAll(){
+ var t0=Date.now(); sp(10,'Chargement...','⏳ Chargement...');
+ try{
+  var [mR,pR,zR,hmR]=await Promise.all([
+   fetch(BASE+'/meta.json?t='+Date.now()),
+   fetch(BASE+'/by_province.json'),
+   fetch(BASE+'/by_zs.json'),
+   fetch(BASE+'/heatmap/manifest.json')
+  ]);
+  sp(50,'Parsing...');
+  S.meta=await mR.json();
+  var byProv=await pR.json();
+  var byZS=await zR.json();
+  S.hmIndex=await hmR.json();
+  S.hmCache={}; S.heatmap={};
+
+  /* ────────────────────────────────────────────────
+     DÉTECTION DYNAMIQUE des champs disponibles
+     ──────────────────────────────────────────────── */
+  if(byZS.length>0){
+   var firstRec=byZS[0];
+   var availKeys=Object.keys(firstRec);
+
+   /* Granularité */
+   DATA_HAS_AS  = availKeys.indexOf('_AS')>=0;
+   DATA_HAS_FOSA= availKeys.indexOf('_FOSA')>=0 || availKeys.indexOf('orgUnit')>=0;
+
+   /* Filtrer AG pour ne garder que ceux présents dans les données */
+   AG=AG_FULL.filter(function(ag){
+    var f=AG_FIELD_MAP[ag]; return f && availKeys.indexOf(f)>=0;
+   });
+   AG_VAP=AG_VAP_FULL.filter(function(ag){
+    var f=AG_FIELD_MAP[ag]; return f && availKeys.indexOf(f)>=0;
+   });
+   AG_ALL=AG.concat(AG_VAP);
+
+   /* Antigènes manquants (pour information) */
+   AG_MISSING=AG_FULL.concat(AG_VAP_FULL).filter(function(a){return AG_ALL.indexOf(a)<0;});
+
+   /* Filtrer SAME_AGE : ne garder que les vaccins présents */
+   SAME_AGE=SAME_AGE_FULL.map(function(g){
+    return{age:g.age,v:g.v.filter(function(v){return AG_ALL.indexOf(v)>=0;})};
+   }).filter(function(g){return g.v.length>0;});
+
+   console.log('=== PREMIER ENREGISTREMENT JSON BRUT ===');
+   console.log(JSON.stringify(firstRec,null,2));
+   console.log('=== CLÉS DISPONIBLES ===');
+   console.log(availKeys.join(', '));
+   console.log('=== GRANULARITÉ ===');
+   console.log('AS disponible :',DATA_HAS_AS,'| FOSA disponible :',DATA_HAS_FOSA);
+   console.log('=== ANTIGÈNES ACTIFS ('+AG_ALL.length+') ===');
+   console.log(AG_ALL.join(', '));
+   if(AG_MISSING.length){
+    console.warn('=== ANTIGÈNES MANQUANTS ('+AG_MISSING.length+') ===');
+    console.warn(AG_MISSING.join(', '));
+   }
   }
 
-  /* ═══ DATA LOADING ═══ */
-  async function loadAll() {
-    var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
-    try {
-      var [mR, pR, zR, hmR] = await Promise.all([
-        fetch(BASE + '/meta.json?t=' + Date.now()),
-        fetch(BASE + '/by_province.json'),
-        fetch(BASE + '/by_zs.json'),
-        fetch(BASE + '/heatmap/manifest.json')
-      ]);
-      sp(50, 'Parsing...');
-      S.meta = await mR.json();
-      var byProv = await pR.json();
-      var byZS = await zR.json();
-      S.hmIndex = await hmR.json();
-      S.hmCache = {}; S.heatmap = {};
-      sp(65, 'Transformation...');
-          S.data = byZS.map(transformRecord);
-      if (byZS.length > 0) { console.log('=== PREMIER ENREGISTREMENT JSON BRUT ==='); console.log(JSON.stringify(byZS[0], null, 2)); console.log('=== CLÉS DISPONIBLES ==='); console.log(Object.keys(byZS[0]).join(', ')); }
-      sp(80, 'Indexation...');
-          var v = { province: S.meta.provinces || [], antenne: S.meta.antennes || [], zs: S.meta.zs || [], as: S.meta.as || [], fosa: S.meta.fosa || [], period: S.meta.months || [] };
-      if (!v.as.length || !v.fosa.length) {
-        S.data.forEach(function (r) {
-          if (r.org4 && v.as.indexOf(r.org4) < 0) v.as.push(r.org4);
-          if (r.org5 && v.fosa.indexOf(r.org5) < 0) v.fosa.push(r.org5);
-        });
-      }
-      Object.keys(v).forEach(function (k) { v[k].sort(); S.filters[k] = v[k].slice(); });
-      S.vals = v; S.loaded = true;
-      sp(85, 'Rendu...');
-      apFlt(); bNav(); rFlt(); render();
-      var dt = ((Date.now() - t0) / 1000).toFixed(1);
-      sp(100, (S.meta.total_records || S.data.length).toLocaleString() + ' enreg. | ' + v.period.length + ' mois | ' + (S.meta.nb_fosa || v.fosa.length) + ' FOSA', '⚡ Prêt en ' + dt + 's');
-    } catch (e) {
-      console.error(e); sp(0, '❌ ' + e.message, '❌ Erreur');
-      document.getElementById('DB').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur de chargement</h3><p>' + e.message + '</p><p style="margin-top:12px;font-size:12px;color:#888">Lancez d\'abord le workflow <code>aggregate</code> via GitHub Actions.</p></div>';
-    }
+  sp(65,'Transformation...');
+  S.data=byZS.map(transformRecord);
+
+  sp(80,'Indexation...');
+  var v={
+   province:S.meta.provinces||[],
+   antenne:S.meta.antennes||[],
+   zs:S.meta.zs||[],
+   as:S.meta.as||[],
+   fosa:S.meta.fosa||[],
+   period:S.meta.months||[]
+  };
+
+  /* Compléter AS et FOSA à partir des données si le meta ne les a pas */
+  if(!v.as.length||!v.fosa.length){
+   S.data.forEach(function(r){
+    if(r.org4&&v.as.indexOf(r.org4)<0) v.as.push(r.org4);
+    if(r.org5&&v.fosa.indexOf(r.org5)<0) v.fosa.push(r.org5);
+   });
   }
 
-  /* ═══ HEATMAP ON-DEMAND ═══ */
-  async function loadHeatmap() {
-    var provs = S.filters.province || [];
-    var toLoad = provs.filter(function (p) { return S.hmIndex[p] && !S.hmCache[p]; });
-    if (toLoad.length) {
-      var fetches = toLoad.map(function (p) {
-        return fetch(BASE + '/heatmap/' + S.hmIndex[p]).then(function (r) { return r.json(); }).then(function (d) { S.hmCache[p] = d; });
-      });
-      await Promise.all(fetches);
-    }
-    S.heatmap = {};
-    provs.forEach(function (p) { var d = S.hmCache[p]; if (d) { Object.keys(d).forEach(function (f) { S.heatmap[f] = d[f]; }); } });
-  }
+  Object.keys(v).forEach(function(k){v[k].sort();S.filters[k]=v[k].slice();});
+  S.vals=v; S.loaded=true;
+
+  sp(85,'Rendu...');
+  apFlt();bNav();rFlt();render();
+
+  var dt=((Date.now()-t0)/1000).toFixed(1);
+  sp(100,(S.meta.total_records||S.data.length).toLocaleString()+' enreg. | '+v.period.length+' mois | '+(S.meta.nb_fosa||v.fosa.length)+' unités','⚡ Prêt en '+dt+'s');
+ }catch(e){
+  console.error(e);sp(0,'❌ '+e.message,'❌ Erreur');
+  document.getElementById('DB').innerHTML='<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur de chargement</h3><p>'+e.message+'</p><p style="margin-top:12px;font-size:12px;color:#888">Lancez d\'abord le workflow <code>aggregate</code> via GitHub Actions.</p></div>';
+ }
+}
+
+/* ═══ HEATMAP ON-DEMAND ═══ */
+async function loadHeatmap(){
+ var provs=S.filters.province||[];
+ var toLoad=provs.filter(function(p){return S.hmIndex[p]&&!S.hmCache[p];});
+ if(toLoad.length){
+  var fetches=toLoad.map(function(p){
+   return fetch(BASE+'/heatmap/'+S.hmIndex[p]).then(function(r){return r.json();}).then(function(d){S.hmCache[p]=d;});
+  });
+  await Promise.all(fetches);
+ }
+ S.heatmap={};
+ provs.forEach(function(p){var d=S.hmCache[p];if(d){Object.keys(d).forEach(function(f){S.heatmap[f]=d[f];});}});
+}
+
+/* ═══ BANNIÈRE D'AVERTISSEMENT ═══ */
+function warnBanner(){
+ var parts=[];
+ if(!DATA_HAS_AS) parts.push('Aire de Santé');
+ if(!DATA_HAS_FOSA) parts.push('FOSA');
+ if(AG_MISSING.length) parts.push('Antigènes: '+AG_MISSING.map(function(a){return AG_LBL[a]||a;}).join(', '));
+ if(!parts.length) return '';
+ return '<div class="wn">⚠️ <b>Données manquantes :</b> '+parts.join(' · ')+' — Les données sont agrégées au niveau Zone de Santé. Filtres AS/FOSA utilisent ZS comme proxy.</div>';
+}
 
 /* ═══ FILTERS ═══ */
 function apFlt(){
-  var f=S.filters,tab=TABS[S.tab],dims=tab.fl;
-  S.flt=S.data.filter(function(r){
-    if(dims.indexOf('province')>=0&&f.province.length<S.vals.province.length&&f.province.indexOf(r.org2)<0)return false;
-    if(dims.indexOf('antenne')>=0&&f.antenne.length<S.vals.antenne.length&&f.antenne.indexOf(r.antenne)<0)return false;
-    if(dims.indexOf('zs')>=0&&f.zs.length<S.vals.zs.length&&f.zs.indexOf(r.org3)<0)return false;
-    if(dims.indexOf('as')>=0&&f.as.length<S.vals.as.length&&f.as.indexOf(r.org4)<0)return false;
-    if(dims.indexOf('fosa')>=0&&f.fosa.length<S.vals.fosa.length&&f.fosa.indexOf(r.org5)<0)return false;
-    if(dims.indexOf('period')>=0&&f.period.length<S.vals.period.length&&f.period.indexOf(r.period)<0)return false;
-    return true;
-  });
+ var f=S.filters,tab=TABS[S.tab],dims=tab.fl;
+ S.flt=S.data.filter(function(r){
+  if(dims.indexOf('province')>=0&&f.province.length<S.vals.province.length&&f.province.indexOf(r.org2)<0)return false;
+  if(dims.indexOf('antenne')>=0&&f.antenne.length<S.vals.antenne.length&&f.antenne.indexOf(r.antenne)<0)return false;
+  if(dims.indexOf('zs')>=0&&f.zs.length<S.vals.zs.length&&f.zs.indexOf(r.org3)<0)return false;
+  if(dims.indexOf('as')>=0&&f.as.length<S.vals.as.length&&f.as.indexOf(r.org4)<0)return false;
+  if(dims.indexOf('fosa')>=0&&f.fosa.length<S.vals.fosa.length&&f.fosa.indexOf(r.org5)<0)return false;
+  if(dims.indexOf('period')>=0&&f.period.length<S.vals.period.length&&f.period.indexOf(r.period)<0)return false;
+  return true;
+ });
 }
 
 function rFlt(){
-  var c=document.getElementById('FS');c.innerHTML='';
-  var tab=TABS[S.tab];
-  var dm={province:{l:'Province',k:'province'},antenne:{l:'Antenne PEV',k:'antenne'},zs:{l:'Zone de Santé',k:'zs'},as:{l:'Aire de Santé',k:'as'},fosa:{l:'FOSA',k:'fosa'},period:{l:'Période',k:'period'}};
-  tab.fl.forEach(function(dim){
-    var info=dm[dim];if(!info)return;
-    var g=document.createElement('div');g.className='fg';
-    var lb=document.createElement('label');lb.textContent=info.l;g.appendChild(lb);
-    var bt=document.createElement('button');bt.className='fbtn';
-    var sel=S.filters[info.k],tot=S.vals[info.k].length;
-    bt.innerHTML='<span>'+(sel.length===tot?'Tout ('+tot+')':sel.length+'/'+tot)+'</span><span class="cn">'+sel.length+'</span><span>▼</span>';
-    bt.onclick=function(e){e.stopPropagation();document.querySelectorAll('.fd').forEach(function(el){if(el.id!=='fd-'+info.k)el.classList.remove('sh');});document.getElementById('fd-'+info.k).classList.toggle('sh');};
-    g.appendChild(bt);
-    var dd=document.createElement('div');dd.className='fd';dd.id='fd-'+info.k;
-    var sr=document.createElement('input');sr.className='sr';sr.placeholder='Rechercher...';sr.type='text';
-    sr.oninput=function(){var q=sr.value.toLowerCase();dd.querySelectorAll('.fi:not(.fa)').forEach(function(it){it.style.display=it.textContent.toLowerCase().indexOf(q)>=0?'':'none';});};
-    dd.appendChild(sr);
-    var aD=document.createElement('div');aD.className='fi fa';
-    var aC=document.createElement('input');aC.type='checkbox';aC.checked=sel.length===tot;
-    aC.onchange=function(){S.filters[info.k]=aC.checked?S.vals[info.k].slice():[];apFlt();rFlt();render();};
-    aD.appendChild(aC);var aS=document.createElement('span');aS.textContent='Tout sélectionner';aS.style.fontWeight='700';aD.appendChild(aS);dd.appendChild(aD);
-    S.vals[info.k].forEach(function(v){
-      var it=document.createElement('div');it.className='fi';
-      var cb=document.createElement('input');cb.type='checkbox';cb.checked=S.filters[info.k].indexOf(v)>=0;
-      cb.onchange=function(){if(cb.checked){if(S.filters[info.k].indexOf(v)<0)S.filters[info.k].push(v);}else{S.filters[info.k]=S.filters[info.k].filter(function(x){return x!==v;});}apFlt();rFlt();render();};
-      it.appendChild(cb);var sp2=document.createElement('span');sp2.textContent=info.k==='period'?mL(v):v;it.appendChild(sp2);dd.appendChild(it);
-    });
-    g.appendChild(dd);c.appendChild(g);
+ var c=document.getElementById('FS');c.innerHTML='';
+ var tab=TABS[S.tab];
+ var dm={
+  province:{l:'Province',k:'province'},
+  antenne:{l:'Antenne PEV',k:'antenne'},
+  zs:{l:'Zone de Santé',k:'zs'},
+  as:{l:DATA_HAS_AS?'Aire de Santé':'Aire de Santé (≈ZS)',k:'as'},
+  fosa:{l:DATA_HAS_FOSA?'FOSA':'FOSA (≈ZS)',k:'fosa'},
+  period:{l:'Période',k:'period'}
+ };
+ tab.fl.forEach(function(dim){
+  var info=dm[dim];if(!info)return;
+  var g=document.createElement('div');g.className='fg';
+  var lb=document.createElement('label');lb.textContent=info.l;g.appendChild(lb);
+  var bt=document.createElement('button');bt.className='fbtn';
+  var sel=S.filters[info.k],tot=S.vals[info.k].length;
+  bt.innerHTML='<span>'+(sel.length===tot?'Tout ('+tot+')':sel.length+'/'+tot)+'</span><span class="cn">'+sel.length+'</span><span>▼</span>';
+  bt.onclick=function(e){e.stopPropagation();document.querySelectorAll('.fd').forEach(function(el){if(el.id!=='fd-'+info.k)el.classList.remove('sh');});document.getElementById('fd-'+info.k).classList.toggle('sh');};
+  g.appendChild(bt);
+  var dd=document.createElement('div');dd.className='fd';dd.id='fd-'+info.k;
+  var sr=document.createElement('input');sr.className='sr';sr.placeholder='Rechercher...';sr.type='text';
+  sr.oninput=function(){var q=sr.value.toLowerCase();dd.querySelectorAll('.fi:not(.fa)').forEach(function(it){it.style.display=it.textContent.toLowerCase().indexOf(q)>=0?'':'none';});};
+  dd.appendChild(sr);
+  var aD=document.createElement('div');aD.className='fi fa';
+  var aC=document.createElement('input');aC.type='checkbox';aC.checked=sel.length===tot;
+  aC.onchange=function(){S.filters[info.k]=aC.checked?S.vals[info.k].slice():[];apFlt();rFlt();render();};
+  aD.appendChild(aC);var aS=document.createElement('span');aS.textContent='Tout sélectionner';aS.style.fontWeight='700';aD.appendChild(aS);dd.appendChild(aD);
+  S.vals[info.k].forEach(function(v){
+   var it=document.createElement('div');it.className='fi';
+   var cb=document.createElement('input');cb.type='checkbox';cb.checked=S.filters[info.k].indexOf(v)>=0;
+   cb.onchange=function(){if(cb.checked){if(S.filters[info.k].indexOf(v)<0)S.filters[info.k].push(v);}else{S.filters[info.k]=S.filters[info.k].filter(function(x){return x!==v;});}apFlt();rFlt();render();};
+   it.appendChild(cb);var sp2=document.createElement('span');sp2.textContent=info.k==='period'?mL(v):v;it.appendChild(sp2);dd.appendChild(it);
   });
+  g.appendChild(dd);c.appendChild(g);
+ });
 }
 document.addEventListener('click',function(e){if(!e.target.closest('.fg'))document.querySelectorAll('.fd').forEach(function(el){el.classList.remove('sh');});});
 
 /* ═══ NAV ═══ */
 function bNav(){
-  var nav=document.getElementById('NAV');nav.innerHTML='';
-  TABS.forEach(function(tab,ti){
-    var mi=E('div','mi'+(ti===S.tab?' act':''));mi.id='mi-'+tab.id;
-    mi.innerHTML='<span>'+tab.lb+'</span><span style="font-size:10px;margin-left:3px;opacity:.6">▼</span>';
-    if(tab.pp.length>0){
-      var dd=E('div','dd');dd.id='dd-'+tab.id;
-      tab.pp.forEach(function(pg,pi){
-        var di=E('div','di'+(ti===S.tab&&pi===S.pg?' as':''));
-        di.innerHTML='<span>'+pg.ic+'</span> '+pg.t;
-        di.onclick=function(e){e.stopPropagation();navTo(ti,pi);};
-        dd.appendChild(di);
-      });
-      mi.appendChild(dd);
-    }
-    mi.onclick=function(){navTo(ti,0);};
-    nav.appendChild(mi);
-  });
+ var nav=document.getElementById('NAV');nav.innerHTML='';
+ TABS.forEach(function(tab,ti){
+  var mi=E('div','mi'+(ti===S.tab?' act':''));mi.id='mi-'+tab.id;
+  mi.innerHTML='<span>'+tab.lb+'</span><span style="font-size:10px;margin-left:3px;opacity:.6">▼</span>';
+  if(tab.pp.length>0){
+   var dd=E('div','dd');dd.id='dd-'+tab.id;
+   tab.pp.forEach(function(pg,pi){
+    var di=E('div','di'+(ti===S.tab&&pi===S.pg?' as':''));
+    di.innerHTML='<span>'+pg.ic+'</span> '+pg.t;
+    di.onclick=function(e){e.stopPropagation();navTo(ti,pi);};
+    dd.appendChild(di);
+   });
+   mi.appendChild(dd);
+  }
+  mi.onclick=function(){navTo(ti,0);};
+  nav.appendChild(mi);
+ });
 }
-
 function navTo(t,p){S.tab=t;S.pg=p;document.querySelectorAll('.mi').forEach(function(el,i){el.classList.toggle('act',i===t);});
-  var dd=document.getElementById('dd-'+TABS[t].id);if(dd)dd.querySelectorAll('.di').forEach(function(el,i){el.classList.toggle('as',i===p);});
-  rFlt();apFlt();render();window.scrollTo({top:0,behavior:'smooth'});}
+ var dd=document.getElementById('dd-'+TABS[t].id);if(dd)dd.querySelectorAll('.di').forEach(function(el,i){el.classList.toggle('as',i===p);});
+ rFlt();apFlt();render();window.scrollTo({top:0,behavior:'smooth'});}
 function chPg(d){var tab=TABS[S.tab],np=S.pg+d;if(np>=0&&np<tab.pp.length){S.pg=np;var dd=document.getElementById('dd-'+tab.id);if(dd)dd.querySelectorAll('.di').forEach(function(el,i){el.classList.toggle('as',i===np);});render();window.scrollTo({top:0,behavior:'smooth'});}}
 
 /* ═══ RENDER ═══ */
 function render(){
-  Object.values(S.charts).forEach(function(c){try{c.destroy();}catch(e){}});S.charts={};
-  var db=document.getElementById('DB');db.innerHTML='';
-  var tab=TABS[S.tab],pg=tab.pp[S.pg];
-  db.appendChild(E('div','st','<span>'+pg.ic+'</span> '+tab.lb+' — '+pg.t));
-  var ct=E('div','','');ct.id='PC';db.appendChild(ct);
-  if(tab.id==='oqd'){[rP1,rP2,rP3,rP4,rP5][S.pg](ct);}
-  else{ct.innerHTML='<div style="text-align:center;padding:70px;color:#888"><div style="font-size:48px;margin-bottom:12px">🚧</div><h3>'+tab.lb+' — En construction</h3><p style="margin-top:8px">Contenu à venir.</p></div>';}
-  var bar=document.getElementById('PG');
-  if(tab.pp.length>1){bar.style.display='flex';document.getElementById('PI').textContent='Page '+(S.pg+1)+' sur '+tab.pp.length;document.getElementById('BP').disabled=S.pg===0;document.getElementById('BN').disabled=S.pg>=tab.pp.length-1;}
-  else{bar.style.display='none';}
+ Object.values(S.charts).forEach(function(c){try{c.destroy();}catch(e){}});S.charts={};
+ var db=document.getElementById('DB');db.innerHTML='';
+ var tab=TABS[S.tab],pg=tab.pp[S.pg];
+ /* Bannière avertissement données manquantes */
+ db.innerHTML=warnBanner();
+ db.appendChild(E('div','st','<span>'+pg.ic+'</span> '+tab.lb+' — '+pg.t));
+ var ct=E('div','','');ct.id='PC';db.appendChild(ct);
+ if(tab.id==='oqd'){[rP1,rP2,rP3,rP4,rP5][S.pg](ct);}
+ else{ct.innerHTML='<div style="text-align:center;padding:70px;color:#888"><div style="font-size:48px;margin-bottom:12px">🔧</div><h3>'+tab.lb+' — En construction</h3><p style="margin-top:8px">Contenu à venir.</p></div>';}
+ var bar=document.getElementById('PG');
+ if(tab.pp.length>1){bar.style.display='flex';document.getElementById('PI').textContent='Page '+(S.pg+1)+' sur '+tab.pp.length;document.getElementById('BP').disabled=S.pg===0;document.getElementById('BN').disabled=S.pg>=tab.pp.length-1;}
+ else{bar.style.display='none';}
 }
 
 /* ═══ CONTEXT LABEL ═══ */
 function ctxLbl(){
-  var f=S.filters,v=S.vals;
-  if(f.fosa.length===1)return ' dans la FOSA : '+f.fosa[0];
-  if(f.as.length===1)return ' dans l\'AS : '+f.as[0];
-  if(f.zs.length===1)return ' dans la ZS : '+f.zs[0];
-  if(f.antenne.length===1)return ' dans l\'Antenne : '+f.antenne[0];
-  if(f.province.length===1)return ' dans la Province : '+f.province[0];
-  return ' dans toute la RDC';
+ var f=S.filters,v=S.vals;
+ if(DATA_HAS_FOSA&&f.fosa.length===1)return ' dans la FOSA : '+f.fosa[0];
+ if(DATA_HAS_AS&&f.as.length===1)return ' dans l\'AS : '+f.as[0];
+ if(f.zs.length===1)return ' dans la ZS : '+f.zs[0];
+ if(f.antenne.length===1)return ' dans l\'Antenne : '+f.antenne[0];
+ if(f.province.length===1)return ' dans la Province : '+f.province[0];
+ return ' dans toute la RDC';
 }
 
 /* ╔══════════════════════════════════════╗
-   ║  P1: COMPLÉTUDE & PROMPTITUDE       ║
+   ║ P1: COMPLÉTUDE & PROMPTITUDE       ║
    ╚══════════════════════════════════════╝ */
 function rP1(c){
-  var D=S.flt,rep=D.filter(isRep),nT=D.length,nNR=D.filter(function(r){return!isRep(r);}).length;
-  var pR=pct(nT-nNR,nT),aC=af(rep,'completude');
-  var aE=rep.length?rep.reduce(function(s,r){return s+exh(r);},0)/rep.length:0;
-  var nF=uv(D,function(r){return r.org5;}).length;
+ var D=S.flt,rep=D.filter(isRep),nT=D.length,nNR=D.filter(function(r){return!isRep(r);}).length;
+ var pR=pct(nT-nNR,nT),aC=af(rep,'completude');
+ var aE=rep.length?rep.reduce(function(s,r){return s+exh(r);},0)/rep.length:0;
+ var nF=uv(D,function(r){return r.org5;}).length;
+ var unitLabel=DATA_HAS_FOSA?'FOSA':'Unités (ZS)';
 
-  c.appendChild(E('div','kr',
-    '<div class="kc gn"><div class="kv">'+(nT-nNR)+'</div><div class="kl">FOSA rapportantes</div></div>'+
-    '<div class="kc rd"><div class="kv">'+nNR+'</div><div class="kl">FOSA non-rapportantes</div></div>'+
-    '<div class="kc bl"><div class="kv">'+pR.toFixed(1)+'%</div><div class="kl">% de rapportage</div></div>'+
-    '<div class="kc or"><div class="kv">'+aE.toFixed(1)+'%</div><div class="kl">Complétude var. obligatoires</div></div>'+
-    '<div class="kc pu"><div class="kv">'+nF+'</div><div class="kl">Nombre de FOSA'+ctxLbl()+'</div></div>'));
+ c.appendChild(E('div','kr',
+  '<div class="kc gn"><div class="kv">'+(nT-nNR)+'</div><div class="kl">'+unitLabel+' rapportantes</div></div>'+
+  '<div class="kc rd"><div class="kv">'+nNR+'</div><div class="kl">'+unitLabel+' non-rapportantes</div></div>'+
+  '<div class="kc bl"><div class="kv">'+pR.toFixed(1)+'%</div><div class="kl">% de rapportage</div></div>'+
+  '<div class="kc or"><div class="kv">'+aE.toFixed(1)+'%</div><div class="kl">Complétude var. obligatoires ('+AG.length+' AG)</div></div>'+
+  '<div class="kc pu"><div class="kv">'+nF+'</div><div class="kl">Nombre de '+unitLabel+ctxLbl()+'</div></div>'));
 
-  // Bar charts at 5 levels
-  [{l:'Province',k:function(r){return r.org2;}},{l:'Antenne PEV',k:function(r){return r.antenne;}},{l:'Zone de Santé',k:function(r){return r.org3;}},{l:'Aire de Santé',k:function(r){return r.org4;}},{l:'FOSA',k:function(r){return r.org5;}}].forEach(function(lv,idx){
-    var g=grp(D,lv.k),labs=Object.keys(g).filter(Boolean).sort();if(!labs.length)return;
-    if(labs.length>50)labs=labs.slice(0,50);
-    var cd=labs.map(function(k){return af(g[k],'completude');}),pd=labs.map(function(k){return af(g[k],'promptitude');});
-    var box=E('div','cb');box.innerHTML='<h4>📊 Complétude et Promptitude par '+lv.l+'</h4><canvas id="cp'+idx+'" height="'+(labs.length>15?Math.min(labs.length*5,200):70)+'"></canvas>';c.appendChild(box);
-    setTimeout(function(){var x=document.getElementById('cp'+idx);if(!x)return;
-      S.charts['cp'+idx]=new Chart(x,{type:'bar',data:{labels:labs.map(function(l){return tr(l,24);}),datasets:[{label:'Complétude (%)',data:cd,backgroundColor:'rgba(33,150,243,.72)',borderRadius:3},{label:'Promptitude (%)',data:pd,backgroundColor:'rgba(255,152,0,.72)',borderRadius:3}]},options:{indexAxis:labs.length>12?'y':'x',responsive:true,plugins:{legend:{position:'top',labels:{font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{beginAtZero:true,max:100,title:{display:true,text:'%'}},y:{ticks:{font:{size:labs.length>25?7:9}}}}}});
-    },60+idx*30);
-  });
+ /* Niveaux de regroupement */
+ var levels=[
+  {l:'Province',k:function(r){return r.org2;}},
+  {l:'Antenne PEV',k:function(r){return r.antenne;}},
+  {l:'Zone de Santé',k:function(r){return r.org3;}}
+ ];
+ if(DATA_HAS_AS) levels.push({l:'Aire de Santé',k:function(r){return r.org4;}});
+ if(DATA_HAS_FOSA) levels.push({l:'FOSA',k:function(r){return r.org5;}});
 
-  // Line chart: % rapportant par mois
-  var bM=grp(D,function(r){return r.period;}),mos=Object.keys(bM).filter(Boolean).sort();
-  var pM=mos.map(function(m){var d=bM[m],rep2=d.filter(isRep).length;return d.length?(rep2/d.length*100):0;});
-  var lb=E('div','cb');lb.innerHTML='<h4>📈 % FOSA ayant rapporté par mois</h4><canvas id="pMC" height="50"></canvas>';c.appendChild(lb);
-  setTimeout(function(){var x=document.getElementById('pMC');if(!x)return;
-    S.charts.pMC=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'% rapportage',data:pM,borderColor:'#0b3a6f',backgroundColor:'rgba(11,58,111,.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#0b3a6f',borderWidth:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}}}}});
-  },400);
+ levels.forEach(function(lv,idx){
+  var g=grp(D,lv.k),labs=Object.keys(g).filter(Boolean).sort();if(!labs.length)return;
+  if(labs.length>50)labs=labs.slice(0,50);
+  var cd=labs.map(function(k){return af(g[k],'completude');}),pd=labs.map(function(k){return af(g[k],'promptitude');});
+  var box=E('div','cb');box.innerHTML='<h4>📊 Complétude et Promptitude par '+lv.l+'</h4><canvas id="cp'+idx+'" height="'+(labs.length>15?Math.min(labs.length*5,200):70)+'"></canvas>';c.appendChild(box);
+  setTimeout(function(){var x=document.getElementById('cp'+idx);if(!x)return;
+   S.charts['cp'+idx]=new Chart(x,{type:'bar',data:{labels:labs.map(function(l){return tr(l,24);}),datasets:[{label:'Complétude (%)',data:cd,backgroundColor:'rgba(33,150,243,.72)',borderRadius:3},{label:'Promptitude (%)',data:pd,backgroundColor:'rgba(255,152,0,.72)',borderRadius:3}]},options:{indexAxis:labs.length>12?'y':'x',responsive:true,plugins:{legend:{position:'top',labels:{font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.raw.toFixed(1)+'%';}}}},scales:{x:{beginAtZero:true,max:100,title:{display:true,text:'%'}},y:{ticks:{font:{size:labs.length>25?7:9}}}}}});
+  },60+idx*30);
+ });
 
-  // Heatmap
-  var hb=E('div','cb');hb.innerHTML='<h4>🗓️ Suivi des soumissions par FOSA × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#27ae60"></div> Rapporté</div><div class="lgi"><div class="lgd" style="background:#e74c3c"></div> Non rapporté</div><div class="lgi"><div class="lgd" style="background:#bdc3c8"></div> Pas de données</div></div><div id="HM" style="width:100%;min-height:300px"></div>';c.appendChild(hb);
-  setTimeout(function(){
-    var fosas=uv(D,function(r){return r.org5;}).slice(0,80);
-    if(!fosas.length||!mos.length){document.getElementById('HM').innerHTML='<em style="color:#888;padding:20px">Aucune donnée.</em>';return;}
-    var z=fosas.map(function(f){return mos.map(function(m){var rec=D.find(function(r){return r.org5===f&&r.period===m;});if(!rec)return-1;return isRep(rec)?1:0;});});
-    var el2=document.getElementById('HM');el2.style.height=Math.max(300,fosas.length*15)+'px';
-    Plotly.newPlot(el2,[{z:z,x:mos.map(mL),y:fosas.map(function(f){return tr(f,32);}),type:'heatmap',colorscale:[[0,'#e74c3c'],[.5,'#bdc3c8'],[1,'#27ae60']],showscale:false,hoverongaps:false}],{margin:{l:200,r:25,t:8,b:55},xaxis:{tickangle:-45,tickfont:{size:10}},yaxis:{autorange:'reversed',dtick:1,tickfont:{size:7}},plot_bgcolor:'#fafbfc'},{responsive:true});
-  },500);
+ // Line chart
+ var bM=grp(D,function(r){return r.period;}),mos=Object.keys(bM).filter(Boolean).sort();
+ var pM=mos.map(function(m){var d=bM[m],rep2=d.filter(isRep).length;return d.length?(rep2/d.length*100):0;});
+ var lb2=E('div','cb');lb2.innerHTML='<h4>📈 % ayant rapporté par mois</h4><canvas id="pMC" height="50"></canvas>';c.appendChild(lb2);
+ setTimeout(function(){var x=document.getElementById('pMC');if(!x)return;
+  S.charts.pMC=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'% rapportage',data:pM,borderColor:'#0b3a6f',backgroundColor:'rgba(11,58,111,.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#0b3a6f',borderWidth:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}}}}});
+ },400);
+
+ // Heatmap
+ var hb=E('div','cb');hb.innerHTML='<h4>🗓️ Suivi des soumissions par unité × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#27ae60"></div> Rapporté</div><div class="lgi"><div class="lgd" style="background:#e74c3c"></div> Non rapporté</div><div class="lgi"><div class="lgd" style="background:#bdc3c8"></div> Pas de données</div></div><div id="HM" style="width:100%;min-height:300px"></div>';c.appendChild(hb);
+ setTimeout(function(){
+  var fosas=uv(D,function(r){return r.org5;}).slice(0,80);
+  if(!fosas.length||!mos.length){document.getElementById('HM').innerHTML='<em style="color:#888;padding:20px">Aucune donnée.</em>';return;}
+  var z=fosas.map(function(f){return mos.map(function(m){var rec=D.find(function(r){return r.org5===f&&r.period===m;});if(!rec)return-1;return isRep(rec)?1:0;});});
+  var el2=document.getElementById('HM');el2.style.height=Math.max(300,fosas.length*15)+'px';
+  Plotly.newPlot(el2,[{z:z,x:mos.map(mL),y:fosas.map(function(f){return tr(f,32);}),type:'heatmap',colorscale:[[0,'#e74c3c'],[.5,'#bdc3c8'],[1,'#27ae60']],showscale:false,hoverongaps:false}],{margin:{l:200,r:25,t:8,b:55},xaxis:{tickangle:-45,tickfont:{size:10}},yaxis:{autorange:'reversed',dtick:1,tickfont:{size:7}},plot_bgcolor:'#fafbfc'},{responsive:true});
+ },500);
 }
 
 /* ╔══════════════════════════════════════╗
-   ║  P2: COHÉRENCE-TEMPS                ║
+   ║ P2: COHÉRENCE-TEMPS               ║
    ╚══════════════════════════════════════╝ */
 function rP2(c){
-  var D=S.flt,AD=S.data,mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT;
-  var yr=mos.length?mos[0].substr(0,4):'2025',yr1=''+(+yr-1),yr2=''+(+yr-2);
-  var mNums=['01','02','03','04','05','06','07','08','09','10','11','12'];
-  var mLabs=mNums.map(function(m){return mL('2025'+m).split(' ')[0];});
-  function yrD(y,ag){return mNums.map(function(m){return AD.filter(function(r){return r.period===y+m;}).reduce(function(s,r){return s+(Number(r[ag])||0);},0);});}
+ var D=S.flt,AD=S.data,mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT;
+ var yr=mos.length?mos[0].substr(0,4):'2025',yr1=''+(+yr-1),yr2=''+(+yr-2);
+ var mNums=['01','02','03','04','05','06','07','08','09','10','11','12'];
+ var mLabs=mNums.map(function(m){return mL('2025'+m).split(' ')[0];});
+ function yrD(y,ag){return mNums.map(function(m){return AD.filter(function(r){return r.period===y+m;}).reduce(function(s,r){return s+(Number(r[ag])||0);},0);});}
 
-  ['BCG','DTC1','DTC3','VAR1','PCV13_1','PCV13_3'].forEach(function(ag,i){
-    var row=E('div','cr');
-    // Left: 3-year evolution
-    var left=E('div','ch');left.innerHTML='<div class="cb"><h4>📈 '+AG_LBL[ag]+' — Évolution mensuelle</h4><canvas id="ev'+i+'" height="60"></canvas></div>';row.appendChild(left);
-    // Right: dot plot
-    var right=E('div','ch');right.innerHTML='<div class="cb"><h4>🎯 '+AG_LBL[ag]+' — Valeurs vs Moy. '+N+' mois (±'+Math.round(thr*100)+'%)</h4><div id="dp'+i+'" style="height:290px"></div></div>';row.appendChild(right);
-    c.appendChild(row);
+ /* Utiliser les AG disponibles */
+ var chartAGs=['BCG','DTC1','DTC3','VAR1','PCV13_1','PCV13_3'].filter(function(a){return AG.indexOf(a)>=0;});
 
-    setTimeout(function(){
-      var x=document.getElementById('ev'+i);if(!x)return;
-      S.charts['ev'+i]=new Chart(x,{type:'line',data:{labels:mLabs,datasets:[
-        {label:yr,data:yrD(yr,ag),borderColor:'#1565c0',backgroundColor:'rgba(21,101,192,.05)',fill:true,tension:.3,pointRadius:5,borderWidth:3},
-        {label:yr1,data:yrD(yr1,ag),borderColor:'#e91e63',fill:false,tension:.3,pointRadius:4,borderWidth:2,borderDash:[5,3]},
-        {label:yr2,data:yrD(yr2,ag),borderColor:'#ff9800',fill:false,tension:.3,pointRadius:3,borderWidth:2,borderDash:[8,4]}
-      ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{tooltip:{mode:'index',intersect:false},legend:{position:'bottom',labels:{font:{size:10},usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Vaccinés'}},x:{grid:{display:false}}}}});
+ chartAGs.forEach(function(ag,i){
+  var row=E('div','cr');
+  var left=E('div','ch');left.innerHTML='<div class="cb"><h4>📈 '+AG_LBL[ag]+' — Évolution mensuelle</h4><canvas id="ev'+i+'" height="60"></canvas></div>';row.appendChild(left);
+  var right=E('div','ch');right.innerHTML='<div class="cb"><h4>🎯 '+AG_LBL[ag]+' — Valeurs vs Moy. '+N+' mois (±'+Math.round(thr*100)+'%)</h4><div id="dp'+i+'" style="height:290px"></div></div>';row.appendChild(right);
+  c.appendChild(row);
 
-      // Dot plot
-      var dv=document.getElementById('dp'+i);if(!dv)return;
-      var orgK,orgL;
-      if(S.filters.as.length<=2){orgK='org5';orgL='FOSA';}
-      else if(S.filters.zs.length<=3){orgK='org4';orgL='AS';}
-      else if(S.filters.antenne.length<=3){orgK='org3';orgL='ZS';}
-      else if(S.filters.province.length<=3){orgK='antenne';orgL='Antenne';}
-      else{orgK='org2';orgL='Province';}
-      var lastM=mos[mos.length-1];if(!lastM)return;
-      var ld=D.filter(function(r){return r.period===lastM;});
-      var og=grp(ld,function(r){return r[orgK];});
-      var xV=[],yV=[],txt=[],col=[];
-      Object.keys(og).filter(Boolean).forEach(function(org){
-        var cv=sf(og[org],ag);
-        var allOrg=AD.filter(function(r){return r[orgK]===org&&r.period<lastM;});
-        allOrg.sort(function(a,b){return b.period<a.period?-1:1;});
-        var prev=allOrg.slice(0,N);if(!prev.length)return;
-        var avg=prev.reduce(function(s,r){return s+(Number(r[ag])||0);},0)/prev.length;
-        if(!avg)return;
-        var v2=(cv-avg)/avg;
-        xV.push(avg);yV.push(cv);col.push(Math.abs(v2)<=thr?'#1565c0':'#e74c3c');
-        txt.push(org+'<br>Valeur: '+cv+'<br>Moy: '+avg.toFixed(0)+'<br>Var: '+(v2*100).toFixed(1)+'%');
-      });
-      if(!xV.length)return;
-      var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
-      Plotly.newPlot(dv,[
-        {x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:9,color:col,line:{width:1,color:'#fff'}},hoverinfo:'text',name:orgL},
-        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2},name:'Moyenne',showlegend:true},
-        {x:[0,mx],y:[0,mx*(1+thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'+'+Math.round(thr*100)+'%'},
-        {x:[0,mx],y:[0,mx*(1-thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'-'+Math.round(thr*100)+'%'}
-      ],{xaxis:{title:'Moyenne '+N+' mois'},yaxis:{title:'Valeur courante'},margin:{l:55,r:20,t:8,b:45},legend:{orientation:'h',y:-0.22},plot_bgcolor:'#fafbfc'},{responsive:true});
-    },80+i*60);
-  });
+  setTimeout(function(){
+   var x=document.getElementById('ev'+i);if(!x)return;
+   S.charts['ev'+i]=new Chart(x,{type:'line',data:{labels:mLabs,datasets:[
+    {label:yr,data:yrD(yr,ag),borderColor:'#1565c0',backgroundColor:'rgba(21,101,192,.05)',fill:true,tension:.3,pointRadius:5,borderWidth:3},
+    {label:yr1,data:yrD(yr1,ag),borderColor:'#e91e63',fill:false,tension:.3,pointRadius:4,borderWidth:2,borderDash:[5,3]},
+    {label:yr2,data:yrD(yr2,ag),borderColor:'#ff9800',fill:false,tension:.3,pointRadius:3,borderWidth:2,borderDash:[8,4]}
+   ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{tooltip:{mode:'index',intersect:false},legend:{position:'bottom',labels:{font:{size:10},usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Vaccinés'}},x:{grid:{display:false}}}}});
 
-  // Alertes table
-  c.appendChild(mkAlertTbl(D,AD,mos,N,thr));
+   // Dot plot
+   var dv=document.getElementById('dp'+i);if(!dv)return;
+   var orgK,orgL;
+   if(DATA_HAS_AS&&S.filters.as.length<=2){orgK='org5';orgL='FOSA';}
+   else if(S.filters.zs.length<=3){orgK=DATA_HAS_AS?'org4':'org3';orgL=DATA_HAS_AS?'AS':'ZS';}
+   else if(S.filters.antenne.length<=3){orgK='org3';orgL='ZS';}
+   else if(S.filters.province.length<=3){orgK='antenne';orgL='Antenne';}
+   else{orgK='org2';orgL='Province';}
+
+   var lastM=mos[mos.length-1];if(!lastM)return;
+   var ld=D.filter(function(r){return r.period===lastM;});
+   var og=grp(ld,function(r){return r[orgK];});
+   var xV=[],yV=[],txt=[],col=[];
+   Object.keys(og).filter(Boolean).forEach(function(org){
+    var cv=sf(og[org],ag);
+    var allOrg=AD.filter(function(r){return r[orgK]===org&&r.period<lastM;});
+    allOrg.sort(function(a,b){return b.period<a.period?-1:1;});
+    var prev=allOrg.slice(0,N);if(!prev.length)return;
+    var avg=prev.reduce(function(s,r){return s+(Number(r[ag])||0);},0)/prev.length;
+    if(!avg)return;
+    var v2=(cv-avg)/avg;
+    xV.push(avg);yV.push(cv);col.push(Math.abs(v2)<=thr?'#1565c0':'#e74c3c');
+    txt.push(org+'<br>Valeur: '+cv+'<br>Moy: '+avg.toFixed(0)+'<br>Var: '+(v2*100).toFixed(1)+'%');
+   });
+   if(!xV.length)return;
+   var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
+   Plotly.newPlot(dv,[
+    {x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:9,color:col,line:{width:1,color:'#fff'}},hoverinfo:'text',name:orgL},
+    {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2},name:'Moyenne',showlegend:true},
+    {x:[0,mx],y:[0,mx*(1+thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'+'+Math.round(thr*100)+'%'},
+    {x:[0,mx],y:[0,mx*(1-thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'-'+Math.round(thr*100)+'%'}
+   ],{xaxis:{title:'Moyenne '+N+' mois'},yaxis:{title:'Valeur courante'},margin:{l:55,r:20,t:8,b:45},legend:{orientation:'h',y:-0.22},plot_bgcolor:'#fafbfc'},{responsive:true});
+  },80+i*60);
+ });
+
+ c.appendChild(mkAlertTbl(D,AD,mos,N,thr));
 }
 
 function mkAlertTbl(D,AD,mos,N,thr){
-  var box=E('div','cb');var lastM=mos[mos.length-1];
-  box.innerHTML='<h4>🚨 Alertes Prioritaires — Valeurs non acceptables (moy. mobile '+N+' mois, ±'+Math.round(thr*100)+'%)</h4>';
-  if(!lastM){box.innerHTML+='<p style="color:#888;padding:20px">Aucune donnée.</p>';return box;}
-  var ld=D.filter(function(r){return r.period===lastM&&isRep(r);}),rows=[];
-  ld.forEach(function(r){
-    AG.forEach(function(ag){
-      var val=Number(r[ag])||0;if(!val)return;
-      var avg=mAvg(r.org5,ag,lastM,AD,N);if(!avg)return;
-      var v2=(val-avg)/avg;
-      if(Math.abs(v2)>thr)rows.push({fosa:r.org5,prov:r.org2,zs:r.org3,ant:r.antenne,vac:AG_LBL[ag],val:val,avg:avg.toFixed(0),var2:(v2*100).toFixed(1),pri:Math.abs(v2)>=.5?'Priorité 1':'Priorité 2'});
-    });
+ var box=E('div','cb');var lastM=mos[mos.length-1];
+ box.innerHTML='<h4>🚨 Alertes Prioritaires — Valeurs non acceptables (moy. mobile '+N+' mois, ±'+Math.round(thr*100)+'%)</h4>';
+ if(!lastM){box.innerHTML+='<p style="color:#888;padding:20px">Aucune donnée.</p>';return box;}
+ var ld=D.filter(function(r){return r.period===lastM&&isRep(r);}),rows=[];
+ ld.forEach(function(r){
+  AG.forEach(function(ag){
+   var val=Number(r[ag])||0;if(!val)return;
+   var avg=mAvg(r.org5,ag,lastM,AD,N);if(!avg)return;
+   var v2=(val-avg)/avg;
+   if(Math.abs(v2)>thr)rows.push({fosa:r.org5,prov:r.org2,zs:r.org3,ant:r.antenne,vac:AG_LBL[ag],val:val,avg:avg.toFixed(0),var2:(v2*100).toFixed(1),pri:Math.abs(v2)>=.5?'Priorité 1':'Priorité 2'});
   });
-  rows.sort(function(a,b){return a.pri<b.pri?-1:a.pri>b.pri?1:Math.abs(+b.var2)-Math.abs(+a.var2);});
-  var p1=rows.filter(function(r){return r.pri==='Priorité 1';}).length,p2=rows.length-p1;
-  box.innerHTML+='<div class="kr" style="margin-bottom:12px"><div class="kc rd" style="min-width:110px"><div class="kv">'+p1+'</div><div class="kl">Priorité 1 (≥50%)</div></div><div class="kc or" style="min-width:110px"><div class="kv">'+p2+'</div><div class="kl">Priorité 2 (>33%)</div></div><div class="kc" style="min-width:110px"><div class="kv">'+rows.length+'</div><div class="kl">Total alertes</div></div></div>';
-  if(!rows.length){box.innerHTML+='<p style="padding:20px;color:#27ae60;font-weight:600">✅ Aucune valeur non acceptable pour '+mL(lastM)+'.</p>';return box;}
-  var h='<div class="tw"><table class="dt"><thead><tr><th>FOSA</th><th>Province</th><th>ZS</th><th>Antigène</th><th>Valeur</th><th>Moy. mobile</th><th>% Variation</th><th>Priorité</th></tr></thead><tbody>';
-  rows.slice(0,150).forEach(function(r){
-    var vn=+r.var2,pc=r.pri==='Priorité 1'?'crd':'co';
-    h+='<tr><td>'+tr(r.fosa,28)+'</td><td>'+tr(r.prov,18)+'</td><td>'+tr(r.zs,18)+'</td><td><b>'+r.vac+'</b></td><td style="text-align:right">'+r.val+'</td><td style="text-align:right">'+r.avg+'</td><td style="text-align:right;color:'+(vn>0?'#e74c3c':'#1565c0')+';font-weight:700">'+(vn>0?'+':'')+r.var2+'%</td><td class="'+pc+'" style="font-weight:700">'+r.pri+'</td></tr>';
-  });
-  box.innerHTML+=h+'</tbody></table></div>';
-  return box;
+ });
+ rows.sort(function(a,b){return a.pri<b.pri?-1:a.pri>b.pri?1:Math.abs(+b.var2)-Math.abs(+a.var2);});
+ var p1=rows.filter(function(r){return r.pri==='Priorité 1';}).length,p2=rows.length-p1;
+ box.innerHTML+='<div class="kr" style="margin-bottom:12px"><div class="kc rd" style="min-width:110px"><div class="kv">'+p1+'</div><div class="kl">Priorité 1 (≥50%)</div></div><div class="kc or" style="min-width:110px"><div class="kv">'+p2+'</div><div class="kl">Priorité 2 (>33%)</div></div><div class="kc" style="min-width:110px"><div class="kv">'+rows.length+'</div><div class="kl">Total alertes</div></div></div>';
+ if(!rows.length){box.innerHTML+='<p style="padding:20px;color:#27ae60;font-weight:600">✅ Aucune valeur non acceptable pour '+mL(lastM)+'.</p>';return box;}
+ var h='<div class="tw"><table class="dt"><thead><tr><th>'+(DATA_HAS_FOSA?'FOSA':'ZS')+'</th><th>Province</th><th>ZS</th><th>Antigène</th><th>Valeur</th><th>Moy. mobile</th><th>% Variation</th><th>Priorité</th></tr></thead><tbody>';
+ rows.slice(0,150).forEach(function(r){
+  var vn=+r.var2,pc=r.pri==='Priorité 1'?'crd':'co';
+  h+='<tr><td>'+tr(r.fosa,28)+'</td><td>'+tr(r.prov,18)+'</td><td>'+tr(r.zs,18)+'</td><td><b>'+r.vac+'</b></td><td style="text-align:right">'+r.val+'</td><td style="text-align:right">'+r.avg+'</td><td style="text-align:right;color:'+(vn>0?'#e74c3c':'#1565c0')+';font-weight:700">'+(vn>0?'+':'')+r.var2+'%</td><td class="'+pc+'" style="font-weight:700">'+r.pri+'</td></tr>';
+ });
+ box.innerHTML+=h+'</tbody></table></div>';
+ return box;
 }
 
 /* ╔══════════════════════════════════════╗
-   ║  P3: COHÉRENCE-DONNÉE               ║
+   ║ P3: COHÉRENCE-DONNÉE              ║
    ╚══════════════════════════════════════╝ */
 function rP3(c){
-  var D=S.flt,mos=uv(D,function(r){return r.period;}),lastM=mos[mos.length-1],thr=C.CD;
-  // Scatter plots
-  [{a:'PCV13_1',b:'DTC1',t:'PCV13-1 vs DTC1'},{a:'PCV13_3',b:'DTC3',t:'PCV13-3 vs DTC3'}].forEach(function(p,pi){
-    var box=E('div','cb');box.innerHTML='<h4>🔗 Cohérence '+p.t+' (±'+Math.round(thr*100)+'%)</h4><div id="cs'+pi+'" style="height:340px"></div>';c.appendChild(box);
-    setTimeout(function(){
-      var dv=document.getElementById('cs'+pi);if(!dv||!lastM)return;
-      var ld=D.filter(function(r){return r.period===lastM&&isRep(r);});
-      var orgK=S.filters.zs.length<=3?'org5':'org3';
-      var og=grp(ld,function(r){return r[orgK];});
-      var xV=[],yV=[],txt=[],col=[];
-      Object.keys(og).filter(Boolean).forEach(function(org){
-        var vA=sf(og[org],p.a),vB=sf(og[org],p.b);if(!vA&&!vB)return;
-        var den=vB||vA||1,v2=(vA-vB)/den;
-        xV.push(vB);yV.push(vA);col.push(Math.abs(v2)>thr?'#e74c3c':'#1565c0');
-        txt.push(org+'<br>'+AG_LBL[p.b]+': '+vB+'<br>'+AG_LBL[p.a]+': '+vA+'<br>Var: '+(v2*100).toFixed(1)+'%');
-      });
-      if(!xV.length)return;
-      var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
-      Plotly.newPlot(dv,[
-        {x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:9,color:col,line:{width:1,color:'#fff'}},hoverinfo:'text'},
-        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2,dash:'dot'},name:'Égalité'},
-        {x:[0,mx],y:[0,mx*(1+thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'+10%'},
-        {x:[0,mx],y:[0,mx*(1-thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'-10%'}
-      ],{xaxis:{title:AG_LBL[p.b]},yaxis:{title:AG_LBL[p.a]},margin:{l:55,r:20,t:8,b:45},legend:{orientation:'h',y:-0.2},plot_bgcolor:'#fafbfc'},{responsive:true});
-    },80+pi*80);
+ var D=S.flt,mos=uv(D,function(r){return r.period;}),lastM=mos[mos.length-1],thr=C.CD;
+
+ /* Scatter plots — uniquement si les deux antigènes existent */
+ var scatterPairs=[
+  {a:'PCV13_1',b:'DTC1',t:'PCV13-1 vs DTC1'},
+  {a:'PCV13_3',b:'DTC3',t:'PCV13-3 vs DTC3'}
+ ].filter(function(p){return AG.indexOf(p.a)>=0&&AG.indexOf(p.b)>=0;});
+
+ scatterPairs.forEach(function(p,pi){
+  var box=E('div','cb');box.innerHTML='<h4>🔗 Cohérence '+p.t+' (±'+Math.round(thr*100)+'%)</h4><div id="cs'+pi+'" style="height:340px"></div>';c.appendChild(box);
+  setTimeout(function(){
+   var dv=document.getElementById('cs'+pi);if(!dv||!lastM)return;
+   var ld=D.filter(function(r){return r.period===lastM&&isRep(r);});
+   var orgK=S.filters.zs.length<=3?'org5':'org3';
+   var og=grp(ld,function(r){return r[orgK];});
+   var xV=[],yV=[],txt=[],col=[];
+   Object.keys(og).filter(Boolean).forEach(function(org){
+    var vA=sf(og[org],p.a),vB=sf(og[org],p.b);if(!vA&&!vB)return;
+    var den=vB||vA||1,v2=(vA-vB)/den;
+    xV.push(vB);yV.push(vA);col.push(Math.abs(v2)>thr?'#e74c3c':'#1565c0');
+    txt.push(org+'<br>'+AG_LBL[p.b]+': '+vB+'<br>'+AG_LBL[p.a]+': '+vA+'<br>Var: '+(v2*100).toFixed(1)+'%');
+   });
+   if(!xV.length)return;
+   var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
+   Plotly.newPlot(dv,[
+    {x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:9,color:col,line:{width:1,color:'#fff'}},hoverinfo:'text'},
+    {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2,dash:'dot'},name:'Égalité'},
+    {x:[0,mx],y:[0,mx*(1+thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'+10%'},
+    {x:[0,mx],y:[0,mx*(1-thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'-10%'}
+   ],{xaxis:{title:AG_LBL[p.b]},yaxis:{title:AG_LBL[p.a]},margin:{l:55,r:20,t:8,b:45},legend:{orientation:'h',y:-0.2},plot_bgcolor:'#fafbfc'},{responsive:true});
+  },80+pi*80);
+ });
+
+ // Same-age table
+ if(lastM&&SAME_AGE.length){
+  var tBox=E('div','cb');tBox.innerHTML='<h4>📋 Vaccins même âge — % variation 2 à 2 ('+mL(lastM)+')</h4>';
+  var ld=D.filter(function(r){return r.period===lastM&&isRep(r);});
+  var h='<div class="tw"><table class="dt"><thead><tr><th>'+(DATA_HAS_FOSA?'FOSA':'ZS')+'</th>';
+  SAME_AGE.forEach(function(g){h+='<th>'+g.age+'</th><th>% Var.</th>';});
+  h+='<th>Acceptabilité</th><th>Priorité</th></tr></thead><tbody>';
+  ld.slice(0,80).forEach(function(r){
+   h+='<tr><td>'+tr(r.org5,24)+'</td>';
+   var bad=false,maxV=0;
+   SAME_AGE.forEach(function(g){
+    var vs=g.v.map(function(v){return AG_LBL[v]+': '+(Number(r[v])||0);}).join(', ');
+    h+='<td style="font-size:9.5px">'+vs+'</td>';
+    var parts=[];
+    for(var j=0;j<g.v.length-1;j++){
+     var a2=Number(r[g.v[j]])||0,b2=Number(r[g.v[j+1]])||0,den=b2||a2||1;
+     var pv=den>0?((a2-b2)/den*100):0;
+     var isBad=Math.abs(pv)>10;if(isBad)bad=true;maxV=Math.max(maxV,Math.abs(pv));
+     parts.push('<span style="color:'+(isBad?'#e74c3c':'#27ae60')+';font-weight:600">'+AG_LBL[g.v[j]]+'-'+AG_LBL[g.v[j+1]]+': '+(pv>0?'+':'')+pv.toFixed(1)+'%</span>');
+    }
+    h+='<td style="font-size:9px">'+parts.join('<br>')+'</td>';
+   });
+   var acc=bad?'Non acceptable':'Acceptable',pri=maxV>20?'Priorité 1':(bad?'Priorité 2':'—');
+   h+='<td class="'+(bad?'crd':'cg')+'">'+acc+'</td><td class="'+(pri.indexOf('1')>0?'crd':(pri.indexOf('2')>0?'co':''))+'">'+pri+'</td></tr>';
   });
+  tBox.innerHTML+=h+'</tbody></table></div>';c.appendChild(tBox);
+ }
 
-  // Same-age table
-  if(lastM){
-    var tBox=E('div','cb');tBox.innerHTML='<h4>📋 Vaccins même âge — % variation 2 à 2 ('+mL(lastM)+')</h4>';
-    var ld=D.filter(function(r){return r.period===lastM&&isRep(r);});
-    var h='<div class="tw"><table class="dt"><thead><tr><th>FOSA</th>';
-    SAME_AGE.forEach(function(g){h+='<th>'+g.age+'</th><th>% Var.</th>';});
-    h+='<th>Acceptabilité</th><th>Priorité</th></tr></thead><tbody>';
-    ld.slice(0,80).forEach(function(r){
-      h+='<tr><td>'+tr(r.org5,24)+'</td>';
-      var bad=false,maxV=0;
-      SAME_AGE.forEach(function(g){
-        var vs=g.v.map(function(v){return AG_LBL[v]+': '+(Number(r[v])||0);}).join(', ');
-        h+='<td style="font-size:9.5px">'+vs+'</td>';
-        var parts=[];
-        for(var j=0;j<g.v.length-1;j++){
-          var a2=Number(r[g.v[j]])||0,b2=Number(r[g.v[j+1]])||0,den=b2||a2||1;
-          var pv=den>0?((a2-b2)/den*100):0,isBad=Math.abs(pv)>thr*1000; // thr=0.10 → 10%
-          isBad=Math.abs(pv)>10;if(isBad)bad=true;maxV=Math.max(maxV,Math.abs(pv));
-          parts.push('<span style="color:'+(isBad?'#e74c3c':'#27ae60')+';font-weight:600">'+AG_LBL[g.v[j]]+'-'+AG_LBL[g.v[j+1]]+': '+(pv>0?'+':'')+pv.toFixed(1)+'%</span>');
-        }
-        h+='<td style="font-size:9px">'+parts.join('<br>')+'</td>';
-      });
-      var acc=bad?'Non acceptable':'Acceptable',pri=maxV>20?'Priorité 1':(bad?'Priorité 2':'—');
-      h+='<td class="'+(bad?'crd':'cg')+'">'+acc+'</td><td class="'+(pri.indexOf('1')>0?'crd':(pri.indexOf('2')>0?'co':''))+'">'+pri+'</td></tr>';
-    });
-    tBox.innerHTML+=h+'</tbody></table></div>';c.appendChild(tBox);
-  }
-
-  // Dropout DTC1-DTC3
+ // Dropout DTC1-DTC3
+ if(AG.indexOf('DTC1')>=0&&AG.indexOf('DTC3')>=0){
   var drBox=E('div','cb');drBox.innerHTML='<h4>📉 Taux d\'abandon DTC1–DTC3</h4><canvas id="drC" height="75"></canvas>';c.appendChild(drBox);
   setTimeout(function(){
-    var x=document.getElementById('drC');if(!x)return;
-    var orgK,orgL;
-    if(S.filters.zs.length<=3){orgK='org4';orgL='AS';}
-    else if(S.filters.antenne.length<=3){orgK='org3';orgL='ZS';}
-    else{orgK='org2';orgL='Province';}
-    var og=grp(D,function(r){return r[orgK];}),orgs=Object.keys(og).filter(Boolean).sort();
-    var dV=[],dC=[];
-    orgs.forEach(function(org){var d1=sf(og[org],'DTC1'),d3=sf(og[org],'DTC3');var dr2=d1>0?((d1-d3)/d1*100):0;dV.push(dr2);dC.push(dr2<0?'#e74c3c':'#1565c0');});
-    S.charts.dr=new Chart(x,{type:'bar',data:{labels:orgs.map(function(l){return tr(l,26);}),datasets:[{label:'Dropout DTC1-DTC3 (%)',data:dV,backgroundColor:dC,borderRadius:3}]},options:{indexAxis:orgs.length>8?'y':'x',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.raw;return'Dropout: '+(v>0?'+':'')+v.toFixed(1)+'%'+(v<0?' ⚠️ NÉGATIF':'');}}}},scales:{x:{title:{display:true,text:'%'}},y:{ticks:{font:{size:orgs.length>20?7:9}}}}}});
+   var x=document.getElementById('drC');if(!x)return;
+   var orgK,orgL;
+   if(S.filters.zs.length<=3){orgK='org4';orgL='AS';}
+   else if(S.filters.antenne.length<=3){orgK='org3';orgL='ZS';}
+   else{orgK='org2';orgL='Province';}
+   var og=grp(D,function(r){return r[orgK];}),orgs=Object.keys(og).filter(Boolean).sort();
+   var dV=[],dC=[];
+   orgs.forEach(function(org){var d1=sf(og[org],'DTC1'),d3=sf(og[org],'DTC3');var dr2=d1>0?((d1-d3)/d1*100):0;dV.push(dr2);dC.push(dr2<0?'#e74c3c':'#1565c0');});
+   S.charts.dr=new Chart(x,{type:'bar',data:{labels:orgs.map(function(l){return tr(l,26);}),datasets:[{label:'Dropout DTC1-DTC3 (%)',data:dV,backgroundColor:dC,borderRadius:3}]},options:{indexAxis:orgs.length>8?'y':'x',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.raw;return'Dropout: '+(v>0?'+':'')+v.toFixed(1)+'%'+(v<0?' ⚠️ NÉGATIF':'');}}}},scales:{x:{title:{display:true,text:'%'}},y:{ticks:{font:{size:orgs.length>20?7:9}}}}}});
   },300);
+ }
 }
 
 /* ╔══════════════════════════════════════╗
-   ║  P4: VALEURS ATYPIQUES              ║
+   ║ P4: VALEURS ATYPIQUES             ║
    ╚══════════════════════════════════════╝ */
 function rP4(c){
-  var D=S.flt,AD=S.data,mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT;
-  var lastM=mos[mos.length-1];
-  var ld=lastM?D.filter(function(r){return r.period===lastM&&isRep(r);}):[];
+ var D=S.flt,AD=S.data,mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT;
+ var lastM=mos[mos.length-1];
+ var ld=lastM?D.filter(function(r){return r.period===lastM&&isRep(r);}):[];
 
-  // Count atypiques per antigen
-  var atB={};AG.forEach(function(ag){atB[ag]={t:0,a:0};});
-  ld.forEach(function(r){AG.forEach(function(ag){
-    var val=Number(r[ag])||0;if(!val)return;atB[ag].t++;
-    var avg=mAvg(r.org5,ag,lastM,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)atB[ag].a++;
-  });});
+ var atB={};AG.forEach(function(ag){atB[ag]={t:0,a:0};});
+ ld.forEach(function(r){AG.forEach(function(ag){
+  var val=Number(r[ag])||0;if(!val)return;atB[ag].t++;
+  var avg=mAvg(r.org5,ag,lastM,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)atB[ag].a++;
+ });});
+ var agK=AG.filter(function(a){return atB[a].t>0;});
 
-  var agK=AG.filter(function(a){return atB[a].t>0;});
-  var b1=E('div','cb');b1.innerHTML='<h4>⚠️ Valeurs atypiques par antigène — '+mL(lastM||'')+'</h4><canvas id="atB" height="55"></canvas>';c.appendChild(b1);
-  setTimeout(function(){var x=document.getElementById('atB');if(!x)return;
-    S.charts.atB=new Chart(x,{type:'bar',data:{labels:agK.map(function(a){return AG_LBL[a];}),datasets:[{label:'Atypiques',data:agK.map(function(a){return atB[a].a;}),backgroundColor:'#e74c3c',borderRadius:3},{label:'Normales',data:agK.map(function(a){return atB[a].t-atB[a].a;}),backgroundColor:'#27ae60',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'FOSA'}}}}});
-  },80);
+ var b1=E('div','cb');b1.innerHTML='<h4>⚠️ Valeurs atypiques par antigène — '+mL(lastM||'')+'</h4><canvas id="atB" height="55"></canvas>';c.appendChild(b1);
+ setTimeout(function(){var x=document.getElementById('atB');if(!x)return;
+  S.charts.atB=new Chart(x,{type:'bar',data:{labels:agK.map(function(a){return AG_LBL[a];}),datasets:[{label:'Atypiques',data:agK.map(function(a){return atB[a].a;}),backgroundColor:'#e74c3c',borderRadius:3},{label:'Normales',data:agK.map(function(a){return atB[a].t-atB[a].a;}),backgroundColor:'#27ae60',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'Unités'}}}}});
+ },80);
 
-  // Tendance mensuelle
-  var b2=E('div','cb');b2.innerHTML='<h4>📈 Tendance mensuelle des valeurs atypiques</h4><canvas id="atT" height="50"></canvas>';c.appendChild(b2);
-  setTimeout(function(){var x=document.getElementById('atT');if(!x)return;
-    var td=mos.map(function(m){var mD=D.filter(function(r){return r.period===m&&isRep(r);});var t=0,a=0;
-      mD.forEach(function(r){AG.forEach(function(ag){var val=Number(r[ag])||0;if(!val)return;t++;var avg=mAvg(r.org5,ag,m,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)a++;});});
-      return{t:t,a:a,p:t?(a/t*100):0};});
-    S.charts.atT=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'Nb atypiques',data:td.map(function(d){return d.a;}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.05)',fill:true,tension:.3,pointRadius:5,borderWidth:3,yAxisID:'y'},{label:'% atypiques',data:td.map(function(d){return d.p;}),borderColor:'#f39c12',borderWidth:2,tension:.3,pointRadius:4,borderDash:[5,3],fill:false,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nombre'},position:'left'},y1:{beginAtZero:true,title:{display:true,text:'%'},position:'right',grid:{drawOnChartArea:false}}}}});
-  },160);
+ // Tendance mensuelle
+ var b2=E('div','cb');b2.innerHTML='<h4>📈 Tendance mensuelle des valeurs atypiques</h4><canvas id="atT" height="50"></canvas>';c.appendChild(b2);
+ setTimeout(function(){var x=document.getElementById('atT');if(!x)return;
+  var td2=mos.map(function(m){var mD=D.filter(function(r){return r.period===m&&isRep(r);});var t=0,a=0;
+   mD.forEach(function(r){AG.forEach(function(ag){var val=Number(r[ag])||0;if(!val)return;t++;var avg=mAvg(r.org5,ag,m,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)a++;});});
+   return{t:t,a:a,p:t?(a/t*100):0};});
+  S.charts.atT=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'Nb atypiques',data:td2.map(function(d){return d.a;}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.05)',fill:true,tension:.3,pointRadius:5,borderWidth:3,yAxisID:'y'},{label:'% atypiques',data:td2.map(function(d){return d.p;}),borderColor:'#f39c12',borderWidth:2,tension:.3,pointRadius:4,borderDash:[5,3],fill:false,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nombre'},position:'left'},y1:{beginAtZero:true,title:{display:true,text:'%'},position:'right',grid:{drawOnChartArea:false}}}}});
+ },160);
 
-  // FOSA encodant VAR2 et HPV
-  var b3=E('div','cb');b3.innerHTML='<h4>💉 FOSA encodant VAR2 (0-11 mois) et HPV</h4><canvas id="v2h" height="50"></canvas>';c.appendChild(b3);
+ // VAR2 et HPV (seulement si disponibles)
+ var hasVAR2=AG.indexOf('VAR2')>=0, hasHPV=AG.indexOf('HPV')>=0;
+ if(hasVAR2||hasHPV){
+  var b3=E('div','cb');b3.innerHTML='<h4>🔬 Encodage '+(hasVAR2?'VAR2':'')+(hasVAR2&&hasHPV?' et ':'')+( hasHPV?'HPV':'')+'</h4><canvas id="v2h" height="50"></canvas>';c.appendChild(b3);
   setTimeout(function(){var x=document.getElementById('v2h');if(!x)return;
-    S.charts.v2h=new Chart(x,{type:'bar',data:{labels:mos.map(mL),datasets:[{label:'FOSA avec VAR2>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.VAR2)||0)>0;}).length;}),backgroundColor:'rgba(156,39,176,.65)',borderRadius:3},{label:'FOSA avec HPV>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.HPV)||0)>0;}).length;}),backgroundColor:'rgba(0,150,136,.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'FOSA'}}}}});
+   var ds=[];
+   if(hasVAR2) ds.push({label:'Avec VAR2>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.VAR2)||0)>0;}).length;}),backgroundColor:'rgba(156,39,176,.65)',borderRadius:3});
+   if(hasHPV) ds.push({label:'Avec HPV>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.HPV)||0)>0;}).length;}),backgroundColor:'rgba(0,150,136,.65)',borderRadius:3});
+   S.charts.v2h=new Chart(x,{type:'bar',data:{labels:mos.map(mL),datasets:ds},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Unités'}}}}});
   },240);
+ }
 
-  // Structures données manquantes
-  if(lastM){
-    var b4=E('div','cb');
-    b4.innerHTML='<h4>📋 Structures avec données manquantes — '+mL(lastM)+'</h4>'+
-      '<div style="margin-bottom:8px"><label style="font-weight:600;font-size:11px;margin-right:6px">Filtrer antigène:</label>'+
-      '<select id="agFlt" onchange="fltMiss()" style="padding:5px 8px;border:1px solid #ddd;border-radius:5px;font-size:11px">'+
-      '<option value="all">Tous</option>'+AG_ALL.map(function(a){return'<option value="'+a+'">'+AG_LBL[a]+'</option>';}).join('')+'</select></div>';
-    var ld2=D.filter(function(r){return r.period===lastM;});
-    var h='<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>FOSA</th><th>Province</th><th>ZS</th><th>Rapport</th><th>Renseignées</th><th>Total</th><th>Complétude (%)</th><th>Antigènes non renseignés</th></tr></thead><tbody>';
-    ld2.forEach(function(r){
-      var rep=isRep(r),nR=cntRens(r),tot=obTotal(r),ex=pct(nR,tot),miss=missAg(r);
-      h+='<tr data-miss="'+miss.join(',')+'"><td>'+tr(r.org5,24)+'</td><td>'+tr(r.org2,16)+'</td><td>'+tr(r.org3,16)+'</td><td class="'+(rep?'cg':'crd')+'">'+(rep?'Oui':'Non')+'</td><td style="text-align:center">'+nR+'</td><td style="text-align:center">'+tot+'</td><td class="'+ccl(ex)+'">'+ex.toFixed(1)+'%</td><td style="font-size:9.5px"><span class="tr">'+miss.map(function(a){return AG_LBL[a];}).join(', ')+'</span></td></tr>';
-    });
-    b4.innerHTML+=h+'</tbody></table></div>';c.appendChild(b4);
-  }
+ // Structures données manquantes
+ if(lastM){
+  var b4=E('div','cb');
+  b4.innerHTML='<h4>📋 Structures avec données manquantes — '+mL(lastM)+'</h4>'+
+   '<div style="margin-bottom:8px"><label style="font-weight:600;font-size:11px;margin-right:6px">Filtrer antigène:</label>'+
+   '<select id="agFlt" onchange="fltMiss()" style="padding:5px 8px;border:1px solid #ddd;border-radius:5px;font-size:11px">'+
+   '<option value="all">Tous</option>'+AG_ALL.map(function(a){return'<option value="'+a+'">'+AG_LBL[a]+'</option>';}).join('')+'</select></div>';
+  var ld2=D.filter(function(r){return r.period===lastM;});
+  var h='<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>'+(DATA_HAS_FOSA?'FOSA':'ZS')+'</th><th>Province</th><th>ZS</th><th>Rapport</th><th>Renseignées</th><th>Total</th><th>Complétude (%)</th><th>Antigènes non renseignés</th></tr></thead><tbody>';
+  ld2.forEach(function(r){
+   var rep=isRep(r),nR=cntRens(r),tot=obTotal(r),ex=pct(nR,tot),miss=missAg(r);
+   h+='<tr data-miss="'+miss.join(',')+'"><td>'+tr(r.org5,24)+'</td><td>'+tr(r.org2,16)+'</td><td>'+tr(r.org3,16)+'</td><td class="'+(rep?'cg':'crd')+'">'+(rep?'Oui':'Non')+'</td><td style="text-align:center">'+nR+'</td><td style="text-align:center">'+tot+'</td><td class="'+ccl(ex)+'">'+ex.toFixed(1)+'%</td><td style="font-size:9.5px"><span class="tr">'+miss.map(function(a){return AG_LBL[a];}).join(', ')+'</span></td></tr>';
+  });
+  b4.innerHTML+=h+'</tbody></table></div>';c.appendChild(b4);
+ }
 }
 window.fltMiss=function(){var sel=document.getElementById('agFlt');if(!sel)return;var v=sel.value;document.querySelectorAll('#mTbl tbody tr').forEach(function(row){if(v==='all'){row.style.display='';return;}var m=(row.getAttribute('data-miss')||'').split(',');row.style.display=m.indexOf(v)>=0?'':'none';});};
 
 /* ╔══════════════════════════════════════╗
-   ║  P5: SCORE QUALITÉ DES DONNÉES      ║
+   ║ P5: SCORE QUALITÉ DES DONNÉES     ║
    ╚══════════════════════════════════════╝ */
 function rP5(c){
-  c.innerHTML='<div class="stt" id="sTabs"><div class="stb act" onclick="sSL(0)">Par FOSA</div><div class="stb" onclick="sSL(1)">Par Aire de Santé</div><div class="stb" onclick="sSL(2)">Par Zone de Santé</div><div class="stb" onclick="sSL(3)">Par Antenne PEV</div><div class="stb" onclick="sSL(4)">Par Province</div></div><div id="sC"></div>';
-  setTimeout(function(){sSL(0);},40);
+ var lvLabels=['Par '+(DATA_HAS_FOSA?'FOSA':'ZS')];
+ if(DATA_HAS_AS) lvLabels.push('Par Aire de Santé');
+ lvLabels.push('Par Zone de Santé','Par Antenne PEV','Par Province');
+
+ c.innerHTML='<div class="stt" id="sTabs">'+lvLabels.map(function(l,i){return '<div class="stb'+(i===0?' act':'')+'" onclick="sSL('+i+')">'+l+'</div>';}).join('')+'</div><div id="sC"></div>';
+ setTimeout(function(){sSL(0);},40);
 }
 
 window.sSL=function(lv){
-  document.querySelectorAll('#sTabs .stb').forEach(function(t,i){t.classList.toggle('act',i===lv);});
-  var sc=document.getElementById('sC');sc.innerHTML='';
-  var D=S.flt,AD=S.data,mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT,lastM=mos[mos.length-1];
-  var lvC=[{k:function(r){return r.org5;},l:'FOSA'},{k:function(r){return r.org4;},l:'Aire de Santé'},{k:function(r){return r.org3;},l:'Zone de Santé'},{k:function(r){return r.antenne;},l:'Antenne PEV'},{k:function(r){return r.org2;},l:'Province'}][lv];
-  var og=grp(D,lvC.k),units=Object.keys(og).filter(Boolean).sort();
-  var rows=units.map(function(u){
-    var rc=og[u],rep=rc.filter(isRep),nT=rc.length,nR=rep.length;
-    var tR=pct(nR,nT);
-    var aE=rep.length?rep.reduce(function(s,r){return s+exh(r);},0)/rep.length:0;
-    var cohOk=rep.filter(chkCoh).length,bCoh=rep.length?(cohOk/rep.length>=.5):false;
-    var tV=0,aV=0;
-    if(lastM){var lr=rep.filter(function(r){return r.period===lastM;});
-      lr.forEach(function(r){AG.forEach(function(ag){var val=Number(r[ag])||0;if(!val)return;tV++;var avg=mAvg(r.org5,ag,lastM,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)aV++;});});}
-    var pA=tV?(aV/tV*100):0;
-    var d1=sf(rc,'DTC1'),d3=sf(rc,'DTC3'),dr=d1?((d1-d3)/d1*100):0;
-    var scR=sB(tR,C.BR),scE=sB(aE,C.BR),scC=bCoh?20:0,scA=sBA(pA),scD=dr>=0?20:0;
-    var tot=scR+scE+scC+scA+scD;
-    var interp=tot>=80?'Excellent':(tot>=50?'Bon':'Mauvais');
-    var notes=[];
-    if(tot<50){if(scR<12)notes.push('Rapportage');if(scE<12)notes.push('Exhaustivité');if(!bCoh)notes.push('Cohérence');if(scA<12)notes.push('Atypiques');if(scD===0)notes.push('Dropout');}
-    return{u:u,nT:nT,nR:nR,tR:tR,aE:aE,bCoh:bCoh,pA:pA,dr:dr,scR:scR,scE:scE,scC:scC,scA:scA,scD:scD,tot:tot,interp:interp,notes:notes.join('; ')};
-  });
-  rows.sort(function(a,b){return b.tot-a.tot;});
+ document.querySelectorAll('#sTabs .stb').forEach(function(t,i){t.classList.toggle('act',i===lv);});
+ var sc=document.getElementById('sC');sc.innerHTML='';
+ var D=S.flt,AD=S.data,mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT,lastM=mos[mos.length-1];
 
-  var exc=rows.filter(function(r){return r.interp==='Excellent';}).length;
-  var bon=rows.filter(function(r){return r.interp==='Bon';}).length;
-  var mau=rows.filter(function(r){return r.interp==='Mauvais';}).length;
-  var avg2=rows.length?rows.reduce(function(s,r){return s+r.tot;},0)/rows.length:0;
+ /* Construire les niveaux dynamiquement */
+ var lvDefs=[];
+ if(DATA_HAS_FOSA) lvDefs.push({k:function(r){return r.org5;},l:'FOSA'});
+ else lvDefs.push({k:function(r){return r.org3;},l:'ZS'});
+ if(DATA_HAS_AS) lvDefs.push({k:function(r){return r.org4;},l:'Aire de Santé'});
+ lvDefs.push({k:function(r){return r.org3;},l:'Zone de Santé'});
+ lvDefs.push({k:function(r){return r.antenne;},l:'Antenne PEV'});
+ lvDefs.push({k:function(r){return r.org2;},l:'Province'});
+ /* Dédupliquer si FOSA≡ZS */
+ if(!DATA_HAS_FOSA&&!DATA_HAS_AS){
+  lvDefs=[
+   {k:function(r){return r.org3;},l:'Zone de Santé'},
+   {k:function(r){return r.antenne;},l:'Antenne PEV'},
+   {k:function(r){return r.org2;},l:'Province'}
+  ];
+ }
 
-  sc.innerHTML='<div class="kr" style="margin-bottom:16px">'+
-    '<div class="kc gn"><div class="kv">'+exc+'</div><div class="kl">🏆 Excellent (≥80)</div></div>'+
-    '<div class="kc or"><div class="kv">'+bon+'</div><div class="kl">👍 Bon (50-79)</div></div>'+
-    '<div class="kc rd"><div class="kv">'+mau+'</div><div class="kl">⚠️ Mauvais (<50)</div></div>'+
-    '<div class="kc bl"><div class="kv">'+avg2.toFixed(0)+'</div><div class="kl">Score moyen /100</div></div>'+
-    '<div class="kc pu"><div class="kv">'+rows.length+'</div><div class="kl">'+lvC.l+'s évaluées</div></div></div>';
+ if(lv>=lvDefs.length) lv=0;
+ var lvC=lvDefs[lv];
 
-  // Distribution chart
-  sc.innerHTML+='<div class="cb"><h4>📊 Distribution des scores — '+lvC.l+'</h4><canvas id="sDist" height="45"></canvas></div>';
-  setTimeout(function(){var x=document.getElementById('sDist');if(!x)return;
-    var bins=[[0,20],[20,40],[40,60],[60,80],[80,101]],bL=bins.map(function(b){return b[0]+'-'+(b[1]===101?100:b[1]);}),bC=bins.map(function(b){return rows.filter(function(r){return r.tot>=b[0]&&r.tot<b[1];}).length;});
-    S.charts.sDist=new Chart(x,{type:'bar',data:{labels:bL,datasets:[{data:bC,backgroundColor:['#e74c3c','#ff7043','#f39c12','#66bb6a','#27ae60'],borderRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nombre'}},x:{title:{display:true,text:'Score'}}}}});
-  },60);
+ var og=grp(D,lvC.k),units=Object.keys(og).filter(Boolean).sort();
+ var rows=units.map(function(u){
+  var rc=og[u],rep=rc.filter(isRep),nT=rc.length,nR=rep.length;
+  var tR=pct(nR,nT);
+  var aE=rep.length?rep.reduce(function(s,r){return s+exh(r);},0)/rep.length:0;
+  var cohOk=rep.filter(chkCoh).length,bCoh=rep.length?(cohOk/rep.length>=.5):false;
+  var tV=0,aV=0;
+  if(lastM){var lr=rep.filter(function(r){return r.period===lastM;});
+   lr.forEach(function(r){AG.forEach(function(ag){var val=Number(r[ag])||0;if(!val)return;tV++;var avg=mAvg(r.org5,ag,lastM,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)aV++;});});}
+  var pA=tV?(aV/tV*100):0;
+  var d1=sf(rc,'DTC1'),d3=sf(rc,'DTC3'),dr=d1?((d1-d3)/d1*100):0;
+  var scR=sB(tR,C.BR),scE=sB(aE,C.BR),scC=bCoh?20:0,scA=sBA(pA),scD=dr>=0?20:0;
+  var tot=scR+scE+scC+scA+scD;
+  var interp=tot>=80?'Excellent':(tot>=50?'Bon':'Mauvais');
+  var notes=[];
+  if(tot<50){if(scR<12)notes.push('Rapportage');if(scE<12)notes.push('Exhaustivité');if(!bCoh)notes.push('Cohérence');if(scA<12)notes.push('Atypiques');if(scD===0)notes.push('Dropout');}
+  return{u:u,nT:nT,nR:nR,tR:tR,aE:aE,bCoh:bCoh,pA:pA,dr:dr,scR:scR,scE:scE,scC:scC,scA:scA,scD:scD,tot:tot,interp:interp,notes:notes.join('; ')};
+ });
+ rows.sort(function(a,b){return b.tot-a.tot;});
 
-  // Table
-  var h='<div class="tw"><table class="dt"><thead><tr><th>'+lvC.l+'</th><th>Rapp. att.</th><th>Rapp. prod.</th><th>Taux rapp. (%)</th><th>Sc.</th><th>Exhaust. (%)</th><th>Sc.</th><th>Cohérence</th><th>Sc.</th><th>% Atyp.</th><th>Sc.</th><th>Dropout (%)</th><th>Sc.</th><th>SCORE /100</th><th>Interprét.</th><th>Notes</th></tr></thead><tbody>';
-  rows.forEach(function(r){
-    var scCol=r.tot>=80?'#27ae60':(r.tot>=50?'#f39c12':'#e74c3c');
-    var intC=r.interp==='Excellent'?'cg':(r.interp==='Bon'?'cy':'crd');
-    h+='<tr><td><b>'+tr(r.u,26)+'</b></td><td style="text-align:center">'+r.nT+'</td><td style="text-align:center">'+r.nR+'</td><td class="'+ccl(r.tR)+'">'+r.tR.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scR+'</td><td class="'+ccl(r.aE)+'">'+r.aE.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scE+'</td><td class="'+(r.bCoh?'cg':'crd')+'">'+(r.bCoh?'Oui':'Non')+'</td><td style="text-align:center;font-weight:700">'+r.scC+'</td><td style="text-align:center;color:'+(r.pA>20?'#e74c3c':'#333')+'">'+r.pA.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scA+'</td><td class="'+(r.dr<0?'crd':'')+'">'+r.dr.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scD+'</td><td style="background:'+scCol+';color:#fff;text-align:center;font-weight:800;font-size:15px">'+r.tot+'</td><td class="'+intC+'" style="font-weight:700;text-align:center">'+r.interp+'</td><td style="font-size:9.5px;color:#e74c3c;max-width:160px;white-space:normal">'+r.notes+'</td></tr>';
-  });
-  sc.innerHTML+=h+'</tbody></table></div>';
+ var exc=rows.filter(function(r){return r.interp==='Excellent';}).length;
+ var bon=rows.filter(function(r){return r.interp==='Bon';}).length;
+ var mau=rows.filter(function(r){return r.interp==='Mauvais';}).length;
+ var avg2=rows.length?rows.reduce(function(s,r){return s+r.tot;},0)/rows.length:0;
+
+ sc.innerHTML='<div class="kr" style="margin-bottom:16px">'+
+  '<div class="kc gn"><div class="kv">'+exc+'</div><div class="kl">🏆 Excellent (≥80)</div></div>'+
+  '<div class="kc or"><div class="kv">'+bon+'</div><div class="kl">👍 Bon (50-79)</div></div>'+
+  '<div class="kc rd"><div class="kv">'+mau+'</div><div class="kl">⚠️ Mauvais (<50)</div></div>'+
+  '<div class="kc bl"><div class="kv">'+avg2.toFixed(0)+'</div><div class="kl">Score moyen /100</div></div>'+
+  '<div class="kc pu"><div class="kv">'+rows.length+'</div><div class="kl">'+lvC.l+'s évaluées</div></div></div>';
+
+ // Distribution chart
+ sc.innerHTML+='<div class="cb"><h4>📊 Distribution des scores — '+lvC.l+'</h4><canvas id="sDist" height="45"></canvas></div>';
+ setTimeout(function(){var x=document.getElementById('sDist');if(!x)return;
+  var bins=[[0,20],[20,40],[40,60],[60,80],[80,101]],bL=bins.map(function(b){return b[0]+'-'+(b[1]===101?100:b[1]);}),bC=bins.map(function(b){return rows.filter(function(r){return r.tot>=b[0]&&r.tot<b[1];}).length;});
+  S.charts.sDist=new Chart(x,{type:'bar',data:{labels:bL,datasets:[{data:bC,backgroundColor:['#e74c3c','#ff7043','#f39c12','#66bb6a','#27ae60'],borderRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nombre'}},x:{title:{display:true,text:'Score'}}}}});
+ },60);
+
+ // Table
+ var h='<div class="tw"><table class="dt"><thead><tr><th>'+lvC.l+'</th><th>Rapp. att.</th><th>Rapp. prod.</th><th>Taux rapp. (%)</th><th>Sc.</th><th>Exhaust. (%)</th><th>Sc.</th><th>Cohérence</th><th>Sc.</th><th>% Atyp.</th><th>Sc.</th><th>Dropout (%)</th><th>Sc.</th><th>SCORE /100</th><th>Interprét.</th><th>Notes</th></tr></thead><tbody>';
+ rows.forEach(function(r){
+  var scCol=r.tot>=80?'#27ae60':(r.tot>=50?'#f39c12':'#e74c3c');
+  var intC=r.interp==='Excellent'?'cg':(r.interp==='Bon'?'cy':'crd');
+  h+='<tr><td><b>'+tr(r.u,26)+'</b></td><td style="text-align:center">'+r.nT+'</td><td style="text-align:center">'+r.nR+'</td><td class="'+ccl(r.tR)+'">'+r.tR.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scR+'</td><td class="'+ccl(r.aE)+'">'+r.aE.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scE+'</td><td class="'+(r.bCoh?'cg':'crd')+'">'+(r.bCoh?'Oui':'Non')+'</td><td style="text-align:center;font-weight:700">'+r.scC+'</td><td style="text-align:center;color:'+(r.pA>20?'#e74c3c':'#333')+'">'+r.pA.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scA+'</td><td class="'+(r.dr<0?'crd':'')+'">'+r.dr.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scD+'</td><td style="background:'+scCol+';color:#fff;text-align:center;font-weight:800;font-size:15px">'+r.tot+'</td><td class="'+intC+'" style="font-weight:700;text-align:center">'+r.interp+'</td><td style="font-size:9.5px;color:#e74c3c;max-width:160px;white-space:normal">'+r.notes+'</td></tr>';
+ });
+ sc.innerHTML+=h+'</tbody></table></div>';
 };
 
 /* ═══ START ═══ */
-  loadAll();
+loadAll();
 </script>
 </body>
 </html>
