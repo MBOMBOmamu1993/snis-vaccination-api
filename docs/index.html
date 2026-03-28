@@ -192,7 +192,7 @@ function sp(p,t,s){var a=document.getElementById('PF'),b=document.getElementById
 
   /* ═══ TRANSFORM RECORD ═══ */
   function transformRecord(r) {
-    var rec = { org2: r._Province || '', org3: r._ZS || '', org4: r._ZS || '', org5: r._ZS || '', antenne: r._Antenne || '', period: r._YM || '', completude: r.comp || 0, promptitude: r.prompt || 0, isVAP: C.VAP_PROV.indexOf(r._Province) >= 0, _n: r.n || 0, _rap: r.rap || 0 };
+    var rec = { org2: r._Province || '', org3: r._ZS || '', org4: r._AS || '', org5: r._FOSA || r.orgUnit || '', antenne: r._Antenne || '', period: r._YM || '', completude: r.comp || 0, promptitude: r.prompt || 0, isVAP: C.VAP_PROV.indexOf(r._Province) >= 0, _n: r.n || 0, _rap: r.rap || 0 };
     AG_ALL.forEach(function (ag) { var src = AG_FIELD_MAP[ag]; var val = src ? (Number(r[src]) || 0) : 0; rec[ag] = val; rec[ag + '_f'] = val; });
     return rec;
   }
@@ -214,13 +214,16 @@ function sp(p,t,s){var a=document.getElementById('PF'),b=document.getElementById
       S.hmIndex = await hmR.json();
       S.hmCache = {}; S.heatmap = {};
       sp(65, 'Transformation...');
-      S.data = byZS.map(transformRecord);
+          S.data = byZS.map(transformRecord);
+      if (byZS.length > 0) { console.log('=== PREMIER ENREGISTREMENT JSON BRUT ==='); console.log(JSON.stringify(byZS[0], null, 2)); console.log('=== CLÉS DISPONIBLES ==='); console.log(Object.keys(byZS[0]).join(', ')); }
       sp(80, 'Indexation...');
-      var v = { province: S.meta.provinces || [], antenne: S.meta.antennes || [], zs: S.meta.zs || [], as: [], fosa: [], period: S.meta.months || [] };
-      S.data.forEach(function (r) {
-        if (r.org4 && v.as.indexOf(r.org4) < 0) v.as.push(r.org4);
-        if (r.org5 && v.fosa.indexOf(r.org5) < 0) v.fosa.push(r.org5);
-      });
+          var v = { province: S.meta.provinces || [], antenne: S.meta.antennes || [], zs: S.meta.zs || [], as: S.meta.as || [], fosa: S.meta.fosa || [], period: S.meta.months || [] };
+      if (!v.as.length || !v.fosa.length) {
+        S.data.forEach(function (r) {
+          if (r.org4 && v.as.indexOf(r.org4) < 0) v.as.push(r.org4);
+          if (r.org5 && v.fosa.indexOf(r.org5) < 0) v.fosa.push(r.org5);
+        });
+      }
       Object.keys(v).forEach(function (k) { v[k].sort(); S.filters[k] = v[k].slice(); });
       S.vals = v; S.loaded = true;
       sp(85, 'Rendu...');
