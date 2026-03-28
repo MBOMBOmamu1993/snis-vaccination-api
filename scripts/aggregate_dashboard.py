@@ -1,328 +1,857 @@
-import json, gzip, os, re, sys
-from pathlib import Path
+from __future__ import annotations
+
+import json
+import gzip
+import sys
 from collections import defaultdict
-import shutil
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-DOCS = Path("docs")
-DATA = DOCS / "data"
-MONTHLY = DATA / "monthly"
-DASH = DATA / "dashboard"
+# ============================================================
+# CONFIG
+# ============================================================
 
-# Clean previous dashboard
-if DASH.exists():
-    shutil.rmtree(DASH)
-DASH.mkdir(parents=True, exist_ok=True)
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "docs" / "data"
+MONTHLY_DIR = DATA_DIR / "monthly"
+DASHBOARD_DIR = DATA_DIR / "dashboard"
+OU_MAP_PATH = DATA_DIR / "ou_map.json"
+INDEX_PATH = DATA_DIR / "index.json"
+ANTENNE_RULES_PATH = DATA_DIR / "antenne_rules.json"
+RENAME_MAP_PATH = REPO_ROOT / "docs" / "config" / "rename_map.json"
 
-# ── Load ou_map ──
-with open(DATA / "ou_map.json") as f:
-    OU_MAP = json.load(f)
+# Max JSON file size (GitHub Pages limit ~100MB, we stay under 50MB per file)
+MAX_FILE_BYTES = 50_000_000
 
-# ── Load antenne_rules ──
-ANT_RULES = {}
-ant_path = DOCS / "config" / "antenne_rules.json"
-if ant_path.exists():
-    with open(ant_path) as f:
-        ANT_RULES = json.load(f)
-
-# ── Field specs ──
-SUM_SPECS = {
-    'BCG_0_11': ['BCG_fixe1','BCG_fixe2','BCG_avanc_1','BCG_avanc_2','BCG_mobile1','BCG_mobile2'],
-    'BCG_0_11_fixe': ['BCG_fixe1','BCG_fixe2'],
-    'DTC1_0_11': ['Penta1_fixe1','Penta1_fixe2','Penta1_avanc_1','Penta1_avanc_2','Penta1_mobile1','Penta1_mobile2'],
-    'DTC1_0_11_fixe': ['Penta1_fixe1','Penta1_fixe2'],
-    'DTC2_0_11': ['Penta2_fixe1','Penta2_fixe2','Penta2_avanc_1','Penta2_avanc_2','Penta2_mobile1','Penta2_mobile2'],
-    'DTC2_0_11_fixe': ['Penta2_fixe1','Penta2_fixe2'],
-    'DTC3_0_11': ['Penta3_fixe1','Penta3_fixe2','Penta3_avanc_1','Penta3_avanc_2','Penta3_mobile1','Penta3_mobile2'],
-    'DTC3_0_11_fixe': ['Penta3_fixe1','Penta3_fixe2'],
-    'VPO0_0_11': ['VPO0_0_11_mois_fixe1','VPO0_0_11_mois_fixe2','VPO0_0_11_mois_avanc_e1','VPO0_0_11_mois_avanc_e2','VPO0_0_11_mois_mobile1','VPO0_0_11_mois_mobile2'],
-    'VPO0_0_11_fixe': ['VPO0_0_11_mois_fixe1','VPO0_0_11_mois_fixe2'],
-    'VPO1_0_11': ['VPO1_0_11_mois_fixe1','VPO1_0_11_mois_fixe2','VPO1_0_11_mois_avanc_e1','VPO1_0_11_mois_avanc_e2','VPO1_0_11_mois_mobile1','VPO1_0_11_mois_mobile2'],
-    'VPO1_0_11_fixe': ['VPO1_0_11_mois_fixe1','VPO1_0_11_mois_fixe2'],
-    'VPO2_0_11': ['VPO2_0_11_mois_fixe1','VPO2_0_11_mois_fixe2','VPO2_0_11_mois_avanc_e1','VPO2_0_11_mois_avanc_e2','VPO2_0_11_mois_mobile1','VPO2_0_11_mois_mobile2'],
-    'VPO2_0_11_fixe': ['VPO2_0_11_mois_fixe1','VPO2_0_11_mois_fixe2'],
-    'VPO3_0_11': ['VPO3_fixe1','VPO3_fixe2','VPO3_avanc_1','VPO3_avanc_2','VPO3_mobile1','VPO3_mobile2'],
-    'VPO3_0_11_fixe': ['VPO3_fixe1','VPO3_fixe2'],
-    'VPI1_0_11': ['VPI1_fixe1','VPI1_fixe2','VPI1_avanc_1','VPI1_avanc_2','VPI1_mobile1','VPI1_mobile2'],
-    'VPI1_0_11_fixe': ['VPI1_fixe1','VPI1_fixe2'],
-    'VPI2_0_11': ['VPI2_fixe1','VPI2_fixe2','VPI2_avanc_1','VPI2_avanc_2','VPI2_mobile1','VPI2_mobile2'],
-    'VPI2_0_11_fixe': ['VPI2_fixe1','VPI2_fixe2'],
-    'ROTA1_0_11': ['ROTA1_0_11_mois_fixe','ROTA1_0_11_mois_avanc_e','ROTA1_0_11_mois_mobile'],
-    'ROTA1_0_11_fixe': ['ROTA1_0_11_mois_fixe'],
-    'ROTA2_0_11': ['ROTA2_0_11_mois_fixe','ROTA2_0_11_mois_avanc_e','ROTA2_0_11_mois_mobile'],
-    'ROTA2_0_11_fixe': ['ROTA2_0_11_mois_fixe'],
-    'ROTA3_0_11': ['ROTA3_fixe','ROTA3_avanc_','ROTA3_mobile'],
-    'ROTA3_0_11_fixe': ['ROTA3_fixe'],
-    'PCV13_1_0_11': ['PCV13_1_0_11_mois_fixe1','PCV13_1_0_11_mois_fixe2','PCV13_1_0_11_mois_avanc_e1','PCV13_1_0_11_mois_avanc_e2','PCV13_1_0_11_mois_mobile1','PCV13_1_0_11_mois_mobile2'],
-    'PCV13_1_0_11_fixe': ['PCV13_1_0_11_mois_fixe1','PCV13_1_0_11_mois_fixe2'],
-    'PCV13_2_0_11': ['PCV13_2_0_11_mois_fixe1','PCV13_2_0_11_mois_fixe2','PCV13_2_0_11_mois_avanc_e1','PCV13_2_0_11_mois_avanc_e2','PCV13_2_0_11_mois_mobile1','PCV13_2_0_11_mois_mobile2'],
-    'PCV13_2_0_11_fixe': ['PCV13_2_0_11_mois_fixe1','PCV13_2_0_11_mois_fixe2'],
-    'PCV13_3_0_11': ['PCV13_fixe1','PCV13_fixe2','PCV13_avanc_1','PCV13_avanc_2','PCV13_mobile1','PCV13_mobile2'],
-    'PCV13_3_0_11_fixe': ['PCV13_fixe1','PCV13_fixe2'],
-    'VAR1_0_11': ['VAR1_fixe1','VAR1_fixe2','VAR1_avanc_1','VAR1_avanc_2','VAR1_mobile1','VAR1_mobile2'],
-    'VAR1_0_11_fixe': ['VAR1_fixe1','VAR1_fixe2'],
-    'VAR2_0_11': ['VAR2_0_11_mois_fixe','VAR2_0_11_mois_avanc_e','VAR2_0_11_mois_mobile'],
-    'VAR2_0_11_fixe': ['VAR2_0_11_mois_fixe'],
-    'VAA_0_11': ['VAA_fixe1','VAA_fixe2','VAA_avanc_1','VAA_avanc_2','VAA_mobile1','VAA_mobile2'],
-    'VAA_0_11_fixe': ['VAA_fixe1','VAA_fixe2'],
-    'VAP1_0_11': ['VAP1_0_11_mois_fixe','VAP1_0_11_mois_avanc_e'],
-    'VAP1_0_11_fixe': ['VAP1_0_11_mois_fixe'],
-    'VAP2_0_11': ['VAP2_0_11_mois_fixe','VAP2_0_11_mois_avanc_e','VAP2_0_11_mois_mobile'],
-    'VAP2_0_11_fixe': ['VAP2_0_11_mois_fixe'],
-    'VAP3_0_11': ['VAP3_0_11_mois_fixe','VAP3_0_11_mois_avanc_e','VAP3_0_11_mois_mobile'],
-    'VAP3_0_11_fixe': ['VAP3_0_11_mois_fixe'],
-    'VAP4_12_23': ['VAP4_12_23_mois_fixe','VAP4_12_23_mois_avanc_e','VAP4_12_23_mois_mobile'],
-    'VAP4_12_23_fixe': ['VAP4_12_23_mois_fixe'],
-    'Td_2_plus': ['Td_2','Td_3','Td_4','Td_5']
+# Month abbreviations for parsing "01-Jan-2025" format
+MONTH_ABBR = {
+    "jan": "01", "feb": "02", "mar": "03", "apr": "04",
+    "may": "05", "jun": "06", "jul": "07", "aug": "08",
+    "sep": "09", "oct": "10", "nov": "11", "dec": "12",
 }
 
-AG_KEYS = list(SUM_SPECS.keys())
+# ============================================================
+# VACCINE DEFINITIONS
+# Maps Zoho field link names back to vaccine groups.
+# We need rename_map.json to know what fields exist.
+# ============================================================
 
-def nv(row, field):
-    v = row.get(field)
-    if v is None or v == '':
-        return 0
-    try:
+# These are the DHIS2 labels -> vaccine group mappings
+# The Zoho link names are resolved at runtime from rename_map.json
+VACCINE_GROUPS = {
+    "BCG": {
+        "labels": [
+            "BCG fixe1", "BCG fixe2", "BCG avancé1", "BCG avancé2",
+            "BCG mobile1", "BCG mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "DTC1": {
+        "labels": [
+            "Penta1 fixe1", "Penta1 fixe2", "Penta1 avancé1", "Penta1 avancé2",
+            "Penta1 mobile1", "Penta1 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "DTC3": {
+        "labels": [
+            "Penta3 fixe1", "Penta3 fixe2", "Penta3 avancé1", "Penta3 avancé2",
+            "Penta3 mobile1", "Penta3 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "VPO3": {
+        "labels": [
+            "VPO3 fixe1", "VPO3 fixe2", "VPO3 avancé1", "VPO3 avancé2",
+            "VPO3 mobile1", "VPO3 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "VPI1": {
+        "labels": [
+            "VPI1 fixe1", "VPI1 fixe2", "VPI1 avancé1", "VPI1 avancé2",
+            "VPI1 mobile1", "VPI1 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "ROTA3": {
+        "labels": ["ROTA3 fixe", "ROTA3 avancé", "ROTA3 mobile"],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "PCV13": {
+        "labels": [
+            "PCV13 fixe1", "PCV13 fixe2", "PCV13 avancé1", "PCV13 avancé2",
+            "PCV13 mobile1", "PCV13 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "VAR1": {
+        "labels": [
+            "VAR1 fixe1", "VAR1 fixe2", "VAR1 avancé1", "VAR1 avancé2",
+            "VAR1 mobile1", "VAR1 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "VAR2": {
+        "labels": [
+            "VAR2 fixe1", "VAR2 fixe2", "VAR2 avancé", "VAR2 mobile1", "VAR2 mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "VAA": {
+        "labels": [
+            "VAA fixe1", "VAA fixe2", "VAA avancé1", "VAA avancé2",
+            "VAA mobile1", "VAA mobile2"
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "VAP": {
+        "labels": [
+            "VAP1 0-11 mois fixe", "VAP1 0-11 mois avancée", "VAP1 0-11 mois mobile",
+            "VAP2 0-11 mois fixe", "VAP2 0-11 mois avancée", "VAP2 0-11 mois mobile",
+            "VAP3 0-11 mois fixe", "VAP3 0-11 mois avancée", "VAP3 0-11 mois mobile",
+        ],
+        "denominator": "Pop. 0-11m (survivants)",
+    },
+    "Td": {
+        "labels": ["Td 2", "Td 3", "Td 4", "Td 5"],
+        "denominator": None,
+    },
+}
+
+
+# ============================================================
+# HELPERS
+# ============================================================
+
+def parse_period(period_str: str) -> Optional[str]:
+    """
+    Convert various period formats to YYYYMM.
+    Handles:
+      - "01-Jan-2025" (Zoho format from fetch script)
+      - "202501" (already YYYYMM)
+      - "2025-01" or "2025-01-01" (ISO)
+      - "January 2025"
+    """
+    if not period_str or not isinstance(period_str, str):
+        return None
+
+    s = period_str.strip()
+
+    # Already YYYYMM
+    if len(s) == 6 and s.isdigit():
+        return s
+
+    # "01-Jan-2025" format
+    if len(s) >= 9 and s[2] == "-" and s[6] == "-":
+        month_abbr = s[3:6].lower()
+        year = s[7:11]
+        mm = MONTH_ABBR.get(month_abbr)
+        if mm and year.isdigit():
+            return f"{year}{mm}"
+
+    # ISO "2025-01-01" or "2025-01"
+    if len(s) >= 7 and s[4] == "-":
+        year = s[0:4]
+        month = s[5:7]
+        if year.isdigit() and month.isdigit():
+            return f"{year}{month}"
+
+    # "January 2025"
+    full_months = {
+        "january": "01", "february": "02", "march": "03", "april": "04",
+        "may": "05", "june": "06", "july": "07", "august": "08",
+        "september": "09", "october": "10", "november": "11", "december": "12",
+    }
+    parts = s.lower().split()
+    if len(parts) == 2 and parts[0] in full_months and parts[1].isdigit():
+        return f"{parts[1]}{full_months[parts[0]]}"
+
+    print(f"  WARN: cannot parse period '{period_str}'")
+    return None
+
+
+def safe_float(v: Any) -> float:
+    """Convert value to float, returning 0.0 for non-numeric."""
+    if v is None:
+        return 0.0
+    if isinstance(v, (int, float)):
         return float(v)
-    except:
-        return 0
+    if isinstance(v, str):
+        try:
+            return float(v.replace(",", "."))
+        except ValueError:
+            return 0.0
+    return 0.0
 
-def normalize_org3(org3):
-    s = (org3 or '').strip()
-    if len(s) > 3 and s[2] == ' ':
-        s = s[3:].strip()
-    for suf in [' Zone de Santé', ' Zone de Sante']:
-        if s.endswith(suf):
-            s = s[:-len(suf)].strip()
-            break
+
+def normalize_name(name: str) -> str:
+    """Normalize org unit name for matching."""
+    if not name:
+        return ""
+    import unicodedata
+    s = unicodedata.normalize("NFC", name.strip())
     return s
 
-def resolve_antenne(province, zs):
-    rules = ANT_RULES.get(province, {})
-    norm = normalize_org3(zs)
-    return rules.get(norm, rules.get(zs, ''))
 
-def period_to_ym(p):
-    p = (p or '').strip()
-    if len(p) >= 7 and p[4] == '-':
-        return p[:4] + p[5:7]
-    if len(p) >= 6 and p.isdigit():
-        return p[:6]
-    mmm = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06',
-           'Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12'}
-    parts = p.split('-')
-    if len(parts) == 3 and parts[1] in mmm:
-        return parts[2] + mmm[parts[1]]
-    return p
+# ============================================================
+# LOAD OU MAP
+# ============================================================
 
-def slug(name):
-    """Filesystem-safe slug from a name"""
-    s = re.sub(r'[^\w\s-]', '', (name or 'unknown').strip())
-    s = re.sub(r'[\s-]+', '_', s)
-    return s.lower() or 'unknown'
+def load_ou_map(path: Path) -> Dict[str, dict]:
+    """
+    Load ou_map.json which maps UID -> org unit info.
+    Expected format:
+    {
+      "uid1": {
+        "name": "CS Abc",
+        "level": 5,
+        "parent": "uid_parent",
+        "ancestors": {
+            "province": "Province X",
+            "zone_sante": "ZS Y",
+            "aire_sante": "AS Z"
+        }
+      },
+      ...
+    }
+    or list format:
+    [
+      {"id": "uid1", "name": "CS Abc", "level": 5, "parent": "...", ...}
+    ]
+    """
+    if not path.exists():
+        print(f"ERROR: ou_map.json not found at {path}")
+        return {}
 
-# ── Load all records ──
-print("Loading all NDJSON files...")
-with open(DATA / "index.json") as f:
-    index = json.load(f)
+    data = json.loads(path.read_text(encoding="utf-8"))
 
-all_records = []
-months_list = sorted(index.get("months", {}).keys())
+    ou_map = {}
 
-for month in months_list:
-    parts = index["months"][month].get("parts", [])
-    for part in parts:
-        fname = part.get("plain") or part.get("file", "")
-        if not fname:
-            continue
-        fpath = MONTHLY / month / fname
-        gz_path = MONTHLY / month / part.get("file", "")
+    if isinstance(data, dict):
+        # Could be {"organisationUnits": [...]} or direct {uid: info}
+        if "organisationUnits" in data:
+            for ou in data["organisationUnits"]:
+                uid = ou.get("id") or ou.get("uid")
+                if uid:
+                    ou_map[uid] = ou
+        else:
+            # Assume {uid: info} format
+            ou_map = data
 
-        lines = []
-        if fpath.exists() and not fname.endswith('.gz'):
-            with open(fpath) as f:
-                lines = f.readlines()
-        elif gz_path.exists() and str(gz_path).endswith('.gz'):
-            with gzip.open(gz_path, 'rt') as f:
-                lines = f.readlines()
-        elif fpath.exists():
-            try:
-                with gzip.open(fpath, 'rt') as f:
-                    lines = f.readlines()
-            except:
-                with open(fpath) as f:
-                    lines = f.readlines()
+    elif isinstance(data, list):
+        for ou in data:
+            uid = ou.get("id") or ou.get("uid")
+            if uid:
+                ou_map[uid] = ou
 
-        for line in lines:
-            line = line.strip()
-            if not line:
+    print(f"  Loaded {len(ou_map)} org units from ou_map.json")
+    return ou_map
+
+
+def get_hierarchy(ou_map: Dict[str, dict], uid: str) -> Dict[str, str]:
+    """
+    Get the hierarchy for an org unit.
+    Returns: {"province": "...", "zone_sante": "...", "aire_sante": "...", "fosa": "..."}
+    """
+    info = ou_map.get(uid, {})
+
+    # Try structured ancestors
+    ancestors = info.get("ancestors", {})
+    if ancestors:
+        return {
+            "province": ancestors.get("province", ""),
+            "zone_sante": ancestors.get("zone_sante", ancestors.get("zs", "")),
+            "aire_sante": ancestors.get("aire_sante", ancestors.get("as", "")),
+            "fosa": info.get("name", ""),
+            "uid": uid,
+        }
+
+    # Try path-based resolution
+    path = info.get("path", "")
+    name = info.get("name", "")
+    level = info.get("level", 0)
+
+    # Walk up the parent chain
+    province = zone_sante = aire_sante = fosa = ""
+
+    if level == 5:
+        fosa = name
+    elif level == 4:
+        aire_sante = name
+    elif level == 3:
+        zone_sante = name
+    elif level == 2:
+        province = name
+
+    # Resolve ancestors via parent chain
+    current_uid = uid
+    visited = set()
+    while current_uid and current_uid not in visited:
+        visited.add(current_uid)
+        current_info = ou_map.get(current_uid, {})
+        current_level = current_info.get("level", 0)
+        current_name = current_info.get("name", "")
+
+        if current_level == 2:
+            province = current_name
+        elif current_level == 3:
+            zone_sante = current_name
+        elif current_level == 4:
+            aire_sante = current_name
+
+        current_uid = current_info.get("parent", {})
+        if isinstance(current_uid, dict):
+            current_uid = current_uid.get("id", "")
+
+    return {
+        "province": province,
+        "zone_sante": zone_sante,
+        "aire_sante": aire_sante,
+        "fosa": fosa,
+        "uid": uid,
+    }
+
+
+# ============================================================
+# LOAD RENAME MAP (reverse: Zoho link name -> DHIS2 label)
+# ============================================================
+
+def load_rename_maps(path: Path) -> Tuple[Dict[str, str], Dict[str, str]]:
+    """
+    rename_map.json: {"DHIS2 label": "zoho_link_name", ...}
+    Returns:
+      label_to_zoho: {"BCG fixe1": "BCG_fixe_1", ...}
+      zoho_to_label: {"BCG_fixe_1": "BCG fixe1", ...}
+    """
+    if not path.exists():
+        print(f"WARN: rename_map.json not found at {path}")
+        return {}, {}
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    label_to_zoho = data  # {"DHIS2 label": "zoho_link_name"}
+    zoho_to_label = {v: k for k, v in data.items()}
+
+    print(f"  Loaded {len(label_to_zoho)} rename mappings")
+    return label_to_zoho, zoho_to_label
+
+
+# ============================================================
+# READ ALL NDJSON DATA
+# ============================================================
+
+def read_all_ndjson(monthly_dir: Path) -> List[dict]:
+    """Read all NDJSON files from monthly subfolders."""
+    all_records = []
+
+    if not monthly_dir.exists():
+        print(f"ERROR: monthly directory not found: {monthly_dir}")
+        return all_records
+
+    month_dirs = sorted([d for d in monthly_dir.iterdir() if d.is_dir()])
+    print(f"  Found {len(month_dirs)} month directories")
+
+    for month_dir in month_dirs:
+        month_records = 0
+
+        # Read .ndjson files (plain text)
+        for ndjson_file in sorted(month_dir.glob("*.ndjson")):
+            if ndjson_file.suffix == ".gz":
                 continue
             try:
-                row = json.loads(line)
-                ou = row.get('OrgUnit', '')
-                meta = OU_MAP.get(ou, {})
-                row['_Province'] = meta.get('Org2', '')
-                row['_ZS'] = meta.get('Org3', '')
-                row['_AS'] = meta.get('Org4', '')
-                row['_FOSA'] = meta.get('Org5', '')
-                row['_Antenne'] = resolve_antenne(row['_Province'], row['_ZS'])
-                row['_YM'] = period_to_ym(row.get('Period', ''))
-                for sf, sources in SUM_SPECS.items():
-                    row[sf] = sum(nv(row, s) for s in sources)
-                all_records.append(row)
-            except:
-                pass
+                with open(ndjson_file, "r", encoding="utf-8") as f:
+                    for line_num, line in enumerate(f, 1):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            rec = json.loads(line)
+                            all_records.append(rec)
+                            month_records += 1
+                        except json.JSONDecodeError as e:
+                            if line_num <= 3:
+                                print(f"  WARN: bad JSON line {line_num} in {ndjson_file.name}: {e}")
+            except Exception as e:
+                print(f"  WARN: error reading {ndjson_file}: {e}")
 
-    print(f"  {month}: {len(all_records)} total records")
+        # If no plain files found, try .ndjson.gz
+        if month_records == 0:
+            for gz_file in sorted(month_dir.glob("*.ndjson.gz")):
+                try:
+                    with gzip.open(gz_file, "rt", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                rec = json.loads(line)
+                                all_records.append(rec)
+                                month_records += 1
+                            except json.JSONDecodeError:
+                                pass
+                except Exception as e:
+                    print(f"  WARN: error reading {gz_file}: {e}")
 
-print(f"Total: {len(all_records)} records")
+        if month_records > 0:
+            print(f"    {month_dir.name}: {month_records} records")
 
-# ── Helper: aggregate by group ──
-def agg_group(records, group_fields):
-    groups = defaultdict(lambda: {
-        'n': 0, 'rap': 0,
-        'sum_comp': 0, 'sum_prompt': 0,
-        **{k: 0 for k in AG_KEYS}
-    })
+    print(f"  Total: {len(all_records)} records from all months")
+    return all_records
 
-    for r in records:
-        key = tuple(r.get(f, '') for f in group_fields)
-        g = groups[key]
-        g['n'] += 1
-        comp = nv(r, 'Compl_tude')
-        if comp > 0:
-            g['rap'] += 1
-        g['sum_comp'] += comp
-        g['sum_prompt'] += nv(r, 'Promptitude')
-        for k in AG_KEYS:
-            g[k] += nv(r, k)
 
-    result = []
-    for key, g in groups.items():
-        entry = {}
-        for i, f in enumerate(group_fields):
-            entry[f] = key[i]
-        entry['n'] = g['n']
-        entry['rap'] = g['rap']
-        entry['comp'] = round(g['sum_comp'] / g['n'], 2) if g['n'] > 0 else 0
-        entry['prompt'] = round(g['sum_prompt'] / g['n'], 2) if g['n'] > 0 else 0
-        for k in AG_KEYS:
-            if g[k] > 0:
-                entry[k] = g[k]
-        result.append(entry)
+# ============================================================
+# AGGREGATE
+# ============================================================
+
+def aggregate_data(
+    records: List[dict],
+    ou_map: Dict[str, dict],
+    zoho_to_label: Dict[str, str],
+    label_to_zoho: Dict[str, str],
+) -> Dict[str, Any]:
+    """
+    Aggregate records into dashboard structure.
+
+    Returns nested dict:
+    {
+      "national": { "periods": { "202501": { "BCG": {"administered": N, ...}, ... } } },
+      "provinces": {
+        "Province X": {
+          "periods": { "202501": { ... } },
+          "zones_sante": {
+            "ZS Y": { "periods": { ... }, "aires_sante": { ... } }
+          }
+        }
+      },
+      "metadata": { ... }
+    }
+    """
+
+    # Build vaccine field mapping: vaccine_group -> list of zoho field names
+    vaccine_fields = {}
+    denom_fields = {}
+
+    for vax_name, vax_def in VACCINE_GROUPS.items():
+        fields = []
+        for label in vax_def["labels"]:
+            zoho_name = label_to_zoho.get(label, label)
+            fields.append(zoho_name)
+        vaccine_fields[vax_name] = fields
+
+        if vax_def.get("denominator"):
+            denom_fields[vax_name] = label_to_zoho.get(
+                vax_def["denominator"], vax_def["denominator"]
+            )
+
+    # Completeness/promptitude field names
+    completude_field = label_to_zoho.get("Complétude", "Complétude")
+    promptitude_field = label_to_zoho.get("Promptitude", "Promptitude")
+    rapports_attendus_field = label_to_zoho.get("Rapports attendus", "Rapports attendus")
+
+    # Aggregation accumulators
+    # Key: (level_path, period) -> {vaccine: total, denom: total, ...}
+    # level_path examples: ("national",), ("Province X",), ("Province X", "ZS Y"), etc.
+
+    accum = defaultdict(lambda: defaultdict(float))
+    counts = defaultdict(lambda: defaultdict(int))  # for averaging completeness
+
+    unresolved_uids = set()
+    parsed_ok = 0
+    parsed_fail = 0
+
+    for rec in records:
+        ou_uid = rec.get("OrgUnit", "")
+        period_raw = rec.get("Period", "")
+
+        period = parse_period(period_raw)
+        if not period:
+            parsed_fail += 1
+            continue
+        parsed_ok += 1
+
+        # Resolve hierarchy
+        hier = get_hierarchy(ou_map, ou_uid)
+        province = hier["province"]
+        zs = hier["zone_sante"]
+        as_ = hier["aire_sante"]
+        fosa = hier["fosa"]
+
+        if not province and not zs:
+            if ou_uid not in unresolved_uids:
+                unresolved_uids.add(ou_uid)
+            continue
+
+        # Define aggregation keys
+        keys = []
+        keys.append(("national", period))
+        if province:
+            keys.append((f"prov:{province}", period))
+            if zs:
+                keys.append((f"prov:{province}|zs:{zs}", period))
+                if as_:
+                    keys.append((f"prov:{province}|zs:{zs}|as:{as_}", period))
+
+        for key in keys:
+            bucket = accum[key]
+
+            # Accumulate vaccine doses
+            for vax_name, fields in vaccine_fields.items():
+                total = 0.0
+                for field_name in fields:
+                    total += safe_float(rec.get(field_name, 0))
+                bucket[f"{vax_name}_administered"] += total
+
+            # Accumulate denominators
+            for vax_name, denom_field in denom_fields.items():
+                bucket[f"{vax_name}_denominator"] += safe_float(rec.get(denom_field, 0))
+
+            # Completeness/promptitude
+            bucket["completude_sum"] += safe_float(rec.get(completude_field, 0))
+            bucket["promptitude_sum"] += safe_float(rec.get(promptitude_field, 0))
+            bucket["rapports_attendus"] += safe_float(rec.get(rapports_attendus_field, 0))
+            counts[key]["facilities"] += 1
+
+    if unresolved_uids:
+        print(f"  WARN: {len(unresolved_uids)} org unit UIDs not found in ou_map")
+        if len(unresolved_uids) <= 10:
+            for uid in list(unresolved_uids)[:10]:
+                print(f"    - {uid}")
+
+    print(f"  Records parsed OK: {parsed_ok}, failed: {parsed_fail}")
+
+    # ============================================================
+    # Build output structure
+    # ============================================================
+
+    def build_period_data(key_prefix: str) -> Dict[str, dict]:
+        """Build period data for a given key prefix."""
+        period_data = {}
+
+        for (key, period), bucket in accum.items():
+            if key != key_prefix:
+                continue
+
+            n_fac = max(1, counts[(key, period)]["facilities"])
+
+            pd = {}
+            for vax_name in VACCINE_GROUPS:
+                administered = bucket.get(f"{vax_name}_administered", 0)
+                denominator = bucket.get(f"{vax_name}_denominator", 0)
+
+                entry = {
+                    "administered": round(administered),
+                }
+                if denominator > 0:
+                    entry["denominator"] = round(denominator)
+                    entry["coverage_pct"] = round(administered / denominator * 100, 1)
+                pd[vax_name] = entry
+
+            # Completeness
+            comp_sum = bucket.get("completude_sum", 0)
+            prompt_sum = bucket.get("promptitude_sum", 0)
+            rapp_att = bucket.get("rapports_attendus", 0)
+
+            pd["reporting"] = {
+                "completeness_avg": round(comp_sum / n_fac, 1) if n_fac else 0,
+                "promptness_avg": round(prompt_sum / n_fac, 1) if n_fac else 0,
+                "expected_reports": round(rapp_att),
+                "facilities_count": n_fac,
+            }
+
+            period_data[period] = pd
+
+        return dict(sorted(period_data.items()))
+
+    # National level
+    national = {"periods": build_period_data("national")}
+
+    # Province level
+    provinces = {}
+    province_names = set()
+
+    for key, _ in accum.keys():
+        if isinstance(key, str) and key.startswith("prov:") and "|" not in key:
+            prov_name = key[5:]
+            province_names.add(prov_name)
+
+    for prov_name in sorted(province_names):
+        prov_key = f"prov:{prov_name}"
+        prov_data = {
+            "periods": build_period_data(prov_key),
+            "zones_sante": {},
+        }
+
+        # Find ZS under this province
+        zs_names = set()
+        for key, _ in accum.keys():
+            if isinstance(key, str) and key.startswith(f"{prov_key}|zs:"):
+                parts = key.split("|")
+                if len(parts) >= 2:
+                    zs_name = parts[1][3:]  # remove "zs:"
+                    zs_names.add(zs_name)
+
+        for zs_name in sorted(zs_names):
+            zs_key = f"{prov_key}|zs:{zs_name}"
+            zs_data = {
+                "periods": build_period_data(zs_key),
+                "aires_sante": {},
+            }
+
+            # Find AS under this ZS
+            as_names = set()
+            for key, _ in accum.keys():
+                if isinstance(key, str) and key.startswith(f"{zs_key}|as:"):
+                    parts = key.split("|")
+                    if len(parts) >= 3:
+                        as_name = parts[2][3:]  # remove "as:"
+                        as_names.add(as_name)
+
+            for as_name in sorted(as_names):
+                as_key = f"{zs_key}|as:{as_name}"
+                zs_data["aires_sante"][as_name] = {
+                    "periods": build_period_data(as_key),
+                }
+
+            prov_data["zones_sante"][zs_name] = zs_data
+
+        provinces[prov_name] = prov_data
+
+    # Available periods
+    all_periods = set()
+    for (key, period) in accum.keys():
+        all_periods.add(period)
+
+    result = {
+        "metadata": {
+            "generated_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+            "periods": sorted(all_periods),
+            "provinces": sorted(province_names),
+            "vaccine_groups": list(VACCINE_GROUPS.keys()),
+        },
+        "national": national,
+        "provinces": provinces,
+    }
 
     return result
 
-# ── Write helpers ──
-def write_json(path, data):
-    with open(path, 'w') as f:
-        json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
-    size = os.path.getsize(path)
-    print(f"  Written {path} ({size/1024:.0f} KB)")
 
-def write_split(base_dir, records, key_field='_Province'):
-    """Split records by key_field into separate files under base_dir/"""
-    base_dir.mkdir(parents=True, exist_ok=True)
-    by_key = defaultdict(list)
-    for r in records:
-        by_key[r.get(key_field, '') or 'unknown'].append(r)
+# ============================================================
+# WRITE OUTPUT (split by province if needed)
+# ============================================================
 
-    manifest = {}
-    for k, rows in sorted(by_key.items()):
-        fname = slug(k) + '.json'
-        write_json(base_dir / fname, rows)
-        manifest[k] = fname
+def write_dashboard_json(data: Dict[str, Any], output_dir: Path) -> None:
+    """Write dashboard JSON, splitting by province if too large."""
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    write_json(base_dir / "_index.json", manifest)
-    return manifest
+    # Clean old files
+    for old_file in output_dir.glob("*.json"):
+        old_file.unlink()
 
-# ── Generate aggregated files ──
-print("Aggregating...")
+    # Try writing as single file first
+    full_json = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 
-# 1. By Province × Month
-prov_month = agg_group(all_records, ['_Province', '_YM'])
-print(f"  Province×Month: {len(prov_month)} rows")
+    if len(full_json.encode("utf-8")) < MAX_FILE_BYTES:
+        out_path = output_dir / "dashboard.json"
+        out_path.write_text(full_json, encoding="utf-8")
+        print(f"  Written: {out_path} ({len(full_json):,} bytes)")
 
-# 2. By ZS × Month
-zs_month = agg_group(all_records, ['_Province', '_ZS', '_Antenne', '_YM'])
-print(f"  ZS×Month: {len(zs_month)} rows")
+        # Write index
+        index = {
+            "files": ["dashboard.json"],
+            "split_by_province": False,
+            "metadata": data["metadata"],
+        }
+        (output_dir / "index.json").write_text(
+            json.dumps(index, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        return
 
-# 3. By AS × Month
-as_month = agg_group(all_records, ['_Province', '_ZS', '_Antenne', '_AS', '_YM'])
-print(f"  AS×Month: {len(as_month)} rows")
+    # Split: national + one file per province
+    print("  Data too large for single file, splitting by province...")
 
-# 4. By FOSA × Month
-fosa_month = agg_group(all_records, ['_Province', '_ZS', '_Antenne', '_AS', '_FOSA', '_YM'])
-print(f"  FOSA×Month: {len(fosa_month)} rows")
+    files = []
 
-# 5. Metadata
-all_provinces = sorted(set(r['_Province'] for r in all_records if r.get('_Province')))
-all_antennes = sorted(set(r['_Antenne'] for r in all_records if r.get('_Antenne')))
-all_zs = sorted(set(r['_ZS'] for r in all_records if r.get('_ZS')))
-all_as_list = sorted(set(r['_AS'] for r in all_records if r.get('_AS')))
-all_fosa = sorted(set(r['_FOSA'] for r in all_records if r.get('_FOSA')))
-all_months = sorted(set(r['_YM'] for r in all_records if r.get('_YM')))
+    # National file
+    national_data = {
+        "metadata": data["metadata"],
+        "national": data["national"],
+    }
+    nat_json = json.dumps(national_data, ensure_ascii=False, separators=(",", ":"))
+    nat_path = output_dir / "national.json"
+    nat_path.write_text(nat_json, encoding="utf-8")
+    files.append("national.json")
+    print(f"    {nat_path.name}: {len(nat_json):,} bytes")
 
-# Province → slug mapping
-prov_slugs = {p: slug(p) for p in all_provinces}
+    # Per-province files
+    for prov_name, prov_data in sorted(data.get("provinces", {}).items()):
+        # Create safe filename
+        safe_name = (
+            prov_name.lower()
+            .replace(" ", "_")
+            .replace("'", "")
+            .replace("/", "_")
+            .replace("é", "e")
+            .replace("è", "e")
+            .replace("ê", "e")
+            .replace("à", "a")
+            .replace("â", "a")
+            .replace("ô", "o")
+            .replace("î", "i")
+            .replace("ù", "u")
+            .replace("ç", "c")
+        )
+        # Remove any remaining non-ASCII
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        filename = f"province_{safe_name}.json"
 
-meta_data = {
-    'generated_at': index.get('generated_at', ''),
-    'total_records': len(all_records),
-    'provinces': all_provinces,
-    'province_slugs': prov_slugs,
-    'antennes': all_antennes,
-    'zs': all_zs,
-    'as': all_as_list,
-    'months': all_months,
-    'nb_fosa': len(all_fosa)
-}
+        prov_json = json.dumps(
+            {"province_name": prov_name, **prov_data},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
 
-# ── Write output files ──
-print("\nWriting output files...")
+        prov_path = output_dir / filename
+        prov_path.write_text(prov_json, encoding="utf-8")
+        files.append(filename)
+        print(f"    {filename}: {len(prov_json):,} bytes")
 
-write_json(DASH / "meta.json", meta_data)
-write_json(DASH / "by_province.json", prov_month)
-write_json(DASH / "by_zs.json", zs_month)
+        # Safety check
+        if len(prov_json.encode("utf-8")) > MAX_FILE_BYTES:
+            print(f"    WARN: {filename} exceeds {MAX_FILE_BYTES:,} bytes!")
 
-# Split large files by province
-print("\nSplitting by_as by province...")
-write_split(DASH / "by_as", as_month)
+    # Write index
+    index = {
+        "files": files,
+        "split_by_province": True,
+        "metadata": data["metadata"],
+    }
+    index_path = output_dir / "index.json"
+    index_path.write_text(
+        json.dumps(index, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    files.append("index.json")
+    print(f"    index.json written")
+    print(f"  Total: {len(files)} files written to {output_dir}")
 
-print("\nSplitting by_fosa by province...")
-write_split(DASH / "by_fosa", fosa_month)
 
-# Heatmap split by province
-print("\nBuilding heatmap by province...")
-hm_dir = DASH / "heatmap"
-hm_dir.mkdir(parents=True, exist_ok=True)
-hm_by_prov = defaultdict(dict)
-for r in fosa_month:
-    prov = r.get('_Province', '') or 'unknown'
-    fosa = r.get('_FOSA', '')
-    ym = r.get('_YM', '')
-    if fosa and ym:
-        if fosa not in hm_by_prov[prov]:
-            hm_by_prov[prov][fosa] = {}
-        hm_by_prov[prov][fosa][ym] = 1 if r['rap'] > 0 else 0
+# ============================================================
+# VALIDATION
+# ============================================================
 
-hm_manifest = {}
-for prov, data in sorted(hm_by_prov.items()):
-    fname = slug(prov) + '.json'
-    write_json(hm_dir / fname, data)
-    hm_manifest[prov] = fname
-write_json(hm_dir / "_index.json", hm_manifest)
+def validate_output(output_dir: Path) -> bool:
+    """Validate all generated JSON files."""
+    ok = True
+    for json_file in output_dir.glob("*.json"):
+        try:
+            content = json_file.read_text(encoding="utf-8")
+            if not content.strip():
+                print(f"  ❌ {json_file.name}: EMPTY FILE")
+                ok = False
+                continue
 
-# ── Summary ──
-print("\n✅ Dashboard aggregation complete!")
-total_size = 0
-file_count = 0
-for p in DASH.rglob("*.json"):
-    total_size += os.path.getsize(p)
-    file_count += 1
-print(f"  {file_count} files, total {total_size/1024/1024:.1f} MB")
+            # Verify it's valid JSON
+            parsed = json.loads(content)
 
-# Check no file > 90 MB
-for p in DASH.rglob("*.json"):
-    sz = os.path.getsize(p)
-    if sz > 90_000_000:
-        print(f"  ⚠️  WARNING: {p} is {sz/1024/1024:.0f} MB (near GitHub limit)")
+            # Verify first character
+            first_char = content.strip()[0]
+            if first_char not in ("{", "["):
+                print(f"  ❌ {json_file.name}: starts with '{first_char}' (not JSON)")
+                ok = False
+                continue
+
+            size = json_file.stat().st_size
+            print(f"  ✅ {json_file.name}: {size:,} bytes, valid JSON")
+
+        except json.JSONDecodeError as e:
+            print(f"  ❌ {json_file.name}: INVALID JSON - {e}")
+            ok = False
+        except Exception as e:
+            print(f"  ❌ {json_file.name}: ERROR - {e}")
+            ok = False
+
+    return ok
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main() -> int:
+    print("=" * 60)
+    print("AGGREGATE DASHBOARD DATA")
+    print("=" * 60)
+
+    # Verify paths
+    print(f"\nPaths:")
+    print(f"  REPO_ROOT:    {REPO_ROOT}")
+    print(f"  DATA_DIR:     {DATA_DIR}")
+    print(f"  MONTHLY_DIR:  {MONTHLY_DIR} (exists: {MONTHLY_DIR.exists()})")
+    print(f"  OU_MAP:       {OU_MAP_PATH} (exists: {OU_MAP_PATH.exists()})")
+    print(f"  RENAME_MAP:   {RENAME_MAP_PATH} (exists: {RENAME_MAP_PATH.exists()})")
+    print(f"  DASHBOARD_DIR:{DASHBOARD_DIR}")
+
+    # Load rename map
+    print(f"\n--- Loading rename map ---")
+    label_to_zoho, zoho_to_label = load_rename_maps(RENAME_MAP_PATH)
+    if not label_to_zoho:
+        print("ERROR: No rename mappings. Cannot map NDJSON fields to vaccines.")
+        return 1
+
+    # Load org unit map
+    print(f"\n--- Loading org unit map ---")
+    ou_map = load_ou_map(OU_MAP_PATH)
+    if not ou_map:
+        print("ERROR: No org unit data. Cannot build hierarchy.")
+        return 1
+
+    # Read NDJSON data
+    print(f"\n--- Reading NDJSON data ---")
+    records = read_all_ndjson(MONTHLY_DIR)
+    if not records:
+        print("ERROR: No records found in monthly data.")
+        # Write empty but valid dashboard
+        DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
+        empty = {"metadata": {"error": "no_data"}, "national": {}, "provinces": {}}
+        (DASHBOARD_DIR / "dashboard.json").write_text(
+            json.dumps(empty), encoding="utf-8"
+        )
+        (DASHBOARD_DIR / "index.json").write_text(
+            json.dumps({"files": ["dashboard.json"], "split_by_province": False, "metadata": empty["metadata"]}),
+            encoding="utf-8",
+        )
+        print("  Written empty dashboard.json (valid JSON)")
+        return 0
+
+    # Show sample record for debugging
+    print(f"\n--- Sample record (first) ---")
+    sample = records[0]
+    sample_keys = list(sample.keys())[:10]
+    for k in sample_keys:
+        print(f"  {k}: {sample[k]}")
+    if len(sample.keys()) > 10:
+        print(f"  ... and {len(sample.keys()) - 10} more fields")
+
+    # Aggregate
+    print(f"\n--- Aggregating ---")
+    dashboard_data = aggregate_data(records, ou_map, zoho_to_label, label_to_zoho)
+
+    # Write
+    print(f"\n--- Writing output ---")
+    write_dashboard_json(dashboard_data, DASHBOARD_DIR)
+
+    # Validate
+    print(f"\n--- Validation ---")
+    valid = validate_output(DASHBOARD_DIR)
+
+    if valid:
+        print(f"\n✅ Dashboard data generated successfully")
+        return 0
+    else:
+        print(f"\n❌ Some output files are invalid!")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
