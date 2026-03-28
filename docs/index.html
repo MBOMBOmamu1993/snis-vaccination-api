@@ -34,14 +34,15 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
 .fg label{display:block;font-size:9.5px;font-weight:700;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
 .fbtn{padding:7px 12px;border:2px solid #d1d5db;border-radius:7px;background:#fafbfc;cursor:pointer;font-size:12px;font-weight:600;min-width:140px;text-align:left;display:flex;justify-content:space-between;align-items:center;transition:.2s;gap:6px}
 .fbtn:hover{border-color:#1565c0;background:#f0f4ff}
+.fbtn.active{border-color:#1565c0;background:#e8f0fe}
 .fbtn .cn{background:#0b3a6f;color:#fff;font-size:9px;padding:2px 5px;border-radius:8px}
-.fd{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:230px;max-height:310px;overflow-y:auto;box-shadow:0 14px 40px rgba(0,0,0,.16);border-radius:8px;z-index:999;padding:4px 0;border:1px solid #ddd;margin-top:2px}
+.fd{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:260px;max-height:350px;overflow-y:auto;box-shadow:0 14px 40px rgba(0,0,0,.16);border-radius:8px;z-index:999;padding:4px 0;border:1px solid #ddd;margin-top:2px}
 .fd.sh{display:block}
 .fd .sr{width:calc(100% - 14px);margin:4px 7px 6px;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:11px;outline:none}
 .fd .sr:focus{border-color:#1565c0}
 .fi{display:flex;align-items:center;gap:7px;padding:5px 12px;font-size:12px;cursor:pointer;transition:.12s}
 .fi:hover{background:#e3f2fd}
-.fi input[type=checkbox]{accent-color:#0b3a6f;width:14px;height:14px}
+.fi input[type=checkbox],.fi input[type=radio]{accent-color:#0b3a6f;width:14px;height:14px}
 .fa{border-bottom:2px solid #e3ecf7;font-weight:700;padding:7px 12px;background:#fafbfc}
 .ct{padding:18px 22px}
 .db{background:#fff;border-radius:13px;padding:22px;min-height:480px;box-shadow:0 4px 18px rgba(0,0,0,.05);border:1px solid #e5e7eb}
@@ -100,39 +101,19 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
 <div class="pg" id="PG" style="display:none"><button id="BP" onclick="chPg(-1)" disabled>◀ Précédent</button><span id="PI">Page 1/5</span><button id="BN" onclick="chPg(1)">Suivant ▶</button></div></div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   CONFIGURATION — alignée sur le script d'agrégation
-   ═══════════════════════════════════════════════ */
+/* ═══ CONFIGURATION ═══ */
 var C={
-  MA:11, CT:0.33, CD:0.10,
+  MA:11,CT:0.33,CD:0.10,
   VAP_PROV:['Kongo Central','Kwango','Kwilu','Maindombe','Equateur','Tshuapa','Mongala','Sud-Ubangi','Nord-Ubangi','Bas-Uele','Haut-Uele','Tshopo','Maniema','Lomami','Haut-Lomami','Kasai Central'],
   BR:[[90,20],[80,16],[70,12],[60,8],[50,4],[0,0]],
   BA:[[0,20],[5.01,16],[10.01,12],[20.01,8],[30.01,4],[50.01,0]]
 };
 
-/* ═══ Tous les antigènes produits par le script d'agrégation ═══
-   Le script écrit la clé SEULEMENT si > 0, sinon elle est absente du JSON.
-   On doit donc toujours traiter l'absence comme 0 (pas comme "antigène inexistant"). */
-var AG=['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2',
-        'DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2'];
+var AG=['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2','DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2'];
 var AG_VAP=['VAP1','VAP2','VAP3','VAP4'];
 var AG_ALL=AG.concat(AG_VAP);
-
-var AG_LBL={BCG:'BCG',VPO0:'VPO0',DTC1:'DTC1/Penta1',VPO1:'VPO1',ROTA1:'ROTA1',
-  PCV13_1:'PCV13-1',DTC2:'DTC2/Penta2',VPO2:'VPO2',ROTA2:'ROTA2',PCV13_2:'PCV13-2',
-  DTC3:'DTC3/Penta3',VPO3:'VPO3',VPI1:'VPI1',ROTA3:'ROTA3',PCV13_3:'PCV13-3',
-  VAR1:'VAR1',VPI2:'VPI2',VAA:'VAA',VAR2:'VAR2',
-  VAP1:'VAP1',VAP2:'VAP2',VAP3:'VAP3',VAP4:'VAP4'};
-
-/* Mapping antigène logique → clé JSON exacte produite par le script */
-var AG_FIELD_MAP={
-  BCG:'BCG_0_11',VPO0:'VPO0_0_11',DTC1:'DTC1_0_11',VPO1:'VPO1_0_11',
-  ROTA1:'ROTA1_0_11',PCV13_1:'PCV13_1_0_11',DTC2:'DTC2_0_11',VPO2:'VPO2_0_11',
-  ROTA2:'ROTA2_0_11',PCV13_2:'PCV13_2_0_11',DTC3:'DTC3_0_11',VPO3:'VPO3_0_11',
-  VPI1:'VPI1_0_11',ROTA3:'ROTA3_0_11',PCV13_3:'PCV13_3_0_11',
-  VAR1:'VAR1_0_11',VPI2:'VPI2_0_11',VAA:'VAA_0_11',VAR2:'VAR2_0_11',
-  VAP1:'VAP1_0_11',VAP2:'VAP2_0_11',VAP3:'VAP3_0_11',VAP4:'VAP4_12_23'
-};
+var AG_LBL={BCG:'BCG',VPO0:'VPO0',DTC1:'DTC1/Penta1',VPO1:'VPO1',ROTA1:'ROTA1',PCV13_1:'PCV13-1',DTC2:'DTC2/Penta2',VPO2:'VPO2',ROTA2:'ROTA2',PCV13_2:'PCV13-2',DTC3:'DTC3/Penta3',VPO3:'VPO3',VPI1:'VPI1',ROTA3:'ROTA3',PCV13_3:'PCV13-3',VAR1:'VAR1',VPI2:'VPI2',VAA:'VAA',VAR2:'VAR2',VAP1:'VAP1',VAP2:'VAP2',VAP3:'VAP3',VAP4:'VAP4'};
+var AG_FIELD_MAP={BCG:'BCG_0_11',VPO0:'VPO0_0_11',DTC1:'DTC1_0_11',VPO1:'VPO1_0_11',ROTA1:'ROTA1_0_11',PCV13_1:'PCV13_1_0_11',DTC2:'DTC2_0_11',VPO2:'VPO2_0_11',ROTA2:'ROTA2_0_11',PCV13_2:'PCV13_2_0_11',DTC3:'DTC3_0_11',VPO3:'VPO3_0_11',VPI1:'VPI1_0_11',ROTA3:'ROTA3_0_11',PCV13_3:'PCV13_3_0_11',VAR1:'VAR1_0_11',VPI2:'VPI2_0_11',VAA:'VAA_0_11',VAR2:'VAR2_0_11',VAP1:'VAP1_0_11',VAP2:'VAP2_0_11',VAP3:'VAP3_0_11',VAP4:'VAP4_12_23'};
 
 var SAME_AGE=[
   {age:'Naissance',v:['BCG','VPO0']},
@@ -158,7 +139,11 @@ var BASE='./data/dashboard';
 var S={tab:0,pg:0,data:[],flt:[],charts:{},filters:{},vals:{},loaded:false,meta:null,
        hmIndex:{},hmCache:{},heatmap:{},
        fosaIndex:{},fosaCache:{},fosaData:[],
-       asIndex:{},asCache:{},asData:[]};
+       asIndex:{},asCache:{},asData:[],
+       /* Hiérarchie complète extraite des données FOSA */
+       hierarchy:{}
+       /* hierarchy[province][antenne][zs][as] = [fosa1, fosa2, ...] */
+};
 
 /* ═══ UTILITIES ═══ */
 function mL(ym){if(!ym||ym.length<6)return ym||'';var n=['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];return n[parseInt(ym.substr(4,2),10)-1]+' '+ym.substr(0,4);}
@@ -178,42 +163,135 @@ function exh(r){return pct(cntRens(r),obTotal(r));}
 function missAg(r){return obAg(r).filter(function(a){return!(Number(r[a+'_f'])||0);});}
 function mAvg(fosa,ag,per,data,N){var d=data.filter(function(r){return r.org5===fosa&&r.period<per&&(Number(r[ag])||0)>0;});d.sort(function(a,b){return b.period<a.period?-1:1;});var sub=d.slice(0,N);if(!sub.length)return null;return sub.reduce(function(s,r){return s+(Number(r[ag])||0);},0)/sub.length;}
 function chkCoh(r){var ok=true;SAME_AGE.forEach(function(g){for(var i=0;i<g.v.length-1;i++){var a=Number(r[g.v[i]])||0,b=Number(r[g.v[i+1]])||0;var den=b||a||1;if(Math.abs((a-b)/den)>C.CD)ok=false;}});return ok;}
-function drop(r){var d1=Number(r.DTC1)||0,d3=Number(r.DTC3)||0;return d1>0?((d1-d3)/d1*100):null;}
 function ccl(v){return v>=80?'cg':v>=50?'cy':'crd';}
 function sB(val,bar){for(var i=0;i<bar.length;i++){if(val>=bar[i][0])return bar[i][1];}return 0;}
 function sBA(v){if(v<=5)return 20;if(v<=10)return 16;if(v<=20)return 12;if(v<=30)return 8;if(v<=50)return 4;return 0;}
 function sp(p,t,s){var a=document.getElementById('PF'),b=document.getElementById('PT'),c=document.getElementById('LS');if(a)a.style.width=p+'%';if(b&&t)b.textContent=t;if(c&&s)c.textContent=s;}
 
-/* ═══ TRANSFORM RECORD ═══
-   Fonctionne pour by_zs (sans _AS/_FOSA), by_as (avec _AS), by_fosa (avec _AS+_FOSA)
-   Les clés antigènes absentes du JSON = 0 (car le script n'écrit que si > 0) */
-function transformRecord(r) {
-  var rec={
-    org2:r._Province||'', org3:r._ZS||'', org4:r._AS||'', org5:r._FOSA||'',
-    antenne:r._Antenne||'', period:r._YM||'',
-    completude:Number(r.comp)||0, promptitude:Number(r.prompt)||0,
+/* ═══ TRANSFORM RECORD ═══ */
+function transformRecord(r){
+  var rec={org2:r._Province||'',org3:r._ZS||'',org4:r._AS||'',org5:r._FOSA||'',
+    antenne:r._Antenne||'',period:r._YM||'',
+    completude:Number(r.comp)||0,promptitude:Number(r.prompt)||0,
     isVAP:C.VAP_PROV.indexOf(r._Province)>=0,
-    _n:Number(r.n)||0, _rap:Number(r.rap)||0
-  };
-  AG_ALL.forEach(function(ag){
-    var src=AG_FIELD_MAP[ag];
-    var val=src?(Number(r[src])||0):0;
-    rec[ag]=val; rec[ag+'_f']=val;
-    /* Aussi récupérer _fixe */
-    var srcF=src?src+'_fixe':null;
-    /* Cas spécial VAP4: VAP4_12_23_fixe */
-    if(ag==='VAP4') srcF='VAP4_12_23_fixe';
-    else if(src) srcF=src.replace(/_0_11$/,'_0_11_fixe');
-    if(srcF) rec[ag+'_fixe']=Number(r[srcF])||0;
-  });
+    _n:Number(r.n)||0,_rap:Number(r.rap)||0};
+  AG_ALL.forEach(function(ag){var src=AG_FIELD_MAP[ag];var val=src?(Number(r[src])||0):0;rec[ag]=val;rec[ag+'_f']=val;});
   return rec;
+}
+
+/* ═══ BUILD HIERARCHY ═══
+   Construit la hiérarchie Province → Antenne → ZS → AS → [FOSA] */
+function buildHierarchy(fosaData,zsData,asData){
+  var h={};
+  /* D'abord depuis fosaData (le plus complet) */
+  fosaData.forEach(function(r){
+    var prov=r.org2,ant=r.antenne,zs=r.org3,as2=r.org4,fosa=r.org5;
+    if(!prov)return;
+    if(!h[prov])h[prov]={};
+    if(ant&&!h[prov][ant])h[prov][ant]={};
+    if(ant&&zs&&!h[prov][ant][zs])h[prov][ant][zs]={};
+    if(ant&&zs&&as2&&!h[prov][ant][zs][as2])h[prov][ant][zs][as2]=[];
+    if(ant&&zs&&as2&&fosa&&h[prov][ant][zs][as2].indexOf(fosa)<0)h[prov][ant][zs][as2].push(fosa);
+  });
+  /* Compléter avec asData */
+  asData.forEach(function(r){
+    var prov=r.org2,ant=r.antenne,zs=r.org3,as2=r.org4;
+    if(!prov)return;
+    if(!h[prov])h[prov]={};
+    if(ant&&!h[prov][ant])h[prov][ant]={};
+    if(ant&&zs&&!h[prov][ant][zs])h[prov][ant][zs]={};
+    if(ant&&zs&&as2&&!h[prov][ant][zs][as2])h[prov][ant][zs][as2]=[];
+  });
+  /* Compléter avec zsData */
+  zsData.forEach(function(r){
+    var prov=r.org2,ant=r.antenne,zs=r.org3;
+    if(!prov)return;
+    if(!h[prov])h[prov]={};
+    if(ant&&!h[prov][ant])h[prov][ant]={};
+    if(ant&&zs&&!h[prov][ant][zs])h[prov][ant][zs]={};
+  });
+  /* Trier */
+  Object.keys(h).forEach(function(p){
+    Object.keys(h[p]).forEach(function(a){
+      Object.keys(h[p][a]).forEach(function(z){
+        Object.keys(h[p][a][z]).forEach(function(as2){
+          h[p][a][z][as2].sort();
+        });
+      });
+    });
+  });
+  return h;
+}
+
+/* ═══ CASCADED OPTIONS ═══
+   Retourne les options disponibles pour chaque dimension selon les filtres actuels */
+function getCascadedOptions(){
+  var h=S.hierarchy;
+  var selProv=S.filters.province; /* string unique */
+  var selAnt=S.filters.antenne;   /* array */
+  var selZS=S.filters.zs;         /* array */
+  var selAS=S.filters.as;         /* array */
+
+  var opts={province:Object.keys(h).sort(),antenne:[],zs:[],as:[],fosa:[],period:S.vals.period};
+
+  /* Antennes de la province sélectionnée */
+  if(selProv&&h[selProv]){
+    opts.antenne=Object.keys(h[selProv]).sort();
+  }
+
+  /* ZS des antennes sélectionnées */
+  var activeAnt=selAnt.length?selAnt:opts.antenne;
+  if(selProv&&h[selProv]){
+    activeAnt.forEach(function(ant){
+      if(h[selProv][ant]){
+        Object.keys(h[selProv][ant]).forEach(function(zs){
+          if(opts.zs.indexOf(zs)<0)opts.zs.push(zs);
+        });
+      }
+    });
+    opts.zs.sort();
+  }
+
+  /* AS des ZS sélectionnées */
+  var activeZS=selZS.length?selZS:opts.zs;
+  if(selProv&&h[selProv]){
+    activeAnt.forEach(function(ant){
+      if(!h[selProv][ant])return;
+      activeZS.forEach(function(zs){
+        if(!h[selProv][ant][zs])return;
+        Object.keys(h[selProv][ant][zs]).forEach(function(as2){
+          if(opts.as.indexOf(as2)<0)opts.as.push(as2);
+        });
+      });
+    });
+    opts.as.sort();
+  }
+
+  /* FOSA des AS sélectionnées */
+  var activeAS=selAS.length?selAS:opts.as;
+  if(selProv&&h[selProv]){
+    activeAnt.forEach(function(ant){
+      if(!h[selProv][ant])return;
+      activeZS.forEach(function(zs){
+        if(!h[selProv][ant][zs])return;
+        activeAS.forEach(function(as2){
+          if(!h[selProv][ant][zs][as2])return;
+          h[selProv][ant][zs][as2].forEach(function(f){
+            if(opts.fosa.indexOf(f)<0)opts.fosa.push(f);
+          });
+        });
+      });
+    });
+    opts.fosa.sort();
+  }
+
+  return opts;
 }
 
 /* ═══ DATA LOADING ═══ */
 async function loadAll(){
-  var t0=Date.now(); sp(10,'Chargement...','⏳ Chargement...');
+  var t0=Date.now();sp(10,'Chargement...','⏳ Chargement...');
   try{
-    /* 1) Charger meta + by_province + by_zs + manifests */
     var [mR,pR,zR,hmR,fosaR,asR]=await Promise.all([
       fetch(BASE+'/meta.json?t='+Date.now()),
       fetch(BASE+'/by_province.json'),
@@ -222,10 +300,9 @@ async function loadAll(){
       fetch(BASE+'/by_fosa/manifest.json').catch(function(){return{ok:true,json:function(){return Promise.resolve({});}}}),
       fetch(BASE+'/by_as/manifest.json').catch(function(){return{ok:true,json:function(){return Promise.resolve({});}}})
     ]);
-
     sp(40,'Parsing...');
     S.meta=await mR.json();
-    var byProv=await pR.json();
+    await pR.json(); /* byProv - on ne l'utilise pas directement */
     var byZS=await zR.json();
     S.hmIndex=await hmR.json();
     S.fosaIndex=await fosaR.json();
@@ -236,64 +313,40 @@ async function loadAll(){
     S.data=byZS.map(transformRecord);
 
     if(byZS.length>0){
-      console.log('=== PREMIER ENREGISTREMENT JSON BRUT (by_zs) ===');
-      console.log(JSON.stringify(byZS[0],null,2));
-      console.log('=== CLÉS DISPONIBLES ===');
+      console.log('=== PREMIER ENREGISTREMENT (by_zs) ===');
       console.log(Object.keys(byZS[0]).join(', '));
-      /* Vérifier les antigènes */
-      var present=[],absent=[];
-      Object.keys(AG_FIELD_MAP).forEach(function(ag){
-        var k=AG_FIELD_MAP[ag];
-        if(byZS[0][k]!==undefined) present.push(ag);
-        else absent.push(ag+'('+k+')');
-      });
-      console.log('=== Antigènes présents dans 1er rec:',present.join(', '));
-      console.log('=== Antigènes absents (=0 pour ce rec):',absent.join(', '));
     }
 
-    sp(70,'Chargement FOSA/AS...');
-
-    /* 2) Charger les données FOSA et AS par province (on-demand au filtre) */
-    /* Pour le chargement initial, on charge tout */
+    sp(65,'Chargement FOSA/AS...');
     var allProvs=S.meta.provinces||[];
 
-    /* Charger toutes les données FOSA */
-    var fosaPromises=allProvs.filter(function(p){return S.fosaIndex[p];}).map(function(p){
-      return fetch(BASE+'/by_fosa/'+S.fosaIndex[p]).then(function(r){return r.json();}).then(function(d){
-        S.fosaCache[p]=d;
-      }).catch(function(){});
+    /* Charger TOUTES les données FOSA et AS */
+    var fosaP=allProvs.filter(function(p){return S.fosaIndex[p];}).map(function(p){
+      return fetch(BASE+'/by_fosa/'+S.fosaIndex[p]).then(function(r){return r.json();}).then(function(d){S.fosaCache[p]=d;}).catch(function(){});
     });
-
-    /* Charger toutes les données AS */
-    var asPromises=allProvs.filter(function(p){return S.asIndex[p];}).map(function(p){
-      return fetch(BASE+'/by_as/'+S.asIndex[p]).then(function(r){return r.json();}).then(function(d){
-        S.asCache[p]=d;
-      }).catch(function(){});
+    var asP=allProvs.filter(function(p){return S.asIndex[p];}).map(function(p){
+      return fetch(BASE+'/by_as/'+S.asIndex[p]).then(function(r){return r.json();}).then(function(d){S.asCache[p]=d;}).catch(function(){});
     });
+    await Promise.all(fosaP.concat(asP));
 
-    await Promise.all(fosaPromises.concat(asPromises));
-
-    sp(85,'Indexation...');
-
-    /* Construire les données FOSA et AS complètes */
+    sp(80,'Indexation...');
     S.fosaData=[];
     Object.keys(S.fosaCache).forEach(function(p){
-      var arr=S.fosaCache[p];
-      if(arr&&arr.length) arr.forEach(function(r){S.fosaData.push(transformRecord(r));});
+      var arr=S.fosaCache[p];if(arr&&arr.length)arr.forEach(function(r){S.fosaData.push(transformRecord(r));});
     });
-
     S.asData=[];
     Object.keys(S.asCache).forEach(function(p){
-      var arr=S.asCache[p];
-      if(arr&&arr.length) arr.forEach(function(r){S.asData.push(transformRecord(r));});
+      var arr=S.asCache[p];if(arr&&arr.length)arr.forEach(function(r){S.asData.push(transformRecord(r));});
     });
 
-    console.log('FOSA data loaded:',S.fosaData.length,'records');
-    console.log('AS data loaded:',S.asData.length,'records');
+    console.log('FOSA:',S.fosaData.length,'AS:',S.asData.length,'ZS:',S.data.length);
 
-    /* Construire les listes de valeurs */
-    var v={
-      province:S.meta.provinces||[],
+    /* Construire la hiérarchie */
+    S.hierarchy=buildHierarchy(S.fosaData,S.data,S.asData);
+
+    /* Valeurs globales */
+    S.vals={
+      province:allProvs,
       antenne:S.meta.antennes||[],
       zs:S.meta.zs||[],
       as:S.meta.as||[],
@@ -301,91 +354,195 @@ async function loadAll(){
       period:S.meta.months||[]
     };
 
-    /* Extraire les FOSA et AS depuis les données chargées */
-    var fosaSet={},asSet={};
-    S.fosaData.forEach(function(r){
-      if(r.org5&&!fosaSet[r.org5]){fosaSet[r.org5]=1;v.fosa.push(r.org5);}
-      if(r.org4&&!asSet[r.org4]){asSet[r.org4]=1;}
-    });
-    if(!v.as.length){
-      S.asData.forEach(function(r){
-        if(r.org4&&v.as.indexOf(r.org4)<0)v.as.push(r.org4);
-      });
-    }
+    /* Extraire FOSA */
+    var fSet={};
+    S.fosaData.forEach(function(r){if(r.org5&&!fSet[r.org5]){fSet[r.org5]=1;S.vals.fosa.push(r.org5);}});
+    S.vals.fosa.sort();
 
-    Object.keys(v).forEach(function(k){v[k].sort();S.filters[k]=v[k].slice();});
-    S.vals=v;S.loaded=true;
+    /* ═══ FILTRES PAR DÉFAUT : première province ═══ */
+    var defaultProv=allProvs.length?allProvs[0]:'';
+    S.filters={
+      province:defaultProv,    /* CHOIX UNIQUE */
+      antenne:[],              /* vide = tout */
+      zs:[],
+      as:[],
+      fosa:[],
+      period:S.vals.period.slice()
+    };
 
+    S.loaded=true;
     sp(90,'Rendu...');
     apFlt();bNav();rFlt();render();
 
     var dt=((Date.now()-t0)/1000).toFixed(1);
     sp(100,
-      (S.meta.total_records||S.data.length).toLocaleString()+' enreg. | '+v.period.length+' mois | '+(S.meta.nb_fosa||v.fosa.length)+' FOSA | '+v.as.length+' AS',
-      '⚡ Prêt en '+dt+'s');
-
+      (S.meta.total_records||0).toLocaleString()+' enreg. | '+S.vals.period.length+' mois | '+(S.meta.nb_fosa||S.vals.fosa.length)+' FOSA | '+S.vals.as.length+' AS',
+      '⚡ Prêt en '+dt+'s — Province: '+defaultProv);
   }catch(e){
     console.error(e);sp(0,'❌ '+e.message,'❌ Erreur');
-    document.getElementById('DB').innerHTML='<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur de chargement</h3><p>'+e.message+'</p><p style="margin-top:12px;font-size:12px;color:#888">Lancez d\'abord le workflow <code>aggregate</code> via GitHub Actions.</p></div>';
+    document.getElementById('DB').innerHTML='<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur</h3><p>'+e.message+'</p></div>';
   }
 }
 
-/* ═══ Données contextuelles ═══
-   Selon le niveau de filtre, on utilise by_fosa, by_as ou by_zs */
+/* ═══ Données contextuelles ═══ */
 function getContextData(){
   var tab=TABS[S.tab];
-  if(tab.fl.indexOf('fosa')>=0 && S.fosaData.length) return S.fosaData;
-  if(tab.fl.indexOf('as')>=0 && S.asData.length) return S.asData;
+  if(tab.fl.indexOf('fosa')>=0&&S.fosaData.length)return S.fosaData;
+  if(tab.fl.indexOf('as')>=0&&S.asData.length)return S.asData;
   return S.data;
 }
 
-/* ═══ FILTERS ═══ */
+/* ═══ APPLY FILTER ═══ */
 function apFlt(){
   var f=S.filters,tab=TABS[S.tab],dims=tab.fl;
   var src=getContextData();
+  var opts=getCascadedOptions();
+
   S.flt=src.filter(function(r){
-    if(dims.indexOf('province')>=0&&f.province.length<S.vals.province.length&&f.province.indexOf(r.org2)<0)return false;
-    if(dims.indexOf('antenne')>=0&&f.antenne.length<S.vals.antenne.length&&f.antenne.indexOf(r.antenne)<0)return false;
-    if(dims.indexOf('zs')>=0&&f.zs.length<S.vals.zs.length&&f.zs.indexOf(r.org3)<0)return false;
-    if(dims.indexOf('as')>=0&&f.as.length<S.vals.as.length&&f.as.indexOf(r.org4)<0)return false;
-    if(dims.indexOf('fosa')>=0&&f.fosa.length<S.vals.fosa.length&&f.fosa.indexOf(r.org5)<0)return false;
+    /* Province = choix unique obligatoire */
+    if(dims.indexOf('province')>=0&&f.province&&r.org2!==f.province)return false;
+    /* Antenne : si sélection, filtrer; sinon tout */
+    if(dims.indexOf('antenne')>=0&&f.antenne.length&&f.antenne.indexOf(r.antenne)<0)return false;
+    /* ZS */
+    if(dims.indexOf('zs')>=0&&f.zs.length&&f.zs.indexOf(r.org3)<0)return false;
+    /* AS */
+    if(dims.indexOf('as')>=0&&f.as.length&&f.as.indexOf(r.org4)<0)return false;
+    /* FOSA */
+    if(dims.indexOf('fosa')>=0&&f.fosa.length&&f.fosa.indexOf(r.org5)<0)return false;
+    /* Période */
     if(dims.indexOf('period')>=0&&f.period.length<S.vals.period.length&&f.period.indexOf(r.period)<0)return false;
     return true;
   });
 }
 
+/* ═══ RENDER FILTERS (cascadés) ═══ */
 function rFlt(){
   var c=document.getElementById('FS');c.innerHTML='';
   var tab=TABS[S.tab];
-  var dm={province:{l:'Province',k:'province'},antenne:{l:'Antenne PEV',k:'antenne'},zs:{l:'Zone de Santé',k:'zs'},as:{l:'Aire de Santé',k:'as'},fosa:{l:'FOSA',k:'fosa'},period:{l:'Période',k:'period'}};
-  tab.fl.forEach(function(dim){
-    var info=dm[dim];if(!info)return;
+  var opts=getCascadedOptions();
+
+  var dims=[
+    {dim:'province',l:'Province',k:'province',single:true},
+    {dim:'antenne',l:'Antenne PEV',k:'antenne',single:false},
+    {dim:'zs',l:'Zone de Santé',k:'zs',single:false},
+    {dim:'as',l:'Aire de Santé',k:'as',single:false},
+    {dim:'fosa',l:'FOSA',k:'fosa',single:false},
+    {dim:'period',l:'Période',k:'period',single:false}
+  ];
+
+  dims.forEach(function(info){
+    if(tab.fl.indexOf(info.dim)<0)return;
+    var available=opts[info.k]||[];
+    if(!available.length&&info.dim!=='province')return;
+
     var g=document.createElement('div');g.className='fg';
     var lb=document.createElement('label');lb.textContent=info.l;g.appendChild(lb);
+
     var bt=document.createElement('button');bt.className='fbtn';
-    var sel=S.filters[info.k],tot=S.vals[info.k].length;
-    bt.innerHTML='<span>'+(sel.length===tot?'Tout ('+tot+')':sel.length+'/'+tot)+'</span><span class="cn">'+sel.length+'</span><span>▼</span>';
-    bt.onclick=function(e){e.stopPropagation();document.querySelectorAll('.fd').forEach(function(el){if(el.id!=='fd-'+info.k)el.classList.remove('sh');});document.getElementById('fd-'+info.k).classList.toggle('sh');};
+    var ddId='fd-'+info.k;
+
+    if(info.single){
+      /* Province : choix unique */
+      bt.innerHTML='<span>'+S.filters.province+'</span><span>▼</span>';
+    }else{
+      var sel=S.filters[info.k];
+      var cnt=sel.length;
+      var tot=available.length;
+      bt.innerHTML='<span>'+(cnt===0?'Tout ('+tot+')':cnt+'/'+tot)+'</span><span class="cn">'+(cnt||tot)+'</span><span>▼</span>';
+    }
+
+    bt.onclick=function(e){
+      e.stopPropagation();
+      /* Fermer les autres */
+      document.querySelectorAll('.fd').forEach(function(el){if(el.id!==ddId)el.classList.remove('sh');});
+      document.getElementById(ddId).classList.toggle('sh');
+    };
     g.appendChild(bt);
-    var dd=document.createElement('div');dd.className='fd';dd.id='fd-'+info.k;
+
+    var dd=document.createElement('div');dd.className='fd';dd.id=ddId;
+
+    /* Recherche */
     var sr=document.createElement('input');sr.className='sr';sr.placeholder='Rechercher...';sr.type='text';
     sr.oninput=function(){var q=sr.value.toLowerCase();dd.querySelectorAll('.fi:not(.fa)').forEach(function(it){it.style.display=it.textContent.toLowerCase().indexOf(q)>=0?'':'none';});};
     dd.appendChild(sr);
-    var aD=document.createElement('div');aD.className='fi fa';
-    var aC=document.createElement('input');aC.type='checkbox';aC.checked=sel.length===tot;
-    aC.onchange=function(){S.filters[info.k]=aC.checked?S.vals[info.k].slice():[];apFlt();rFlt();render();};
-    aD.appendChild(aC);var aS=document.createElement('span');aS.textContent='Tout sélectionner';aS.style.fontWeight='700';aD.appendChild(aS);dd.appendChild(aD);
-    S.vals[info.k].forEach(function(v){
-      var it=document.createElement('div');it.className='fi';
-      var cb=document.createElement('input');cb.type='checkbox';cb.checked=S.filters[info.k].indexOf(v)>=0;
-      cb.onchange=function(){if(cb.checked){if(S.filters[info.k].indexOf(v)<0)S.filters[info.k].push(v);}else{S.filters[info.k]=S.filters[info.k].filter(function(x){return x!==v;});}apFlt();rFlt();render();};
-      it.appendChild(cb);var sp2=document.createElement('span');sp2.textContent=info.k==='period'?mL(v):v;it.appendChild(sp2);dd.appendChild(it);
-    });
+
+    if(info.single){
+      /* PROVINCE : radio buttons */
+      available.forEach(function(v){
+        var it=document.createElement('div');it.className='fi';
+        var rb=document.createElement('input');rb.type='radio';rb.name='prov_radio';rb.checked=(v===S.filters.province);
+        rb.onchange=function(){
+          if(rb.checked){
+            S.filters.province=v;
+            /* Reset sous-filtres */
+            S.filters.antenne=[];S.filters.zs=[];S.filters.as=[];S.filters.fosa=[];
+            apFlt();rFlt();render();
+          }
+        };
+        it.appendChild(rb);
+        var sp2=document.createElement('span');sp2.textContent=v;
+        if(v===S.filters.province)sp2.style.fontWeight='700';
+        it.appendChild(sp2);dd.appendChild(it);
+      });
+    }else{
+      /* MULTI-SELECT avec Tout sélectionner/Tout décocher */
+      var sel=S.filters[info.k];
+
+      var aD=document.createElement('div');aD.className='fi fa';
+      var aC=document.createElement('input');aC.type='checkbox';aC.checked=(sel.length===0);
+      aC.onchange=function(){
+        S.filters[info.k]=[];
+        /* Cascade reset des niveaux inférieurs */
+        if(info.k==='antenne'){S.filters.zs=[];S.filters.as=[];S.filters.fosa=[];}
+        if(info.k==='zs'){S.filters.as=[];S.filters.fosa=[];}
+        if(info.k==='as'){S.filters.fosa=[];}
+        apFlt();rFlt();render();
+        /* NE PAS fermer le dropdown */
+      };
+      aD.appendChild(aC);
+      var aS=document.createElement('span');aS.textContent='Tout sélectionner';aS.style.fontWeight='700';
+      aD.appendChild(aS);dd.appendChild(aD);
+
+      available.forEach(function(v){
+        var it=document.createElement('div');it.className='fi';
+        var cb=document.createElement('input');cb.type='checkbox';
+        cb.checked=(sel.length===0||sel.indexOf(v)>=0);
+        cb.onchange=function(){
+          if(cb.checked){
+            if(sel.indexOf(v)<0)sel.push(v);
+          }else{
+            S.filters[info.k]=sel.filter(function(x){return x!==v;});
+            sel=S.filters[info.k];
+          }
+          /* Si tout est coché, reset à [] (= tout) */
+          if(sel.length===available.length)S.filters[info.k]=[];
+
+          /* Cascade reset */
+          if(info.k==='antenne'){S.filters.zs=[];S.filters.as=[];S.filters.fosa=[];}
+          if(info.k==='zs'){S.filters.as=[];S.filters.fosa=[];}
+          if(info.k==='as'){S.filters.fosa=[];}
+
+          apFlt();rFlt();render();
+          /* NE PAS fermer — rFlt va re-render mais on va re-ouvrir */
+          setTimeout(function(){
+            var el=document.getElementById(ddId);
+            if(el)el.classList.add('sh');
+          },50);
+        };
+        it.appendChild(cb);
+        var sp2=document.createElement('span');sp2.textContent=info.k==='period'?mL(v):v;
+        it.appendChild(sp2);dd.appendChild(it);
+      });
+    }
+
     g.appendChild(dd);c.appendChild(g);
   });
 }
 
-document.addEventListener('click',function(e){if(!e.target.closest('.fg'))document.querySelectorAll('.fd').forEach(function(el){el.classList.remove('sh');});});
+/* Fermer dropdowns quand on clique ailleurs */
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.fg'))document.querySelectorAll('.fd').forEach(function(el){el.classList.remove('sh');});
+});
 
 /* ═══ NAV ═══ */
 function bNav(){
@@ -407,11 +564,9 @@ function bNav(){
     nav.appendChild(mi);
   });
 }
-
 function navTo(t,p){S.tab=t;S.pg=p;document.querySelectorAll('.mi').forEach(function(el,i){el.classList.toggle('act',i===t);});
   var dd=document.getElementById('dd-'+TABS[t].id);if(dd)dd.querySelectorAll('.di').forEach(function(el,i){el.classList.toggle('as',i===p);});
   rFlt();apFlt();render();window.scrollTo({top:0,behavior:'smooth'});}
-
 function chPg(d){var tab=TABS[S.tab],np=S.pg+d;if(np>=0&&np<tab.pp.length){S.pg=np;var dd=document.getElementById('dd-'+tab.id);if(dd)dd.querySelectorAll('.di').forEach(function(el,i){el.classList.toggle('as',i===np);});render();window.scrollTo({top:0,behavior:'smooth'});}}
 
 /* ═══ RENDER ═══ */
@@ -422,25 +577,22 @@ function render(){
   db.appendChild(E('div','st','<span>'+pg.ic+'</span> '+tab.lb+' — '+pg.t));
   var ct=E('div','','');ct.id='PC';db.appendChild(ct);
   if(tab.id==='oqd'){[rP1,rP2,rP3,rP4,rP5][S.pg](ct);}
-  else{ct.innerHTML='<div style="text-align:center;padding:70px;color:#888"><div style="font-size:48px;margin-bottom:12px">🔧</div><h3>'+tab.lb+' — En construction</h3><p style="margin-top:8px">Contenu à venir.</p></div>';}
+  else{ct.innerHTML='<div style="text-align:center;padding:70px;color:#888"><div style="font-size:48px;margin-bottom:12px">🔧</div><h3>'+tab.lb+' — En construction</h3></div>';}
   var bar=document.getElementById('PG');
   if(tab.pp.length>1){bar.style.display='flex';document.getElementById('PI').textContent='Page '+(S.pg+1)+' sur '+tab.pp.length;document.getElementById('BP').disabled=S.pg===0;document.getElementById('BN').disabled=S.pg>=tab.pp.length-1;}
   else{bar.style.display='none';}
 }
 
 function ctxLbl(){
-  var f=S.filters,v=S.vals;
-  if(f.fosa&&f.fosa.length===1)return ' dans la FOSA : '+f.fosa[0];
-  if(f.as&&f.as.length===1)return ' dans l\'AS : '+f.as[0];
-  if(f.zs&&f.zs.length===1)return ' dans la ZS : '+f.zs[0];
-  if(f.antenne&&f.antenne.length===1)return ' dans l\'Antenne : '+f.antenne[0];
-  if(f.province&&f.province.length===1)return ' dans la Province : '+f.province[0];
-  return ' dans toute la RDC';
+  var f=S.filters;
+  if(f.fosa&&f.fosa.length===1)return ' FOSA : '+f.fosa[0];
+  if(f.as&&f.as.length===1)return ' AS : '+f.as[0];
+  if(f.zs&&f.zs.length===1)return ' ZS : '+f.zs[0];
+  if(f.antenne&&f.antenne.length===1)return ' Antenne : '+f.antenne[0];
+  return ' Province : '+f.province;
 }
 
-/* ╔══════════════════════════════════════╗
-   ║ P1: COMPLÉTUDE & PROMPTITUDE       ║
-   ╚══════════════════════════════════════╝ */
+/* ═══ P1: COMPLÉTUDE & PROMPTITUDE ═══ */
 function rP1(c){
   var D=S.flt,rep=D.filter(isRep),nT=D.length,nNR=D.filter(function(r){return!isRep(r);}).length;
   var pR=pct(nT-nNR,nT);
@@ -452,11 +604,11 @@ function rP1(c){
     '<div class="kc rd"><div class="kv">'+nNR+'</div><div class="kl">FOSA non-rapportantes</div></div>'+
     '<div class="kc bl"><div class="kv">'+pR.toFixed(1)+'%</div><div class="kl">% de rapportage</div></div>'+
     '<div class="kc or"><div class="kv">'+aE.toFixed(1)+'%</div><div class="kl">Complétude var. obligatoires</div></div>'+
-    '<div class="kc pu"><div class="kv">'+nF+'</div><div class="kl">Nombre de FOSA'+ctxLbl()+'</div></div>'));
+    '<div class="kc pu"><div class="kv">'+nF+'</div><div class="kl">FOSA'+ctxLbl()+'</div></div>'));
 
-  [{l:'Province',k:function(r){return r.org2;}},{l:'Antenne PEV',k:function(r){return r.antenne;}},{l:'Zone de Santé',k:function(r){return r.org3;}},{l:'Aire de Santé',k:function(r){return r.org4;}},{l:'FOSA',k:function(r){return r.org5;}}].forEach(function(lv,idx){
+  [{l:'Antenne PEV',k:function(r){return r.antenne;}},{l:'Zone de Santé',k:function(r){return r.org3;}},{l:'Aire de Santé',k:function(r){return r.org4;}},{l:'FOSA',k:function(r){return r.org5;}}].forEach(function(lv,idx){
     var g=grp(D,lv.k),labs=Object.keys(g).filter(Boolean).sort();if(!labs.length)return;
-    if(labs.length>50)labs=labs.slice(0,50);
+    if(labs.length>60)labs=labs.slice(0,60);
     var cd=labs.map(function(k){return af(g[k],'completude');}),pd=labs.map(function(k){return af(g[k],'promptitude');});
     var box=E('div','cb');box.innerHTML='<h4>📊 Complétude et Promptitude par '+lv.l+'</h4><canvas id="cp'+idx+'" height="'+(labs.length>15?Math.min(labs.length*5,200):70)+'"></canvas>';c.appendChild(box);
     setTimeout(function(){var x=document.getElementById('cp'+idx);if(!x)return;
@@ -471,7 +623,7 @@ function rP1(c){
     S.charts.pMC=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'% rapportage',data:pM,borderColor:'#0b3a6f',backgroundColor:'rgba(11,58,111,.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#0b3a6f',borderWidth:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}}}}});
   },400);
 
-  var hb=E('div','cb');hb.innerHTML='<h4>🗓️ Suivi des soumissions par FOSA × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#27ae60"></div> Rapporté</div><div class="lgi"><div class="lgd" style="background:#e74c3c"></div> Non rapporté</div><div class="lgi"><div class="lgd" style="background:#bdc3c8"></div> Pas de données</div></div><div id="HM" style="width:100%;min-height:300px"></div>';c.appendChild(hb);
+  var hb=E('div','cb');hb.innerHTML='<h4>🗓️ Soumissions FOSA × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#27ae60"></div> Rapporté</div><div class="lgi"><div class="lgd" style="background:#e74c3c"></div> Non rapporté</div><div class="lgi"><div class="lgd" style="background:#bdc3c8"></div> N/A</div></div><div id="HM" style="width:100%;min-height:300px"></div>';c.appendChild(hb);
   setTimeout(function(){
     var fosas=uv(D,function(r){return r.org5;}).slice(0,80);
     if(!fosas.length||!mos.length){document.getElementById('HM').innerHTML='<em style="color:#888;padding:20px">Aucune donnée.</em>';return;}
@@ -481,20 +633,18 @@ function rP1(c){
   },500);
 }
 
-/* ╔══════════════════════════════════════╗
-   ║ P2: COHÉRENCE-TEMPS               ║
-   ╚══════════════════════════════════════╝ */
+/* ═══ P2: COHÉRENCE-TEMPS ═══ */
 function rP2(c){
   var D=S.flt,AD=getContextData(),mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT;
   var yr=mos.length?mos[0].substr(0,4):'2025',yr1=''+(+yr-1),yr2=''+(+yr-2);
   var mNums=['01','02','03','04','05','06','07','08','09','10','11','12'];
   var mLabs=mNums.map(function(m){return mL('2025'+m).split(' ')[0];});
-  function yrD(y,ag){return mNums.map(function(m){return AD.filter(function(r){return r.period===y+m;}).reduce(function(s,r){return s+(Number(r[ag])||0);},0);});}
+  function yrD(y,ag){return mNums.map(function(m){return AD.filter(function(r){return r.period===y+m&&r.org2===S.filters.province;}).reduce(function(s,r){return s+(Number(r[ag])||0);},0);});}
 
   ['BCG','DTC1','DTC3','VAR1','VAA','VAR2','PCV13_1','PCV13_3'].forEach(function(ag,i){
     var row=E('div','cr');
     var left=E('div','ch');left.innerHTML='<div class="cb"><h4>📈 '+AG_LBL[ag]+' — Évolution mensuelle</h4><canvas id="ev'+i+'" height="60"></canvas></div>';row.appendChild(left);
-    var right=E('div','ch');right.innerHTML='<div class="cb"><h4>🎯 '+AG_LBL[ag]+' — Valeurs vs Moy. '+N+' mois (±'+Math.round(thr*100)+'%)</h4><div id="dp'+i+'" style="height:290px"></div></div>';row.appendChild(right);
+    var right=E('div','ch');right.innerHTML='<div class="cb"><h4>🎯 '+AG_LBL[ag]+' — Valeurs vs Moy. '+N+'m (±'+Math.round(thr*100)+'%)</h4><div id="dp'+i+'" style="height:290px"></div></div>';row.appendChild(right);
     c.appendChild(row);
     setTimeout(function(){
       var x=document.getElementById('ev'+i);if(!x)return;
@@ -503,14 +653,11 @@ function rP2(c){
         {label:yr1,data:yrD(yr1,ag),borderColor:'#e91e63',fill:false,tension:.3,pointRadius:4,borderWidth:2,borderDash:[5,3]},
         {label:yr2,data:yrD(yr2,ag),borderColor:'#ff9800',fill:false,tension:.3,pointRadius:3,borderWidth:2,borderDash:[8,4]}
       ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{tooltip:{mode:'index',intersect:false},legend:{position:'bottom',labels:{font:{size:10},usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Vaccinés'}},x:{grid:{display:false}}}}});
-
       var dv=document.getElementById('dp'+i);if(!dv)return;
-      var orgK,orgL;
-      if(S.filters.as&&S.filters.as.length<=2){orgK='org5';orgL='FOSA';}
-      else if(S.filters.zs&&S.filters.zs.length<=3){orgK='org4';orgL='AS';}
-      else if(S.filters.antenne&&S.filters.antenne.length<=3){orgK='org3';orgL='ZS';}
-      else if(S.filters.province&&S.filters.province.length<=3){orgK='antenne';orgL='Antenne';}
-      else{orgK='org2';orgL='Province';}
+      var orgK='org5',orgL='FOSA';
+      if(S.filters.as.length<=2&&S.filters.as.length>0){orgK='org5';orgL='FOSA';}
+      else if(S.filters.zs.length<=3&&S.filters.zs.length>0){orgK='org4';orgL='AS';}
+      else{orgK='org3';orgL='ZS';}
       var lastM=mos[mos.length-1];if(!lastM)return;
       var ld=D.filter(function(r){return r.period===lastM;});
       var og=grp(ld,function(r){return r[orgK];});
@@ -524,13 +671,13 @@ function rP2(c){
         if(!avg)return;
         var v2=(cv-avg)/avg;
         xV.push(avg);yV.push(cv);col.push(Math.abs(v2)<=thr?'#1565c0':'#e74c3c');
-        txt.push(org+'<br>Valeur: '+cv+'<br>Moy: '+avg.toFixed(0)+'<br>Var: '+(v2*100).toFixed(1)+'%');
+        txt.push(org+'<br>Val: '+cv+'<br>Moy: '+avg.toFixed(0)+'<br>Var: '+(v2*100).toFixed(1)+'%');
       });
       if(!xV.length)return;
       var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
       Plotly.newPlot(dv,[
         {x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:9,color:col,line:{width:1,color:'#fff'}},hoverinfo:'text',name:orgL},
-        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2},name:'Moyenne',showlegend:true},
+        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2},name:'Moy',showlegend:true},
         {x:[0,mx],y:[0,mx*(1+thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'+'+Math.round(thr*100)+'%'},
         {x:[0,mx],y:[0,mx*(1-thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'-'+Math.round(thr*100)+'%'}
       ],{xaxis:{title:'Moyenne '+N+' mois'},yaxis:{title:'Valeur courante'},margin:{l:55,r:20,t:8,b:45},legend:{orientation:'h',y:-0.22},plot_bgcolor:'#fafbfc'},{responsive:true});
@@ -541,41 +688,36 @@ function rP2(c){
 
 function mkAlertTbl(D,AD,mos,N,thr){
   var box=E('div','cb');var lastM=mos[mos.length-1];
-  box.innerHTML='<h4>🚨 Alertes Prioritaires — Valeurs non acceptables (moy. mobile '+N+' mois, ±'+Math.round(thr*100)+'%)</h4>';
+  box.innerHTML='<h4>🚨 Alertes Prioritaires (moy. mobile '+N+'m, ±'+Math.round(thr*100)+'%)</h4>';
   if(!lastM){box.innerHTML+='<p style="color:#888;padding:20px">Aucune donnée.</p>';return box;}
   var ld=D.filter(function(r){return r.period===lastM&&isRep(r);}),rows=[];
-  ld.forEach(function(r){
-    AG.forEach(function(ag){
-      var val=Number(r[ag])||0;if(!val)return;
-      var avg=mAvg(r.org5,ag,lastM,AD,N);if(!avg)return;
-      var v2=(val-avg)/avg;
-      if(Math.abs(v2)>thr)rows.push({fosa:r.org5,as:r.org4,prov:r.org2,zs:r.org3,ant:r.antenne,vac:AG_LBL[ag],val:val,avg:avg.toFixed(0),var2:(v2*100).toFixed(1),pri:Math.abs(v2)>=.5?'Priorité 1':'Priorité 2'});
-    });
-  });
+  ld.forEach(function(r){AG.forEach(function(ag){
+    var val=Number(r[ag])||0;if(!val)return;
+    var avg=mAvg(r.org5,ag,lastM,AD,N);if(!avg)return;
+    var v2=(val-avg)/avg;
+    if(Math.abs(v2)>thr)rows.push({fosa:r.org5,as:r.org4,zs:r.org3,ant:r.antenne,vac:AG_LBL[ag],val:val,avg:avg.toFixed(0),var2:(v2*100).toFixed(1),pri:Math.abs(v2)>=.5?'P1':'P2'});
+  });});
   rows.sort(function(a,b){return a.pri<b.pri?-1:a.pri>b.pri?1:Math.abs(+b.var2)-Math.abs(+a.var2);});
-  var p1=rows.filter(function(r){return r.pri==='Priorité 1';}).length,p2=rows.length-p1;
-  box.innerHTML+='<div class="kr" style="margin-bottom:12px"><div class="kc rd" style="min-width:110px"><div class="kv">'+p1+'</div><div class="kl">Priorité 1 (≥50%)</div></div><div class="kc or" style="min-width:110px"><div class="kv">'+p2+'</div><div class="kl">Priorité 2 (>33%)</div></div><div class="kc" style="min-width:110px"><div class="kv">'+rows.length+'</div><div class="kl">Total alertes</div></div></div>';
-  if(!rows.length){box.innerHTML+='<p style="padding:20px;color:#27ae60;font-weight:600">✅ Aucune valeur non acceptable pour '+mL(lastM)+'.</p>';return box;}
-  var h='<div class="tw"><table class="dt"><thead><tr><th>FOSA</th><th>AS</th><th>Province</th><th>ZS</th><th>Antigène</th><th>Valeur</th><th>Moy. mobile</th><th>% Variation</th><th>Priorité</th></tr></thead><tbody>';
+  var p1=rows.filter(function(r){return r.pri==='P1';}).length;
+  box.innerHTML+='<div class="kr" style="margin-bottom:12px"><div class="kc rd" style="min-width:90px"><div class="kv">'+p1+'</div><div class="kl">P1 (≥50%)</div></div><div class="kc or" style="min-width:90px"><div class="kv">'+(rows.length-p1)+'</div><div class="kl">P2 (>33%)</div></div><div class="kc" style="min-width:90px"><div class="kv">'+rows.length+'</div><div class="kl">Total</div></div></div>';
+  if(!rows.length){box.innerHTML+='<p style="padding:20px;color:#27ae60;font-weight:600">✅ RAS pour '+mL(lastM)+'</p>';return box;}
+  var h='<div class="tw"><table class="dt"><thead><tr><th>FOSA</th><th>AS</th><th>ZS</th><th>Antigène</th><th>Valeur</th><th>Moy</th><th>%Var</th><th>Pri</th></tr></thead><tbody>';
   rows.slice(0,150).forEach(function(r){
-    var vn=+r.var2,pc=r.pri==='Priorité 1'?'crd':'co';
-    h+='<tr><td>'+tr(r.fosa,28)+'</td><td>'+tr(r.as,20)+'</td><td>'+tr(r.prov,18)+'</td><td>'+tr(r.zs,18)+'</td><td><b>'+r.vac+'</b></td><td style="text-align:right">'+r.val+'</td><td style="text-align:right">'+r.avg+'</td><td style="text-align:right;color:'+(vn>0?'#e74c3c':'#1565c0')+';font-weight:700">'+(vn>0?'+':'')+r.var2+'%</td><td class="'+pc+'" style="font-weight:700">'+r.pri+'</td></tr>';
+    var vn=+r.var2,pc=r.pri==='P1'?'crd':'co';
+    h+='<tr><td>'+tr(r.fosa,24)+'</td><td>'+tr(r.as,18)+'</td><td>'+tr(r.zs,16)+'</td><td><b>'+r.vac+'</b></td><td style="text-align:right">'+r.val+'</td><td style="text-align:right">'+r.avg+'</td><td style="text-align:right;color:'+(vn>0?'#e74c3c':'#1565c0')+';font-weight:700">'+(vn>0?'+':'')+r.var2+'%</td><td class="'+pc+'" style="font-weight:700">'+r.pri+'</td></tr>';
   });
-  box.innerHTML+=h+'</tbody></table></div>';
-  return box;
+  box.innerHTML+=h+'</tbody></table></div>';return box;
 }
 
-/* ╔══════════════════════════════════════╗
-   ║ P3: COHÉRENCE-DONNÉE              ║
-   ╚══════════════════════════════════════╝ */
+/* ═══ P3: COHÉRENCE-DONNÉE ═══ */
 function rP3(c){
   var D=S.flt,mos=uv(D,function(r){return r.period;}),lastM=mos[mos.length-1],thr=C.CD;
   [{a:'PCV13_1',b:'DTC1',t:'PCV13-1 vs DTC1'},{a:'PCV13_3',b:'DTC3',t:'PCV13-3 vs DTC3'}].forEach(function(p,pi){
-    var box=E('div','cb');box.innerHTML='<h4>🔗 Cohérence '+p.t+' (±'+Math.round(thr*100)+'%)</h4><div id="cs'+pi+'" style="height:340px"></div>';c.appendChild(box);
+    var box=E('div','cb');box.innerHTML='<h4>🔗 '+p.t+' (±'+Math.round(thr*100)+'%)</h4><div id="cs'+pi+'" style="height:340px"></div>';c.appendChild(box);
     setTimeout(function(){
       var dv=document.getElementById('cs'+pi);if(!dv||!lastM)return;
       var ld=D.filter(function(r){return r.period===lastM&&isRep(r);});
-      var orgK=S.filters.zs.length<=3?'org5':'org3';
+      var orgK=S.filters.zs.length<=3&&S.filters.zs.length>0?'org5':'org3';
       var og=grp(ld,function(r){return r[orgK];});
       var xV=[],yV=[],txt=[],col=[];
       Object.keys(og).filter(Boolean).forEach(function(org){
@@ -584,11 +726,10 @@ function rP3(c){
         xV.push(vB);yV.push(vA);col.push(Math.abs(v2)>thr?'#e74c3c':'#1565c0');
         txt.push(org+'<br>'+AG_LBL[p.b]+': '+vB+'<br>'+AG_LBL[p.a]+': '+vA+'<br>Var: '+(v2*100).toFixed(1)+'%');
       });
-      if(!xV.length)return;
-      var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
+      if(!xV.length)return;var mx=Math.max.apply(null,xV.concat(yV).concat([10]))*1.15;
       Plotly.newPlot(dv,[
         {x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:9,color:col,line:{width:1,color:'#fff'}},hoverinfo:'text'},
-        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2,dash:'dot'},name:'Égalité'},
+        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'#333',width:2,dash:'dot'},name:'='},
         {x:[0,mx],y:[0,mx*(1+thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'+10%'},
         {x:[0,mx],y:[0,mx*(1-thr)],type:'scatter',mode:'lines',line:{color:'#27ae60',width:1.5,dash:'dash'},name:'-10%'}
       ],{xaxis:{title:AG_LBL[p.b]},yaxis:{title:AG_LBL[p.a]},margin:{l:55,r:20,t:8,b:45},legend:{orientation:'h',y:-0.2},plot_bgcolor:'#fafbfc'},{responsive:true});
@@ -596,107 +737,87 @@ function rP3(c){
   });
 
   if(lastM){
-    var tBox=E('div','cb');tBox.innerHTML='<h4>📊 Vaccins même âge — % variation 2 à 2 ('+mL(lastM)+')</h4>';
+    var tBox=E('div','cb');tBox.innerHTML='<h4>📊 Vaccins même âge ('+mL(lastM)+')</h4>';
     var ld=D.filter(function(r){return r.period===lastM&&isRep(r);});
     var h='<div class="tw"><table class="dt"><thead><tr><th>FOSA</th><th>AS</th>';
-    SAME_AGE.forEach(function(g){h+='<th>'+g.age+'</th><th>% Var.</th>';});
-    h+='<th>Acceptabilité</th><th>Priorité</th></tr></thead><tbody>';
+    SAME_AGE.forEach(function(g){h+='<th>'+g.age+'</th><th>%Var</th>';});
+    h+='<th>Accept.</th><th>Pri</th></tr></thead><tbody>';
     ld.slice(0,80).forEach(function(r){
-      h+='<tr><td>'+tr(r.org5,24)+'</td><td>'+tr(r.org4,18)+'</td>';
+      h+='<tr><td>'+tr(r.org5,22)+'</td><td>'+tr(r.org4,16)+'</td>';
       var bad=false,maxV=0;
       SAME_AGE.forEach(function(g){
-        var vs=g.v.map(function(v){return AG_LBL[v]+': '+(Number(r[v])||0);}).join(', ');
-        h+='<td style="font-size:9.5px">'+vs+'</td>';
-        var parts=[];
-        for(var j=0;j<g.v.length-1;j++){
-          var a2=Number(r[g.v[j]])||0,b2=Number(r[g.v[j+1]])||0,den=b2||a2||1;
-          var pv=den>0?((a2-b2)/den*100):0;
-          var isBad=Math.abs(pv)>10;if(isBad)bad=true;maxV=Math.max(maxV,Math.abs(pv));
-          parts.push('<span style="color:'+(isBad?'#e74c3c':'#27ae60')+';font-weight:600">'+AG_LBL[g.v[j]]+'-'+AG_LBL[g.v[j+1]]+': '+(pv>0?'+':'')+pv.toFixed(1)+'%</span>');
-        }
-        h+='<td style="font-size:9px">'+parts.join('<br>')+'</td>';
-      });
-      var acc=bad?'Non acceptable':'Acceptable',pri=maxV>20?'Priorité 1':(bad?'Priorité 2':'—');
-      h+='<td class="'+(bad?'crd':'cg')+'">'+acc+'</td><td class="'+(pri.indexOf('1')>0?'crd':(pri.indexOf('2')>0?'co':''))+'">'+pri+'</td></tr>';
-    });
+        var vs=g.v.map(function(v){return AG_LBL[v]+':'+(Number(r[v])||0);}).join(', ');
+        h+='<td style="font-size:9px">'+vs+'</td>';var parts=[];
+        for(var j=0;j<g.v.length-1;j++){var a2=Number(r[g.v[j]])||0,b2=Number(r[g.v[j+1]])||0,den=b2||a2||1;
+          var pv=den>0?((a2-b2)/den*100):0;var isBad=Math.abs(pv)>10;if(isBad)bad=true;maxV=Math.max(maxV,Math.abs(pv));
+          parts.push('<span style="color:'+(isBad?'#e74c3c':'#27ae60')+'">'+AG_LBL[g.v[j]]+'-'+AG_LBL[g.v[j+1]]+':'+(pv>0?'+':'')+pv.toFixed(1)+'%</span>');}
+        h+='<td style="font-size:8px">'+parts.join('<br>')+'</td>';});
+      var acc=bad?'Non':'Oui',pri=maxV>20?'P1':(bad?'P2':'—');
+      h+='<td class="'+(bad?'crd':'cg')+'">'+acc+'</td><td class="'+(pri==='P1'?'crd':(pri==='P2'?'co':''))+'">'+pri+'</td></tr>';});
     tBox.innerHTML+=h+'</tbody></table></div>';c.appendChild(tBox);
   }
 
-  var drBox=E('div','cb');drBox.innerHTML='<h4>📉 Taux d\'abandon DTC1–DTC3</h4><canvas id="drC" height="75"></canvas>';c.appendChild(drBox);
-  setTimeout(function(){
-    var x=document.getElementById('drC');if(!x)return;
-    var orgK,orgL;
-    if(S.filters.zs.length<=3){orgK='org4';orgL='AS';}
-    else if(S.filters.antenne.length<=3){orgK='org3';orgL='ZS';}
-    else{orgK='org2';orgL='Province';}
+  var drBox=E('div','cb');drBox.innerHTML='<h4>📉 Dropout DTC1–DTC3</h4><canvas id="drC" height="75"></canvas>';c.appendChild(drBox);
+  setTimeout(function(){var x=document.getElementById('drC');if(!x)return;
+    var orgK=S.filters.zs.length<=3&&S.filters.zs.length>0?'org4':'org3';
     var og=grp(D,function(r){return r[orgK];}),orgs=Object.keys(og).filter(Boolean).sort();
     var dV=[],dC=[];
     orgs.forEach(function(org){var d1=sf(og[org],'DTC1'),d3=sf(og[org],'DTC3');var dr2=d1>0?((d1-d3)/d1*100):0;dV.push(dr2);dC.push(dr2<0?'#e74c3c':'#1565c0');});
-    S.charts.dr=new Chart(x,{type:'bar',data:{labels:orgs.map(function(l){return tr(l,26);}),datasets:[{label:'Dropout DTC1-DTC3 (%)',data:dV,backgroundColor:dC,borderRadius:3}]},options:{indexAxis:orgs.length>8?'y':'x',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.raw;return'Dropout: '+(v>0?'+':'')+v.toFixed(1)+'%'+(v<0?' ⚠️ NÉGATIF':'');}}}},scales:{x:{title:{display:true,text:'%'}},y:{ticks:{font:{size:orgs.length>20?7:9}}}}}});
+    S.charts.dr=new Chart(x,{type:'bar',data:{labels:orgs.map(function(l){return tr(l,24);}),datasets:[{label:'Dropout %',data:dV,backgroundColor:dC,borderRadius:3}]},options:{indexAxis:orgs.length>8?'y':'x',responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'%'}},y:{ticks:{font:{size:orgs.length>20?7:9}}}}}});
   },300);
 }
 
-/* ╔══════════════════════════════════════╗
-   ║ P4: VALEURS ATYPIQUES             ║
-   ╚══════════════════════════════════════╝ */
+/* ═══ P4: VALEURS ATYPIQUES ═══ */
 function rP4(c){
   var D=S.flt,AD=getContextData(),mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT;
   var lastM=mos[mos.length-1];
   var ld=lastM?D.filter(function(r){return r.period===lastM&&isRep(r);}):[];
   var atB={};AG.forEach(function(ag){atB[ag]={t:0,a:0};});
-  ld.forEach(function(r){AG.forEach(function(ag){
-    var val=Number(r[ag])||0;if(!val)return;atB[ag].t++;
-    var avg=mAvg(r.org5,ag,lastM,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)atB[ag].a++;
-  });});
+  ld.forEach(function(r){AG.forEach(function(ag){var val=Number(r[ag])||0;if(!val)return;atB[ag].t++;var avg=mAvg(r.org5,ag,lastM,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)atB[ag].a++;});});
   var agK=AG.filter(function(a){return atB[a].t>0;});
 
-  var b1=E('div','cb');b1.innerHTML='<h4>⚠️ Valeurs atypiques par antigène — '+mL(lastM||'')+'</h4><canvas id="atB" height="55"></canvas>';c.appendChild(b1);
+  var b1=E('div','cb');b1.innerHTML='<h4>⚠️ Atypiques par antigène — '+mL(lastM||'')+'</h4><canvas id="atB" height="55"></canvas>';c.appendChild(b1);
   setTimeout(function(){var x=document.getElementById('atB');if(!x)return;
     S.charts.atB=new Chart(x,{type:'bar',data:{labels:agK.map(function(a){return AG_LBL[a];}),datasets:[{label:'Atypiques',data:agK.map(function(a){return atB[a].a;}),backgroundColor:'#e74c3c',borderRadius:3},{label:'Normales',data:agK.map(function(a){return atB[a].t-atB[a].a;}),backgroundColor:'#27ae60',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'FOSA'}}}}});
   },80);
 
-  var b2=E('div','cb');b2.innerHTML='<h4>📈 Tendance mensuelle des valeurs atypiques</h4><canvas id="atT" height="50"></canvas>';c.appendChild(b2);
+  var b2=E('div','cb');b2.innerHTML='<h4>📈 Tendance mensuelle atypiques</h4><canvas id="atT" height="50"></canvas>';c.appendChild(b2);
   setTimeout(function(){var x=document.getElementById('atT');if(!x)return;
     var td=mos.map(function(m){var mD=D.filter(function(r){return r.period===m&&isRep(r);});var t=0,a=0;
       mD.forEach(function(r){AG.forEach(function(ag){var val=Number(r[ag])||0;if(!val)return;t++;var avg=mAvg(r.org5,ag,m,AD,N);if(avg&&avg>0&&Math.abs((val-avg)/avg)>thr)a++;});});
       return{t:t,a:a,p:t?(a/t*100):0};});
-    S.charts.atT=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'Nb atypiques',data:td.map(function(d){return d.a;}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.05)',fill:true,tension:.3,pointRadius:5,borderWidth:3,yAxisID:'y'},{label:'% atypiques',data:td.map(function(d){return d.p;}),borderColor:'#f39c12',borderWidth:2,tension:.3,pointRadius:4,borderDash:[5,3],fill:false,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nombre'},position:'left'},y1:{beginAtZero:true,title:{display:true,text:'%'},position:'right',grid:{drawOnChartArea:false}}}}});
+    S.charts.atT=new Chart(x,{type:'line',data:{labels:mos.map(mL),datasets:[{label:'Nb',data:td.map(function(d){return d.a;}),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.05)',fill:true,tension:.3,pointRadius:5,borderWidth:3,yAxisID:'y'},{label:'%',data:td.map(function(d){return d.p;}),borderColor:'#f39c12',borderWidth:2,tension:.3,pointRadius:4,borderDash:[5,3],fill:false,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nb'},position:'left'},y1:{beginAtZero:true,title:{display:true,text:'%'},position:'right',grid:{drawOnChartArea:false}}}}});
   },160);
 
-  var b3=E('div','cb');b3.innerHTML='<h4>🔬 FOSA encodant VAR2 et VAA</h4><canvas id="v2h" height="50"></canvas>';c.appendChild(b3);
+  var b3=E('div','cb');b3.innerHTML='<h4>🔬 FOSA avec VAR2/VAA > 0</h4><canvas id="v2h" height="50"></canvas>';c.appendChild(b3);
   setTimeout(function(){var x=document.getElementById('v2h');if(!x)return;
-    S.charts.v2h=new Chart(x,{type:'bar',data:{labels:mos.map(mL),datasets:[{label:'FOSA avec VAR2>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.VAR2)||0)>0;}).length;}),backgroundColor:'rgba(156,39,176,.65)',borderRadius:3},{label:'FOSA avec VAA>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.VAA)||0)>0;}).length;}),backgroundColor:'rgba(0,150,136,.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'FOSA'}}}}});
+    S.charts.v2h=new Chart(x,{type:'bar',data:{labels:mos.map(mL),datasets:[{label:'VAR2>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.VAR2)||0)>0;}).length;}),backgroundColor:'rgba(156,39,176,.65)',borderRadius:3},{label:'VAA>0',data:mos.map(function(m){return D.filter(function(r){return r.period===m&&isRep(r)&&(Number(r.VAA)||0)>0;}).length;}),backgroundColor:'rgba(0,150,136,.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{y:{beginAtZero:true,title:{display:true,text:'FOSA'}}}}});
   },240);
 
   if(lastM){
     var b4=E('div','cb');
-    b4.innerHTML='<h4>📋 Structures avec données manquantes — '+mL(lastM)+'</h4>'+
-      '<div style="margin-bottom:8px"><label style="font-weight:600;font-size:11px;margin-right:6px">Filtrer antigène:</label>'+
-      '<select id="agFlt" onchange="fltMiss()" style="padding:5px 8px;border:1px solid #ddd;border-radius:5px;font-size:11px">'+
-      '<option value="all">Tous</option>'+AG_ALL.map(function(a){return'<option value="'+a+'">'+AG_LBL[a]+'</option>';}).join('')+'</select></div>';
+    b4.innerHTML='<h4>📋 Données manquantes — '+mL(lastM)+'</h4>'+
+      '<div style="margin-bottom:8px"><label style="font-weight:600;font-size:11px;margin-right:6px">Antigène:</label>'+
+      '<select id="agFlt" onchange="fltMiss()" style="padding:5px 8px;border:1px solid #ddd;border-radius:5px;font-size:11px"><option value="all">Tous</option>'+AG_ALL.map(function(a){return'<option value="'+a+'">'+AG_LBL[a]+'</option>';}).join('')+'</select></div>';
     var ld2=D.filter(function(r){return r.period===lastM;});
-    var h='<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>FOSA</th><th>AS</th><th>Province</th><th>ZS</th><th>Rapport</th><th>Renseignées</th><th>Total</th><th>Complétude (%)</th><th>Antigènes non renseignés</th></tr></thead><tbody>';
-    ld2.forEach(function(r){
-      var rep=isRep(r),nR=cntRens(r),tot=obTotal(r),ex=pct(nR,tot),miss=missAg(r);
-      h+='<tr data-miss="'+miss.join(',')+'"><td>'+tr(r.org5,24)+'</td><td>'+tr(r.org4,18)+'</td><td>'+tr(r.org2,16)+'</td><td>'+tr(r.org3,16)+'</td><td class="'+(rep?'cg':'crd')+'">'+(rep?'Oui':'Non')+'</td><td style="text-align:center">'+nR+'</td><td style="text-align:center">'+tot+'</td><td class="'+ccl(ex)+'">'+ex.toFixed(1)+'%</td><td style="font-size:9.5px"><span class="tr">'+miss.map(function(a){return AG_LBL[a];}).join(', ')+'</span></td></tr>';
-    });
+    var h='<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>FOSA</th><th>AS</th><th>ZS</th><th>Rapp</th><th>Rens.</th><th>Tot</th><th>%Compl</th><th>Manquants</th></tr></thead><tbody>';
+    ld2.forEach(function(r){var rep=isRep(r),nR=cntRens(r),tot=obTotal(r),ex=pct(nR,tot),miss=missAg(r);
+      h+='<tr data-miss="'+miss.join(',')+'"><td>'+tr(r.org5,22)+'</td><td>'+tr(r.org4,16)+'</td><td>'+tr(r.org3,14)+'</td><td class="'+(rep?'cg':'crd')+'">'+(rep?'O':'N')+'</td><td style="text-align:center">'+nR+'</td><td style="text-align:center">'+tot+'</td><td class="'+ccl(ex)+'">'+ex.toFixed(1)+'%</td><td style="font-size:9px"><span class="tr">'+miss.map(function(a){return AG_LBL[a];}).join(', ')+'</span></td></tr>';});
     b4.innerHTML+=h+'</tbody></table></div>';c.appendChild(b4);
   }
 }
 window.fltMiss=function(){var sel=document.getElementById('agFlt');if(!sel)return;var v=sel.value;document.querySelectorAll('#mTbl tbody tr').forEach(function(row){if(v==='all'){row.style.display='';return;}var m=(row.getAttribute('data-miss')||'').split(',');row.style.display=m.indexOf(v)>=0?'':'none';});};
 
-/* ╔══════════════════════════════════════╗
-   ║ P5: SCORE QUALITÉ DES DONNÉES     ║
-   ╚══════════════════════════════════════╝ */
+/* ═══ P5: SCORE QUALITÉ ═══ */
 function rP5(c){
-  c.innerHTML='<div class="stt" id="sTabs"><div class="stb act" onclick="sSL(0)">Par FOSA</div><div class="stb" onclick="sSL(1)">Par Aire de Santé</div><div class="stb" onclick="sSL(2)">Par Zone de Santé</div><div class="stb" onclick="sSL(3)">Par Antenne PEV</div><div class="stb" onclick="sSL(4)">Par Province</div></div><div id="sC"></div>';
+  c.innerHTML='<div class="stt" id="sTabs"><div class="stb act" onclick="sSL(0)">Par FOSA</div><div class="stb" onclick="sSL(1)">Par AS</div><div class="stb" onclick="sSL(2)">Par ZS</div><div class="stb" onclick="sSL(3)">Par Antenne</div><div class="stb" onclick="sSL(4)">Par Province</div></div><div id="sC"></div>';
   setTimeout(function(){sSL(0);},40);
 }
 window.sSL=function(lv){
   document.querySelectorAll('#sTabs .stb').forEach(function(t,i){t.classList.toggle('act',i===lv);});
   var sc=document.getElementById('sC');sc.innerHTML='';
   var D=S.flt,AD=getContextData(),mos=uv(D,function(r){return r.period;}),N=C.MA,thr=C.CT,lastM=mos[mos.length-1];
-  var lvC=[{k:function(r){return r.org5;},l:'FOSA'},{k:function(r){return r.org4;},l:'Aire de Santé'},{k:function(r){return r.org3;},l:'Zone de Santé'},{k:function(r){return r.antenne;},l:'Antenne PEV'},{k:function(r){return r.org2;},l:'Province'}][lv];
+  var lvC=[{k:function(r){return r.org5;},l:'FOSA'},{k:function(r){return r.org4;},l:'AS'},{k:function(r){return r.org3;},l:'ZS'},{k:function(r){return r.antenne;},l:'Antenne'},{k:function(r){return r.org2;},l:'Province'}][lv];
   var og=grp(D,lvC.k),units=Object.keys(og).filter(Boolean).sort();
   var rows=units.map(function(u){
     var rc=og[u],rep=rc.filter(isRep),nT=rc.length,nR=rep.length;
@@ -712,7 +833,7 @@ window.sSL=function(lv){
     var tot=scR+scE+scC+scA+scD;
     var interp=tot>=80?'Excellent':(tot>=50?'Bon':'Mauvais');
     var notes=[];
-    if(tot<50){if(scR<12)notes.push('Rapportage');if(scE<12)notes.push('Exhaustivité');if(!bCoh)notes.push('Cohérence');if(scA<12)notes.push('Atypiques');if(scD===0)notes.push('Dropout');}
+    if(tot<50){if(scR<12)notes.push('Rapp');if(scE<12)notes.push('Exh');if(!bCoh)notes.push('Coh');if(scA<12)notes.push('Atyp');if(scD===0)notes.push('Drop');}
     return{u:u,nT:nT,nR:nR,tR:tR,aE:aE,bCoh:bCoh,pA:pA,dr:dr,scR:scR,scE:scE,scC:scC,scA:scA,scD:scD,tot:tot,interp:interp,notes:notes.join('; ')};
   });
   rows.sort(function(a,b){return b.tot-a.tot;});
@@ -720,25 +841,19 @@ window.sSL=function(lv){
   var bon=rows.filter(function(r){return r.interp==='Bon';}).length;
   var mau=rows.filter(function(r){return r.interp==='Mauvais';}).length;
   var avg2=rows.length?rows.reduce(function(s,r){return s+r.tot;},0)/rows.length:0;
+  sc.innerHTML='<div class="kr" style="margin-bottom:16px"><div class="kc gn"><div class="kv">'+exc+'</div><div class="kl">Excellent (≥80)</div></div><div class="kc or"><div class="kv">'+bon+'</div><div class="kl">Bon (50-79)</div></div><div class="kc rd"><div class="kv">'+mau+'</div><div class="kl">Mauvais (<50)</div></div><div class="kc bl"><div class="kv">'+avg2.toFixed(0)+'</div><div class="kl">Score moyen</div></div><div class="kc pu"><div class="kv">'+rows.length+'</div><div class="kl">'+lvC.l+'s</div></div></div>';
 
-  sc.innerHTML='<div class="kr" style="margin-bottom:16px">'+
-    '<div class="kc gn"><div class="kv">'+exc+'</div><div class="kl">👤 Excellent (≥80)</div></div>'+
-    '<div class="kc or"><div class="kv">'+bon+'</div><div class="kl">👍 Bon (50-79)</div></div>'+
-    '<div class="kc rd"><div class="kv">'+mau+'</div><div class="kl">⚠️ Mauvais (<50)</div></div>'+
-    '<div class="kc bl"><div class="kv">'+avg2.toFixed(0)+'</div><div class="kl">Score moyen /100</div></div>'+
-    '<div class="kc pu"><div class="kv">'+rows.length+'</div><div class="kl">'+lvC.l+'s évaluées</div></div></div>';
-
-  sc.innerHTML+='<div class="cb"><h4>📊 Distribution des scores — '+lvC.l+'</h4><canvas id="sDist" height="45"></canvas></div>';
+  sc.innerHTML+='<div class="cb"><h4>📊 Distribution — '+lvC.l+'</h4><canvas id="sDist" height="45"></canvas></div>';
   setTimeout(function(){var x=document.getElementById('sDist');if(!x)return;
     var bins=[[0,20],[20,40],[40,60],[60,80],[80,101]],bL=bins.map(function(b){return b[0]+'-'+(b[1]===101?100:b[1]);}),bC=bins.map(function(b){return rows.filter(function(r){return r.tot>=b[0]&&r.tot<b[1];}).length;});
-    S.charts.sDist=new Chart(x,{type:'bar',data:{labels:bL,datasets:[{data:bC,backgroundColor:['#e74c3c','#ff7043','#f39c12','#66bb6a','#27ae60'],borderRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Nombre'}},x:{title:{display:true,text:'Score'}}}}});
+    S.charts.sDist=new Chart(x,{type:'bar',data:{labels:bL,datasets:[{data:bC,backgroundColor:['#e74c3c','#ff7043','#f39c12','#66bb6a','#27ae60'],borderRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{title:{display:true,text:'Score'}}}}});
   },60);
 
-  var h='<div class="tw"><table class="dt"><thead><tr><th>'+lvC.l+'</th><th>Rapp. att.</th><th>Rapp. prod.</th><th>Taux rapp. (%)</th><th>Sc.</th><th>Exhaust. (%)</th><th>Sc.</th><th>Cohérence</th><th>Sc.</th><th>% Atyp.</th><th>Sc.</th><th>Dropout (%)</th><th>Sc.</th><th>SCORE /100</th><th>Interprét.</th><th>Notes</th></tr></thead><tbody>';
+  var h='<div class="tw"><table class="dt"><thead><tr><th>'+lvC.l+'</th><th>Att</th><th>Prod</th><th>Rapp%</th><th>Sc</th><th>Exh%</th><th>Sc</th><th>Coh</th><th>Sc</th><th>Atyp%</th><th>Sc</th><th>Drop%</th><th>Sc</th><th>SCORE</th><th>Interp</th><th>Notes</th></tr></thead><tbody>';
   rows.forEach(function(r){
     var scCol=r.tot>=80?'#27ae60':(r.tot>=50?'#f39c12':'#e74c3c');
     var intC=r.interp==='Excellent'?'cg':(r.interp==='Bon'?'cy':'crd');
-    h+='<tr><td><b>'+tr(r.u,26)+'</b></td><td style="text-align:center">'+r.nT+'</td><td style="text-align:center">'+r.nR+'</td><td class="'+ccl(r.tR)+'">'+r.tR.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scR+'</td><td class="'+ccl(r.aE)+'">'+r.aE.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scE+'</td><td class="'+(r.bCoh?'cg':'crd')+'">'+(r.bCoh?'Oui':'Non')+'</td><td style="text-align:center;font-weight:700">'+r.scC+'</td><td style="text-align:center;color:'+(r.pA>20?'#e74c3c':'#333')+'">'+r.pA.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scA+'</td><td class="'+(r.dr<0?'crd':'')+'">'+r.dr.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scD+'</td><td style="background:'+scCol+';color:#fff;text-align:center;font-weight:800;font-size:15px">'+r.tot+'</td><td class="'+intC+'" style="font-weight:700;text-align:center">'+r.interp+'</td><td style="font-size:9.5px;color:#e74c3c;max-width:160px;white-space:normal">'+r.notes+'</td></tr>';
+    h+='<tr><td><b>'+tr(r.u,24)+'</b></td><td style="text-align:center">'+r.nT+'</td><td style="text-align:center">'+r.nR+'</td><td class="'+ccl(r.tR)+'">'+r.tR.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scR+'</td><td class="'+ccl(r.aE)+'">'+r.aE.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scE+'</td><td class="'+(r.bCoh?'cg':'crd')+'">'+(r.bCoh?'O':'N')+'</td><td style="text-align:center;font-weight:700">'+r.scC+'</td><td style="text-align:center;color:'+(r.pA>20?'#e74c3c':'#333')+'">'+r.pA.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scA+'</td><td class="'+(r.dr<0?'crd':'')+'">'+r.dr.toFixed(1)+'%</td><td style="text-align:center;font-weight:700">'+r.scD+'</td><td style="background:'+scCol+';color:#fff;text-align:center;font-weight:800;font-size:15px">'+r.tot+'</td><td class="'+intC+'" style="font-weight:700;text-align:center">'+r.interp+'</td><td style="font-size:9px;color:#e74c3c;max-width:140px;white-space:normal">'+r.notes+'</td></tr>';
   });
   sc.innerHTML+=h+'</tbody></table></div>';
 };
