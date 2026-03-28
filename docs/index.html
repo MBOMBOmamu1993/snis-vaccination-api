@@ -149,6 +149,7 @@ var SAME_AGE=[
   {age:'14 semaines',v:['DTC3','VPO3','VPI1','ROTA3','PCV13_3']},
   {age:'9 mois',v:['VAR1','VPI2','VAA']}
 ];
+  var AG_FIELD_MAP = { BCG: 'BCG_0_11', VPO0: 'VPO0_0_11', DTC1: 'DTC1_0_11', VPO1: 'VPO1_0_11', ROTA1: 'ROTA1_0_11', PCV13_1: 'PCV13_1_0_11', DTC2: 'DTC2_0_11', VPO2: 'VPO2_0_11', ROTA2: 'ROTA2_0_11', PCV13_2: 'PCV13_2_0_11', DTC3: 'DTC3_0_11', VPO3: 'VPO3_0_11', VPI1: 'VPI1_0_11', ROTA3: 'ROTA3_0_11', PCV13_3: 'PCV13_3_0_11', VAR1: 'VAR1_0_11', VPI2: 'VPI2_0_11', VAA: 'VAA_0_11', VAR2: 'VAR2_0_11' };
 
 var TABS=[
   {id:'oqd',lb:'Outil qualité données',fl:['province','antenne','zs','as','fosa','period'],
@@ -162,7 +163,8 @@ var TABS=[
 ];
 
 /* ═══ STATE ═══ */
-var S={tab:0,pg:0,data:[],flt:[],charts:{},filters:{},vals:{},loaded:false};
+  var BASE = './data/dashboard';
+  var S = { tab: 0, pg: 0, data: [], flt: [], charts: {}, filters: {}, vals: {}, loaded: false, meta: null, hmIndex: {}, hmCache: {}, heatmap: {} };
 
 /* ═══ UTILITIES ═══ */
 function mL(ym){if(!ym||ym.length<6)return ym||'';var n=['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];return n[parseInt(ym.substr(4,2),10)-1]+' '+ym.substr(0,4);}
@@ -188,88 +190,62 @@ function sB(val,bar){for(var i=0;i<bar.length;i++){if(val>=bar[i][0])return bar[
 function sBA(v){if(v<=5)return 20;if(v<=10)return 16;if(v<=20)return 12;if(v<=30)return 8;if(v<=50)return 4;return 0;}
 function sp(p,t,s){var a=document.getElementById('PF'),b=document.getElementById('PT'),c=document.getElementById('LS');if(a)a.style.width=p+'%';if(b&&t)b.textContent=t;if(c&&s)c.textContent=s;}
 
-/* ═══ MOCK DATA ═══ */
-  function genData() {
-    var provs = [
-      { n: 'Bas Uele Province', vap: true, ant: ['Buta'], zs: { 'Buta': ['Aketi', 'Ango', 'Bili', 'Bondo', 'Buta', 'Dingila', 'Ganga', 'Likati', 'Monga', 'Poko', 'Titule', 'Viadana'] } },
-      { n: 'Equateur Province', vap: true, ant: ['Mbandaka'], zs: { 'Mbandaka': ['Basankusu', 'Bikoro', 'Bolenge', 'Bolomba', 'Bomongo', 'Djombo', 'Iboko', 'Ingende', 'Irebu', 'Lilanga Bobangi', 'Lolanga', 'Lotumbe', 'Lukolela', 'Makanza', 'Mampoko', 'Mbandaka', 'Monieka', 'Ntondo', 'Wangata'] } },
-      { n: 'Haut Katanga Province', vap: false, ant: ['Likasi', 'Lubumbashi'], zs: { 'Likasi': ['Kambove', 'Kapolowe', 'Kikula', 'Kilela Balanda', 'Likasi', 'Mitwaba', 'Mufunga Sampwe', 'Panda'], 'Lubumbashi': ['Kafubu', 'Kamalondo', 'Kampemba', 'Kasenga', 'Kashobwe', 'Katuba', 'Kenya', 'Kilwa', 'Kipushi', 'Kisanga', 'Kowe', 'Lubumbashi', 'Lukafu', 'Mumbunda', 'Pweto', 'Ruashi', 'Sakania', 'Tshamilemba', 'Vangu'] } },
-      { n: 'Haut Lomami Province', vap: true, ant: ['Kabondo Dianda', 'Kamina'], zs: { 'Kabondo Dianda': ['Bukama', 'Butumba', 'Kabondo Dianda', 'Kinkondja', 'Lwamba', 'Malemba Nkulu', 'Mukanga', 'Mulongo'], 'Kamina': ['Baka', 'Kabongo', 'Kamina', 'Kaniama', 'Kayamba', 'Kinda', 'Kitenge', 'Songa'] } },
-      { n: 'Haut Uele Province', vap: false, ant: ['Isiro', 'Watsa'], zs: { 'Isiro': ['Boma Mangbetu', 'Doruma', 'Dungu', 'Isiro', 'Niangara', 'Pawa', 'Rungu', 'Wamba'], 'Watsa': ['Aba', 'Faradje', 'Gombari', 'Makoro', 'Watsa'] } },
-      { n: 'Ituri Province', vap: false, ant: ['Aru', 'Bunia'], zs: { 'Aru': ['Adi', 'Adja', 'Angumu', 'Ariwara', 'Aru', 'Aungba', 'Biringi', 'Gety', 'Kambala', 'Laybo', 'Logo', 'Mahagi', 'Nyarambe', 'Rimba'], 'Bunia': ['Bambu', 'Boga', 'Bunia', 'Damas', 'Drodro', 'Fataki', 'Jiba', 'Kilo', 'Komanda', 'Linga', 'Lita', 'Lolwa', 'Mambasa', 'Mandima', 'Mangala', 'Mongbwalu', 'Nia Nia', 'Nizi', 'Nyankunde', 'Rethy', 'Rwampara', 'Tchomia'] } },
-      { n: 'Kasai Province', vap: false, ant: ['Mweka', 'Tshikapa'], zs: { 'Mweka': ['Bulape', 'Dekese', 'Ilebo', 'Kakenge', 'Luebo', 'Mikope', 'Mushenge', 'Mweka'], 'Tshikapa': ['Banga Lubaka', 'Kalonda Ouest', 'Kamonia', 'Kamwesha', 'Kanzala', 'Kitangwa', 'Mutena', 'Ndjoko Mpunda', 'Nyanga', 'Tshikapa'] } },
-      { n: 'Kasai Central Province', vap: true, ant: ['Kananga', 'Luiza'], zs: { 'Kananga': ['Bena Leka', 'Bena Tshadi', 'Bilomba', 'Bobozo', 'Bunkonde', 'Demba', 'Dibaya', 'Kananga', 'Katende', 'Katoka', 'Lubondaie', 'Lubunga', 'Lukonga', 'Mikalayi', 'Muetshi', 'Mutoto', 'Ndekesha', 'Ndesha', 'Tshikaji', 'Tshikula'], 'Luiza': ['Kalomba', 'Luambo', 'Luiza', 'Masuika', 'Tshibala', 'Yangala'] } },
-      { n: 'Kasai Oriental Province', vap: false, ant: ['Mbuji Mayi'], zs: { 'Mbuji Mayi': ['Bibanga', 'Bipemba', 'Bonzola', 'Cilundu', 'Citenge', 'Dibindi', 'Diulu', 'Kabeya Kamwanga', 'Kansele', 'Kasansa', 'Lubilanji', 'Lukelenge', 'Miabi', 'Mpokolo', 'Mukumbi', 'Muya', 'Nzaba', 'Tshilenge', 'Tshishimbi'] } },
-      { n: 'Kinshasa Province', vap: false, ant: ['Kin Centre', 'Kin Est', 'Kin Ouest'], zs: { 'Kin Centre': ['Bumbu', 'Kalamu 1', 'Kalamu 2', 'Kasa Vubu', 'Kingabwa', 'Kisenso', 'Lemba', 'Limete', 'Makala', 'Matete', 'Ngaba', 'Ngiri Ngiri'], 'Kin Est': ['Biyela', 'Kikimi', 'Kimbanseke', 'Kingasani', 'Maluku 1', 'Maluku 2', 'Masina 1', 'Masina 2', 'Ndjili', 'Nsele'], 'Kin Ouest': ['Bandalungwa', 'Barumbu', 'Binza Meteo', 'Binza Ozone', 'Gombe', 'Kinshasa', 'Kintambo', 'Kokolo', 'Lingwala', 'Mont Ngafula 1', 'Mont Ngafula 2', 'Police', 'Selembao'] } },
-      { n: 'Kongo Central Province', vap: true, ant: ['Boma', 'Matadi', 'Mbanza Ngungu'], zs: { 'Boma': ['Boma', 'Boma Bungu', 'Kangu', 'Kinkonzi', 'Kitona', 'Kizu', 'Kuimba', 'Lukula', 'Muanda', 'Tshela', 'Vaku'], 'Matadi': ['Inga', 'Kibunzi', 'Luozi', 'Mangembo', 'Matadi', 'Nsona Mpangu', 'Nzanza', 'Seke Banza'], 'Mbanza Ngungu': ['Boko Kivulu', 'Gombe Matadi', 'Kimpangu', 'Kimpese', 'Kimvula', 'Kisantu', 'Kwilu Ngongo', 'Massa', 'Mbanza Ngungu', 'Ngidinga', 'Nselo', 'Sona Bata'] } },
-      { n: 'Kwango Province', vap: true, ant: ['Kahemba', 'Kenge'], zs: { 'Kahemba': ['Kahemba', 'Kajiji', 'Kisanji', 'Panzi', 'Tembo'], 'Kenge': ['Boko', 'Feshi', 'Kasongo Lunda', 'Kenge', 'Kimbao', 'Kitenda', 'Mwela Lembwa', 'Popokabaka', 'Wamba Lwadi'] } },
-      { n: 'Kwilu Province', vap: true, ant: ['Bandundu', 'Kikwit'], zs: { 'Bandundu': ['Bagata', 'Bandundu', 'Djuma', 'Kikongo', 'Sia', 'Vanga'], 'Kikwit': ['Bulungu', 'Gungu', 'Idiofa', 'Ipamu', 'Kikwit Nord', 'Kikwit Sud', 'Kimputu', 'Kingandu', 'Koshibanda', 'Lusanga', 'Masi Manimba', 'Moanza', 'Mokala', 'Mosango', 'Mukedi', 'Mungindu', 'Pay Kongila', 'Yasa Bonga'] } },
-      { n: 'Lomami Province', vap: true, ant: ['Kabinda', 'Mweneditu'], zs: { 'Kabinda': ['Kabinda', 'Kalambayi Kabanga', 'Kalonda Est', 'Kamana', 'Lubao', 'Ludimbi Lukula', 'Mulumba', 'Ngandajika', 'Tshofa'], 'Mweneditu': ['Kalenda', 'Kamiji', 'Kanda Kanda', 'Luputa', 'Makota', 'Mweneditu', 'Wikong'] } },
-      { n: 'Lualaba Province', vap: false, ant: ['Kisenge', 'Kolwezi'], zs: { 'Kisenge': ['Dilolo', 'Kafakumba', 'Kalamba', 'Kapanga', 'Kasaji', 'Sandoa'], 'Kolwezi': ['Bunkeya', 'Dilala', 'Fungurume', 'Kanzenze', 'Lualaba', 'Lubudi', 'Manika', 'Mutshatsha'] } },
-      { n: 'Maindombe Province', vap: true, ant: ['Inongo'], zs: { 'Inongo': ['Banzow Moke', 'Bokoro', 'Bolobo', 'Bosobe', 'Inongo', 'Kiri', 'Kwamouth', 'Mimia', 'Mushie', 'Nioki', 'Ntandembelo', 'Oshwe', 'Pendjwa', 'Yumbi'] } },
-      { n: 'Maniema Province', vap: true, ant: ['Kasongo', 'Kindu'], zs: { 'Kasongo': ['Kabambare', 'Kampene', 'Kasongo', 'Kibombo', 'Kunda', 'Lusangi', 'Saramabila', 'Samba', 'Tunda'], 'Kindu': ['Alunguli', 'Ferekeni', 'Kailo', 'Kalima', 'Kindu', 'Lubutu', 'Obokote', 'Pangi', 'Punia'] } },
-      { n: 'Mongala Province', vap: true, ant: ['Bumba', 'Lisala'], zs: { 'Bumba': ['Bumba', 'Lolo', 'Yamaluka', 'Yambuku', 'Yamongili'], 'Lisala': ['Binga', 'Bongandanga', 'Boso Manzi', 'Boso Mondanda', 'Bosondjo', 'Lisala', 'Pimu'] } },
-      { n: 'Nord Kivu Province', vap: false, ant: ['Butembo', 'Goma'], zs: { 'Butembo': ['Alimbongo', 'Beni', 'Biena', 'Butembo', 'Kalunguta', 'Kamango', 'Katwa', 'Kayna', 'Kyondo', 'Lubero', 'Mabalako', 'Manguredjipa', 'Masereka', 'Musienene', 'Mutwanga', 'Oicha', 'Vuhovi'], 'Goma': ['Bambo', 'Binza', 'Birambizo', 'Goma', 'Itebero', 'Karisimbi', 'Katoyi', 'Kibirizi', 'Kibua', 'Kirotshe', 'Masisi', 'Mweso', 'Nyiragongo', 'Pinga', 'Rutshuru', 'Rwanguba', 'Walikale'] } },
-      { n: 'Nord Ubangi Province', vap: true, ant: ['Gbadolite'], zs: { 'Gbadolite': ['Abuzi', 'Bili', 'Bosobolo', 'Businga', 'Gbadolite', 'Karawa', 'Loko', 'Mobayi Mbongo', 'Wapinda', 'Wasolo', 'Yakoma'] } },
-      { n: 'Sankuru Province', vap: false, ant: ['Lodja'], zs: { 'Lodja': ['Bena Dibele', 'Dikungu', 'Djalo Ndjeka', 'Katako Kombe', 'Kole', 'Lodja', 'Lomela', 'Lusambo', 'Minga', 'Omendjadi', 'Ototo', 'Pania Mutombo', 'Tshudi Loto', 'Tshumbe', 'Vanga Kete', 'Wembo Nyama'] } },
-      { n: 'Sud Kivu Province', vap: false, ant: ['Bukavu', 'Uvira'], zs: { 'Bukavu': ['Bagira', 'Bunyakiri', 'Ibanda', 'Idjwi', 'Kabare', 'Kadutu', 'Kalehe', 'Kalole', 'Kalonge', 'Kamituga', 'Kaniola', 'Katana', 'Kaziba', 'Kitutu', 'Lulingu', 'Minova', 'Miti Murhesa', 'Mubumbano', 'Mulungu', 'Mwana', 'Mwenga', 'Nyangezi', 'Nyantende', 'Shabunda', 'Walungu'], 'Uvira': ['Fizi', 'Haut Plateau', 'Itombwe', 'Kimbi Lulenge', 'Lemera', 'Minembwe', 'Nundu', 'Ruzizi', 'Uvira'] } },
-      { n: 'Sud Ubangi Province', vap: true, ant: ['Gemena'], zs: { 'Gemena': ['Bangabola', 'Bogosenubea', 'Bokonzi', 'Bominenge', 'Boto', 'Budjala', 'Bulu', 'Bwamanda', 'Gemena', 'Kungu', 'Libenge', 'Mawuya', 'Mbaya', 'Ndage', 'Tandala', 'Zongo'] } },
-      { n: 'Tanganyika Province', vap: false, ant: ['Kabalo', 'Kalemie'], zs: { 'Kabalo': ['Ankoro', 'Kabalo', 'Kiambi', 'Kongolo', 'Manono', 'Mbulula'], 'Kalemie': ['Kalemie', 'Kansimba', 'Moba', 'Nyemba', 'Nyunzu'] } },
-      { n: 'Tshopo Province', vap: true, ant: ['Kisangani', 'Lokutu'], zs: { 'Kisangani': ['Bafwagbogbo', 'Bafwasende', 'Banalia', 'Bengamisa', 'Kabondo', 'Lowa', 'Lubunga', 'Makiso Kisangani', 'Mangobo', 'Opala', 'Opienge', 'Tshopo', 'Ubundu', 'Wanierukula', 'Yahisuli', 'Yakusu', 'Yaleko'], 'Lokutu': ['Basali', 'Basoko', 'Isangi', 'Yabaondo', 'Yahuma', 'Yalimbongo'] } },
-      { n: 'Tshuapa Province', vap: true, ant: ['Boende', 'Bokungu'], zs: { 'Boende': ['Befale', 'Boende', 'Lingomo', 'Mompono', 'Monkoto', 'Wema'], 'Bokungu': ['Bokungu', 'Busanga', 'Djolu', 'Ikela', 'Mondombe', 'Yalifafu'] } }
-    ];
+  /* ═══ TRANSFORM RECORD ═══ */
+  function transformRecord(r) {
+    var rec = { org2: r._Province || '', org3: r._ZS || '', org4: r._ZS || '', org5: r._ZS || '', antenne: r._Antenne || '', period: r._YM || '', completude: r.comp || 0, promptitude: r.prompt || 0, isVAP: C.VAP_PROV.indexOf(r._Province) >= 0, _n: r.n || 0, _rap: r.rap || 0 };
+    AG_ALL.forEach(function (ag) { var src = AG_FIELD_MAP[ag]; var val = src ? (Number(r[src]) || 0) : 0; rec[ag] = val; rec[ag + '_f'] = val; });
+    return rec;
+  }
 
-  var mos=['202501','202502','202503','202504','202505','202506','202507','202508','202509','202510','202511','202512','202601','202602','202603','202604','202605','202606','202607','202608','202609','202610','202611','202612'];
-  var D=[],id=0;
-  provs.forEach(function(p){
-    p.ant.forEach(function(ant){
-      (p.zs[ant]||[]).forEach(function(zs){
-        for(var ai=1;ai<=2;ai++){
-          var asN=zs.replace(' ZS','')+' AS-'+ai;
-          for(var fi=1;fi<=2+Math.floor(Math.random()*2);fi++){
-            var foN='CS '+zs.replace(' ZS','')+'-'+ai+'-'+fi;
-            mos.forEach(function(m){
-              id++;var rep=Math.random()>.1;
-              var r={id:id,org2:p.n,org3:zs,org4:asN,org5:foN,antenne:ant,period:m,isVAP:p.vap,completude:rep?Math.round(55+Math.random()*45):0,promptitude:rep?Math.round(35+Math.random()*60):0};
-              AG_ALL.forEach(function(ag){
-                if(!rep){r[ag]=0;r[ag+'_f']=0;return;}
-                if(!p.vap&&AG_VAP.indexOf(ag)>=0){r[ag]=0;r[ag+'_f']=0;return;}
-                var base=ag==='HPV'?Math.floor(Math.random()*15):ag==='VAR2'?Math.floor(Math.random()*25):18+Math.floor(Math.random()*55);
-                if(Math.random()<.07)base=Math.round(base*(Math.random()>.5?2.8:.15));
-                if(Math.random()<.04)base=0;
-                r[ag]=Math.max(0,base);r[ag+'_f']=r[ag]>0?Math.max(0,r[ag]-Math.floor(Math.random()*4)):0;
-              });
-              D.push(r);
-            });
-          }
-        }
+  /* ═══ DATA LOADING ═══ */
+  async function loadAll() {
+    var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
+    try {
+      var [mR, pR, zR, hmR] = await Promise.all([
+        fetch(BASE + '/meta.json?t=' + Date.now()),
+        fetch(BASE + '/by_province.json'),
+        fetch(BASE + '/by_zs.json'),
+        fetch(BASE + '/heatmap/manifest.json')
+      ]);
+      sp(50, 'Parsing...');
+      S.meta = await mR.json();
+      var byProv = await pR.json();
+      var byZS = await zR.json();
+      S.hmIndex = await hmR.json();
+      S.hmCache = {}; S.heatmap = {};
+      sp(65, 'Transformation...');
+      S.data = byZS.map(transformRecord);
+      sp(80, 'Indexation...');
+      var v = { province: S.meta.provinces || [], antenne: S.meta.antennes || [], zs: S.meta.zs || [], as: [], fosa: [], period: S.meta.months || [] };
+      S.data.forEach(function (r) {
+        if (r.org4 && v.as.indexOf(r.org4) < 0) v.as.push(r.org4);
+        if (r.org5 && v.fosa.indexOf(r.org5) < 0) v.fosa.push(r.org5);
       });
-    });
-  });
-  return D;
-}
+      Object.keys(v).forEach(function (k) { v[k].sort(); S.filters[k] = v[k].slice(); });
+      S.vals = v; S.loaded = true;
+      sp(85, 'Rendu...');
+      apFlt(); bNav(); rFlt(); render();
+      var dt = ((Date.now() - t0) / 1000).toFixed(1);
+      sp(100, (S.meta.total_records || S.data.length).toLocaleString() + ' enreg. | ' + v.period.length + ' mois | ' + (S.meta.nb_fosa || v.fosa.length) + ' FOSA', '⚡ Prêt en ' + dt + 's');
+    } catch (e) {
+      console.error(e); sp(0, '❌ ' + e.message, '❌ Erreur');
+      document.getElementById('DB').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur de chargement</h3><p>' + e.message + '</p><p style="margin-top:12px;font-size:12px;color:#888">Lancez d\'abord le workflow <code>aggregate</code> via GitHub Actions.</p></div>';
+    }
+  }
 
-/* ═══ INIT ═══ */
-function init(){
-  sp(10,'Génération...','⏳ Chargement...');
-  setTimeout(function(){
-    sp(40,'Traitement...');
-    S.data=genData();sp(65,'Indexation...');
-    var v={province:[],antenne:[],zs:[],as:[],fosa:[],period:[]};
-    S.data.forEach(function(r){
-      if(r.org2&&v.province.indexOf(r.org2)<0)v.province.push(r.org2);
-      if(r.antenne&&v.antenne.indexOf(r.antenne)<0)v.antenne.push(r.antenne);
-      if(r.org3&&v.zs.indexOf(r.org3)<0)v.zs.push(r.org3);
-      if(r.org4&&v.as.indexOf(r.org4)<0)v.as.push(r.org4);
-      if(r.org5&&v.fosa.indexOf(r.org5)<0)v.fosa.push(r.org5);
-      if(r.period&&v.period.indexOf(r.period)<0)v.period.push(r.period);
-    });
-    Object.keys(v).forEach(function(k){v[k].sort();S.filters[k]=v[k].slice();});
-    S.vals=v;S.loaded=true;sp(85,'Rendu...');
-    apFlt();bNav();rFlt();render();
-    sp(100,S.data.length+' enreg. | '+v.period.length+' mois | '+v.fosa.length+' FOSA','✅ Prêt — '+S.data.length+' enregistrements');
-  },200);
-}
+  /* ═══ HEATMAP ON-DEMAND ═══ */
+  async function loadHeatmap() {
+    var provs = S.filters.province || [];
+    var toLoad = provs.filter(function (p) { return S.hmIndex[p] && !S.hmCache[p]; });
+    if (toLoad.length) {
+      var fetches = toLoad.map(function (p) {
+        return fetch(BASE + '/heatmap/' + S.hmIndex[p]).then(function (r) { return r.json(); }).then(function (d) { S.hmCache[p] = d; });
+      });
+      await Promise.all(fetches);
+    }
+    S.heatmap = {};
+    provs.forEach(function (p) { var d = S.hmCache[p]; if (d) { Object.keys(d).forEach(function (f) { S.heatmap[f] = d[f]; }); } });
+  }
 
 /* ═══ FILTERS ═══ */
 function apFlt(){
@@ -695,7 +671,7 @@ window.sSL=function(lv){
 };
 
 /* ═══ START ═══ */
-init();
+  loadAll();
 </script>
 </body>
 </html>
