@@ -1,22 +1,30 @@
 name: Aggregate dashboard data
 
 on:
-  # Trigger after fetch workflow completes
+  # Trigger after BOTH fetch workflows complete
   workflow_run:
-    workflows: ["Fetch DHIS2 Vaccination Data"]
+    workflows:
+      - "Update DHIS2 vaccination data"
+      - "Backfill DHIS2 (range)"
     types: [completed]
 
   # Manual trigger
   workflow_dispatch:
 
-  # Also trigger on data changes
+  # Also trigger on config/data changes
   push:
     branches: [main]
     paths:
       - "docs/data/monthly/**"
       - "docs/data/ou_map.json"
-      - "docs/config/rename_map.json"
+      - "docs/data/rename_map.json"
+      - "docs/data/antenne_rules.json"
       - "scripts/aggregate_dashboard.py"
+
+# Same concurrency group as fetch workflows to avoid conflicts
+concurrency:
+  group: dhis2-data
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -24,6 +32,8 @@ permissions:
 jobs:
   aggregate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     # Only run if the triggering workflow succeeded (or if manual/push trigger)
     if: >
       github.event_name != 'workflow_run' ||
@@ -32,6 +42,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -43,17 +55,23 @@ jobs:
           echo "=== ou_map.json ==="
           if [ -f docs/data/ou_map.json ]; then
             echo "EXISTS — $(wc -c < docs/data/ou_map.json) bytes"
-            echo "First 200 chars:"
-            head -c 200 docs/data/ou_map.json
-            echo ""
+            python3 -c "
+          import json
+          d = json.load(open('docs/data/ou_map.json'))
+          print(f'  Type: {type(d).__name__}, entries: {len(d)}')
+          if isinstance(d, dict):
+              k = list(d.keys())[0]
+              print(f'  Sample key: {k}')
+              print(f'  Sample val: {d[k]}')
+          "
           else
             echo "MISSING!"
           fi
 
           echo ""
           echo "=== rename_map.json ==="
-          if [ -f docs/config/rename_map.json ]; then
-            echo "EXISTS — $(wc -c < docs/config/rename_map.json) bytes"
+          if [ -f docs/data/rename_map.json ]; then
+            echo "EXISTS — $(wc -c < docs/data/rename_map.json) bytes"
           else
             echo "MISSING!"
           fi
@@ -67,29 +85,32 @@ jobs:
           fi
 
           echo ""
-          echo "=== Monthly NDJSON files ==="
+          echo "=== Monthly NDJSON ==="
           if [ -d docs/data/monthly ]; then
-            find docs/data/monthly -name "*.ndjson" -not -name "*.gz" | head -20
-            echo "Total .ndjson files: $(find docs/data/monthly -name '*.ndjson' -not -name '*.gz' | wc -l)"
-            echo "Total .ndjson.gz files: $(find docs/data/monthly -name '*.ndjson.gz' | wc -l)"
-            
+            NDIRS=$(find docs/data/monthly -mindepth 1 -maxdepth 1 -type d | wc -l)
+            NFILES=$(find docs/data/monthly -name "*.ndjson" -not -name "*.gz" | wc -l)
+            NGZFILES=$(find docs/data/monthly -name "*.ndjson.gz" | wc -l)
+            echo "  Month folders: $NDIRS"
+            echo "  .ndjson files: $NFILES"
+            echo "  .ndjson.gz files: $NGZFILES"
+
             # Show first line of first file
             FIRST=$(find docs/data/monthly -name "*.ndjson" -not -name "*.gz" | sort | head -1)
             if [ -n "$FIRST" ]; then
               echo ""
-              echo "First line of $FIRST:"
-              head -1 "$FIRST"
+              echo "  First record from $FIRST:"
+              head -1 "$FIRST" | python3 -c "
+          import sys, json
+          rec = json.loads(sys.stdin.readline())
+          keys = list(rec.keys())
+          print(f'    Fields: {len(keys)}')
+          print(f'    First 8: {keys[:8]}')
+          print(f'    OrgUnit: {rec.get(\"OrgUnit\", \"?\")}')
+          print(f'    Period:  {rec.get(\"Period\", \"?\")}')
+          " 2>/dev/null || echo "    (could not parse)"
             fi
           else
-            echo "docs/data/monthly/ NOT FOUND"
-          fi
-
-          echo ""
-          echo "=== index.json ==="
-          if [ -f docs/data/index.json ]; then
-            echo "EXISTS — $(wc -c < docs/data/index.json) bytes"
-          else
-            echo "MISSING"
+            echo "  docs/data/monthly/ NOT FOUND"
           fi
 
       - name: Run aggregation
@@ -97,34 +118,48 @@ jobs:
 
       - name: Validate output JSON
         run: |
-          echo "=== Dashboard output files ==="
+          echo "=== Dashboard output ==="
+          ERRORS=0
           if [ -d docs/data/dashboard ]; then
             for f in docs/data/dashboard/*.json; do
               if [ -f "$f" ]; then
                 SIZE=$(wc -c < "$f")
-                # Check if valid JSON
-                if python3 -c "import json; json.load(open('$f'))" 2>/dev/null; then
-                  echo "✅ $(basename $f): ${SIZE} bytes — valid JSON"
+                if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" 2>/dev/null; then
+                  echo "✅ $(basename $f): ${SIZE} bytes"
                 else
                   echo "❌ $(basename $f): ${SIZE} bytes — INVALID JSON!"
-                  echo "   First 100 chars: $(head -c 100 "$f")"
-                  exit 1
+                  head -c 200 "$f"
+                  echo ""
+                  ERRORS=$((ERRORS + 1))
                 fi
               fi
             done
+
+            if [ $ERRORS -gt 0 ]; then
+              echo "FATAL: $ERRORS invalid JSON files"
+              exit 1
+            fi
           else
-            echo "❌ docs/data/dashboard/ directory not found!"
+            echo "❌ docs/data/dashboard/ not created!"
             exit 1
           fi
 
-      - name: Commit & push
+      - name: Commit & push (rebase + retry)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add docs/data/dashboard/
           if git diff --cached --quiet; then
             echo "No changes to commit"
-          else
-            git commit -m "Update dashboard aggregated data [skip ci]"
-            git push
+            exit 0
           fi
+
+          git commit -m "Update dashboard aggregated data [skip ci]"
+
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push failed (attempt $i), retrying..."
+            sleep 5
+          done
