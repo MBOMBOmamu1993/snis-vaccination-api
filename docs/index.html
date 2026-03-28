@@ -106,7 +106,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333}
 
 <script>
 var BASE='./data/dashboard';
-var S={page:0,charts:{},meta:null,byProv:[],byZS:[],heatmap:{},filtered:{prov:[],zs:[]},filters:{},allVals:{},loaded:false};
+/* ◄ CHANGED: added hmIndex + hmCache for split heatmap files */
+var S={page:0,charts:{},meta:null,byProv:[],byZS:[],
+       heatmap:{},hmIndex:{},hmCache:{},
+       filtered:{prov:[],zs:[]},filters:{},allVals:{},loaded:false};
+
 var PAGES=[
   {title:'1. Complétude et Promptitude',render:renderP1},
   {title:'2. Cohérence-temps',render:renderP2},
@@ -120,18 +124,20 @@ function moisLabel(ym){var n=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû',
 
 function setP(pct,text,status){document.getElementById('progFill').style.width=pct+'%';document.getElementById('progText').textContent=text||'';if(status)document.getElementById('loadStatus').textContent=status;}
 
-/* ── LOAD: only 4 small files (~11 MB total) ── */
+/* ◄ CHANGED: load heatmap/_index.json instead of heatmap.json */
 async function loadAll(){
   var t0=Date.now();setP(10,'Chargement...','⏳ Chargement...');
   try{
-    var [mR,pR,zR,hR]=await Promise.all([
+    var [mR,pR,zR,hmR]=await Promise.all([
       fetch(BASE+'/meta.json?t='+Date.now()),
       fetch(BASE+'/by_province.json'),
       fetch(BASE+'/by_zs.json'),
-      fetch(BASE+'/heatmap.json')
+      fetch(BASE+'/heatmap/_index.json')
     ]);
     setP(50,'Parsing...');
-    S.meta=await mR.json();S.byProv=await pR.json();S.byZS=await zR.json();S.heatmap=await hR.json();
+    S.meta=await mR.json();S.byProv=await pR.json();S.byZS=await zR.json();
+    S.hmIndex=await hmR.json();
+    S.hmCache={};S.heatmap={};
     setP(80,'Filtres...');
     S.allVals={province:S.meta.provinces||[],antenne:S.meta.antennes||[],zs:S.meta.zs||[],period:S.meta.months||[]};
     Object.keys(S.allVals).forEach(function(k){S.filters[k]=S.allVals[k].slice();});
@@ -142,6 +148,25 @@ async function loadAll(){
     console.error(e);setP(0,'❌ '+e.message,'❌ Erreur');
     document.getElementById('dashboard').innerHTML='<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur de chargement</h3><p>'+e.message+'</p><p style="margin-top:12px;font-size:12px;color:#888">Lancez d\'abord le workflow <code>aggregate</code> via GitHub Actions.</p></div>';
   }
+}
+
+/* ◄ NEW: load heatmap split files for selected provinces, with cache */
+async function loadHeatmap(){
+  var provs=S.filters.province||[];
+  var toLoad=provs.filter(function(p){return S.hmIndex[p]&&!S.hmCache[p];});
+  if(toLoad.length){
+    var fetches=toLoad.map(function(p){
+      return fetch(BASE+'/heatmap/'+S.hmIndex[p])
+        .then(function(r){return r.json();})
+        .then(function(d){S.hmCache[p]=d;});
+    });
+    await Promise.all(fetches);
+  }
+  S.heatmap={};
+  provs.forEach(function(p){
+    var d=S.hmCache[p];
+    if(d){Object.keys(d).forEach(function(f){S.heatmap[f]=d[f];});}
+  });
 }
 
 function applyFilters(){
@@ -232,15 +257,30 @@ function renderP1(c){
     S.charts.pM=new Chart(ctx,{type:'line',data:{labels:months.map(moisLabel),datasets:[{label:'% rapporté',data:months.map(function(m){var d=byM[m];var t=sumF(d,'n'),r=sumF(d,'rap');return t?(r/t*100):0;}),borderColor:'#0b3a6f',backgroundColor:'rgba(11,58,111,.08)',fill:true,tension:.3,pointRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}}}}});
   },200);
 
-  var hm=S.heatmap;var fosas=Object.keys(hm).sort().slice(0,150);
-  if(fosas.length>0&&months.length>0){
-    var z=fosas.map(function(f){return months.map(function(m){return hm[f]&&hm[f][m]!==undefined?hm[f][m]:-1;});});
-    var hmB=document.createElement('div');hmB.className='chart-box';
-    hmB.innerHTML='<h4>Soumissions par FOSA (150 premières)</h4><div id="hmDiv" style="width:100%;height:'+Math.max(400,fosas.length*14)+'px"></div>';c.appendChild(hmB);
-    setTimeout(function(){if(!document.getElementById('hmDiv'))return;
-      Plotly.newPlot('hmDiv',[{z:z,x:months.map(moisLabel),y:fosas.map(function(f){return f.length>30?f.substring(0,28)+'…':f;}),type:'heatmap',colorscale:[[0,'#f8d7da'],[.5,'#e0e0e0'],[1,'#d4edda']],showscale:true,colorbar:{tickvals:[0,1],ticktext:['Non','Oui']}}],{margin:{l:200,r:30,t:20,b:60},xaxis:{title:'Mois',tickangle:-45},yaxis:{autorange:'reversed',dtick:1,tickfont:{size:7}}},{responsive:true});
-    },300);
-  }
+  /* ◄ CHANGED: load heatmap on-demand then render */
+  var hmBox=document.createElement('div');hmBox.className='chart-box';
+  hmBox.innerHTML='<h4>Soumissions par FOSA (150 premières)</h4><div id="hmDiv" style="text-align:center;padding:30px;color:#888"><em>⏳ Chargement heatmap…</em></div>';
+  c.appendChild(hmBox);
+
+  loadHeatmap().then(function(){
+    var hm=S.heatmap;
+    var fosas=Object.keys(hm).sort().slice(0,150);
+    if(fosas.length>0&&months.length>0){
+      var z=fosas.map(function(f){return months.map(function(m){return hm[f]&&hm[f][m]!==undefined?hm[f][m]:-1;});});
+      var el=document.getElementById('hmDiv');
+      if(!el)return;
+      el.innerHTML='';
+      el.style.cssText='width:100%;height:'+Math.max(400,fosas.length*14)+'px';
+      Plotly.newPlot(el,[{z:z,x:months.map(moisLabel),y:fosas.map(function(f){return f.length>30?f.substring(0,28)+'…':f;}),type:'heatmap',colorscale:[[0,'#f8d7da'],[.5,'#e0e0e0'],[1,'#d4edda']],showscale:true,colorbar:{tickvals:[0,1],ticktext:['Non','Oui']}}],{margin:{l:200,r:30,t:20,b:60},xaxis:{title:'Mois',tickangle:-45},yaxis:{autorange:'reversed',dtick:1,tickfont:{size:7}}},{responsive:true});
+    }else{
+      var el=document.getElementById('hmDiv');
+      if(el)el.innerHTML='<em>Aucune donnée heatmap pour cette sélection.</em>';
+    }
+  }).catch(function(e){
+    console.error('Heatmap error:',e);
+    var el=document.getElementById('hmDiv');
+    if(el)el.innerHTML='<em style="color:#e74c3c">Erreur chargement heatmap.</em>';
+  });
 }
 
 /* ══════ PAGE 2 : COHÉRENCE TEMPS ══════ */
