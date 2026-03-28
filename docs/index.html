@@ -8,808 +8,371 @@
 <script src="https://cdn.plot.ly/plotly-2.35.0.min.js" charset="utf-8"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--pri:#0b3a6f;--pri2:#1565C0;--bg:#f5f7fa;--card:#fff;--bord:#e5e7eb;--green:#27ae60;--red:#e74c3c;--orange:#f39c12;--blue:#2196F3}
-html{scroll-behavior:smooth}
-body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:#333;font-size:13px}
-
-/* ── Header ── */
-.top-header{background:linear-gradient(135deg,#0b3a6f,#1a5fa8);color:#fff;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;height:56px;box-shadow:0 2px 12px rgba(0,0,0,.15);position:sticky;top:0;z-index:1100}
-.logo{display:flex;align-items:center;font-weight:bold;font-size:13px;gap:8px}
-.logo img{height:32px;border-radius:4px}
-.title-block{text-align:center}
-.title{font-size:18px;font-weight:800;letter-spacing:.5px}
-.gen-info{font-size:10px;opacity:.8;margin-top:1px}
-.info-btn{border:2px solid rgba(255,255,255,.5);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-style:italic;font-size:16px;transition:.2s}
-.info-btn:hover{background:rgba(255,255,255,.2)}
-
-/* ── Navbar ── */
-.navbar{background:linear-gradient(135deg,#0b3a6f,#0e4a8a);display:flex;padding-left:16px;border-top:1px solid rgba(255,255,255,.1);box-shadow:0 2px 8px rgba(0,0,0,.1);position:sticky;top:56px;z-index:1050;flex-wrap:wrap}
-.nav-item{position:relative;padding:12px 18px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:.25s;border-bottom:3px solid transparent}
-.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.1);border-bottom-color:#4ea1ff}
-.dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:280px;box-shadow:0 12px 32px rgba(0,0,0,.2);border-radius:0 0 10px 10px;z-index:2000;overflow:hidden;border:1px solid rgba(0,0,0,.08)}
-.dropdown div{padding:11px 16px;cursor:pointer;color:#333;font-size:13px;font-weight:500;border-bottom:1px solid #f0f0f0;transition:.2s}
-.dropdown div:last-child{border-bottom:none}
-.dropdown div:hover{background:#e8f0fe;color:var(--pri);padding-left:20px}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;color:#333}
+.top-header{background:linear-gradient(135deg,#0b3a6f,#1a5fa8);color:#fff;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:1100;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.htitle{font-size:20px;font-weight:800;letter-spacing:.5px}
+.navbar{background:linear-gradient(135deg,#0b3a6f,#0e4a8a);display:flex;padding-left:16px;border-top:1px solid rgba(255,255,255,.1);position:sticky;top:58px;z-index:1050}
+.menu-item{position:relative;padding:13px 20px;color:#fff;cursor:pointer;font-size:13.5px;font-weight:600;white-space:nowrap;border-bottom:3px solid transparent;transition:all .25s}
+.menu-item:hover,.menu-item.active{background:rgba(255,255,255,.1);border-bottom-color:#4ea1ff}
+.dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:280px;box-shadow:0 12px 32px rgba(0,0,0,.2);border-radius:0 0 10px 10px;z-index:2000;overflow:hidden}
+.dropdown div{padding:12px 18px;cursor:pointer;color:#333;font-size:13.5px;font-weight:500;border-bottom:1px solid #f0f0f0;transition:all .2s}
+.dropdown div:hover{background:#e8f0fe;color:#0b3a6f;padding-left:22px}
 .dropdown div.active-sub{background:linear-gradient(135deg,#0b3a6f,#1565C0);color:#fff;font-weight:700}
-.nav-item:hover .dropdown{display:block}
-
-/* ── Loading ── */
-.load-bar{background:#e8f0fe;padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #d0d5dd;font-size:12px;flex-wrap:wrap}
+.menu-item:hover .dropdown{display:block}
+.load-bar{background:#e8f0fe;padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #d0d5dd;font-size:12.5px;flex-wrap:wrap}
 .load-bar .status{font-weight:700;min-width:200px}
-.prog-wrap{flex:1;min-width:200px;height:7px;background:#ddd;border-radius:4px;overflow:hidden}
-.prog-fill{height:100%;background:var(--pri);border-radius:4px;transition:width .3s}
-.prog-text{font-size:11px;color:#666;min-width:120px}
-
-/* ── Filters ── */
-.filters{background:#fff;padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;border-bottom:2px solid #e8f0fe;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.f-group{position:relative}
-.f-group label{display:block;font-size:10px;font-weight:700;color:#666;margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px}
-.f-btn{padding:7px 12px;border:2px solid #d1d5db;border-radius:8px;background:#fafbfc;cursor:pointer;font-size:12px;font-weight:600;min-width:130px;text-align:left;display:flex;justify-content:space-between;align-items:center;transition:.2s}
-.f-btn:hover{border-color:var(--pri);background:#f0f4ff}
-.f-dd{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:220px;max-height:280px;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,.15);border-radius:10px;z-index:999;padding:4px 0;border:1px solid #e5e7eb}
-.f-dd.show{display:block}
-.fd-i{display:flex;align-items:center;gap:8px;padding:5px 12px;font-size:12px;cursor:pointer;transition:.1s}
-.fd-i:hover{background:#e8f0fe}
-.fd-i input{accent-color:var(--pri)}
+.load-bar .prog-wrap{flex:1;min-width:200px;height:8px;background:#ddd;border-radius:4px;overflow:hidden}
+.load-bar .prog-fill{height:100%;background:#0b3a6f;border-radius:4px;transition:width .3s}
+.load-bar .prog-text{font-size:11px;color:#666;min-width:120px}
+.filter-section{background:#fff;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;border-bottom:2px solid #e8f0fe}
+.filter-group{position:relative}
+.filter-group label{display:block;font-size:10.5px;font-weight:700;color:#666;margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+.filter-btn{padding:8px 14px;border:2px solid #d1d5db;border-radius:8px;background:#fafbfc;cursor:pointer;font-size:12.5px;font-weight:600;min-width:140px;text-align:left;display:flex;justify-content:space-between;align-items:center;transition:all .2s}
+.filter-btn:hover{border-color:#0b3a6f;background:#f0f4ff}
+.filter-dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;min-width:220px;max-height:280px;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,.15);border-radius:10px;z-index:999;padding:4px 0;border:1px solid #e5e7eb}
+.filter-dropdown.show{display:block}
+.fd-item{display:flex;align-items:center;gap:8px;padding:5px 12px;font-size:12.5px;cursor:pointer}
+.fd-item:hover{background:#e8f0fe}
+.fd-item input[type=checkbox]{accent-color:#0b3a6f}
 .fd-all{border-bottom:1px solid #eee;font-weight:600;padding:6px 12px}
-
-/* ── Content ── */
-.container{padding:18px}
-.dashboard{background:#fff;border-radius:12px;padding:18px;min-height:400px;box-shadow:0 4px 16px rgba(0,0,0,.06);border:1px solid var(--bord);animation:fadeIn .3s ease-out}
-
-/* ── KPI ── */
-.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-.kpi{flex:1;min-width:155px;background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 4px 16px rgba(0,0,0,.06);border-left:5px solid var(--pri);text-align:center;transition:.2s;border:1px solid #f0f0f0}
-.kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
-.kpi.green{border-left-color:var(--green)}.kpi.red{border-left-color:var(--red)}.kpi.orange{border-left-color:var(--orange)}.kpi.blue{border-left-color:var(--blue)}
-.kpi .val{font-size:26px;font-weight:800;color:var(--pri)}
-.kpi .lbl{font-size:11px;font-weight:600;color:#555;margin-top:3px}
-
-/* ── Charts ── */
-.box{background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.05);margin-bottom:16px;border:1px solid #eef1f5;transition:.2s}
-.box:hover{box-shadow:0 6px 20px rgba(0,0,0,.08)}
-.box h4{font-size:14px;font-weight:700;color:var(--pri);margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #e8f0fe}
-.row2{display:flex;gap:14px;flex-wrap:wrap}
-.half{flex:1;min-width:380px}
-
-/* ── Tables ── */
-.tw{overflow-x:auto;margin-bottom:16px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
-.dt{width:100%;border-collapse:collapse;font-size:11px}
-.dt thead{background:linear-gradient(135deg,#0b3a6f,#1565C0);color:#fff;position:sticky;top:0}
-.dt th{padding:9px 10px;text-align:left;font-weight:700;white-space:nowrap;font-size:11px}
-.dt td{padding:7px 9px;border-bottom:1px solid #eee}
-.dt tbody tr:hover{background:#f0f7ff}
-.cg{background:#d1fae5!important;color:#065f46}
-.cr{background:#fee2e2!important;color:#991b1b}
-.cy{background:#fef3c7!important;color:#92400e}
-
-/* ── Section title ── */
-.sec{font-size:15px;font-weight:800;color:var(--pri);margin-bottom:14px;padding:11px 16px;background:linear-gradient(135deg,#e8f0fe,#dce8fa);border-radius:10px;display:flex;align-items:center;gap:8px;border-left:4px solid var(--pri)}
-
-/* ── Pagination ── */
-.pagi{display:flex;justify-content:center;align-items:center;gap:16px;padding:12px;margin-top:8px}
-.pagi button{padding:8px 18px;border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:.2s;box-shadow:0 2px 6px rgba(11,58,111,.2)}
-.pagi button:disabled{opacity:.35;cursor:not-allowed}
-.pagi button:not(:disabled):hover{background:var(--pri2);transform:translateY(-1px)}
-.pagi span{font-size:12px;font-weight:600}
-
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:768px){.navbar{flex-wrap:wrap}.half{min-width:100%}.kpi-row{flex-direction:column}}
+.container{padding:20px}
+.dashboard{background:#fff;border-radius:12px;padding:20px;min-height:500px;box-shadow:0 4px 16px rgba(0,0,0,.06);border:1px solid #e5e7eb}
+.kpi-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.kpi-card{flex:1;min-width:170px;background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 4px 16px rgba(0,0,0,.06);border-left:5px solid #0b3a6f;text-align:center;border:1px solid #f0f0f0;transition:transform .2s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.kpi-card.green{border-left-color:#27ae60}.kpi-card.red{border-left-color:#e74c3c}.kpi-card.orange{border-left-color:#f39c12}.kpi-card.blue{border-left-color:#2196F3}
+.kpi-value{font-size:28px;font-weight:800;color:#0b3a6f}
+.kpi-label{font-size:12px;font-weight:600;color:#555;margin-top:4px}
+.chart-box{background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,.05);margin-bottom:18px;border:1px solid #eef1f5}
+.chart-box h4{font-size:14.5px;font-weight:700;color:#0b3a6f;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #e8f0fe}
+.chart-row{display:flex;gap:16px;flex-wrap:wrap}
+.chart-half{flex:1;min-width:380px}
+.data-table-wrap{overflow-x:auto;margin-bottom:18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.data-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.data-table thead{background:linear-gradient(135deg,#0b3a6f,#1565C0);color:#fff;position:sticky;top:0}
+.data-table th{padding:10px 12px;text-align:left;font-weight:700;white-space:nowrap}
+.data-table td{padding:8px 10px;border-bottom:1px solid #eee}
+.data-table tbody tr:hover{background:#f0f7ff}
+.cell-red{background:#fee2e2!important;color:#991b1b}
+.section-title{font-size:16px;font-weight:800;color:#0b3a6f;margin-bottom:16px;padding:12px 18px;background:linear-gradient(135deg,#e8f0fe,#dce8fa);border-radius:10px;display:flex;align-items:center;gap:8px;border-left:4px solid #0b3a6f}
+.sub-tabs{display:flex;margin-bottom:18px;border-bottom:3px solid #0b3a6f;background:#fff;border-radius:10px 10px 0 0;overflow:hidden}
+.sub-tab{padding:12px 20px;cursor:pointer;font-size:13px;font-weight:600;color:#555;border-bottom:4px solid transparent}
+.sub-tab:hover{background:#e8f0fe;color:#0b3a6f}
+.sub-tab.active{color:#0b3a6f;border-bottom-color:#0b3a6f;font-weight:800;background:#f5f8ff}
+.pagination{display:flex;justify-content:center;align-items:center;gap:16px;padding:14px;margin-top:10px}
+.pagination button{padding:9px 20px;border:none;background:#0b3a6f;color:#fff;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:700}
+.pagination button:disabled{opacity:.35;cursor:not-allowed}
+.pagination button:not(:disabled):hover{background:#1565C0}
+.pagination span{font-size:13px;font-weight:600;color:#333}
+@media(max-width:768px){.navbar{flex-wrap:wrap}.chart-half{min-width:100%}.kpi-row{flex-direction:column}}
 </style>
 </head>
 <body>
 
 <div class="top-header">
-  <div class="logo">🏥 PEV – RDC</div>
-  <div class="title-block">
-    <div class="title">Dashboard PEV de routine</div>
-    <div class="gen-info" id="genInfo"></div>
-  </div>
-  <div class="info-btn" title="Information">i</div>
+  <div style="display:flex;align-items:center;gap:10px;font-weight:bold;font-size:14px">🏥 PEV</div>
+  <div class="htitle">Dashboard PEV de routine – RDC</div>
+  <div style="border:2px solid rgba(255,255,255,.5);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-style:italic;font-size:18px;color:#fff" title="Info">i</div>
 </div>
 
 <div class="navbar" id="mainNav">
-  <div class="nav-item active" id="navOQD">
-    Outil de qualité ▼
-    <div class="dropdown" id="ddOQD">
-      <div class="active-sub" onclick="goOQD(0)">1. Complétude et Promptitude</div>
-      <div onclick="goOQD(1)">2. Cohérence-temps</div>
-      <div onclick="goOQD(2)">3. Cohérence-donnée</div>
-      <div onclick="goOQD(3)">4. Valeurs atypiques</div>
-      <div onclick="goOQD(4)">5. Score qualité</div>
+  <div class="menu-item active" id="menuOQD">Outil qualité données ▼
+    <div class="dropdown" id="dropdownOQD">
+      <div class="active-sub" onclick="event.stopPropagation();goTo(0)">1. Complétude et Promptitude</div>
+      <div onclick="event.stopPropagation();goTo(1)">2. Cohérence-temps</div>
+      <div onclick="event.stopPropagation();goTo(2)">3. Cohérence-donnée</div>
+      <div onclick="event.stopPropagation();goTo(3)">4. Valeurs atypiques</div>
+      <div onclick="event.stopPropagation();goTo(4)">5. Score qualité</div>
     </div>
   </div>
-  <div class="nav-item" onclick="loadTab('zs')">Zone de Santé</div>
-  <div class="nav-item" onclick="loadTab('nat')">National</div>
-  <div class="nav-item" onclick="loadTab('apercu')">Aperçu général</div>
 </div>
 
 <div class="load-bar" id="loadBar">
-  <div class="status" id="loadSt">⏳ Chargement…</div>
-  <div class="prog-wrap"><div class="prog-fill" id="pFill" style="width:0%"></div></div>
-  <div class="prog-text" id="pText"></div>
+  <div class="status" id="loadStatus">⏳ Chargement...</div>
+  <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  <div class="prog-text" id="progText"></div>
 </div>
 
-<div class="filters" id="filterSec"></div>
+<div class="filter-section" id="filterSection"></div>
 
 <div class="container">
-  <div class="dashboard" id="dash"></div>
-  <div class="pagi" id="pagi" style="display:none">
-    <button id="bPrev" onclick="chPage(-1)" disabled>◀ Précédent</button>
-    <span id="pInfo"></span>
-    <button id="bNext" onclick="chPage(1)">Suivant ▶</button>
+  <div class="dashboard" id="dashboard"></div>
+  <div class="pagination" id="paginationBar" style="display:none">
+    <button id="btnPrev" onclick="changePage(-1)" disabled>◀ Précédent</button>
+    <span id="pageInfo"></span>
+    <button id="btnNext" onclick="changePage(1)">Suivant ▶</button>
   </div>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════
-   DASHBOARD PEV – RDC  v9.0
-   Champs réels: _Province, _Antenne, _YM
-   n, rap, comp, prompt
-   BCG_0_11, DTC1_0_11 … VAA_0_11
-   ═══════════════════════════════════════════ */
+var BASE='./data/dashboard';
+var S={page:0,charts:{},meta:null,byProv:[],byZS:[],
+       heatmap:{},hmIndex:{},hmCache:{},
+       filtered:{prov:[],zs:[]},filters:{},allVals:{},loaded:false};
 
-var B='./data/dashboard';
-
-/* ── ANTIGÈNES EXACTS ── */
-var AG=[
-  'BCG_0_11','DTC1_0_11','DTC2_0_11','DTC3_0_11',
-  'VPO0_0_11','VPO1_0_11','VPO2_0_11','VPO3_0_11',
-  'VPI1_0_11','VPI2_0_11',
-  'ROTA1_0_11','ROTA2_0_11','ROTA3_0_11',
-  'PCV13_1_0_11','PCV13_2_0_11','PCV13_3_0_11',
-  'VAR1_0_11','VAR2_0_11','VAA_0_11'
+var PAGES=[
+  {title:'1. Complétude et Promptitude',render:renderP1},
+  {title:'2. Cohérence-temps',render:renderP2},
+  {title:'3. Cohérence-donnée',render:renderP3},
+  {title:'4. Valeurs atypiques',render:renderP4},
+  {title:'5. Score qualité des données',render:renderP5}
 ];
+var AG_MAP={BCG:'BCG_0_11',VPO0:'VPO0_0_11',DTC1:'DTC1_0_11',VPO1:'VPO1_0_11',ROTA1:'ROTA1_0_11','PCV13_1':'PCV13_1_0_11',DTC2:'DTC2_0_11',VPO2:'VPO2_0_11',ROTA2:'ROTA2_0_11','PCV13_2':'PCV13_2_0_11',DTC3:'DTC3_0_11',VPO3:'VPO3_0_11',VPI1:'VPI1_0_11',ROTA3:'ROTA3_0_11','PCV13_3':'PCV13_3_0_11',VAR1:'VAR1_0_11',VPI2:'VPI2_0_11',VAR2:'VAR2_0_11',VAA:'VAA_0_11'};
+function agL(a){var m={BCG:'BCG',VPO0:'VPO0',DTC1:'DTC1/Penta1',VPO1:'VPO1',ROTA1:'ROTA1',PCV13_1:'PCV13-1',DTC2:'DTC2/Penta2',VPO2:'VPO2',ROTA2:'ROTA2',PCV13_2:'PCV13-2',DTC3:'DTC3/Penta3',VPO3:'VPO3',VPI1:'VPI1',ROTA3:'ROTA3',PCV13_3:'PCV13-3',VAR1:'VAR1',VPI2:'VPI2',VAR2:'VAR2',VAA:'VAA'};return m[a]||a;}
+function moisLabel(ym){var n=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return n[parseInt(ym.substring(4,6),10)-1]+' '+ym.substring(0,4);}
 
-/* Display names */
-var NOM={
-  BCG_0_11:'BCG',
-  DTC1_0_11:'DTC1',DTC2_0_11:'DTC2',DTC3_0_11:'DTC3',
-  VPO0_0_11:'VPO0',VPO1_0_11:'VPO1',VPO2_0_11:'VPO2',VPO3_0_11:'VPO3',
-  VPI1_0_11:'VPI1',VPI2_0_11:'VPI2',
-  ROTA1_0_11:'ROTA1',ROTA2_0_11:'ROTA2',ROTA3_0_11:'ROTA3',
-  PCV13_1_0_11:'PCV13-1',PCV13_2_0_11:'PCV13-2',PCV13_3_0_11:'PCV13-3',
-  VAR1_0_11:'VAR1',VAR2_0_11:'VAR2',VAA_0_11:'VAA'
-};
-function nm(f){return NOM[f]||f;}
+function setP(pct,text,status){document.getElementById('progFill').style.width=pct+'%';document.getElementById('progText').textContent=text||'';if(status)document.getElementById('loadStatus').textContent=status;}
 
-/* Key antigens for summary charts */
-var KEY_AG=['BCG_0_11','DTC1_0_11','DTC3_0_11','VPO3_0_11','VPI1_0_11','VAR1_0_11','ROTA1_0_11','PCV13_1_0_11'];
-var COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1565C0','#e67e22','#00897B'];
-
-/* Same-age groups */
-var SAME_AGE={
-  'Naissance':['BCG_0_11','VPO0_0_11'],
-  '6 sem':['DTC1_0_11','VPO1_0_11','ROTA1_0_11','PCV13_1_0_11'],
-  '10 sem':['DTC2_0_11','VPO2_0_11','ROTA2_0_11','PCV13_2_0_11'],
-  '14 sem':['DTC3_0_11','VPO3_0_11','VPI1_0_11','ROTA3_0_11','PCV13_3_0_11'],
-  '9 mois':['VAR1_0_11','VPI2_0_11','VAA_0_11']
-};
-
-/* Dropout: DTC1 → DTC3 */
-var D1='DTC1_0_11', D3='DTC3_0_11';
-
-/* ── State ── */
-var S={tab:'oqd',pg:0,tp:5,byP:[],byZ:[],meta:null,fP:[],fZ:[],charts:{},fl:{},av:{},ok:false};
-
-/* ── Utils ── */
-function v(r,f){var x=r[f];return typeof x==='number'?x:(parseFloat(x)||0);}
-function s(r,f){return(r[f]||'').toString().trim();}
-function prov(r){return s(r,'_Province');}
-function ant(r){return s(r,'_Antenne');}
-function ym(r){return s(r,'_YM');}
-function zs(r){return s(r,'_ZS')||s(r,'_Antenne');}
-function fmt(n){return n?n.toLocaleString('fr-FR'):'0';}
-function pct(n){return n!=null?n.toFixed(1)+'%':'—';}
-function mL(y){if(!y)return'';var n=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];var m=parseInt(y.substring(4,6),10);return n[(m-1)%12]+' '+y.substring(0,4);}
-function sum(rows,f){return rows.reduce(function(a,r){return a+v(r,f);},0);}
-function totD(rows){var t=0;AG.forEach(function(a){t+=sum(rows,a);});return t;}
-function grp(arr,fn){var g={};arr.forEach(function(r){var k=typeof fn==='function'?fn(r):s(r,fn);if(!k)k='?';if(!g[k])g[k]=[];g[k].push(r);});return g;}
-function dropout(d1,d3){return d1>0?((d1-d3)/d1)*100:null;}
-function setP(p,t,st){document.getElementById('pFill').style.width=p+'%';if(t)document.getElementById('pText').textContent=t;if(st)document.getElementById('loadSt').textContent=st;}
-function avg(arr){if(!arr.length)return 0;return arr.reduce(function(a,b){return a+b;},0)/arr.length;}
-
-function movAvg(data,orgFn,orgVal,ag,curYM,n){
-  var pts=data.filter(function(r){return orgFn(r)===orgVal;}).map(function(r){return{m:ym(r),val:v(r,ag)};}).filter(function(x){return x.m<curYM;}).sort(function(a,b){return b.m.localeCompare(a.m);}).slice(0,n);
-  if(!pts.length)return null;
-  return pts.reduce(function(a,x){return a+x.val;},0)/pts.length;
-}
-
-/* ── Load data ── */
-async function init(){
-  var t0=Date.now();
-  setP(5,'','⏳ Chargement…');
+/* ── LOAD ── */
+async function loadAll(){
+  var t0=Date.now();setP(10,'Chargement...','⏳ Chargement...');
   try{
-    setP(10,'meta.json…');
-    var mR=await fetch(B+'/meta.json?t='+Date.now());
-    setP(25,'by_province.json…');
-    var pR=await fetch(B+'/by_province.json?t='+Date.now());
-    setP(50,'by_zs.json…');
-    var zR=await fetch(B+'/by_zs.json?t='+Date.now());
-    if(!mR.ok)throw new Error('meta.json: '+mR.status);
-    if(!pR.ok)throw new Error('by_province.json: '+pR.status);
-    if(!zR.ok)throw new Error('by_zs.json: '+zR.status);
-
-    setP(70,'Parsing…');
-    S.meta=await mR.json();
-    S.byP=await pR.json();
-    S.byZ=await zR.json();
-
-    /* Check by_zs — if empty or has no _ZS, use byP with _Antenne as ZS proxy */
-    if(!S.byZ.length||!S.byZ[0]._ZS){
-      console.log('ℹ️ by_zs vide ou sans _ZS — utilisation de by_province avec _Antenne comme ZS');
-      S.byZ=S.byP;
-    }
-
-    console.log('📋 Sample byP:',S.byP[0]);
-    console.log('📋 Sample byZ:',S.byZ[0]);
-    console.log('📋 Keys byP:',Object.keys(S.byP[0]));
-
-    if(S.meta.generated_at) document.getElementById('genInfo').textContent='Données: '+S.meta.generated_at;
-
-    setP(80,'Filtres…');
-    var provs=new Set(),ants=new Set(),periods=new Set();
-    S.byP.forEach(function(r){provs.add(prov(r));ants.add(ant(r));periods.add(ym(r));});
-
-    S.av={province:[...provs].filter(Boolean).sort(),antenne:[...ants].filter(Boolean).sort(),period:[...periods].filter(Boolean).sort()};
-    S.fl={province:S.av.province.slice(),antenne:S.av.antenne.slice(),period:S.av.period.slice()};
-
-    S.ok=true;
-    applyF(); renderF(); render();
+    var [mR,pR,zR,hmR]=await Promise.all([
+      fetch(BASE+'/meta.json?t='+Date.now()),
+      fetch(BASE+'/by_province.json'),
+      fetch(BASE+'/by_zs.json'),
+      fetch(BASE+'/heatmap/manifest.json')
+    ]);
+    setP(50,'Parsing...');
+    S.meta=await mR.json();S.byProv=await pR.json();S.byZS=await zR.json();
+    S.hmIndex=await hmR.json();
+    S.hmCache={};S.heatmap={};
+    setP(80,'Filtres...');
+    S.allVals={province:S.meta.provinces||[],antenne:S.meta.antennes||[],zs:S.meta.zs||[],period:S.meta.months||[]};
+    Object.keys(S.allVals).forEach(function(k){S.filters[k]=S.allVals[k].slice();});
+    S.loaded=true;applyFilters();renderFilters();renderPage();
     var dt=((Date.now()-t0)/1000).toFixed(1);
-    setP(100,fmt(S.byP.length)+' lig. Prov | '+fmt(S.byZ.length)+' lig. ZS | '+S.av.period.length+' mois | '+S.av.province.length+' prov','✅ Prêt en '+dt+'s');
+    setP(100,S.meta.total_records.toLocaleString()+' enreg. | '+S.meta.months.length+' mois | '+S.meta.nb_fosa+' FOSA','⚡ Prêt en '+dt+'s');
   }catch(e){
-    console.error('❌',e);
-    setP(0,'','❌ '+e.message);
-    document.getElementById('dash').innerHTML='<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur</h3><p>'+e.message+'</p></div>';
+    console.error(e);setP(0,'❌ '+e.message,'❌ Erreur');
+    document.getElementById('dashboard').innerHTML='<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur de chargement</h3><p>'+e.message+'</p><p style="margin-top:12px;font-size:12px;color:#888">Lancez d\'abord le workflow <code>aggregate</code> via GitHub Actions.</p></div>';
   }
 }
 
-/* ── Filters ── */
-function applyF(){
-  var f=S.fl;
-  S.fP=S.byP.filter(function(r){
-    if(f.province.indexOf(prov(r))<0)return false;
-    if(f.antenne.indexOf(ant(r))<0)return false;
-    if(f.period.indexOf(ym(r))<0)return false;
-    return true;
-  });
-  S.fZ=S.byZ.filter(function(r){
-    if(f.province.indexOf(prov(r))<0)return false;
-    if(f.period.indexOf(ym(r))<0)return false;
-    return true;
+/* ── Load heatmap on-demand per province ── */
+async function loadHeatmap(){
+  var provs=S.filters.province||[];
+  var toLoad=provs.filter(function(p){return S.hmIndex[p]&&!S.hmCache[p];});
+  if(toLoad.length){
+    var fetches=toLoad.map(function(p){
+      return fetch(BASE+'/heatmap/'+S.hmIndex[p])
+        .then(function(r){return r.json();})
+        .then(function(d){S.hmCache[p]=d;});
+    });
+    await Promise.all(fetches);
+  }
+  S.heatmap={};
+  provs.forEach(function(p){
+    var d=S.hmCache[p];
+    if(d){Object.keys(d).forEach(function(f){S.heatmap[f]=d[f];});}
   });
 }
 
-function renderF(){
-  var c=document.getElementById('filterSec');c.innerHTML='';
-  var dims=[['province','Province',S.av.province],['antenne','Antenne',S.av.antenne],['period','Période',S.av.period]];
-  dims.forEach(function(d){
-    var key=d[0],label=d[1],all=d[2],sel=S.fl[key];
-    var g=document.createElement('div');g.className='f-group';
-    var lb=document.createElement('label');lb.textContent=label;g.appendChild(lb);
-    var btn=document.createElement('button');btn.className='f-btn';
-    btn.innerHTML='<span>'+(sel.length===all.length?'Tout ('+all.length+')':sel.length+'/'+all.length)+'</span><span>▼</span>';
-    btn.onclick=function(){toggleDD(key);};g.appendChild(btn);
-    var dd=document.createElement('div');dd.className='f-dd';dd.id='dd-'+key;
-    /* Select all */
-    var aDiv=document.createElement('div');aDiv.className='fd-i fd-all';
-    var aCb=document.createElement('input');aCb.type='checkbox';aCb.checked=sel.length===all.length;
-    aCb.onchange=function(){S.fl[key]=aCb.checked?all.slice():[];applyF();renderF();render();};
-    aDiv.appendChild(aCb);var sp=document.createElement('span');sp.textContent='Tout';aDiv.appendChild(sp);dd.appendChild(aDiv);
-    all.forEach(function(val){
-      var item=document.createElement('div');item.className='fd-i';
-      var cb=document.createElement('input');cb.type='checkbox';cb.checked=sel.indexOf(val)>=0;
-      cb.onchange=function(){
-        if(cb.checked&&sel.indexOf(val)<0)S.fl[key].push(val);
-        if(!cb.checked)S.fl[key]=S.fl[key].filter(function(x){return x!==val;});
-        applyF();renderF();render();
-      };
-      item.appendChild(cb);
-      var s2=document.createElement('span');s2.textContent=(key==='period'?mL(val):val);item.appendChild(s2);
-      dd.appendChild(item);
+function applyFilters(){
+  var f=S.filters;
+  function ok(r){
+    if(f.province.length<S.allVals.province.length&&!f.province.includes(r._Province))return false;
+    if(f.antenne.length<S.allVals.antenne.length&&!f.antenne.includes(r._Antenne))return false;
+    if(f.zs.length<S.allVals.zs.length&&!f.zs.includes(r._ZS))return false;
+    if(f.period.length<S.allVals.period.length&&!f.period.includes(r._YM))return false;
+    return true;
+  }
+  S.filtered={prov:S.byProv.filter(ok),zs:S.byZS.filter(ok)};
+}
+
+function renderFilters(){
+  var c=document.getElementById('filterSection');c.innerHTML='';
+  var dims=['province','antenne','zs','period'];
+  var labels={province:'Province',antenne:'Antenne PEV',zs:'Zone de Santé',period:'Période'};
+  dims.forEach(function(dim){
+    var g=document.createElement('div');g.className='filter-group';
+    var l=document.createElement('label');l.textContent=labels[dim];g.appendChild(l);
+    var b=document.createElement('button');b.className='filter-btn';
+    var sel=S.filters[dim],tot=S.allVals[dim].length;
+    b.innerHTML='<span>'+(sel.length===tot?'Tout':sel.length+' sél.')+'</span><span>▼</span>';
+    b.onclick=function(){var dd=document.getElementById('fd-'+dim);document.querySelectorAll('.filter-dropdown').forEach(function(el){if(el.id!=='fd-'+dim)el.classList.remove('show');});dd.classList.toggle('show');};
+    g.appendChild(b);
+    var dd=document.createElement('div');dd.className='filter-dropdown';dd.id='fd-'+dim;
+    var aDiv=document.createElement('div');aDiv.className='fd-item fd-all';
+    var aCb=document.createElement('input');aCb.type='checkbox';aCb.checked=sel.length===tot;
+    aCb.onchange=function(){S.filters[dim]=aCb.checked?S.allVals[dim].slice():[];applyFilters();renderFilters();renderPage();};
+    aDiv.appendChild(aCb);var aS=document.createElement('span');aS.textContent='Tout';aDiv.appendChild(aS);dd.appendChild(aDiv);
+    S.allVals[dim].forEach(function(v){
+      var it=document.createElement('div');it.className='fd-item';
+      var cb=document.createElement('input');cb.type='checkbox';cb.checked=S.filters[dim].includes(v);
+      cb.onchange=function(){if(cb.checked&&!S.filters[dim].includes(v))S.filters[dim].push(v);if(!cb.checked)S.filters[dim]=S.filters[dim].filter(function(x){return x!==v;});applyFilters();renderFilters();renderPage();};
+      it.appendChild(cb);var sp=document.createElement('span');sp.textContent=(dim==='period'?moisLabel(v):v);it.appendChild(sp);dd.appendChild(it);
     });
     g.appendChild(dd);c.appendChild(g);
   });
 }
-function toggleDD(k){var d=document.getElementById('dd-'+k);document.querySelectorAll('.f-dd').forEach(function(e){if(e.id!=='dd-'+k)e.classList.remove('show');});d.classList.toggle('show');}
-document.addEventListener('click',function(e){if(!e.target.closest('.f-group'))document.querySelectorAll('.f-dd').forEach(function(e){e.classList.remove('show');});});
+document.addEventListener('click',function(e){if(!e.target.closest('.filter-group'))document.querySelectorAll('.filter-dropdown').forEach(function(el){el.classList.remove('show');});});
 
-/* ── Navigation ── */
-function goOQD(i){
-  S.tab='oqd';S.pg=i;S.tp=5;
-  document.querySelectorAll('.nav-item').forEach(function(e){e.classList.remove('active');});
-  document.getElementById('navOQD').classList.add('active');
-  document.getElementById('ddOQD').querySelectorAll('div').forEach(function(e,j){e.classList.toggle('active-sub',j===i);});
-  if(S.ok){applyF();renderF();render();}window.scrollTo({top:0});
-}
-function loadTab(t){
-  S.tab=t;S.pg=0;S.tp=1;
-  document.querySelectorAll('.nav-item').forEach(function(e){e.classList.remove('active');});
-  if(S.ok){applyF();renderF();render();}window.scrollTo({top:0});
-}
-function chPage(d){var n=S.pg+d;if(n>=0&&n<S.tp){S.pg=n;goOQD(n);}}
-function render(){
+function goTo(p){S.page=p;document.getElementById('dropdownOQD').querySelectorAll('div').forEach(function(el,i){el.classList.toggle('active-sub',i===p);});window.scrollTo({top:0});if(S.loaded)renderPage();}
+function changePage(d){var n=S.page+d;if(n>=0&&n<5){S.page=n;document.getElementById('dropdownOQD').querySelectorAll('div').forEach(function(el,i){el.classList.toggle('active-sub',i===S.page);});window.scrollTo({top:0});renderPage();}}
+
+function renderPage(){
   Object.values(S.charts).forEach(function(c){try{c.destroy();}catch(e){}});S.charts={};
-  var d=document.getElementById('dash');d.innerHTML='';
-  if(S.tab==='oqd'){S.tp=5;PAGES[S.pg].fn(d);}
-  else if(S.tab==='zs')tabZS(d);
-  else if(S.tab==='nat')tabNat(d);
-  else if(S.tab==='apercu')tabApercu(d);
-  updPagi();
-}
-function updPagi(){
-  var b=document.getElementById('pagi');
-  if(S.tp<=1){b.style.display='none';return;}
-  b.style.display='flex';
-  document.getElementById('pInfo').textContent='Page '+(S.pg+1)+' / '+S.tp;
-  document.getElementById('bPrev').disabled=S.pg===0;
-  document.getElementById('bNext').disabled=S.pg>=S.tp-1;
+  var d=document.getElementById('dashboard');d.innerHTML='';
+  var pg=PAGES[S.page];
+  var t=document.createElement('div');t.className='section-title';t.innerHTML='<span>📊</span> '+pg.title;d.appendChild(t);
+  var c=document.createElement('div');c.id='pageContent';d.appendChild(c);
+  try{pg.render(c);}catch(e){console.error(e);c.innerHTML='<p style="color:red;padding:20px">'+e.message+'</p>';}
+  var bar=document.getElementById('paginationBar');bar.style.display='flex';
+  document.getElementById('pageInfo').textContent='Page '+(S.page+1)+'/5';
+  document.getElementById('btnPrev').disabled=S.page===0;
+  document.getElementById('btnNext').disabled=S.page>=4;
 }
 
-var PAGES=[
-  {fn:p1_completude},
-  {fn:p2_coherenceTemps},
-  {fn:p3_coherenceDonnee},
-  {fn:p4_atypiques},
-  {fn:p5_score}
-];
+function groupBy(a,fn){var g={};a.forEach(function(r){var k=fn(r);if(!g[k])g[k]=[];g[k].push(r);});return g;}
+function sumF(a,f){return a.reduce(function(s,r){return s+(r[f]||0);},0);}
+function avgF(a,f){return a.length?sumF(a,f)/a.length:0;}
 
-/* ═══════════════════════════════════════
-   P1 : COMPLÉTUDE ET PROMPTITUDE
-   ═══════════════════════════════════════ */
-function p1_completude(d){
-  sec(d,'📊','1. Complétude et Promptitude');
-  var data=S.fP;
-  var tN=sum(data,'n'),tR=sum(data,'rap'),tD=totD(data);
-  var avgComp=avg(data.map(function(r){return v(r,'comp');}));
-  var avgPr=avg(data.map(function(r){return v(r,'prompt');}));
-  var nProv=new Set(data.map(prov)).size;
+/* ══════ PAGE 1 ══════ */
+function renderP1(c){
+  var data=S.filtered.zs;
+  var tN=sumF(data,'n'),tR=sumF(data,'rap'),pR=tN?(tR/tN*100):0;
+  var aC=avgF(data,'comp'),aP=avgF(data,'prompt');
+  c.innerHTML='<div class="kpi-row">'+
+    '<div class="kpi-card green"><div class="kpi-value">'+tR.toLocaleString()+'</div><div class="kpi-label">Rapportantes</div></div>'+
+    '<div class="kpi-card red"><div class="kpi-value">'+(tN-tR).toLocaleString()+'</div><div class="kpi-label">Non-rapportantes</div></div>'+
+    '<div class="kpi-card blue"><div class="kpi-value">'+pR.toFixed(1)+'%</div><div class="kpi-label">% rapportage</div></div>'+
+    '<div class="kpi-card orange"><div class="kpi-value">'+aC.toFixed(1)+'%</div><div class="kpi-label">Complétude moy.</div></div>'+
+    '<div class="kpi-card"><div class="kpi-value">'+(S.meta?S.meta.nb_fosa:0).toLocaleString()+'</div><div class="kpi-label">FOSA</div></div></div>';
 
-  d.innerHTML+=kpiRow([
-    kpi(pct(avgComp),'Complétude moyenne','green'),
-    kpi(pct(avgPr),'Promptitude moyenne','orange'),
-    kpi(fmt(tR)+'/'+fmt(tN),'Rapports reçus/attendus','blue'),
-    kpi(fmt(tD),'Total doses',''),
-    kpi(nProv+' Prov','Provinces','')+
-    kpi(S.av.period.length+' mois','Périodes','')
-  ]);
-
-  /* Complétude par Province */
-  var gP=grp(data,prov);var pL=Object.keys(gP).filter(function(k){return k!=='?';}).sort();
-  box(d,'compProv','Complétude moyenne par Province','canvas');
-  after(function(){
-    var ctx=document.getElementById('compProv');if(!ctx)return;
-    S.charts.cp=new Chart(ctx,{type:'bar',data:{labels:pL.map(short),datasets:[
-      {label:'Complétude %',data:pL.map(function(p){return avg(gP[p].map(function(r){return v(r,'comp');}));}),backgroundColor:'#2196F3',borderRadius:3},
-      {label:'Promptitude %',data:pL.map(function(p){return avg(gP[p].map(function(r){return v(r,'prompt');}));}),backgroundColor:'#FF9800',borderRadius:3}
-    ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}},x:{ticks:{maxRotation:45,font:{size:9}}}}}});
+  [{l:'Province',d:S.filtered.prov,k:'_Province'},{l:'Antenne PEV',d:data,k:'_Antenne'},{l:'Zone de Santé',d:data,k:'_ZS'}].forEach(function(lv,i){
+    var g=groupBy(lv.d,function(r){return r[lv.k]||'';});var labs=Object.keys(g).filter(Boolean).sort();
+    var cD=labs.map(function(k){return avgF(g[k],'comp');});var pD=labs.map(function(k){return avgF(g[k],'prompt');});
+    var box=document.createElement('div');box.className='chart-box';
+    box.innerHTML='<h4>Complétude et Promptitude par '+lv.l+'</h4><canvas id="cp'+i+'" height="80"></canvas>';c.appendChild(box);
+    setTimeout(function(){var ctx=document.getElementById('cp'+i);if(!ctx)return;
+      S.charts['cp'+i]=new Chart(ctx,{type:'bar',data:{labels:labs.map(function(l){return l.length>22?l.substring(0,20)+'…':l;}),datasets:[{label:'Complétude (%)',data:cD,backgroundColor:'#2196F3',borderRadius:3},{label:'Promptitude (%)',data:pD,backgroundColor:'#FF9800',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}},x:{ticks:{maxRotation:45,font:{size:9}}}}}});
+    },50+i*30);
   });
 
-  /* Complétude & BCG/DTC3 par Province */
-  box(d,'bcgProv','BCG et DTC3 par Province','canvas');
-  after(function(){
-    var ctx=document.getElementById('bcgProv');if(!ctx)return;
-    S.charts.bp=new Chart(ctx,{type:'bar',data:{labels:pL.map(short),datasets:[
-      {label:'BCG',data:pL.map(function(p){return sum(gP[p],'BCG_0_11');}),backgroundColor:'#2196F3',borderRadius:3},
-      {label:'DTC3',data:pL.map(function(p){return sum(gP[p],'DTC3_0_11');}),backgroundColor:'#FF9800',borderRadius:3}
-    ]},options:{responsive:true,scales:{y:{beginAtZero:true},x:{ticks:{maxRotation:45,font:{size:9}}}}}});
+  var byM=groupBy(data,function(r){return r._YM||'';});var months=Object.keys(byM).filter(Boolean).sort();
+  var mB=document.createElement('div');mB.className='chart-box';mB.innerHTML='<h4>% rapportage par mois</h4><canvas id="pM" height="60"></canvas>';c.appendChild(mB);
+  setTimeout(function(){var ctx=document.getElementById('pM');if(!ctx)return;
+    S.charts.pM=new Chart(ctx,{type:'line',data:{labels:months.map(moisLabel),datasets:[{label:'% rapporté',data:months.map(function(m){var d=byM[m];var t=sumF(d,'n'),r=sumF(d,'rap');return t?(r/t*100):0;}),borderColor:'#0b3a6f',backgroundColor:'rgba(11,58,111,.08)',fill:true,tension:.3,pointRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}}}}});
+  },200);
+
+  /* Heatmap async */
+  var hmBox=document.createElement('div');hmBox.className='chart-box';
+  hmBox.innerHTML='<h4>Soumissions par FOSA (150 premières)</h4><div id="hmDiv" style="text-align:center;padding:30px;color:#888"><em>⏳ Chargement heatmap…</em></div>';
+  c.appendChild(hmBox);
+
+  loadHeatmap().then(function(){
+    var hm=S.heatmap;
+    var fosas=Object.keys(hm).sort().slice(0,150);
+    if(fosas.length>0&&months.length>0){
+      var z=fosas.map(function(f){return months.map(function(m){return hm[f]&&hm[f][m]!==undefined?hm[f][m]:-1;});});
+      var el=document.getElementById('hmDiv');
+      if(!el)return;
+      el.innerHTML='';
+      el.style.cssText='width:100%;height:'+Math.max(400,fosas.length*14)+'px';
+      Plotly.newPlot(el,[{z:z,x:months.map(moisLabel),y:fosas.map(function(f){return f.length>30?f.substring(0,28)+'…':f;}),type:'heatmap',colorscale:[[0,'#f8d7da'],[.5,'#e0e0e0'],[1,'#d4edda']],showscale:true,colorbar:{tickvals:[0,1],ticktext:['Non','Oui']}}],{margin:{l:200,r:30,t:20,b:60},xaxis:{title:'Mois',tickangle:-45},yaxis:{autorange:'reversed',dtick:1,tickfont:{size:7}}},{responsive:true});
+    }else{
+      var el=document.getElementById('hmDiv');
+      if(el)el.innerHTML='<em>Aucune donnée heatmap pour cette sélection.</em>';
+    }
+  }).catch(function(e){
+    console.error('Heatmap error:',e);
+    var el=document.getElementById('hmDiv');
+    if(el)el.innerHTML='<em style="color:#e74c3c">Erreur chargement heatmap.</em>';
+  });
+}
+
+/* ══════ PAGE 2 ══════ */
+function renderP2(c){
+  var data=S.filtered.zs;var months=[...new Set(data.map(function(r){return r._YM;}))].filter(Boolean).sort();
+  ['BCG','DTC1','DTC3','VPO3','VPI1','VAR1'].forEach(function(ag,i){
+    var f=AG_MAP[ag];if(!f)return;
+    var box=document.createElement('div');box.className='chart-box';
+    box.innerHTML='<h4>'+agL(ag)+' – Évolution mensuelle</h4><canvas id="ct'+i+'" height="70"></canvas>';c.appendChild(box);
+    var vals=months.map(function(m){return data.filter(function(r){return r._YM===m;}).reduce(function(a,r){return a+(r[f]||0);},0);});
+    setTimeout(function(){var ctx=document.getElementById('ct'+i);if(!ctx)return;
+      S.charts['ct'+i]=new Chart(ctx,{type:'line',data:{labels:months.map(moisLabel),datasets:[{label:agL(ag),data:vals,borderColor:'#1565C0',backgroundColor:'rgba(21,101,192,.06)',fill:true,tension:.3,pointRadius:4}]},options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'Vaccinés'}}}}});
+    },100+i*50);
+  });
+}
+
+/* ══════ PAGE 3 ══════ */
+function renderP3(c){
+  var data=S.filtered.zs;
+  var gZS=groupBy(data,function(r){return r._ZS||'';});
+  var labs=[],vals=[],cols=[];
+  Object.keys(gZS).filter(Boolean).sort().forEach(function(zs){
+    var d=gZS[zs];var d1=sumF(d,'DTC1_0_11'),d3=sumF(d,'DTC3_0_11');if(!d1)return;
+    var dr=(d1-d3)/d1*100;labs.push(zs.length>25?zs.substring(0,23)+'…':zs);vals.push(dr);cols.push(dr<0?'#e74c3c':'#1565C0');
+  });
+  var box=document.createElement('div');box.className='chart-box';
+  box.innerHTML='<h4>Taux d\'abandon DTC1–DTC3 par ZS</h4><canvas id="drC" height="80"></canvas>';c.appendChild(box);
+  setTimeout(function(){var ctx=document.getElementById('drC');if(!ctx)return;
+    S.charts.dr=new Chart(ctx,{type:'bar',data:{labels:labs,datasets:[{label:'Dropout (%)',data:vals,backgroundColor:cols,borderRadius:3}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'%'}}}}});
   },100);
 
-  /* Complétude mensuelle */
-  var months=[...new Set(data.map(ym))].sort();var byM=grp(data,ym);
-  box(d,'compM','Complétude mensuelle','canvas');
-  after(function(){
-    var ctx=document.getElementById('compM');if(!ctx)return;
-    S.charts.cm=new Chart(ctx,{type:'line',data:{labels:months.map(mL),datasets:[
-      {label:'Complétude %',data:months.map(function(m){return avg((byM[m]||[]).map(function(r){return v(r,'comp');}));}),borderColor:'#0b3a6f',fill:true,backgroundColor:'rgba(11,58,111,.06)',tension:.3,pointRadius:4},
-      {label:'Promptitude %',data:months.map(function(m){return avg((byM[m]||[]).map(function(r){return v(r,'prompt');}));}),borderColor:'#FF9800',fill:false,tension:.3,pointRadius:4}
-    ]},options:{responsive:true,scales:{y:{beginAtZero:true,max:100}}}});
-  },200);
-
-  /* Table détaillée */
-  var html='<div class="tw" style="max-height:450px;overflow-y:auto"><table class="dt"><thead><tr><th>Province</th><th>Antenne</th><th>Mois</th><th>n</th><th>Rap</th><th>Comp%</th><th>Prompt%</th><th>BCG</th><th>DTC1</th><th>DTC3</th><th>Total</th></tr></thead><tbody>';
-  data.slice(0,500).forEach(function(r){
-    var c=v(r,'comp'),p=v(r,'prompt');
-    html+='<tr><td>'+prov(r)+'</td><td>'+ant(r)+'</td><td>'+mL(ym(r))+'</td><td>'+v(r,'n')+'</td><td>'+v(r,'rap')+'</td>'+
-      '<td class="'+(c>=80?'cg':c>=50?'cy':'cr')+'">'+c.toFixed(1)+'%</td>'+
-      '<td class="'+(p>=80?'cg':p>=50?'cy':'cr')+'">'+p.toFixed(1)+'%</td>'+
-      '<td>'+fmt(v(r,'BCG_0_11'))+'</td><td>'+fmt(v(r,'DTC1_0_11'))+'</td><td>'+fmt(v(r,'DTC3_0_11'))+'</td><td>'+fmt(totD([r]))+'</td></tr>';
+  var months=[...new Set(data.map(function(r){return r._YM;}))].sort();var lastM=months[months.length-1];
+  var lastD=data.filter(function(r){return r._YM===lastM;});
+  var xV=[],yV=[],txt=[],col=[];
+  lastD.forEach(function(r){
+    var v1=r.PCV13_1_0_11||0,v2=r.DTC1_0_11||0;if(!v2&&!v1)return;
+    xV.push(v2);yV.push(v1);var pct=v2?((v1-v2)/v2*100):0;
+    txt.push((r._ZS||'')+'<br>DTC1: '+v2+'<br>PCV13-1: '+v1+'<br>Var: '+pct.toFixed(1)+'%');
+    col.push(Math.abs(pct)>10?'#e74c3c':'#1565C0');
   });
-  html+='</tbody></table></div>';
-  var b=document.createElement('div');b.className='box';b.innerHTML='<h4>Détail par Antenne ('+Math.min(500,data.length)+'/'+data.length+')</h4>'+html;d.appendChild(b);
+  if(xV.length){
+    var sB=document.createElement('div');sB.className='chart-box';
+    sB.innerHTML='<h4>Cohérence PCV13-1 vs DTC1 (±10%)</h4><div id="scP" style="height:350px"></div>';c.appendChild(sB);
+    setTimeout(function(){var el=document.getElementById('scP');if(!el)return;var mx=Math.max.apply(null,xV.concat(yV).concat([10]));
+      Plotly.newPlot(el,[{x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:8,color:col},hoverinfo:'text'},{x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'black',dash:'dash'},showlegend:false}],{xaxis:{title:'DTC1'},yaxis:{title:'PCV13-1'},margin:{l:60,r:30,t:10,b:50},showlegend:false},{responsive:true});
+    },200);
+  }
 }
 
-/* ═══════════════════════════════════════
-   P2 : COHÉRENCE-TEMPS
-   ═══════════════════════════════════════ */
-function p2_coherenceTemps(d){
-  sec(d,'📈','2. Cohérence-temps (moy. mobile 11 mois, seuil ±33%)');
-  var data=S.fP;
-  var months=[...new Set(data.map(ym))].sort();
-  var displayed=['BCG_0_11','DTC1_0_11','DTC3_0_11','VPO3_0_11','VAR1_0_11','ROTA1_0_11'];
+/* ══════ PAGE 4 ══════ */
+function renderP4(c){
+  var data=S.filtered.zs;var months=[...new Set(data.map(function(r){return r._YM;}))].filter(Boolean).sort();
+  var ags=['BCG','DTC1','DTC3','VAR1','VPO3'];var colors=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6'];
+  var gP=groupBy(S.filtered.prov,function(r){return r._Province||'';});var provs=Object.keys(gP).filter(Boolean).sort();
+  var ds=ags.map(function(ag,i){return{label:agL(ag),data:provs.map(function(p){return sumF(gP[p],AG_MAP[ag]);}),backgroundColor:colors[i],borderRadius:2};});
+  var box=document.createElement('div');box.className='chart-box';
+  box.innerHTML='<h4>Doses par province — antigènes clés</h4><canvas id="agP" height="80"></canvas>';c.appendChild(box);
+  setTimeout(function(){var ctx=document.getElementById('agP');if(!ctx)return;
+    S.charts.agP=new Chart(ctx,{type:'bar',data:{labels:provs.map(function(l){return l.length>20?l.substring(0,18)+'…':l;}),datasets:ds},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{x:{ticks:{maxRotation:45,font:{size:8}}}}}});
+  },100);
 
-  displayed.forEach(function(ag,i){
-    var r=document.createElement('div');r.className='row2';
-    var L=document.createElement('div');L.className='half box';
-    L.innerHTML='<h4>'+nm(ag)+' – Évolution mensuelle</h4><canvas id="ct'+i+'" height="70"></canvas>';
-    r.appendChild(L);
-    var R=document.createElement('div');R.className='half box';
-    R.innerHTML='<h4>'+nm(ag)+' – Var. vs moy. 11m</h4><div id="sc'+i+'" style="height:300px"></div>';
-    r.appendChild(R);d.appendChild(r);
-
-    after(function(){
-      var byM=grp(data,ym);
-      var ctx=document.getElementById('ct'+i);if(ctx){
-        S.charts['ct'+i]=new Chart(ctx,{type:'line',data:{labels:months.map(mL),
-          datasets:[{label:nm(ag),data:months.map(function(m){return sum(byM[m]||[],ag);}),borderColor:'#1565C0',backgroundColor:'rgba(21,101,192,.06)',fill:true,tension:.3,pointRadius:4}]},
-          options:{responsive:true,scales:{y:{beginAtZero:true}}}});
-      }
-
-      /* Scatter: var vs moving avg */
-      var orgs=[...new Set(data.map(ant))].filter(Boolean);
-      var lastM=months[months.length-1];if(!lastM)return;
-      var dx=[],dy=[],dt=[],dc=[];
-      orgs.forEach(function(ou){
-        var recs=data.filter(function(r){return ant(r)===ou&&ym(r)===lastM;});
-        var val=recs.reduce(function(a,r){return a+v(r,ag);},0);
-        var ma=movAvg(data,ant,ou,ag,lastM,11);
-        if(ma&&ma>0){var pv=((val-ma)/ma)*100;dx.push(pv);
-          dy.push(ou.length>28?ou.substring(0,26)+'…':ou);
-          dt.push(ou+'<br>Val:'+fmt(val)+'<br>Moy:'+ma.toFixed(0)+'<br>Var:'+pv.toFixed(1)+'%');
-          dc.push(Math.abs(pv)>33?'#e74c3c':'#1565C0');}
-      });
-      var el=document.getElementById('sc'+i);
-      if(el&&dx.length){Plotly.newPlot(el,[{x:dx,y:dy,text:dt,type:'scatter',mode:'markers',marker:{size:8,color:dc},hoverinfo:'text'}],
-        {shapes:[{type:'line',x0:0,x1:0,y0:-.5,y1:dy.length-.5,line:{color:'black',width:2}},
-          {type:'line',x0:-33,x1:-33,y0:-.5,y1:dy.length-.5,line:{color:'green',width:1,dash:'dash'}},
-          {type:'line',x0:33,x1:33,y0:-.5,y1:dy.length-.5,line:{color:'green',width:1,dash:'dash'}}],
-          margin:{l:160,r:30,t:10,b:40},xaxis:{title:'% variation'},yaxis:{autorange:'reversed',dtick:1,tickfont:{size:8}}},{responsive:true});
-      }
-    },150+i*80);
-  });
-
-  /* Alerts table */
-  alertsTable(d,data,ant);
-}
-
-function alertsTable(d,data,orgFn){
-  var months=[...new Set(data.map(ym))].sort();
-  var gO=grp(data,orgFn);var oL=Object.keys(gO).filter(function(k){return k!=='?';});
-  var rows=[];
-  oL.forEach(function(ou){
-    AG.forEach(function(ag){
-      months.forEach(function(m){
-        var recs=gO[ou].filter(function(r){return ym(r)===m;});if(!recs.length)return;
-        var val=recs.reduce(function(a,r){return a+v(r,ag);},0);
-        var ma=movAvg(data,orgFn,ou,ag,m,11);
-        if(!ma||ma===0)return;var pv=((val-ma)/ma)*100;
-        if(Math.abs(pv)<=33)return;
-        rows.push({org:ou,prov:prov(recs[0]),ag:ag,per:mL(m),val:val,ma:ma.toFixed(0),pv:pv.toFixed(1),pri:Math.abs(pv)>=50?'P1':'P2'});
-      });
-    });
-  });
-  rows.sort(function(a,b){return Math.abs(parseFloat(b.pv))-Math.abs(parseFloat(a.pv));});
-  var bx=document.createElement('div');bx.className='box';
-  bx.innerHTML='<h4>🚨 Alertes (±33%) — '+rows.length+' détectées</h4>';
-  var h='<div class="tw" style="max-height:400px;overflow-y:auto"><table class="dt"><thead><tr><th>Province</th><th>Organisation</th><th>Antigène</th><th>Période</th><th>Valeur</th><th>Moy 11m</th><th>% Var</th><th>Prio</th></tr></thead><tbody>';
-  rows.slice(0,300).forEach(function(r){
-    var cls=r.pri==='P1'?'cr':'cy';
-    h+='<tr><td>'+r.prov+'</td><td>'+r.org+'</td><td>'+nm(r.ag)+'</td><td>'+r.per+'</td><td>'+r.val+'</td><td>'+r.ma+'</td><td class="'+cls+'">'+r.pv+'%</td><td class="'+cls+'">'+r.pri+'</td></tr>';
-  });
-  h+='</tbody></table></div>';bx.innerHTML+=h;d.appendChild(bx);
-}
-
-/* ═══════════════════════════════════════
-   P3 : COHÉRENCE-DONNÉE
-   ═══════════════════════════════════════ */
-function p3_coherenceDonnee(d){
-  sec(d,'🔗','3. Cohérence-donnée');
-  var data=S.fP;
-  var months=[...new Set(data.map(ym))].sort();
-  var lastM=months[months.length-1]||'';
-
-  /* Scatter: DTC1 vs PCV13-1, DTC3 vs PCV13-3 */
-  var pairs=[['DTC1_0_11','PCV13_1_0_11'],['DTC3_0_11','PCV13_3_0_11'],['DTC1_0_11','ROTA1_0_11']];
-  pairs.forEach(function(pair,i){
-    var bx=document.createElement('div');bx.className='box';
-    bx.innerHTML='<h4>'+nm(pair[0])+' vs '+nm(pair[1])+' (±10%)</h4><div id="cd'+i+'" style="height:320px"></div>';
-    d.appendChild(bx);
-    after(function(){
-      var orgs=[...new Set(data.map(ant))].filter(Boolean);
-      var xV=[],yV=[],txt=[],col=[];
-      orgs.forEach(function(ou){
-        var recs=data.filter(function(r){return ant(r)===ou&&ym(r)===lastM;});if(!recs.length)return;
-        var v1=recs.reduce(function(a,r){return a+v(r,pair[0]);},0);
-        var v2=recs.reduce(function(a,r){return a+v(r,pair[1]);},0);
-        xV.push(v1);yV.push(v2);
-        var pc=v1>0?((v2-v1)/v1*100):0;
-        txt.push(ou+'<br>'+nm(pair[0])+':'+v1+'<br>'+nm(pair[1])+':'+v2+'<br>'+pc.toFixed(1)+'%');
-        col.push(Math.abs(pc)>10?'#e74c3c':'#1565C0');
-      });
-      var el=document.getElementById('cd'+i);if(!el||!xV.length)return;
-      var mx=Math.max.apply(null,xV.concat(yV).concat([10]));
-      Plotly.newPlot(el,[{x:xV,y:yV,text:txt,type:'scatter',mode:'markers',marker:{size:8,color:col},hoverinfo:'text'},
-        {x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',line:{color:'black',dash:'dash'},showlegend:false},
-        {x:[0,mx],y:[0,mx*1.1],type:'scatter',mode:'lines',line:{color:'green',dash:'dot',width:1},showlegend:false},
-        {x:[0,mx],y:[0,mx*.9],type:'scatter',mode:'lines',line:{color:'green',dash:'dot',width:1},showlegend:false}],
-        {xaxis:{title:nm(pair[0])},yaxis:{title:nm(pair[1])},margin:{l:60,r:30,t:10,b:50},showlegend:false},{responsive:true});
-    },150+i*80);
-  });
-
-  /* Same-age table */
-  sameAgeTable(d,data);
-
-  /* Dropout */
-  dropoutChart(d,data);
-}
-
-function sameAgeTable(d,data){
-  var gO=grp(data,ant);var months=[...new Set(data.map(ym))].sort();
-  var ages=Object.keys(SAME_AGE);
-  var bx=document.createElement('div');bx.className='box';
-  bx.innerHTML='<h4>Vaccins au même âge – Cohérence (±10%)</h4>';
-  var h='<div class="tw" style="max-height:500px;overflow-y:auto"><table class="dt"><thead><tr><th>Antenne</th><th>Mois</th>';
-  ages.forEach(function(a){h+='<th colspan="2">'+a+'</th>';});
-  h+='<th>OK?</th></tr></thead><tbody>';
-
-  Object.keys(gO).filter(function(k){return k!=='?';}).sort().forEach(function(ou){
-    months.forEach(function(m){
-      var recs=gO[ou].filter(function(r){return ym(r)===m;});if(!recs.length)return;
-      var maxV=0;
-      var row='<tr><td>'+(ou.length>20?ou.substring(0,18)+'…':ou)+'</td><td>'+mL(m)+'</td>';
-      ages.forEach(function(age){
-        var ags=SAME_AGE[age];
-        var vals=ags.map(function(ag){return{n:nm(ag),v:recs.reduce(function(a,r){return a+v(r,ag);},0)};});
-        var vStr=vals.map(function(x){return x.n+':'+x.v;}).join(', ');
-        var mx=Math.max.apply(null,vals.map(function(x){return x.v;}));
-        var mn=Math.min.apply(null,vals.map(function(x){return x.v;}));
-        var pc=mx>0?((mx-mn)/mx*100):0;
-        if(pc>maxV)maxV=pc;
-        var cls=pc>10?'cr':'cg';
-        row+='<td style="font-size:9px">'+vStr+'</td><td class="'+cls+'">'+pc.toFixed(0)+'%</td>';
-      });
-      row+='<td class="'+(maxV<=10?'cg':'cr')+'">'+(maxV<=10?'✓':'✗')+'</td></tr>';
-      h+=row;
-    });
-  });
-  h+='</tbody></table></div>';bx.innerHTML+=h;d.appendChild(bx);
-}
-
-function dropoutChart(d,data){
-  var gO=grp(data,ant);var labs=[],vals=[],cols=[];
-  Object.keys(gO).filter(function(k){return k!=='?';}).sort().forEach(function(ou){
-    var recs=gO[ou];var d1=sum(recs,D1),d3=sum(recs,D3);
-    var dr=dropout(d1,d3);if(dr===null)return;
-    labs.push(ou.length>25?ou.substring(0,23)+'…':ou);vals.push(dr);cols.push(dr<0?'#e74c3c':dr>10?'#f39c12':'#27ae60');
-  });
-  var bx=document.createElement('div');bx.className='box';
-  bx.innerHTML='<h4>Taux d\'abandon DTC1 → DTC3 (%)</h4><canvas id="dropC" height="'+(Math.max(80,labs.length*3))+'"></canvas>';
-  d.appendChild(bx);
-  after(function(){var ctx=document.getElementById('dropC');if(!ctx)return;
-    S.charts.dr=new Chart(ctx,{type:'bar',data:{labels:labs,datasets:[{label:'Dropout %',data:vals,backgroundColor:cols,borderRadius:3}]},
-      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'%'}}}}});
+  var tB=document.createElement('div');tB.className='chart-box';
+  tB.innerHTML='<h4>Tendance mensuelle — antigènes clés</h4><canvas id="agT" height="60"></canvas>';c.appendChild(tB);
+  setTimeout(function(){var ctx=document.getElementById('agT');if(!ctx)return;
+    var ds2=ags.map(function(ag,i){return{label:agL(ag),data:months.map(function(m){return data.filter(function(r){return r._YM===m;}).reduce(function(a,r){return a+(r[AG_MAP[ag]]||0);},0);}),borderColor:colors[i],tension:.3,pointRadius:3,fill:false};});
+    S.charts.agT=new Chart(ctx,{type:'line',data:{labels:months.map(moisLabel),datasets:ds2},options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'Doses'}}}}});
   },200);
 }
 
-/* ═══════════════════════════════════════
-   P4 : VALEURS ATYPIQUES
-   ═══════════════════════════════════════ */
-function p4_atypiques(d){
-  sec(d,'⚠️','4. Valeurs atypiques (moy ± 2σ)');
-  var data=S.fP;var gO=grp(data,ant);
-  var months=[...new Set(data.map(ym))].sort();
-  var oL=Object.keys(gO).filter(function(k){return k!=='?';});
-  var rows=[];
-  oL.forEach(function(ou){
-    AG.forEach(function(ag){
-      var allV=gO[ou].map(function(r){return{m:ym(r),val:v(r,ag)};});
-      if(allV.length<3)return;
-      var mean=avg(allV.map(function(x){return x.val;}));
-      var sd=Math.sqrt(allV.reduce(function(a,x){return a+Math.pow(x.val-mean,2);},0)/allV.length);
-      if(sd===0)return;
-      allV.forEach(function(x){
-        if(x.val<mean-2*sd||x.val>mean+2*sd)
-          rows.push({org:ou,prov:prov(gO[ou][0]),ag:ag,per:mL(x.m),val:x.val,mean:mean.toFixed(0),sd:sd.toFixed(0),lo:(mean-2*sd).toFixed(0),hi:(mean+2*sd).toFixed(0),type:x.val>mean?'Sup':'Inf'});
-      });
-    });
-  });
-
-  var bx=document.createElement('div');bx.className='box';
-  bx.innerHTML='<h4>'+rows.length+' valeurs atypiques détectées</h4>';
-  var h='<div class="tw" style="max-height:450px;overflow-y:auto"><table class="dt"><thead><tr><th>Prov</th><th>Antenne</th><th>Antigène</th><th>Période</th><th>Valeur</th><th>Moy</th><th>σ</th><th>[Min</th><th>Max]</th><th>Type</th></tr></thead><tbody>';
-  rows.slice(0,400).forEach(function(r){
-    h+='<tr><td>'+r.prov+'</td><td>'+r.org+'</td><td>'+nm(r.ag)+'</td><td>'+r.per+'</td><td class="cr">'+r.val+'</td><td>'+r.mean+'</td><td>'+r.sd+'</td><td>'+r.lo+'</td><td>'+r.hi+'</td><td>'+r.type+'</td></tr>';
-  });
-  h+='</tbody></table></div>';bx.innerHTML+=h;d.appendChild(bx);
-
-  /* Trend chart */
-  var byM={};months.forEach(function(m){byM[m]=0;});
-  rows.forEach(function(r){/* count per month approx */});
-  /* Simpler: count outliers per month */
-  var outM={};months.forEach(function(m){outM[m]=0;});
-  oL.forEach(function(ou){AG.forEach(function(ag){
-    var allV=gO[ou].map(function(r){return{m:ym(r),val:v(r,ag)};});if(allV.length<3)return;
-    var mean=avg(allV.map(function(x){return x.val;}));
-    var sd2=Math.sqrt(allV.reduce(function(a,x){return a+Math.pow(x.val-mean,2);},0)/allV.length);
-    if(sd2===0)return;
-    allV.forEach(function(x){if(x.val<mean-2*sd2||x.val>mean+2*sd2){if(outM[x.m]!==undefined)outM[x.m]++;}});
-  });});
-
-  box(d,'outTr','Tendance mensuelle des valeurs atypiques','canvas');
-  after(function(){var ctx=document.getElementById('outTr');if(!ctx)return;
-    S.charts.oT=new Chart(ctx,{type:'bar',data:{labels:months.map(mL),datasets:[{label:'Outliers',data:months.map(function(m){return outM[m];}),backgroundColor:'#e74c3c',borderRadius:3}]},
-      options:{responsive:true,scales:{y:{beginAtZero:true}}}});
-  },300);
+/* ══════ PAGE 5 ══════ */
+function renderP5(c){
+  c.innerHTML='<div class="sub-tabs"><div class="sub-tab active" onclick="showST(0)">Par Province</div><div class="sub-tab" onclick="showST(1)">Par Antenne</div><div class="sub-tab" onclick="showST(2)">Par ZS</div></div><div id="scoreC"></div>';
+  setTimeout(function(){showST(0);},50);
 }
-
-/* ═══════════════════════════════════════
-   P5 : SCORE QUALITÉ
-   ═══════════════════════════════════════ */
-function p5_score(d){
-  sec(d,'🏆','5. Score qualité des données');
-  var data=S.fP;var gP=grp(data,prov);
-  var pL=Object.keys(gP).filter(function(k){return k!=='?';}).sort();
-
-  /* Score = Complétude(30) + Promptitude(20) + Dropout positif(20) + Cohérence même âge(30) */
-  var rows=pL.map(function(p){
-    var recs=gP[p];
-    var avgC=avg(recs.map(function(r){return v(r,'comp');}));
-    var avgPr=avg(recs.map(function(r){return v(r,'prompt');}));
-    var d1=sum(recs,D1),d3=sum(recs,D3);var dr=dropout(d1,d3);
-    /* Same-age coherence */
-    var cohOK=0,cohTot=0;
-    Object.values(SAME_AGE).forEach(function(ags){
-      var vals=ags.map(function(ag){return sum(recs,ag);});
-      var mx=Math.max.apply(null,vals),mn=Math.min.apply(null,vals);
-      cohTot++;if(mx>0&&((mx-mn)/mx*100)<=10)cohOK++;
-    });
-    var sComp=Math.min(30,avgC/100*30);
-    var sPrompt=Math.min(20,avgPr/100*20);
-    var sDrop=(dr!==null&&dr>=0&&dr<=10)?20:(dr!==null&&dr>=0)?15:0;
-    var sCoh=cohTot>0?(cohOK/cohTot*30):0;
-    var total=Math.round(sComp+sPrompt+sDrop+sCoh);
-    return{prov:p,comp:avgC,prompt:avgPr,dr:dr,cohOK:cohOK,cohTot:cohTot,sComp:sComp,sPrompt:sPrompt,sDrop:sDrop,sCoh:sCoh,total:total};
-  }).sort(function(a,b){return b.total-a.total;});
-
-  /* KPIs */
-  var avgScore=avg(rows.map(function(r){return r.total;}));
-  var nExc=rows.filter(function(r){return r.total>=80;}).length;
-  var nBon=rows.filter(function(r){return r.total>=50&&r.total<80;}).length;
-  var nMauv=rows.filter(function(r){return r.total<50;}).length;
-
-  d.innerHTML+=kpiRow([
-    kpi(avgScore.toFixed(0)+'/100','Score moyen','blue'),
-    kpi(nExc,'Excellent (≥80)','green'),
-    kpi(nBon,'Bon (50-79)','orange'),
-    kpi(nMauv,'Mauvais (<50)','red')
-  ]);
-
-  /* Score chart */
-  box(d,'scoreC','Score qualité par Province','canvas');
-  after(function(){var ctx=document.getElementById('scoreC');if(!ctx)return;
-    S.charts.sc=new Chart(ctx,{type:'bar',data:{labels:rows.map(function(r){return short(r.prov);}),
-      datasets:[
-        {label:'Complétude',data:rows.map(function(r){return r.sComp;}),backgroundColor:'#2196F3'},
-        {label:'Promptitude',data:rows.map(function(r){return r.sPrompt;}),backgroundColor:'#FF9800'},
-        {label:'Dropout',data:rows.map(function(r){return r.sDrop;}),backgroundColor:'#27ae60'},
-        {label:'Cohérence',data:rows.map(function(r){return r.sCoh;}),backgroundColor:'#9b59b6'}
-      ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{x:{stacked:true,ticks:{maxRotation:45,font:{size:9}}},y:{stacked:true,max:100,title:{display:true,text:'Score'}}}}});
+window.showST=function(idx){
+  document.querySelectorAll('.sub-tab').forEach(function(t,i){t.classList.toggle('active',i===idx);});
+  var sc=document.getElementById('scoreC');sc.innerHTML='';
+  var data=[S.filtered.prov,S.filtered.zs,S.filtered.zs][idx];
+  var kf=['_Province','_Antenne','_ZS'][idx];var lb=['Province','Antenne PEV','Zone de Santé'][idx];
+  var g=groupBy(data,function(r){return r[kf]||'';});var units=Object.keys(g).filter(Boolean).sort();
+  var h='<div class="data-table-wrap" style="max-height:550px;overflow-y:auto"><table class="data-table"><thead><tr><th>'+lb+'</th><th>Enreg.</th><th>Rapp.</th><th>%Rapp.</th><th>Compl.</th><th>Prompt.</th><th>DTC1</th><th>DTC3</th><th>Drop%</th><th>Score</th></tr></thead><tbody>';
+  units.forEach(function(u){
+    var d=g[u],tN=sumF(d,'n'),tR=sumF(d,'rap'),pR=tN?(tR/tN*100):0;
+    var aC=avgF(d,'comp'),aP=avgF(d,'prompt');
+    var d1=sumF(d,'DTC1_0_11'),d3=sumF(d,'DTC3_0_11'),dr=d1?((d1-d3)/d1*100):0;
+    var sc=Math.round((pR>=90?20:pR>=70?12:4)+(aC>=90?20:aC>=70?12:4)+(dr>=0?20:0));
+    var cl=sc>=50?'#27ae60':'#e74c3c';
+    h+='<tr><td><b>'+u+'</b></td><td>'+tN+'</td><td>'+tR+'</td><td>'+pR.toFixed(1)+'%</td><td>'+aC.toFixed(1)+'%</td><td>'+aP.toFixed(1)+'%</td><td>'+d1+'</td><td>'+d3+'</td><td class="'+(dr<0?'cell-red':'')+'">'+dr.toFixed(1)+'%</td><td style="background:'+cl+';color:#fff;font-weight:700;text-align:center">'+sc+'</td></tr>';
   });
+  h+='</tbody></table></div>';sc.innerHTML=h;
+};
 
-  /* Table */
-  var bx=document.createElement('div');bx.className='box';
-  var h='<h4>Détail des scores</h4><div class="tw"><table class="dt"><thead><tr><th>#</th><th>Province</th><th>Comp%</th><th>Prompt%</th><th>Dropout%</th><th>Coh. même âge</th><th>S.Comp</th><th>S.Prompt</th><th>S.Drop</th><th>S.Coh</th><th>TOTAL</th><th>Interp.</th></tr></thead><tbody>';
-  rows.forEach(function(r,i){
-    var ip=r.total>=80?['Excellent','#27ae60']:r.total>=50?['Bon','#f39c12']:['Mauvais','#e74c3c'];
-    h+='<tr><td>'+(i+1)+'</td><td><b>'+r.prov+'</b></td><td>'+r.comp.toFixed(1)+'%</td><td>'+r.prompt.toFixed(1)+'%</td><td>'+(r.dr!==null?r.dr.toFixed(1)+'%':'—')+'</td><td>'+r.cohOK+'/'+r.cohTot+'</td>'+
-      '<td>'+r.sComp.toFixed(0)+'</td><td>'+r.sPrompt.toFixed(0)+'</td><td>'+r.sDrop+'</td><td>'+r.sCoh.toFixed(0)+'</td>'+
-      '<td style="background:'+ip[1]+';color:#fff;font-weight:800;text-align:center">'+r.total+'</td>'+
-      '<td style="color:'+ip[1]+';font-weight:700">'+ip[0]+'</td></tr>';
-  });
-  h+='</tbody></table></div>';bx.innerHTML=h;d.appendChild(bx);
-}
-
-/* ═══════════════════════════════════════
-   TAB : ZONE DE SANTÉ (= Antenne)
-   ═══════════════════════════════════════ */
-function tabZS(d){
-  sec(d,'🏥','Analyse par Antenne');
-  var data=S.fP;var gO=grp(data,ant);
-  var ranked=Object.keys(gO).filter(function(k){return k!=='?';}).map(function(ou){return{name:ou,total:totD(gO[ou])};}).sort(function(a,b){return b.total-a.total;});
-
-  var top=ranked.slice(0,30);
-  box(d,'zsTop','Top 30 – Doses totales','canvas');
-  after(function(){var ctx=document.getElementById('zsTop');if(!ctx)return;
-    S.charts.zt=new Chart(ctx,{type:'bar',data:{labels:top.map(function(t){return short(t.name);}),datasets:[{label:'Total doses',data:top.map(function(t){return t.total;}),backgroundColor:'#1565C0',borderRadius:3}]},
-      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});},100);
-
-  var bot=ranked.slice(-30).reverse();
-  box(d,'zsBot','30 dernières – Doses totales','canvas');
-  after(function(){var ctx=document.getElementById('zsBot');if(!ctx)return;
-    S.charts.zb=new Chart(ctx,{type:'bar',data:{labels:bot.map(function(t){return short(t.name);}),datasets:[{label:'Total doses',data:bot.map(function(t){return t.total;}),backgroundColor:'#e74c3c',borderRadius:3}]},
-      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});},200);
-}
-
-/* ═══════════════════════════════════════
-   TAB : NATIONAL
-   ═══════════════════════════════════════ */
-function tabNat(d){
-  sec(d,'🇨🇩','Vue nationale');
-  var data=S.fP;var months=[...new Set(data.map(ym))].sort();var byM=grp(data,ym);
-
-  box(d,'natT','Évolution mensuelle nationale','canvas');
-  after(function(){var ctx=document.getElementById('natT');if(!ctx)return;
-    var ds=KEY_AG.map(function(ag,i){return{label:nm(ag),data:months.map(function(m){return sum(byM[m]||[],ag);}),borderColor:COLORS[i],tension:.3,pointRadius:4,fill:false};});
-    S.charts.nT=new Chart(ctx,{type:'line',data:{labels:months.map(mL),datasets:ds},
-      options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'Doses'}}}}});},100);
-
-  var gP=grp(data,prov);var pL=Object.keys(gP).filter(function(k){return k!=='?';}).sort();
-  box(d,'natP','Doses par Province (empilé)','canvas');
-  after(function(){var ctx=document.getElementById('natP');if(!ctx)return;
-    var ds=KEY_AG.map(function(ag,i){return{label:nm(ag),data:pL.map(function(p){return sum(gP[p],ag);}),backgroundColor:COLORS[i]};});
-    S.charts.nP=new Chart(ctx,{type:'bar',data:{labels:pL.map(short),datasets:ds},
-      options:{responsive:true,scales:{x:{stacked:true,ticks:{maxRotation:45,font:{size:8}}},y:{stacked:true,beginAtZero:true}}}});},200);
-
-  /* Monthly table */
-  var bx=document.createElement('div');bx.className='box';
-  var h='<h4>Résumé mensuel</h4><div class="tw"><table class="dt"><thead><tr><th>Mois</th><th>Comp%</th><th>Prompt%</th>';
-  KEY_AG.forEach(function(a){h+='<th>'+nm(a)+'</th>';});h+='<th>Total</th></tr></thead><tbody>';
-  months.forEach(function(m){var recs=byM[m]||[];
-    h+='<tr><td><b>'+mL(m)+'</b></td><td>'+avg(recs.map(function(r){return v(r,'comp');})).toFixed(1)+'%</td><td>'+avg(recs.map(function(r){return v(r,'prompt');})).toFixed(1)+'%</td>';
-    KEY_AG.forEach(function(a){h+='<td>'+fmt(sum(recs,a))+'</td>';});
-    h+='<td><b>'+fmt(totD(recs))+'</b></td></tr>';});
-  h+='</tbody></table></div>';bx.innerHTML=h;d.appendChild(bx);
-}
-
-/* ═══════════════════════════════════════
-   TAB : APERÇU GÉNÉRAL
-   ═══════════════════════════════════════ */
-function tabApercu(d){
-  sec(d,'📋','Aperçu général');
-  var data=S.fP;var td=totD(data);
-  var avgC=avg(data.map(function(r){return v(r,'comp');}));
-  var avgP=avg(data.map(function(r){return v(r,'prompt');}));
-
-  d.innerHTML+=kpiRow([
-    kpi(fmt(td),'Total doses','blue'),
-    kpi(pct(avgC),'Complétude moy.','green'),
-    kpi(pct(avgP),'Promptitude moy.','orange'),
-    kpi(S.av.province.length,'Provinces',''),
-    kpi(S.av.antenne.length,'Antennes',''),
-    kpi(S.av.period.length,'Mois',''),
-    kpi(AG.length,'Antigènes','')
-  ]);
-
-  var gP=grp(data,prov);var pL=Object.keys(gP).filter(function(k){return k!=='?';}).sort();
-  var bx=document.createElement('div');bx.className='box';
-  var h='<h4>Tous antigènes par Province</h4><div class="tw" style="max-height:600px;overflow-y:auto"><table class="dt"><thead><tr><th>Province</th><th>Comp%</th><th>Prompt%</th>';
-  AG.forEach(function(a){h+='<th>'+nm(a)+'</th>';});h+='<th><b>Total</b></th></tr></thead><tbody>';
-  var gt={};AG.forEach(function(a){gt[a]=0;});var gtt=0;
-  pL.forEach(function(p){var recs=gP[p];
-    var c=avg(recs.map(function(r){return v(r,'comp');}));
-    var pr=avg(recs.map(function(r){return v(r,'prompt');}));
-    h+='<tr><td><b>'+p+'</b></td><td class="'+(c>=80?'cg':c>=50?'cy':'cr')+'">'+c.toFixed(1)+'%</td><td class="'+(pr>=80?'cg':pr>=50?'cy':'cr')+'">'+pr.toFixed(1)+'%</td>';
-    AG.forEach(function(a){var x=sum(recs,a);gt[a]+=x;h+='<td>'+fmt(x)+'</td>';});
-    var t2=totD(recs);gtt+=t2;h+='<td><b>'+fmt(t2)+'</b></td></tr>';
-  });
-  h+='<tr style="background:#e8f0fe;font-weight:800"><td>TOTAL</td><td></td><td></td>';
-  AG.forEach(function(a){h+='<td>'+fmt(gt[a])+'</td>';});
-  h+='<td><b>'+fmt(gtt)+'</b></td></tr></tbody></table></div>';
-  bx.innerHTML=h;d.appendChild(bx);
-}
-
-/* ── DOM helpers ── */
-function sec(d,icon,title){var e=document.createElement('div');e.className='sec';e.innerHTML='<span>'+icon+'</span> '+title;d.appendChild(e);}
-function kpiRow(cards){return'<div class="kpi-row">'+cards.join('')+'</div>';}
-function kpi(val,lbl,cls){return'<div class="kpi'+(cls?' '+cls:'')+'"><div class="val">'+val+'</div><div class="lbl">'+lbl+'</div></div>';}
-function box(d,id,title,type){var b=document.createElement('div');b.className='box';b.innerHTML='<h4>'+title+'</h4><'+(type==='canvas'?'canvas':'div')+' id="'+id+'"'+
-  (type==='canvas'?' height="80"':' style="height:320px"')+'></'+(type==='canvas'?'canvas':'div')+'>';d.appendChild(b);}
-function short(s){return s&&s.length>22?s.substring(0,20)+'…':s;}
-function after(fn,ms){setTimeout(fn,ms||50);}
-
-/* ── Start ── */
-init();
+loadAll();
 </script>
 </body>
 </html>
