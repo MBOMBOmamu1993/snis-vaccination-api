@@ -20,8 +20,8 @@ MONTHLY_DIR = DATA_DIR / "monthly"
 DASHBOARD_DIR = DATA_DIR / "dashboard"
 OU_MAP_PATH = DATA_DIR / "ou_map.json"
 INDEX_PATH  = DATA_DIR / "index.json"
-ANTENNE_RULES_PATH = DATA_DIR / "antenne_rules.json"
-RENAME_MAP_PATH    = DATA_DIR / "rename_map.json"
+ANTENNE   = DOCS / "config" / "antenne_rules.json"    # ← était docs/data/
+RENAME    = DOCS / "config" / "rename_map.json"      # ← était docs/data/
 
 MAX_JSON_FILE_BYTES = 50_000_000
 
