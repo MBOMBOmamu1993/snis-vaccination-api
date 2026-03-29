@@ -1346,44 +1346,194 @@
 
 
 
+        /* ═══ VARIABLE GLOBALE ALERTE ═══ */
+        var _alertAllRows = [];
+
         function mkAlertTbl(D, AD, mos, N, thr) {
             var box = E('div', 'cb'); var lastM = mos[mos.length - 1];
-            box.innerHTML = '<h4> Alertes (moy. mobile ' + N + ' mois, ±' + Math.round(thr * 100) + '%)</h4>';
-            if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donnée.</p>'; return box; }
+            box.innerHTML = '<h4>\u26a0 Alertes &amp; Situation compl\u00e8te (moy. mobile ' + N + ' mois, \u00b1' + Math.round(thr * 100) + '%)</h4>';
+            if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donn\u00e9e.</p>'; return box; }
+
             var ol = getOrgLevel(D);
 
             /* Agréger par org unit au bon niveau */
             var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
             var og = grp(ld, function (r) { return r[ol.k]; });
+            var orgNames = Object.keys(og).filter(Boolean).sort();
 
             var rows = [];
-            Object.keys(og).filter(Boolean).forEach(function (orgName) {
+
+            /* ── Pour chaque org unit × TOUS les 24 antigènes ── */
+            orgNames.forEach(function (orgName) {
                 var recs = og[orgName];
-                AG.forEach(function (ag) {
-                    var val = sf(recs, ag); if (!val) return;
-                    /* Calculer la moyenne des N périodes précédentes pour cette org unit */
+                AG_ALL.forEach(function (ag) {
+                    var val = sf(recs, ag);
+
+                    /* Moyenne mobile N périodes précédentes */
                     var prevData = AD.filter(function (r) { return r[ol.k] === orgName && r.period < lastM; });
                     prevData.sort(function (a, b) { return b.period < a.period ? -1 : 1; });
                     var sub = prevData.slice(0, N);
-                    if (!sub.length) return;
-                    var avg = sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length;
-                    if (!avg) return;
-                    var v2 = (val - avg) / avg;
-                    if (Math.abs(v2) > thr) rows.push({ ou: orgName, vac: AG_LBL[ag], val: val, avg: avg.toFixed(0), var2: (v2 * 100).toFixed(1), acc: Math.abs(v2) > thr ? 'Non acceptable' : 'Acceptable' });
+                    var avg = 0;
+                    if (sub.length) {
+                        avg = sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length;
+                    }
+
+                    var v2 = 0;
+                    if (avg > 0) {
+                        v2 = (val - avg) / avg;
+                    } else if (val > 0) {
+                        v2 = 1; /* 100% si valeur sans historique */
+                    }
+
+                    rows.push({
+                        ou: orgName,
+                        ag: ag,
+                        vac: AG_LBL[ag],
+                        val: val,
+                        avg: avg.toFixed(0),
+                        var2: (v2 * 100).toFixed(1),
+                        acc: Math.abs(v2) > thr ? 'Non acceptable' : 'Acceptable'
+                    });
                 });
             });
 
-            rows.sort(function (a, b) { var ap = a.acc === 'Non acceptable' ? 0 : 1, bp = b.acc === 'Non acceptable' ? 0 : 1; return ap !== bp ? ap - bp : Math.abs(+b.var2) - Math.abs(+a.var2); });
-            if (!rows.length) { box.innerHTML += '<p style="color:#27ae60;font-weight:600"> RAS pour ' + mL(lastM) + '</p>'; return box; }
-
-            var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol.l + '</th><th>Antigène</th><th>Valeur</th><th>Moyenne</th><th>% Variation</th><th>Acceptabilité</th></tr></thead><tbody>';
-            rows.slice(0, 100).forEach(function (r) {
-                var vn = +r.var2, ac = r.acc === 'Non acceptable' ? 'crd' : 'co';
-                h += '<tr><td>' + tr(r.ou, 28) + '</td><td><b>' + r.vac + '</b></td><td style="text-align:right">' + r.val + '</td><td style="text-align:right">' + r.avg + '</td><td style="text-align:right;color:' + (vn > 0 ? '#e74c3c' : '#1565c0') + ';font-weight:700">' + (vn > 0 ? '+' : '') + r.var2 + '%</td><td class="' + ac + '" style="font-weight:700">' + r.acc + '</td></tr>';
+            /* Tri : Non acceptable d'abord, puis par |variation| décroissante */
+            rows.sort(function (a, b) {
+                var ap = a.acc === 'Non acceptable' ? 0 : 1, bp = b.acc === 'Non acceptable' ? 0 : 1;
+                return ap !== bp ? ap - bp : Math.abs(+b.var2) - Math.abs(+a.var2);
             });
-            box.innerHTML += h + '</tbody></table></div>'; return box;
+
+            _alertAllRows = rows;
+
+            /* ── Listes uniques pour les filtres ── */
+            var uniqueOU = [], sOU = {};
+            rows.forEach(function (r) { if (!sOU[r.ou]) { sOU[r.ou] = 1; uniqueOU.push(r.ou); } });
+            uniqueOU.sort();
+
+            var uniqueAG = [], sAG = {};
+            AG_ALL.forEach(function (ag) {
+                var l = AG_LBL[ag];
+                if (!sAG[l]) { sAG[l] = 1; uniqueAG.push(l); }
+            });
+
+            /* ── HTML des filtres ── */
+            var fH = '<div style="display:flex;gap:16px;margin:10px 0 14px;padding:12px 16px;'
+                + 'background:linear-gradient(135deg,#f0f4f8,#e2e8f0);border-radius:10px;'
+                + 'flex-wrap:wrap;align-items:flex-start">';
+
+            /* Filtre Org Unit */
+            fH += '<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">';
+            fH += '<label style="font-weight:700;font-size:11px;color:#0b3a6f;text-transform:uppercase">'
+                + '\ud83c\udfe5 ' + ol.l + '</label>';
+            fH += '<div style="display:flex;gap:6px">';
+            fH += '<select id="alertFltOU" multiple size="5" style="flex:1;min-width:180px;padding:4px;'
+                + 'border:1px solid #cbd5e1;border-radius:6px;font-size:11px;background:#fff">';
+            uniqueOU.forEach(function (ou) {
+                fH += '<option value="' + ou + '">' + tr(ou, 35) + '</option>';
+            });
+            fH += '</select>';
+            fH += '<button onclick="_rstAOU()" style="padding:4px 10px;background:#dc3545;color:#fff;'
+                + 'border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;'
+                + 'align-self:flex-end" title="R\u00e9initialiser">\u2715 Reset</button>';
+            fH += '</div>';
+            fH += '<small style="color:#64748b;font-size:10px">Ctrl+clic pour multi-s\u00e9lection</small>';
+            fH += '</div>';
+
+            /* Filtre Antigène */
+            fH += '<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">';
+            fH += '<label style="font-weight:700;font-size:11px;color:#0b3a6f;text-transform:uppercase">'
+                + '\ud83d\udc89 Antig\u00e8ne</label>';
+            fH += '<div style="display:flex;gap:6px">';
+            fH += '<select id="alertFltAG" multiple size="5" style="flex:1;min-width:180px;padding:4px;'
+                + 'border:1px solid #cbd5e1;border-radius:6px;font-size:11px;background:#fff">';
+            uniqueAG.forEach(function (ag) {
+                fH += '<option value="' + ag + '">' + ag + '</option>';
+            });
+            fH += '</select>';
+            fH += '<button onclick="_rstAAG()" style="padding:4px 10px;background:#dc3545;color:#fff;'
+                + 'border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;'
+                + 'align-self:flex-end" title="R\u00e9initialiser">\u2715 Reset</button>';
+            fH += '</div>';
+            fH += '<small style="color:#64748b;font-size:10px">Ctrl+clic pour multi-s\u00e9lection</small>';
+            fH += '</div>';
+
+            fH += '</div>';
+            box.innerHTML += fH;
+
+            /* ── HTML du tableau ── */
+            var tH = '<div class="tw" style="max-height:600px"><table class="dt">'
+                + '<thead><tr><th>' + ol.l + '</th><th>Antig\u00e8ne</th><th>Valeur</th>'
+                + '<th>Moyenne</th><th>% Variation</th><th>Acceptabilit\u00e9</th></tr></thead>'
+                + '<tbody id="alertTBody"></tbody></table></div>';
+            box.innerHTML += tH;
+
+            /* Rendu initial + listeners après insertion DOM */
+            setTimeout(function () {
+                _renderAlertTbl(_alertAllRows);
+                var ouEl = document.getElementById('alertFltOU');
+                var agEl = document.getElementById('alertFltAG');
+                if (ouEl) ouEl.addEventListener('change', _fltAlert);
+                if (agEl) agEl.addEventListener('change', _fltAlert);
+            }, 30);
+
+            return box;
         }
 
+        /* ── Rendu des lignes du tableau ── */
+        function _renderAlertTbl(rows) {
+            var tb = document.getElementById('alertTBody');
+            if (!tb) return;
+            if (!rows.length) {
+                tb.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;'
+                    + 'color:#888;font-style:italic">Aucune donn\u00e9e correspondante.</td></tr>';
+                return;
+            }
+            var h = '', cNA = 0, cOK = 0;
+            rows.forEach(function (r) {
+                var vn = +r.var2, isNA = r.acc === 'Non acceptable';
+                if (isNA) cNA++; else cOK++;
+                var ac = isNA ? 'crd' : '';
+                var vc = vn > 0 ? '#e74c3c' : (vn < 0 ? '#1565c0' : '#666');
+                h += '<tr><td>' + tr(r.ou, 28) + '</td><td><b>' + r.vac + '</b></td>'
+                    + '<td style="text-align:right">' + r.val + '</td>'
+                    + '<td style="text-align:right">' + r.avg + '</td>'
+                    + '<td style="text-align:right;color:' + vc + ';font-weight:700">'
+                    + (vn > 0 ? '+' : '') + r.var2 + '%</td>'
+                    + '<td class="' + ac + '" style="font-weight:700">' + r.acc + '</td></tr>';
+            });
+            /* Ligne résumé */
+            h += '<tr style="background:linear-gradient(135deg,#1e293b,#334155);color:#fff;font-weight:700">'
+                + '<td colspan="3" style="padding:10px 8px">\ud83d\udcca Total affich\u00e9 : '
+                + rows.length + ' lignes</td>'
+                + '<td style="text-align:center">\u2705 ' + cOK + '</td>'
+                + '<td colspan="2" style="text-align:center">\u26a0\ufe0f ' + cNA
+                + ' non acceptable(s)</td></tr>';
+            tb.innerHTML = h;
+        }
+
+        /* ── Filtrage dynamique ── */
+        function _fltAlert() {
+            var ouS = document.getElementById('alertFltOU');
+            var agS = document.getElementById('alertFltAG');
+            var sOU = ouS ? Array.from(ouS.selectedOptions).map(function (o) { return o.value; }) : [];
+            var sAG = agS ? Array.from(agS.selectedOptions).map(function (o) { return o.value; }) : [];
+            var f = _alertAllRows;
+            if (sOU.length) f = f.filter(function (r) { return sOU.indexOf(r.ou) >= 0; });
+            if (sAG.length) f = f.filter(function (r) { return sAG.indexOf(r.vac) >= 0; });
+            _renderAlertTbl(f);
+        }
+
+        /* ── Boutons Reset ── */
+        window._rstAOU = function () {
+            var s = document.getElementById('alertFltOU');
+            if (s) Array.from(s.options).forEach(function (o) { o.selected = false; });
+            _fltAlert();
+        };
+        window._rstAAG = function () {
+            var s = document.getElementById('alertFltAG');
+            if (s) Array.from(s.options).forEach(function (o) { o.selected = false; });
+            _fltAlert();
+        };
 
         /* ═══ P3: COHÉRENCE-DONNÉE ═══ */
         function rP3(c) {
