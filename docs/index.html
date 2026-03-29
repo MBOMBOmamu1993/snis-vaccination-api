@@ -805,6 +805,15 @@
         function ccl(v) { return v >= 80 ? 'cg' : v >= 50 ? 'cy' : 'crd'; }
         function sB(val, bar) { for (var i = 0; i < bar.length; i++) { if (val >= bar[i][0]) return bar[i][1]; } return 0; }
         function sBA(v) { if (v <= 5) return 20; if (v <= 10) return 16; if (v <= 20) return 12; if (v <= 30) return 8; if (v <= 50) return 4; return 0; }
+        function getOrgLevel(D) {
+            var f = S.filters;
+            if (f.as && f.as.length === 1) return { k: 'org5', l: 'FOSA' };
+            if (f.zs && f.zs.length === 1) return { k: 'org4', l: 'Aire de Santé' };
+            if (f.antenne && f.antenne.length === 1) return { k: 'org3', l: 'Zone de Santé' };
+            var nbAnt = uv(D, function (r) { return r.antenne; }).length;
+            if (nbAnt > 1) return { k: 'antenne', l: 'Antenne PEV' };
+            return { k: 'org3', l: 'Zone de Santé' };
+        }
         function sp(p, t, s) { var a = document.getElementById('PF'), b = document.getElementById('PT'), c = document.getElementById('LS'); if (a) a.style.width = p + '%'; if (b && t) b.textContent = t; if (c && s) c.textContent = s; }
 
         /* ═══ DEFAULT PERIOD ═══ */
@@ -1337,23 +1346,25 @@
 
         function mkAlertTbl(D, AD, mos, N, thr) {
             var box = E('div', 'cb'); var lastM = mos[mos.length - 1];
-            box.innerHTML = '<h4>🚨 Alertes (moy. mobile ' + N + ' mois, ±' + Math.round(thr * 100) + '%)</h4>';
+            box.innerHTML = '<h4> Alertes (moy. mobile ' + N + ' mois, ±' + Math.round(thr * 100) + '%)</h4>';
             if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donnée.</p>'; return box; }
+            var ol = getOrgLevel(D);
             var ld = D.filter(function (r) { return r.period === lastM && isRep(r); }), rows = [];
             ld.forEach(function (r) {
                 AG.forEach(function (ag) {
                     var val = Number(r[ag]) || 0; if (!val) return;
                     var avg = mAvg(r.org5, ag, lastM, AD, N); if (!avg) return;
                     var v2 = (val - avg) / avg;
-                    if (Math.abs(v2) > thr) rows.push({ fosa: r.org5, as: r.org4, zs: r.org3, vac: AG_LBL[ag], val: val, avg: avg.toFixed(0), var2: (v2 * 100).toFixed(1), pri: Math.abs(v2) >= .5 ? 'P1' : 'P2' });
+                    if (Math.abs(v2) > thr) rows.push({ ou: r[ol.k], vac: AG_LBL[ag], val: val, avg: avg.toFixed(0), var2: (v2 * 100).toFixed(1), acc: Math.abs(v2) >= .5 ? 'Non acceptable' : 'Acceptable' });
                 });
             });
-            rows.sort(function (a, b) { return a.pri < b.pri ? -1 : a.pri > b.pri ? 1 : Math.abs(+b.var2) - Math.abs(+a.var2); });
-            if (!rows.length) { box.innerHTML += '<p style="color:#27ae60;font-weight:600">✅ RAS pour ' + mL(lastM) + '</p>'; return box; }
-            var h = '<div class="tw"><table class="dt"><thead><tr><th>FOSA</th><th>AS</th><th>ZS</th><th>AG</th><th>Val</th><th>Moy</th><th>%Var</th><th>Pri</th></tr></thead><tbody>';
+            rows.sort(function (a, b) { var ap = a.acc === 'Non acceptable' ? 0 : 1, bp = b.acc === 'Non acceptable' ? 0 : 1; return ap !== bp ? ap - bp : Math.abs(+b.var2) - Math.abs(+a.var2); });
+            if (!rows.length) { box.innerHTML += '<p style="color:#27ae60;font-weight:600"> RAS pour ' + mL(lastM) + '</p>'; return box; }
+
+            var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol.l + '</th><th>Antigène</th><th>Valeur</th><th>Moyenne</th><th>% Variation</th><th>Acceptabilité</th></tr></thead><tbody>';
             rows.slice(0, 100).forEach(function (r) {
-                var vn = +r.var2, pc = r.pri === 'P1' ? 'crd' : 'co';
-                h += '<tr><td>' + tr(r.fosa, 24) + '</td><td>' + tr(r.as, 18) + '</td><td>' + tr(r.zs, 16) + '</td><td><b>' + r.vac + '</b></td><td style="text-align:right">' + r.val + '</td><td style="text-align:right">' + r.avg + '</td><td style="text-align:right;color:' + (vn > 0 ? '#e74c3c' : '#1565c0') + ';font-weight:700">' + (vn > 0 ? '+' : '') + r.var2 + '%</td><td class="' + pc + '" style="font-weight:700">' + r.pri + '</td></tr>';
+                var vn = +r.var2, ac = r.acc === 'Non acceptable' ? 'crd' : 'co';
+                h += '<tr><td>' + tr(r.ou, 28) + '</td><td><b>' + r.vac + '</b></td><td style="text-align:right">' + r.val + '</td><td style="text-align:right">' + r.avg + '</td><td style="text-align:right;color:' + (vn > 0 ? '#e74c3c' : '#1565c0') + ';font-weight:700">' + (vn > 0 ? '+' : '') + r.var2 + '%</td><td class="' + ac + '" style="font-weight:700">' + r.acc + '</td></tr>';
             });
             box.innerHTML += h + '</tbody></table></div>'; return box;
         }
@@ -1365,34 +1376,37 @@
                 var box = E('div', 'cb'); box.innerHTML = '<h4>🔗 ' + p.t + ' (±' + Math.round(thr * 100) + '%)</h4><div id="cs' + pi + '" style="height:340px"></div>'; c.appendChild(box);
                 setTimeout(function () {
                     var dv = document.getElementById('cs' + pi); if (!dv || !lastM) return;
+                    var ol = getOrgLevel(D);
                     var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
-                    var og = grp(ld, function (r) { return r.org5; });
+                    var og = grp(ld, function (r) { return r[ol.k]; });
                     var xV = [], yV = [], txt = [], col = [];
                     Object.keys(og).filter(Boolean).forEach(function (org) {
                         var vA = sf(og[org], p.a), vB = sf(og[org], p.b); if (!vA && !vB) return;
                         var den = vB || vA || 1, v2 = (vA - vB) / den;
                         xV.push(vB); yV.push(vA); col.push(Math.abs(v2) > thr ? '#e74c3c' : '#1565c0');
-                        txt.push(tr(org, 20) + '<br>' + AG_LBL[p.b] + ':' + vB + ' ' + AG_LBL[p.a] + ':' + vA);
+                        txt.push(tr(org, 28) + '<br>' + AG_LBL[p.b] + ': ' + vB + '<br>' + AG_LBL[p.a] + ': ' + vA + '<br>Var: ' + (v2 > 0 ? '+' : '') + (v2 * 100).toFixed(1) + '%');
                     });
                     if (!xV.length) return;
                     var mx = Math.max.apply(null, xV.concat(yV).concat([10])) * 1.15;
                     Plotly.newPlot(dv, [
-                        { x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: { size: 9, color: col, line: { width: 1, color: '#fff' } }, hoverinfo: 'text' },
+                        { x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: { size: 9, color: col, line: { width: 1, color: '#fff' } }, hoverinfo: 'text', name: ol.l },
                         { x: [0, mx], y: [0, mx], type: 'scatter', mode: 'lines', line: { color: '#333', width: 2, dash: 'dot' }, name: '=' },
-                        { x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '+10%' },
-                        { x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '-10%' }
-                    ], { xaxis: { title: AG_LBL[p.b] }, yaxis: { title: AG_LBL[p.a] }, margin: { l: 55, r: 20, t: 8, b: 45 }, plot_bgcolor: '#fafbfc' }, { responsive: true });
+                        { x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '+' + Math.round(thr * 100) + '%' },
+                        { x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '-' + Math.round(thr * 100) + '%' }
+                    ], { xaxis: { title: { text: AG_LBL[p.b], font: { size: 12 } } }, yaxis: { title: { text: AG_LBL[p.a], font: { size: 12 } } }, margin: { l: 60, r: 20, t: 10, b: 55 }, legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center' }, plot_bgcolor: '#fafbfc' }, { responsive: true });
                 }, 80 + pi * 80);
             });
 
             if (lastM) {
-                var tBox = E('div', 'cb'); tBox.innerHTML = '<h4>📋 Vaccins même âge (' + mL(lastM) + ')</h4>';
+                var ol3 = getOrgLevel(D);
+                var tBox = E('div', 'cb'); tBox.innerHTML = '<h4>📋 Vaccins même âge</h4>';
                 var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
-                var h = '<div class="tw"><table class="dt"><thead><tr><th>FOSA</th><th>AS</th>';
+                var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol3.l + '</th>';
                 SAME_AGE.forEach(function (g) { h += '<th>' + g.age + '</th><th>%Var</th>'; });
-                h += '<th>OK?</th></tr></thead><tbody>';
+                h += '<th>Cohérence</th></tr></thead><tbody>';
+
                 ld.slice(0, 60).forEach(function (r) {
-                    h += '<tr><td>' + tr(r.org5, 22) + '</td><td>' + tr(r.org4, 16) + '</td>';
+                    h += '<tr><td>' + tr(r[ol3.k], 24) + '</td>';
                     var bad = false;
                     SAME_AGE.forEach(function (g) {
                         var vs = g.v.map(function (v) { return AG_LBL[v] + ':' + (Number(r[v]) || 0); }).join(', ');
@@ -1421,7 +1435,6 @@
                 S.charts.dr = new Chart(x, { type: 'bar', data: { labels: orgs.map(function (l) { return tr(l, 24); }), datasets: [{ label: 'Dropout %', data: dV, backgroundColor: dC, borderRadius: 3 }] }, options: { indexAxis: orgs.length > 8 ? 'y' : 'x', responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: '%' } } } } });
             }, 300);
         }
-
         /* ═══ P4: VALEURS ATYPIQUES ═══ */
         function rP4(c) {
             var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT;
