@@ -1416,46 +1416,44 @@
                 if (!sAG[l]) { sAG[l] = 1; uniqueAG.push(l); }
             });
 
-            /* ── HTML des filtres ── */
-            var fH = '<div style="display:flex;gap:16px;margin:10px 0 14px;padding:12px 16px;'
-                + 'background:linear-gradient(135deg,#f0f4f8,#e2e8f0);border-radius:10px;'
-                + 'flex-wrap:wrap;align-items:flex-start">';
+            /* ── HTML des filtres (dropdown checkboxes) ── */
+            var fH = '<div style="display:flex;gap:12px;margin:10px 0 14px;flex-wrap:wrap;align-items:flex-start">';
 
             /* Filtre Org Unit */
-            fH += '<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">';
-            fH += '<label style="font-weight:700;font-size:11px;color:#0b3a6f;text-transform:uppercase">'
-                + '\ud83c\udfe5 ' + ol.l + '</label>';
-            fH += '<div style="display:flex;gap:6px">';
-            fH += '<select id="alertFltOU" multiple size="5" style="flex:1;min-width:180px;padding:4px;'
-                + 'border:1px solid #cbd5e1;border-radius:6px;font-size:11px;background:#fff">';
+            fH += '<div class="fg" style="flex:1;min-width:200px">';
+            fH += '<label style="text-transform:uppercase">' + ol.l;
+            fH += ' <button class="frst" onclick="_rstAOU()" title="R\u00e9initialiser">\u21ba</button>';
+            fH += '</label>';
+            fH += '<button class="fbtn" id="alertBtnOU" onclick="_togADD(\'alertDdOU\')">';
+            fH += '<span>Tout (' + uniqueOU.length + ')</span>';
+            fH += '<span class="cn">' + uniqueOU.length + '</span>';
+            fH += '<span>\u25bc</span>';
+            fH += '</button>';
+            fH += '<div class="fd" id="alertDdOU">';
+            fH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'alertDdOU\')">';
+            fH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'alertDdOU\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
             uniqueOU.forEach(function (ou) {
-                fH += '<option value="' + ou + '">' + tr(ou, 35) + '</option>';
+                fH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_fltAlert()"><span>' + tr(ou, 35) + '</span></div>';
             });
-            fH += '</select>';
-            fH += '<button onclick="_rstAOU()" style="padding:4px 10px;background:#dc3545;color:#fff;'
-                + 'border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;'
-                + 'align-self:flex-end" title="R\u00e9initialiser">\u2715 Reset</button>';
-            fH += '</div>';
-            fH += '<small style="color:#64748b;font-size:10px">Ctrl+clic pour multi-s\u00e9lection</small>';
-            fH += '</div>';
+            fH += '</div></div>';
 
             /* Filtre Antigène */
-            fH += '<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">';
-            fH += '<label style="font-weight:700;font-size:11px;color:#0b3a6f;text-transform:uppercase">'
-                + '\ud83d\udc89 Antig\u00e8ne</label>';
-            fH += '<div style="display:flex;gap:6px">';
-            fH += '<select id="alertFltAG" multiple size="5" style="flex:1;min-width:180px;padding:4px;'
-                + 'border:1px solid #cbd5e1;border-radius:6px;font-size:11px;background:#fff">';
+            fH += '<div class="fg" style="flex:1;min-width:200px">';
+            fH += '<label style="text-transform:uppercase">Antig\u00e8ne';
+            fH += ' <button class="frst" onclick="_rstAAG()" title="R\u00e9initialiser">\u21ba</button>';
+            fH += '</label>';
+            fH += '<button class="fbtn" id="alertBtnAG" onclick="_togADD(\'alertDdAG\')">';
+            fH += '<span>Tout (' + uniqueAG.length + ')</span>';
+            fH += '<span class="cn">' + uniqueAG.length + '</span>';
+            fH += '<span>\u25bc</span>';
+            fH += '</button>';
+            fH += '<div class="fd" id="alertDdAG">';
+            fH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'alertDdAG\')">';
+            fH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'alertDdAG\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
             uniqueAG.forEach(function (ag) {
-                fH += '<option value="' + ag + '">' + ag + '</option>';
+                fH += '<div class="fi"><input type="checkbox" checked value="' + ag.replace(/"/g, '&quot;') + '" onchange="_fltAlert()"><span>' + ag + '</span></div>';
             });
-            fH += '</select>';
-            fH += '<button onclick="_rstAAG()" style="padding:4px 10px;background:#dc3545;color:#fff;'
-                + 'border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;'
-                + 'align-self:flex-end" title="R\u00e9initialiser">\u2715 Reset</button>';
-            fH += '</div>';
-            fH += '<small style="color:#64748b;font-size:10px">Ctrl+clic pour multi-s\u00e9lection</small>';
-            fH += '</div>';
+            fH += '</div></div>';
 
             fH += '</div>';
             box.innerHTML += fH;
@@ -1467,13 +1465,9 @@
                 + '<tbody id="alertTBody"></tbody></table></div>';
             box.innerHTML += tH;
 
-            /* Rendu initial + listeners après insertion DOM */
+            /* Rendu initial (les listeners sont inline via onchange) */
             setTimeout(function () {
                 _renderAlertTbl(_alertAllRows);
-                var ouEl = document.getElementById('alertFltOU');
-                var agEl = document.getElementById('alertFltAG');
-                if (ouEl) ouEl.addEventListener('change', _fltAlert);
-                if (agEl) agEl.addEventListener('change', _fltAlert);
             }, 30);
 
             return box;
@@ -1511,30 +1505,77 @@
             tb.innerHTML = h;
         }
 
-        /* ── Filtrage dynamique ── */
+        /* ── Filtrage dynamique (lit les checkboxes) ── */
         function _fltAlert() {
-            var ouS = document.getElementById('alertFltOU');
-            var agS = document.getElementById('alertFltAG');
-            var sOU = ouS ? Array.from(ouS.selectedOptions).map(function (o) { return o.value; }) : [];
-            var sAG = agS ? Array.from(agS.selectedOptions).map(function (o) { return o.value; }) : [];
+            var ouCBs = document.querySelectorAll('#alertDdOU .fi:not(.fa) input[type=checkbox]');
+            var agCBs = document.querySelectorAll('#alertDdAG .fi:not(.fa) input[type=checkbox]');
+            var sOU = [], sAG = [];
+            ouCBs.forEach(function (cb) { if (cb.checked) sOU.push(cb.value); });
+            agCBs.forEach(function (cb) { if (cb.checked) sAG.push(cb.value); });
             var f = _alertAllRows;
-            if (sOU.length) f = f.filter(function (r) { return sOU.indexOf(r.ou) >= 0; });
-            if (sAG.length) f = f.filter(function (r) { return sAG.indexOf(r.vac) >= 0; });
+            /* Si pas tous cochés → filtrer ; si tous cochés → tout montrer */
+            if (sOU.length < ouCBs.length) {
+                f = f.filter(function (r) { return sOU.indexOf(r.ou) >= 0; });
+            }
+            if (sAG.length < agCBs.length) {
+                f = f.filter(function (r) { return sAG.indexOf(r.vac) >= 0; });
+            }
             _renderAlertTbl(f);
+            _updABtn('alertDdOU', 'alertBtnOU');
+            _updABtn('alertDdAG', 'alertBtnAG');
         }
 
-        /* ── Boutons Reset ── */
+        /* ── Toggle ouverture dropdown ── */
+        window._togADD = function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('sh');
+            /* Fermer l'autre dropdown */
+            var other = id === 'alertDdOU' ? 'alertDdAG' : 'alertDdOU';
+            var oel = document.getElementById(other);
+            if (oel) oel.classList.remove('sh');
+        };
+
+        /* ── Recherche dans le dropdown ── */
+        window._srchA = function (inp, ddId) {
+            var q = inp.value.toLowerCase();
+            document.querySelectorAll('#' + ddId + ' .fi:not(.fa)').forEach(function (it) {
+                it.style.display = it.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+            });
+        };
+
+        /* ── Tout sélectionner / tout désélectionner ── */
+        window._togAllA = function (allCB, ddId) {
+            var cbs = document.querySelectorAll('#' + ddId + ' .fi:not(.fa) input[type=checkbox]');
+            cbs.forEach(function (cb) { cb.checked = allCB.checked; });
+            _fltAlert();
+        };
+
+        /* ── Mettre à jour le label du bouton (ex: "3/19" ou "Tout (19)") ── */
+        function _updABtn(ddId, btnId) {
+            var cbs = document.querySelectorAll('#' + ddId + ' .fi:not(.fa) input[type=checkbox]');
+            var tot = cbs.length, nSel = 0;
+            cbs.forEach(function (cb) { if (cb.checked) nSel++; });
+            /* Sync le checkbox "Tout sélectionner" */
+            var allCB = document.querySelector('#' + ddId + ' .fa input[type=checkbox]');
+            if (allCB) allCB.checked = (nSel === tot);
+            /* Mettre à jour le texte du bouton */
+            var btn = document.getElementById(btnId);
+            if (btn) {
+                var lbl = (nSel === tot && tot > 0) ? 'Tout (' + tot + ')' : nSel + '/' + tot;
+                btn.innerHTML = '<span>' + lbl + '</span><span class="cn">' + nSel + '</span><span>\u25bc</span>';
+            }
+        }
+
+        /* ── Boutons Reset (tout recocher) ── */
         window._rstAOU = function () {
-            var s = document.getElementById('alertFltOU');
-            if (s) Array.from(s.options).forEach(function (o) { o.selected = false; });
+            document.querySelectorAll('#alertDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
             _fltAlert();
         };
         window._rstAAG = function () {
-            var s = document.getElementById('alertFltAG');
-            if (s) Array.from(s.options).forEach(function (o) { o.selected = false; });
+            document.querySelectorAll('#alertDdAG .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
             _fltAlert();
         };
-
         /* ═══ P3: COHÉRENCE-DONNÉE ═══ */
         function rP3(c) {
             var D = S.flt, mos = uv(D, function (r) { return r.period; }), lastM = mos[mos.length - 1], thr = C.CD;
