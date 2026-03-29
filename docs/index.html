@@ -1344,20 +1344,35 @@
             c.appendChild(mkAlertTbl(D, AD, mos, N, thr));
         }
 
+
+
         function mkAlertTbl(D, AD, mos, N, thr) {
             var box = E('div', 'cb'); var lastM = mos[mos.length - 1];
             box.innerHTML = '<h4> Alertes (moy. mobile ' + N + ' mois, ±' + Math.round(thr * 100) + '%)</h4>';
             if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donnée.</p>'; return box; }
             var ol = getOrgLevel(D);
-            var ld = D.filter(function (r) { return r.period === lastM && isRep(r); }), rows = [];
-            ld.forEach(function (r) {
+
+            /* Agréger par org unit au bon niveau */
+            var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
+            var og = grp(ld, function (r) { return r[ol.k]; });
+
+            var rows = [];
+            Object.keys(og).filter(Boolean).forEach(function (orgName) {
+                var recs = og[orgName];
                 AG.forEach(function (ag) {
-                    var val = Number(r[ag]) || 0; if (!val) return;
-                    var avg = mAvg(r.org5, ag, lastM, AD, N); if (!avg) return;
+                    var val = sf(recs, ag); if (!val) return;
+                    /* Calculer la moyenne des N périodes précédentes pour cette org unit */
+                    var prevData = AD.filter(function (r) { return r[ol.k] === orgName && r.period < lastM; });
+                    prevData.sort(function (a, b) { return b.period < a.period ? -1 : 1; });
+                    var sub = prevData.slice(0, N);
+                    if (!sub.length) return;
+                    var avg = sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length;
+                    if (!avg) return;
                     var v2 = (val - avg) / avg;
-                    if (Math.abs(v2) > thr) rows.push({ ou: r[ol.k], vac: AG_LBL[ag], val: val, avg: avg.toFixed(0), var2: (v2 * 100).toFixed(1), acc: Math.abs(v2) >= .5 ? 'Non acceptable' : 'Acceptable' });
+                    if (Math.abs(v2) > thr) rows.push({ ou: orgName, vac: AG_LBL[ag], val: val, avg: avg.toFixed(0), var2: (v2 * 100).toFixed(1), acc: Math.abs(v2) > thr ? 'Non acceptable' : 'Acceptable' });
                 });
             });
+
             rows.sort(function (a, b) { var ap = a.acc === 'Non acceptable' ? 0 : 1, bp = b.acc === 'Non acceptable' ? 0 : 1; return ap !== bp ? ap - bp : Math.abs(+b.var2) - Math.abs(+a.var2); });
             if (!rows.length) { box.innerHTML += '<p style="color:#27ae60;font-weight:600"> RAS pour ' + mL(lastM) + '</p>'; return box; }
 
@@ -1368,6 +1383,7 @@
             });
             box.innerHTML += h + '</tbody></table></div>'; return box;
         }
+
 
         /* ═══ P3: COHÉRENCE-DONNÉE ═══ */
         function rP3(c) {
