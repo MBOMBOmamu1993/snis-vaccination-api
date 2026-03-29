@@ -1255,29 +1255,81 @@
                     });
 
                     var dv = document.getElementById('dp' + i); if (!dv) return;
-                    var orgK = 'org5', orgL = 'FOSA';
                     var lastM = mos[mos.length - 1]; if (!lastM) return;
+
+                    /* ── Déterminer dynamiquement le niveau d'orgunit ── */
+                    var f = S.filters;
+                    var orgK, orgL;
+                    if (f.as && f.as.length === 1) {
+                        orgK = 'org5'; orgL = 'FOSA';
+                    } else if (f.zs && f.zs.length === 1) {
+                        orgK = 'org4'; orgL = 'Aire de Santé';
+                    } else if (f.antenne && f.antenne.length === 1) {
+                        orgK = 'org3'; orgL = 'Zone de Santé';
+                    } else {
+                        /* Province avec plusieurs antennes → Antenne ; sinon ZS */
+                        var nbAnt = uv(D, function (r) { return r.antenne; }).length;
+                        if (nbAnt > 1) {
+                            orgK = 'antenne'; orgL = 'Antenne PEV';
+                        } else {
+                            orgK = 'org3'; orgL = 'Zone de Santé';
+                        }
+                    }
+
                     var ld = D.filter(function (r) { return r.period === lastM; });
                     var og = grp(ld, function (r) { return r[orgK]; });
                     var xV = [], yV = [], txt = [], col = [];
+
                     Object.keys(og).filter(Boolean).forEach(function (org) {
                         var cv = sf(og[org], ag);
-                        var prev = AD.filter(function (r) { return r[orgK] === org && r.period < lastM; }).sort(function (a, b) { return b.period < a.period ? -1 : 1; }).slice(0, N);
+
+                        var prev = AD.filter(function (r) {
+                            return r[orgK] === org && r.period <
+                                lastM;
+                        }).sort(function (a, b) { return b.period < a.period ? -1 : 1; }).slice(0, N);
                         if (!prev.length) return;
-                        var avg = prev.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / prev.length;
+                        var avg = prev.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) /
+                            prev.length;
                         if (!avg) return;
                         var v2 = (cv - avg) / avg;
-                        xV.push(avg); yV.push(cv); col.push(Math.abs(v2) <= thr ? '#1565c0' : '#e74c3c');
-                        txt.push(tr(org, 20) + '<br>Val:' + cv + ' Moy:' + avg.toFixed(0) + ' Var:' + (v2 * 100).toFixed(1) + '%');
+                        xV.push(avg); yV.push(cv); col.push(Math.abs(v2) <= thr ? '#1565c0' :
+                            '#e74c3c');
+                        txt.push(tr(org, 28) + '<br>' + mL(lastM) + ': ' + cv + '<br>Average: ' + avg.toFixed(1) + '<br>Var: ' + (v2 > 0 ? '+' : '') + (v2 * 100).toFixed(1) + '%');
                     });
+
                     if (!xV.length) return;
                     var mx = Math.max.apply(null, xV.concat(yV).concat([10])) * 1.15;
+
                     Plotly.newPlot(dv, [
-                        { x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: { size: 9, color: col, line: { width: 1, color: '#fff' } }, hoverinfo: 'text', name: orgL },
-                        { x: [0, mx], y: [0, mx], type: 'scatter', mode: 'lines', line: { color: '#333', width: 2 }, name: '=' },
-                        { x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '+33%' },
-                        { x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '-33%' }
-                    ], { margin: { l: 55, r: 20, t: 8, b: 45 }, legend: { orientation: 'h', y: -0.22 }, plot_bgcolor: '#fafbfc' }, { responsive: true });
+                        {
+                            x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: {
+                                size: 9, color: col,
+                                line: { width: 1, color: '#fff' }
+                            }, hoverinfo: 'text', name: orgL
+                        },
+                        {
+                            x: [0, mx], y: [0, mx], type: 'scatter', mode: 'lines', line: { color: '#333', width: 2 },
+                            name: '='
+                        },
+                        {
+                            x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: {
+                                color:
+                                    '#888', width: 1.5, dash: 'dash'
+                            }, name: '+ ' + Math.round(thr * 100) + '%'
+                        },
+                        {
+                            x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: {
+                                color:
+                                    '#888', width: 1.5, dash: 'dash'
+                            }, name: '- ' + Math.round(thr * 100) + '%'
+                        }
+                    ], {
+                        margin: { l: 60, r: 20, t: 10, b: 60 },
+                        legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center' },
+                        xaxis: { title: { text: 'Moyenne de ' + N + ' périodes précédentes', font: { size: 12 } }, zeroline: true },
+                        yaxis: { title: { text: mL(lastM), font: { size: 12 } }, zeroline: true },
+                        plot_bgcolor: '#fafbfc'
+                    }, { responsive: true });
                 }, 80 + i * 60);
             });
             c.appendChild(mkAlertTbl(D, AD, mos, N, thr));
