@@ -65,6 +65,8 @@ SUM_SPECS = {
     'VAR1_0_11_fixe': ['VAR1_fixe1','VAR1_fixe2'],
     'VAR2_0_11': ['VAR2_0_11_mois_fixe','VAR2_0_11_mois_avanc_e','VAR2_0_11_mois_mobile'],
     'VAR2_0_11_fixe': ['VAR2_0_11_mois_fixe'],
+    'VAR2_fixe': ['VAR2_fixe1','VAR2_fixe2'],
+    'VAR2': ['VAR2_fixe1','VAR2_fixe2','VAR2_avanc_','VAR2_mobile1','VAR2_mobile2'],
     'VAA_0_11': ['VAA_fixe1','VAA_fixe2','VAA_avanc_1','VAA_avanc_2','VAA_mobile1','VAA_mobile2'],
     'VAA_0_11_fixe': ['VAA_fixe1','VAA_fixe2'],
     'VAP1_0_11': ['VAP1_0_11_mois_fixe','VAP1_0_11_mois_avanc_e'],
