@@ -1641,8 +1641,7 @@
                 var f = window._p4Det.rows;
                 if (sOU.length < ouCBs.length) f = f.filter(function (r) { return sOU.indexOf(r.ou) >= 0; });
                 if (sAG.length < agCBs.length) f = f.filter(function (r) { return sAG.indexOf(r.lbl) >= 0; });
-                window._p4Det.flt = f;
-                window._p4Det.pg = 0;
+                window._p4Det.flt = f; window._p4Det.pg = 0;
                 _renderDetPage();
                 _updABtn('detDdOU', 'detBtnOU');
                 _updABtn('detDdAG', 'detBtnAG');
@@ -1657,45 +1656,36 @@
                 _fltDet();
             };
 
-            window._detPgTo = function (p) {
-                window._p4Det.pg = p;
-                _renderDetPage();
-            };
+            window._detPgTo = function (p) { window._p4Det.pg = p; _renderDetPage(); };
 
             window._renderDetPage = function () {
-                var det = window._p4Det;
-                if (!det || !det.rows) return;
-                var d = det.flt, pp = det.pp, tp = Math.ceil(d.length / pp) || 1;
-                if (det.pg >= tp) det.pg = tp - 1;
-                if (det.pg < 0) det.pg = 0;
+                var det = window._p4Det, d = det.flt, pp = det.pp, tp = Math.ceil(d.length / pp) || 1;
+                if (det.pg >= tp) det.pg = tp - 1; if (det.pg < 0) det.pg = 0;
                 var st = det.pg * pp, pd = d.slice(st, st + pp), mos = det.mos;
+                var ncol = mos.length + 8;
 
-                /* ── En-tête ── */
+                /* ── En-tête du tableau ── */
                 var h = '<table class="dt"><thead>';
                 h += '<tr><th rowspan="2">Unit\u00e9</th><th rowspan="2">Donn\u00e9es</th>';
                 mos.forEach(function (m) { h += '<th style="font-size:9px">' + mL(m) + '</th>'; });
-                h += '<th colspan="2" style="text-align:center">Z-score</th>';
+                h += '<th colspan="2" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">Z-score</th>';
                 h += '<th rowspan="2">Manq.</th><th rowspan="2">Val.Atyp</th><th rowspan="2">Total</th><th rowspan="2"></th></tr>';
                 h += '<tr>';
                 mos.forEach(function () { h += '<th></th>'; });
                 h += '<th style="font-size:9px">Std</th><th style="font-size:9px">Mod%</th></tr></thead><tbody>';
 
                 if (!pd.length) {
-                    h += '<tr><td colspan="' + (mos.length + 8) + '" style="text-align:center;padding:24px;color:#888;font-style:italic">Aucune donn\u00e9e.</td></tr>';
+                    h += '<tr><td colspan="' + ncol + '" style="text-align:center;padding:24px;color:#888;font-style:italic">Aucune donn\u00e9e correspondante.</td></tr>';
                 } else {
                     pd.forEach(function (r, ri) {
-                        h += '<tr>';
-                        h += '<td style="white-space:nowrap">' + tr(r.ou, 26) + '</td>';
-                        h += '<td><b>' + r.lbl + '</b></td>';
+                        h += '<tr><td style="white-space:nowrap">' + tr(r.ou, 26) + '</td><td><b>' + r.lbl + '</b></td>';
                         r.vals.forEach(function (v, vi) {
-                            var sty = '';
-                            if (r.ia[vi]) sty = 'background:#fee2e2;color:#991b1b;font-weight:700';
-                            else if (v === 0) sty = 'background:#fefce8;color:#92400e';
-                            h += '<td style="text-align:right;' + sty + '">' + (v || '') + '</td>';
+                            var sty = r.ia[vi] ? 'background:#fee2e2;color:#991b1b;font-weight:700' : '';
+                            h += '<td style="text-align:right;' + sty + '">' + v + '</td>';
                         });
                         h += '<td style="text-align:right;font-weight:600">' + r.mz.toFixed(2) + '</td>';
                         h += '<td style="text-align:right">' + r.cv.toFixed(2) + '</td>';
-                        h += '<td style="text-align:center;' + (r.miss > 0 ? 'color:#dc2626;font-weight:700' : '') + '">' + r.miss + '</td>';
+                        h += '<td style="text-align:center">' + r.miss + '</td>';
                         h += '<td style="text-align:center;font-weight:700;color:' + (r.ac > 0 ? '#e74c3c' : '#27ae60') + '">' + r.ac + '</td>';
                         h += '<td style="text-align:right;font-weight:600">' + r.tot.toLocaleString() + '</td>';
                         h += '<td style="text-align:center">'
@@ -1709,19 +1699,17 @@
                     });
                 }
                 h += '</tbody></table>';
+                var w = document.getElementById('detTblWrap'); if (w) w.innerHTML = h;
 
-                var w = document.getElementById('detTblWrap');
-                if (w) w.innerHTML = h;
-
-                /* ── Pagination ── */
+                /* ── Pagination style First/Prev/1/2/3/Next/Last ── */
                 var pgH = '';
                 if (tp > 1) {
-                    var bN = 'padding:7px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#555';
+                    var bN = 'padding:7px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#555;transition:.2s';
                     var bD = bN + ';opacity:.35;cursor:not-allowed;pointer-events:none';
-                    var bA = 'padding:7px 14px;border:none;border-radius:6px;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;font-size:12px;font-weight:700';
+                    var bA = 'padding:7px 14px;border:none;border-radius:6px;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;cursor:default;font-size:12px;font-weight:700';
 
-                    pgH += '<button onclick="_detPgTo(0)" style="' + (det.pg === 0 ? bD : bN) + '">Premier</button>';
-                    pgH += '<button onclick="_detPgTo(' + (det.pg - 1) + ')" style="' + (det.pg === 0 ? bD : bN) + '">Pr\u00e9c\u00e9dent</button>';
+                    pgH += '<button onclick="_detPgTo(0)" style="' + (det.pg === 0 ? bD : bN) + '"' + (det.pg === 0 ? ' disabled' : '') + '>Premier</button>';
+                    pgH += '<button onclick="_detPgTo(' + (det.pg - 1) + ')" style="' + (det.pg === 0 ? bD : bN) + '"' + (det.pg === 0 ? ' disabled' : '') + '>Pr\u00e9c\u00e9dent</button>';
 
                     var pS = Math.max(0, det.pg - 2), pE = Math.min(tp, pS + 5);
                     if (pE - pS < 5) pS = Math.max(0, pE - 5);
@@ -1729,22 +1717,21 @@
                         pgH += '<button onclick="_detPgTo(' + pi + ')" style="' + (pi === det.pg ? bA : bN) + '">' + (pi + 1) + '</button>';
                     }
 
-                    pgH += '<button onclick="_detPgTo(' + (det.pg + 1) + ')" style="' + (det.pg >= tp - 1 ? bD : bN) + '">Suivant</button>';
-                    pgH += '<button onclick="_detPgTo(' + (tp - 1) + ')" style="' + (det.pg >= tp - 1 ? bD : bN) + '">Dernier</button>';
-                    pgH += '<span style="padding:7px 12px;font-size:11px;color:#666">Page ' + (det.pg + 1) + '/' + tp + ' (' + d.length + ' lignes)</span>';
+                    pgH += '<button onclick="_detPgTo(' + (det.pg + 1) + ')" style="' + (det.pg >= tp - 1 ? bD : bN) + '"' + (det.pg >= tp - 1 ? ' disabled' : '') + '>Suivant</button>';
+                    pgH += '<button onclick="_detPgTo(' + (tp - 1) + ')" style="' + (det.pg >= tp - 1 ? bD : bN) + '"' + (det.pg >= tp - 1 ? ' disabled' : '') + '>Dernier</button>';
+
+                    pgH += '<span style="padding:7px 12px;font-size:11px;color:#666;align-self:center">Page ' + (det.pg + 1) + '/' + tp + ' (' + d.length + ' lignes)</span>';
                 }
-                var pw = document.getElementById('detPgWrap');
-                if (pw) pw.innerHTML = pgH;
+                var pw = document.getElementById('detPgWrap'); if (pw) pw.innerHTML = pgH;
             };
 
-            /* ═══ MODAL ═══ */
+            /* ═══ MODAL GRAPHIQUE VALEURS ATYPIQUES ═══ */
             var _detModalChart = null;
 
             window._showDetModal = function (idx) {
-                var r = window._p4Det.flt[idx];
-                if (!r) return;
-                var m = document.getElementById('detModal');
-                if (!m) return;
+                var r = window._p4Det.flt[idx]; if (!r) return;
+                var m = document.getElementById('detModal'); if (!m) return;
+
                 document.getElementById('detMT').textContent = r.ou;
                 document.getElementById('detMS').textContent = r.lbl;
                 m.style.display = 'flex';
@@ -1753,7 +1740,10 @@
 
                 var cv = document.getElementById('detMC');
                 var mos = window._p4Det.mos;
+
+                /* Couleurs : rouge pour atypiques, vert pour normales */
                 var colors = r.vals.map(function (v, i) { return r.ia[i] ? '#e74c3c' : '#27ae60'; });
+                var borders = r.vals.map(function (v, i) { return r.ia[i] ? '#b91c1c' : '#16a34a'; });
 
                 _detModalChart = new Chart(cv, {
                     type: 'bar',
@@ -1763,8 +1753,9 @@
                             label: r.lbl + ' \u2014 ' + r.ou,
                             data: r.vals,
                             backgroundColor: colors,
-                            borderColor: colors.map(function (c2) { return c2 === '#e74c3c' ? '#b91c1c' : '#16a34a'; }),
-                            borderWidth: 1, borderRadius: 5
+                            borderColor: borders,
+                            borderWidth: 1,
+                            borderRadius: 5
                         }]
                     },
                     options: {
@@ -1775,13 +1766,14 @@
                             tooltip: {
                                 callbacks: {
                                     afterLabel: function (ctx) {
-                                        return r.ia[ctx.dataIndex] ? '\u26a0 Valeur atypique (>2 SD)' : '';
+                                        var i = ctx.dataIndex;
+                                        return r.ia[i] ? '\u26a0 Valeur atypique (>2 SD)' : '';
                                     }
                                 }
                             }
                         },
                         scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Nombre vaccin\u00e9s', font: { size: 11 } } },
+                            y: { beginAtZero: true, title: { display: true, text: 'Nombre', font: { size: 11 } } },
                             x: { title: { display: true, text: 'Mois', font: { size: 11 } } }
                         }
                     }
@@ -1808,137 +1800,105 @@
             var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT;
             var lastM = mos[mos.length - 1];
             var ld = lastM ? D.filter(function (r) { return r.period === lastM && isRep(r); }) : [];
-            /* ── Niveau org dynamique + données 12 mois ── */
-            var _ol4 = getOrgLevel(D);
-            var _ok4 = _ol4.k;
-            var _allMos4 = uv(AD, function (r) { return r.period; }).sort();
-            var _last12 = _allMos4.slice(Math.max(0, _allMos4.length - 12));
+            /* ── Index rapide pour lookup AD ── */
+            var _p4Idx = {}; AD.forEach(function (r) { var k = (r.org5 || '') + '\t' + (r.period || ''); if (!_p4Idx[k]) _p4Idx[k] = r; });
+            var _allMosP4 = uv(AD, function (r) { return r.period; }).sort();
+            var _last12 = _allMosP4.slice(Math.max(0, _allMosP4.length - 12));
 
-            /* Grouper TOUTES les données par orgK + period */
-            var _gAD = {};
-            AD.forEach(function (r) {
-                var k = (r[_ok4] || '') + '\t' + (r.period || '');
-                if (!_gAD[k]) _gAD[k] = [];
-                _gAD[k].push(r);
-            });
-
-            /* Org units présentes dans le dernier mois */
-            var _ous4 = uv(ld, function (r) { return r[_ok4]; });
-
-            /* ── 1) Graphique Atypiques par AG (méthode ±2 SD) ── */
-            var atB = {};
-            AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
-
-            _ous4.forEach(function (ou) {
+            /* ── Calcul atypiques méthode 2 SD ── */
+            var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
+            var _flst = uv(ld, function (r) { return r.org5; });
+            _flst.forEach(function (fosa) {
                 AG.forEach(function (ag) {
-                    var v12 = _last12.map(function (m) { return sf(_gAD[ou + '\t' + m] || [], ag); });
-                    var cur = v12[v12.length - 1];
-                    if (!cur) return;
-                    atB[ag].t++;
-                    var n2 = v12.length, mu2 = 0, sq2 = 0;
-                    v12.forEach(function (v) { mu2 += v; }); mu2 /= n2;
-                    v12.forEach(function (v) { sq2 += (v - mu2) * (v - mu2); });
-                    var sd2 = n2 > 1 ? Math.sqrt(sq2 / (n2 - 1)) : 0;
-                    if (sd2 > 0 && Math.abs((cur - mu2) / sd2) > 2) atB[ag].a++;
+                    var v12 = _last12.map(function (m) { var rec = _p4Idx[fosa + '\t' + m]; return rec ? (Number(rec[ag]) || 0) : 0; });
+                    var cur = v12[v12.length - 1]; if (!cur) return; atB[ag].t++;
+                    var n2 = v12.length, mu = v12.reduce(function (s, v) { return s + v; }, 0) / n2, sq = 0;
+                    v12.forEach(function (v) { sq += (v - mu) * (v - mu); });
+                    var sd2 = n2 > 1 ? Math.sqrt(sq / (n2 - 1)) : 0;
+                    if (sd2 > 0 && Math.abs((cur - mu) / sd2) > 2) atB[ag].a++;
                 });
             });
 
             var agK = AG.filter(function (a) { return atB[a].t > 0; });
-            var b1 = E('div', 'cb');
-            b1.innerHTML = '<h4>\u26a0 Atypiques par AG</h4><canvas id="atB" height="55"></canvas>';
-            c.appendChild(b1);
+            var b1 = E('div', 'cb'); b1.innerHTML = '<h4>\u26a0 Atypiques par AG</h4><canvas id="atB" height="55"></canvas>'; c.appendChild(b1);
             setTimeout(function () {
                 var x = document.getElementById('atB'); if (!x) return;
-                S.charts.atB = new Chart(x, {
-                    type: 'bar',
-                    data: {
-                        labels: agK.map(function (a) { return AG_LBL[a]; }),
-                        datasets: [
-                            { label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 },
-                            { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }
-                        ]
-                    },
-                    options: { responsive: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
-                });
+                S.charts.atB = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
             }, 80);
-
-            /* ── 2) Tableau détaillé valeurs atypiques ── */
-            var _detRows = [];
-            _ous4.forEach(function (ou) {
-                AG.forEach(function (ag) {
-                    var vals = _last12.map(function (m) { return sf(_gAD[ou + '\t' + m] || [], ag); });
-                    var tot = vals.reduce(function (s, v) { return s + v; }, 0);
-                    var n3 = vals.length, mu3 = n3 > 0 ? tot / n3 : 0, miss = 0;
-                    vals.forEach(function (v) { if (!v) miss++; });
-                    var sq3 = vals.reduce(function (s, v) { return s + (v - mu3) * (v - mu3); }, 0);
-                    var sd3 = n3 > 1 ? Math.sqrt(sq3 / (n3 - 1)) : 0;
-                    var ia = vals.map(function (v) { return v > 0 && sd3 > 0 && Math.abs((v - mu3) / sd3) > 2; });
-                    var ac = ia.filter(Boolean).length;
-                    var mz = 0;
-                    vals.forEach(function (v) { if (sd3 > 0 && v > 0) { var z = Math.abs((v - mu3) / sd3); if (z > mz) mz = z; } });
-                    _detRows.push({
-                        ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia,
-                        tot: tot, miss: miss, ac: ac, mz: mz,
-                        cv: mu3 > 0 ? (sd3 / mu3 * 100) : 0, mu: mu3, sd: sd3
+            /* ═══ TABLEAU DÉTAILLÉ VALEURS ATYPIQUES (méthode ±2 SD) ═══ */
+            window._p4Det = { rows: [], flt: [], pg: 0, pp: 15, mos: _last12, orgL: '' };
+            (function () {
+                var ol = getOrgLevel(D); var orgK = ol.k; window._p4Det.orgL = ol.l;
+                /* Index groupé par orgK+period */
+                var gIdx = {}; AD.forEach(function (r) { var k = (r[orgK] || '') + '\t' + (r.period || ''); if (!gIdx[k]) gIdx[k] = []; gIdx[k].push(r); });
+                var ous = uv(D, function (r) { return r[orgK]; });
+                var rows = [];
+                ous.forEach(function (ou) {
+                    AG.forEach(function (ag) {
+                        var vals = _last12.map(function (m) { return sf(gIdx[ou + '\t' + m] || [], ag); });
+                        var tot = vals.reduce(function (s, v) { return s + v; }, 0);
+                        var n = vals.length, mu = n > 0 ? tot / n : 0, miss = 0;
+                        vals.forEach(function (v) { if (!v) miss++; });
+                        var sq = vals.reduce(function (s, v) { return s + (v - mu) * (v - mu); }, 0);
+                        var sd = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
+                        var ia = vals.map(function (v) { return v > 0 && sd > 0 && Math.abs((v - mu) / sd) > 2; });
+                        var ac = ia.filter(Boolean).length;
+                        var mz = 0; vals.forEach(function (v) { if (sd > 0 && v > 0) { var z = Math.abs((v - mu) / sd); if (z > mz) mz = z; } });
+                        rows.push({ ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia, tot: tot, miss: miss, ac: ac, mz: mz, cv: mu > 0 ? (sd / mu * 100) : 0, mu: mu, sd: sd });
                     });
                 });
-            });
+                window._p4Det.rows = rows; window._p4Det.flt = rows.slice(); window._p4Det.pg = 0;
 
-            window._p4Det = { rows: _detRows, flt: _detRows.slice(), pg: 0, pp: 15, mos: _last12, orgL: _ol4.l };
+                var uOU = ous.sort(), uAG = AG.map(function (a) { return AG_LBL[a]; });
 
-            /* Container */
-            var _dB = E('div', 'cb');
-            var _dH = '<h4>\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode \u00b12 SD)</h4>';
+                /* ── Container ── */
+                var db = E('div', 'cb');
+                db.innerHTML = '<h4>\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode \u00b12 SD)</h4>';
 
-            var _uOU4 = _ous4.slice().sort();
-            var _uAG4 = AG.map(function (a) { return AG_LBL[a]; });
+                /* ── Filtres dropdown checkboxes ── */
+                var fH = '<div style="display:flex;gap:12px;margin:10px 0 14px;flex-wrap:wrap;align-items:flex-start">';
+                /* Filtre Org Unit */
+                fH += '<div class="fg" style="flex:1;min-width:200px">';
+                fH += '<label style="text-transform:uppercase">' + ol.l + ' <button class="frst" onclick="_rstDetOU()" title="Reset">\u21ba</button></label>';
+                fH += '<button class="fbtn" id="detBtnOU" onclick="_togADD(\'detDdOU\')"><span>Tout (' + uOU.length + ')</span><span class="cn">' + uOU.length + '</span><span>\u25bc</span></button>';
+                fH += '<div class="fd" id="detDdOU">';
+                fH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'detDdOU\')">';
+                fH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'detDdOU\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
+                uOU.forEach(function (ou) { fH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_fltDet()"><span>' + tr(ou, 35) + '</span></div>'; });
+                fH += '</div></div>';
 
-            /* Filtres dropdown */
-            _dH += '<div style="display:flex;gap:12px;margin:10px 0 14px;flex-wrap:wrap;align-items:flex-start">';
+                /* Filtre Antigène */
+                fH += '<div class="fg" style="flex:1;min-width:200px">';
+                fH += '<label style="text-transform:uppercase">Antig\u00e8ne <button class="frst" onclick="_rstDetAG()" title="Reset">\u21ba</button></label>';
+                fH += '<button class="fbtn" id="detBtnAG" onclick="_togADD(\'detDdAG\')"><span>Tout (' + uAG.length + ')</span><span class="cn">' + uAG.length + '</span><span>\u25bc</span></button>';
+                fH += '<div class="fd" id="detDdAG">';
+                fH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'detDdAG\')">';
+                fH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'detDdAG\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
+                uAG.forEach(function (ag) { fH += '<div class="fi"><input type="checkbox" checked value="' + ag.replace(/"/g, '&quot;') + '" onchange="_fltDet()"><span>' + ag + '</span></div>'; });
+                fH += '</div></div></div>';
+                db.innerHTML += fH;
 
-            _dH += '<div class="fg" style="flex:1;min-width:200px">';
-            _dH += '<label style="text-transform:uppercase">' + _ol4.l + ' <button class="frst" onclick="_rstDetOU()" title="Reset">\u21ba</button></label>';
-            _dH += '<button class="fbtn" id="detBtnOU" onclick="_togADD(\'detDdOU\')"><span>Tout (' + _uOU4.length + ')</span><span class="cn">' + _uOU4.length + '</span><span>\u25bc</span></button>';
-            _dH += '<div class="fd" id="detDdOU">';
-            _dH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'detDdOU\')">';
-            _dH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'detDdOU\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
-            _uOU4.forEach(function (ou) {
-                _dH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_fltDet()"><span>' + tr(ou, 35) + '</span></div>';
-            });
-            _dH += '</div></div>';
+                /* ── Table + Pagination containers ── */
+                db.innerHTML += '<div id="detTblWrap" style="overflow-x:auto;max-height:520px;overflow-y:auto"></div>';
+                db.innerHTML += '<div id="detPgWrap" style="display:flex;justify-content:center;gap:4px;padding:12px;flex-wrap:wrap"></div>';
+                c.appendChild(db);
 
-            _dH += '<div class="fg" style="flex:1;min-width:200px">';
-            _dH += '<label style="text-transform:uppercase">Antig\u00e8ne <button class="frst" onclick="_rstDetAG()" title="Reset">\u21ba</button></label>';
-            _dH += '<button class="fbtn" id="detBtnAG" onclick="_togADD(\'detDdAG\')"><span>Tout (' + _uAG4.length + ')</span><span class="cn">' + _uAG4.length + '</span><span>\u25bc</span></button>';
-            _dH += '<div class="fd" id="detDdAG">';
-            _dH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'detDdAG\')">';
-            _dH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'detDdAG\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
-            _uAG4.forEach(function (ag) {
-                _dH += '<div class="fi"><input type="checkbox" checked value="' + ag.replace(/"/g, '&quot;') + '" onchange="_fltDet()"><span>' + ag + '</span></div>';
-            });
-            _dH += '</div></div></div>';
+                /* ── Modal (création unique) ── */
+                if (!document.getElementById('detModal')) {
+                    var mod = document.createElement('div'); mod.id = 'detModal';
+                    mod.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:9999;justify-content:center;align-items:center';
+                    mod.innerHTML = '<div style="background:#fff;border-radius:14px;padding:26px;max-width:750px;width:93%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)">'
+                        + '<div id="detMT" style="font-weight:800;font-size:17px;color:#0b3a6f;margin-bottom:4px"></div>'
+                        + '<div id="detMS" style="font-size:13px;color:#666;margin-bottom:16px"></div>'
+                        + '<canvas id="detMC" height="55"></canvas>'
+                        + '<div style="text-align:right;margin-top:16px"><button onclick="_closeDetModal()" style="padding:9px 28px;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">Fermer</button></div>'
+                        + '</div>';
+                    mod.onclick = function (e) { if (e.target === mod) _closeDetModal(); };
+                    document.body.appendChild(mod);
+                }
 
-            _dH += '<div id="detTblWrap" style="overflow-x:auto;max-height:520px;overflow-y:auto"></div>';
-            _dH += '<div id="detPgWrap" style="display:flex;justify-content:center;gap:4px;padding:12px;flex-wrap:wrap"></div>';
-
-            _dB.innerHTML = _dH;
-            c.appendChild(_dB);
-
-            /* Modal */
-            if (!document.getElementById('detModal')) {
-                var _mod = document.createElement('div'); _mod.id = 'detModal';
-                _mod.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:9999;justify-content:center;align-items:center';
-                _mod.innerHTML = '<div style="background:#fff;border-radius:14px;padding:26px;max-width:750px;width:93%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)">'
-                    + '<div id="detMT" style="font-weight:800;font-size:17px;color:#0b3a6f;margin-bottom:4px"></div>'
-                    + '<div id="detMS" style="font-size:13px;color:#666;margin-bottom:16px"></div>'
-                    + '<canvas id="detMC" height="55"></canvas>'
-                    + '<div style="text-align:right;margin-top:16px"><button onclick="_closeDetModal()" style="padding:9px 28px;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">Fermer</button></div></div>';
-                _mod.onclick = function (e) { if (e.target === _mod) _closeDetModal(); };
-                document.body.appendChild(_mod);
-            }
-
-            /* Rendu immédiat (DOM est prêt après appendChild) */
-            _renderDetPage();
+                setTimeout(function () { _renderDetPage(); }, 60);
+            })();
             /* Tendance mensuelle */
             var b2 = E('div', 'cb'); b2.innerHTML = '<h4>📈 Tendance atypiques</h4><canvas id="atT" height="50"></canvas>'; c.appendChild(b2);
             setTimeout(function () {
