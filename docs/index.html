@@ -162,6 +162,22 @@
             display: block
         }
 
+        .mi .dd {
+            animation: fadeIn .15s ease
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
         .lb {
             background: linear-gradient(135deg, #e3ecf7, #d6e3f5);
             padding: 9px 24px;
@@ -1088,19 +1104,52 @@
         function bNav() {
             var nav = document.getElementById('NAV'); nav.innerHTML = '';
             TABS.forEach(function (tab, ti) {
-                var mi = E('div', 'mi' + (ti === S.tab ? ' act' : '')); mi.id = 'mi-' + tab.id;
-                mi.innerHTML = '<span>' + tab.lb + '</span><span style="font-size:10px;margin-left:3px;opacity:.6">▼</span>';
+                var mi = document.createElement('div');
+                mi.className = 'mi' + (ti === S.tab ? ' act' : '');
+                mi.id = 'mi-' + tab.id;
+
+                /* Le texte de l'onglet */
+                var sp1 = document.createElement('span'); sp1.textContent = tab.lb;
+                mi.appendChild(sp1);
+
+                /* Flèche ▼ uniquement si sous-pages */
+                if (tab.pp.length > 1) {
+                    var arr = document.createElement('span');
+                    arr.style.cssText = 'font-size:10px;margin-left:3px;opacity:.6';
+                    arr.textContent = '▼';
+                    mi.appendChild(arr);
+                }
+
+                /* Dropdown des sous-pages */
                 if (tab.pp.length > 0) {
-                    var dd = E('div', 'dd'); dd.id = 'dd-' + tab.id;
+                    var dd = document.createElement('div');
+                    dd.className = 'dd';
+                    dd.id = 'dd-' + tab.id;
+
                     tab.pp.forEach(function (pg, pi) {
-                        var di = E('div', 'di' + (ti === S.tab && pi === S.pg ? ' as' : ''));
+                        var di = document.createElement('div');
+                        di.className = 'di' + (ti === S.tab && pi === S.pg ? ' as' : '');
                         di.innerHTML = '<span>' + pg.ic + '</span> ' + pg.t;
-                        di.onclick = function (e) { e.stopPropagation(); navTo(ti, pi); };
+
+                        /* Clic sur un item → navigation immédiate */
+                        di.addEventListener('click', function (ev) {
+                            ev.stopPropagation();
+                            ev.preventDefault();
+                            navTo(ti, pi);
+                        });
+
                         dd.appendChild(di);
                     });
+
                     mi.appendChild(dd);
                 }
-                mi.onclick = function (e) { if (!e.target.closest('.dd')) navTo(ti, 0); };
+
+                /* Clic sur l'onglet lui-même → page 0 (seulement si pas cliqué dans le dropdown) */
+                mi.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.dd')) return; /* ne rien faire si clic dans le dropdown */
+                    navTo(ti, 0);
+                });
+
                 nav.appendChild(mi);
             });
         }
