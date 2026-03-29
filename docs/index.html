@@ -124,7 +124,7 @@
             min-width: 290px;
             box-shadow: 0 14px 42px rgba(0, 0, 0, .22);
             border-radius: 0 0 10px 10px;
-            z-index: 2000;
+            z-index: 9999;
             overflow: hidden;
             border: 1px solid #ddd
         }
@@ -186,7 +186,9 @@
             gap: 12px;
             border-bottom: 1px solid #c5d4e8;
             font-size: 12px;
-            flex-wrap: wrap
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1000
         }
 
         .lb .st {
@@ -225,7 +227,9 @@
             gap: 12px;
             align-items: flex-start;
             border-bottom: 2px solid #e3ecf7;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .02)
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .02);
+            position: relative;
+            z-index: 1000
         }
 
         .fg {
