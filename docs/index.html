@@ -1701,7 +1701,7 @@
                     h += '<td style="text-align:right">' + r.cv.toFixed(2) + '</td>';
                     h += '<td style="text-align:center;' + (r.miss > 0 ? 'color:#dc2626;font-weight:700' : '') + '">' + r.miss + '</td>';
                     h += '<td style="text-align:center;font-weight:700;color:' + (r.ac > 0 ? '#e74c3c' : '#27ae60') + '">' + r.ac + '</td>';
-                    h += '<td style="text-align:right;font-weight:600">' + r.tot.toLocaleString() + '</td>';
+                    h += '<td style="text-align:center;font-weight:700;color:' + (r.tot > 0 ? '#e74c3c' : '#27ae60') + '">' + r.tot + '</td>';
                     h += '<td style="text-align:center"><span onclick="_showDetModal(' + (st + ri) + ')" style="cursor:pointer;font-size:18px;color:#0b3a6f" title="Voir les valeurs atypiques">\ud83d\udc41</span></td>';
                     h += '</tr>';
                 });
@@ -1737,7 +1737,7 @@
             _detModalChart = new Chart(cv, {
                 type: 'bar',
                 data: { labels: window._p4Det.mos.map(mL), datasets: [{ label: r.lbl, data: r.vals, backgroundColor: colors, borderColor: colors.map(function (c2) { return c2 === '#e74c3c' ? '#b91c1c' : '#16a34a'; }), borderWidth: 1, borderRadius: 5 }] },
-                options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: r.lbl + ' \u2014 ' + r.ou, font: { size: 14 }, color: '#0b3a6f' }, tooltip: { callbacks: { afterLabel: function (ctx) { return r.ia[ctx.dataIndex] ? '\u26a0 Atypique (>2 SD)' : ''; } } } }, scales: { y: { beginAtZero: true }, x: {} } }
+                options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: r.lbl + ' \u2014 ' + r.ou, font: { size: 14 }, color: '#0b3a6f' }, tooltip: { callbacks: { afterLabel: function (ctx) { return r.ia[ctx.dataIndex] ? '\u26a0 Atypique (>2 SD ou >33% var)' : ''; } } } }, scales: { y: { beginAtZero: true }, x: {} } }
             });
         };
         window._closeDetModal = function () {
@@ -1753,8 +1753,10 @@
             /* ── Niveau org dynamique + 12 derniers mois ── */
             var _ol4 = getOrgLevel(D);
             var _ok4 = _ol4.k;
-            var _allMosP4 = uv(AD, function (r) { return r.period; }).sort();
+            var _nowP4 = new Date(), _curPer = '' + _nowP4.getFullYear() + ((_nowP4.getMonth() + 1) < 10 ? '0' : '') + (_nowP4.getMonth() + 1);
+            var _allMosP4 = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < _curPer; });
             var _last12 = _allMosP4.slice(Math.max(0, _allMosP4.length - 12));
+            var lastM12 = _last12.length > 0 ? _last12[_last12.length - 1] : null;
 
             /* Index groupé par orgK + period */
             var _gAD4 = {};
@@ -1767,15 +1769,23 @@
 
             /* ── Calcul atypiques méthode 2 SD ── */
             var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
-            var _flst = uv(ld, function (r) { return r[_ok4]; });
+            var _flst = uv(AD.filter(function (r) { return _last12.indexOf(r.period) >= 0; }), function (r) { return r[_ok4]; });
             _flst.forEach(function (orgU) {
                 AG.forEach(function (ag) {
                     var v12 = _last12.map(function (m) { return sf(_gAD4[orgU + '\t' + m] || [], ag); });
-                    var cur = v12[v12.length - 1]; if (!cur) return; atB[ag].t++;
+                    var hasData = v12.some(function (v) { return v > 0; });
+                    if (!hasData) return;
+                    atB[ag].t++;
                     var n2 = v12.length, mu = v12.reduce(function (s, v) { return s + v; }, 0) / n2, sq = 0;
                     v12.forEach(function (v) { sq += (v - mu) * (v - mu); });
                     var sd2 = n2 > 1 ? Math.sqrt(sq / (n2 - 1)) : 0;
-                    if (sd2 > 0 && Math.abs((cur - mu) / sd2) > 2) atB[ag].a++;
+                    var hasAtyp = v12.some(function (v) {
+                        if (v <= 0) return false;
+                        if (sd2 > 0 && Math.abs((v - mu) / sd2) > 2) return true;
+                        if (mu > 0 && Math.abs((v - mu) / mu) > 0.33) return true;
+                        return false;
+                    });
+                    if (hasAtyp) atB[ag].a++;
                 });
             });
 
@@ -1796,13 +1806,23 @@
                 ous.forEach(function (ou) {
                     AG.forEach(function (ag) {
                         var vals = _last12.map(function (m) { return sf(gIdx[ou + '\t' + m] || [], ag); });
-                        var tot = vals.reduce(function (s, v) { return s + v; }, 0);
-                        var n = vals.length, mu = n > 0 ? tot / n : 0, miss = 0;
-                        vals.forEach(function (v) { if (!v) miss++; });
+                        var sumVal = vals.reduce(function (s, v) { return s + v; }, 0);
+                        var n = vals.length, mu = n > 0 ? sumVal / n : 0;
+                        /* Manquants = mois où la valeur agrégée de l'org unit = 0 */
+                        var miss = 0;
+                        vals.forEach(function (v) { if (v === 0) miss++; });
                         var sq = vals.reduce(function (s, v) { return s + (v - mu) * (v - mu); }, 0);
                         var sd = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
-                        var ia = vals.map(function (v) { return v > 0 && sd > 0 && Math.abs((v - mu) / sd) > 2; });
+                        /* Atypique : valeur > 0 ET (hors ±2 SD OU hors ±33% de la moyenne) */
+                        var ia = vals.map(function (v) {
+                            if (v === 0) return false;
+                            if (sd > 0 && Math.abs((v - mu) / sd) > 2) return true;
+                            if (mu > 0 && Math.abs((v - mu) / mu) > 0.33) return true;
+                            return false;
+                        });
                         var ac = ia.filter(Boolean).length;
+                        /* Total = nombre de valeurs atypiques (même chose que Val.Atyp) */
+                        var tot = ac;
                         var mz = 0; vals.forEach(function (v) { if (sd > 0 && v > 0) { var z = Math.abs((v - mu) / sd); if (z > mz) mz = z; } });
                         rows.push({ ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia, tot: tot, miss: miss, ac: ac, mz: mz, cv: mu > 0 ? (sd / mu * 100) : 0, mu: mu, sd: sd });
                     });
@@ -1887,10 +1907,10 @@
             }, 240);
 
             /* Données manquantes */
-            if (lastM) {
+            if (lastM12) {
                 var b4 = E('div', 'cb');
-                b4.innerHTML = '<h4>📋 Données manquantes — ' + mL(lastM) + '</h4><select id="agFlt" onchange="fltMiss()" style="padding:5px;border:1px solid #ddd;border-radius:5px;font-size:11px;margin-bottom:8px"><option value="all">Tous</option>' + AG_ALL.map(function (a) { return '<option value="' + a + '">' + AG_LBL[a] + '</option>'; }).join('') + '</select>';
-                var ld2 = D.filter(function (r) { return r.period === lastM; });
+                b4.innerHTML = '<h4>📋 Données manquantes — ' + mL(lastM12) + '</h4><select id="agFlt" onchange="fltMiss()" style="padding:5px;border:1px solid #ddd;border-radius:5px;font-size:11px;margin-bottom:8px"><option value="all">Tous</option>' + AG_ALL.map(function (a) { return '<option value="' + a + '">' + AG_LBL[a] + '</option>'; }).join('') + '</select>';
+                var ld2 = D.filter(function (r) { return r.period === lastM12; });
                 var h = '<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>FOSA</th><th>AS</th><th>ZS</th><th>Rapp</th><th>N</th><th>Tot</th><th>%</th><th>Manquants</th></tr></thead><tbody>';
                 ld2.forEach(function (r) {
                     var rep = isRep(r), nR = cntRens(r), tot = obTotal(r), ex = pct(nR, tot), miss = missAg(r);
