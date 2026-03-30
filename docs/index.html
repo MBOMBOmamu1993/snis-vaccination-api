@@ -1683,11 +1683,11 @@
             var h = '<table class="dt"><thead>';
             h += '<tr><th rowspan="2">Unit\u00e9</th><th rowspan="2">Donn\u00e9es</th>';
             mos.forEach(function (m) { h += '<th style="font-size:9px">' + mL(m) + '</th>'; });
-            h += '<th colspan="2" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">Z-score</th>';
+            h += '<th colspan="2" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + (_p4Method === 'var33' ? '%Var' : 'Z-score') + '</th>';
             h += '<th rowspan="2">Manq.</th><th rowspan="2">Val.Atyp</th><th rowspan="2">Total</th><th rowspan="2"></th></tr>';
             h += '<tr>';
             mos.forEach(function () { h += '<th></th>'; });
-            h += '<th style="font-size:9px">Std</th><th style="font-size:9px">Mod%</th></tr></thead><tbody>';
+            h += '<th style="font-size:9px">' + (_p4Method === 'var33' ? 'x\u0304' : 'Std') + '</th><th style="font-size:9px">' + (_p4Method === 'var33' ? '%Var' : 'Mod%') + '</th></tr></thead><tbody>';
             if (!pd.length) {
                 h += '<tr><td colspan="' + ncol + '" style="text-align:center;padding:24px;color:#888">Aucune donn\u00e9e.</td></tr>';
             } else {
@@ -1699,8 +1699,8 @@
                         else if (r.ia[vi] === 'm') sty = 'background:#fef3c7;color:#92400e';
                         h += '<td style="text-align:right;' + sty + '">' + (v || '') + '</td>';
                     });
-                    h += '<td style="text-align:right;font-weight:600">' + r.mz.toFixed(2) + '</td>';
-                    h += '<td style="text-align:right">' + r.cv.toFixed(2) + '</td>';
+                    h += '<td style="text-align:right;font-weight:600">' + (_p4Method === 'var33' ? r.mu.toFixed(0) : r.mz.toFixed(2)) + '</td>';
+                    h += '<td style="text-align:right">' + (_p4Method === 'var33' ? r.pctVar.toFixed(2) : r.cv.toFixed(2)) + '</td>';
                     h += '<td style="text-align:center;' + (r.miss > 0 ? 'color:#dc2626;font-weight:700' : '') + '">' + r.miss + '</td>';
                     h += '<td style="text-align:center;font-weight:700;color:' + (r.ac > 0 ? '#e74c3c' : '#27ae60') + '">' + r.ac + '</td>';
                     h += '<td style="text-align:center;font-weight:700;color:' + (r.tot > 0 ? '#e74c3c' : '#27ae60') + '">' + r.tot + '</td>';
@@ -1746,6 +1746,72 @@
             var m = document.getElementById('detModal'); if (m) m.style.display = 'none';
             if (_detModalChart) { try { _detModalChart.destroy(); } catch (e) { } _detModalChart = null; }
         };
+        var _p4Method = 'var33';
+        var _p4Cache = {};
+
+        function _isAtypP4(v, mu, sd) {
+            if (v === 0) return false;
+            if (_p4Method === 'var33') return mu > 0 && Math.abs((v - mu) / mu) > 0.33;
+            if (_p4Method === 'sd2') return sd > 0 && Math.abs((v - mu) / sd) > 2;
+            if (_p4Method === 'sd3') return sd > 0 && Math.abs((v - mu) / sd) > 3;
+            return false;
+        }
+
+        function _buildP4Rows() {
+            var ca = _p4Cache; if (!ca.gIdx || !ca.ous || !ca._last12) return [];
+            var gIdx = ca.gIdx, ous = ca.ous, _last12 = ca._last12, rows = [];
+            ous.forEach(function (ou) {
+                var _fosaOU = {};
+                _last12.forEach(function (m) { var recs = gIdx[ou + '\t' + m] || []; recs.forEach(function (r) { var fn = r.org5 || ou; if (!_fosaOU[fn]) _fosaOU[fn] = {}; _fosaOU[fn][m] = r; }); });
+                var _fnList = Object.keys(_fosaOU);
+                AG.forEach(function (ag) {
+                    var vals = _last12.map(function (m) { return sf(gIdx[ou + '\t' + m] || [], ag); });
+                    var n = vals.length, mu = n > 0 ? vals.reduce(function (s, v) { return s + v; }, 0) / n : 0;
+                    var sq = vals.reduce(function (s, v) { return s + (v - mu) * (v - mu); }, 0);
+                    var sd = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
+                    var ia = vals.map(function (v) { if (v === 0) return 'm'; if (_isAtypP4(v, mu, sd)) return 'a'; return false; });
+                    var acFosa = 0, missFosa = 0, normFosa = 0;
+                    _fnList.forEach(function (fn) {
+                        var fV = _last12.map(function (m) { var rec = _fosaOU[fn] && _fosaOU[fn][m]; return rec ? (Number(rec[ag]) || 0) : 0; });
+                        var fMu = fV.reduce(function (s, v) { return s + v; }, 0) / fV.length;
+                        var fSq = fV.reduce(function (s, v) { return s + (v - fMu) * (v - fMu); }, 0);
+                        var fSd = fV.length > 1 ? Math.sqrt(fSq / (fV.length - 1)) : 0;
+                        fV.forEach(function (v, mi) {
+                            if (v === 0 && vals[mi] === 0) { missFosa++; }
+                            else if (v === 0 && vals[mi] > 0) { acFosa++; }
+                            else if (v > 0) { if (_isAtypP4(v, fMu, fSd)) { acFosa++; } else { normFosa++; } }
+                        });
+                    });
+                    var mz = 0; vals.forEach(function (v) { if (sd > 0 && v > 0) { var z = Math.abs((v - mu) / sd); if (z > mz) mz = z; } });
+                    var maxPV = 0; vals.forEach(function (v) { if (v > 0 && mu > 0) { var pv = Math.abs((v - mu) / mu) * 100; if (pv > maxPV) maxPV = pv; } });
+                    rows.push({ ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia, tot: acFosa, miss: missFosa, ac: acFosa, norm: normFosa, mz: mz, cv: mu > 0 ? (sd / mu * 100) : 0, mu: mu, sd: sd, pctVar: maxPV });
+                });
+            });
+            return rows;
+        }
+
+        function _renderP4Chart() {
+            if (S.charts.atBChart) { try { S.charts.atBChart.destroy(); } catch (e) { } }
+            var x = document.getElementById('atBChart'); if (!x) return;
+            var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
+            (window._p4Det && window._p4Det.rows || []).forEach(function (r) { if (atB[r.ag]) { atB[r.ag].a += r.ac; atB[r.ag].t += r.ac + r.norm; } });
+            var agK = AG.filter(function (a) { return atB[a].t > 0; });
+            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+        }
+
+        window._changeP4Method = function (method) {
+            _p4Method = method;
+            var rows = _buildP4Rows();
+            window._p4Det.rows = rows; window._p4Det.flt = rows.slice(); window._p4Det.pg = 0;
+            var ouCBs = document.querySelectorAll('#detDdOU .fi:not(.fa) input[type=checkbox]');
+            if (ouCBs.length) { _fltDet(); } else { _renderDetPage(); }
+            _renderP4Chart();
+            document.querySelectorAll('.p4ob').forEach(function (b) { b.style.background = '#e5e7eb'; b.style.color = '#333'; b.style.fontWeight = '600'; });
+            var act = document.getElementById('p4o_' + method);
+            if (act) { act.style.background = method === 'var33' ? '#0b3a6f' : (method === 'sd2' ? '#f39c12' : '#e74c3c'); act.style.color = '#fff'; act.style.fontWeight = '700'; }
+            var tit = document.getElementById('p4DetTitle');
+            if (tit) { var ml = method === 'var33' ? '%Var \u00b133% Moy' : (method === 'sd2' ? '\u00b12 SD Mod\u00e9r\u00e9es' : '\u00b13 SD Extr\u00eames'); tit.innerHTML = '\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode ' + ml + ')'; }
+        };
 
         /* ═══ P4: VALEURS ATYPIQUES ═══ */
         function rP4(c) {
@@ -1770,45 +1836,7 @@
             });
 
             /* ── Calcul atypiques méthode 2 SD ── */
-            var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
-            /* Construire index FOSA pour comptage au niveau FOSA */
-            var _fosaP4 = {};
-            var _filtOUs = uv(AD.filter(function (r) { return _last12.indexOf(r.period) >= 0; }), function (r) { return r[_ok4]; });
-            _filtOUs.forEach(function (ou) {
-                _last12.forEach(function (m) {
-                    var recs = _gAD4[ou + '\t' + m] || [];
-                    recs.forEach(function (r) {
-                        var fn = r.org5 || ou;
-                        if (!_fosaP4[fn]) _fosaP4[fn] = {};
-                        _fosaP4[fn][m] = r;
-                    });
-                });
-            });
-            Object.keys(_fosaP4).forEach(function (fn) {
-                AG.forEach(function (ag) {
-                    var fV = _last12.map(function (m) {
-                        var rec = _fosaP4[fn] && _fosaP4[fn][m];
-                        return rec ? (Number(rec[ag]) || 0) : 0;
-                    });
-                    var hasD = fV.some(function (v) { return v > 0; });
-                    if (!hasD) return;
-                    var fN = fV.length, fMu = fV.reduce(function (s, v) { return s + v; }, 0) / fN;
-                    var fSq = fV.reduce(function (s, v) { return s + (v - fMu) * (v - fMu); }, 0);
-                    var fSd = fN > 1 ? Math.sqrt(fSq / (fN - 1)) : 0;
-                    fV.forEach(function (v) {
-                        if (v > 0) {
-                            atB[ag].t++;
-                            if (fSd > 0 && Math.abs((v - fMu) / fSd) > 2) atB[ag].a++;
-                        }
-                    });
-                });
-            });
-            var agK = AG.filter(function (a) { return atB[a].t > 0; });
-            var b1 = E('div', 'cb'); b1.innerHTML = '<h4>\u26a0 Atypiques par AG</h4><canvas id="atB" height="55"></canvas>'; c.appendChild(b1);
-            setTimeout(function () {
-                var x = document.getElementById('atB'); if (!x) return;
-                S.charts.atB = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
-            }, 80);
+            var b1 = E('div', 'cb'); b1.innerHTML = '<h4>\u26a0 Atypiques et Normales par antig\u00e8ne</h4><canvas id="atBChart" height="55"></canvas>'; c.appendChild(b1);
             /* ═══ TABLEAU DÉTAILLÉ VALEURS ATYPIQUES (méthode ±2 SD) ═══ */
             window._p4Det = { rows: [], flt: [], pg: 0, pp: 15, mos: _last12, orgL: '' };
             (function () {
@@ -1816,66 +1844,14 @@
                 /* Index groupé par orgK+period */
                 var gIdx = _gAD4; /* Réutiliser l'index déjà construit */
                 var ous = uv(D, function (r) { return r[orgK]; });
-                var rows = [];
-                ous.forEach(function (ou) {
-                    var _fosaOU = {};
-                    _last12.forEach(function (m) {
-                        var recs = gIdx[ou + '\t' + m] || [];
-                        recs.forEach(function (r) {
-                            var fn = r.org5 || ou;
-                            if (!_fosaOU[fn]) _fosaOU[fn] = {};
-                            _fosaOU[fn][m] = r;
-                        });
-                    });
-                    var _fnList = Object.keys(_fosaOU);
-
-                    AG.forEach(function (ag) {
-                        var vals = _last12.map(function (m) { return sf(gIdx[ou + '\t' + m] || [], ag); });
-                        var sumVal = vals.reduce(function (s, v) { return s + v; }, 0);
-                        var n = vals.length, mu = n > 0 ? sumVal / n : 0;
-                        var sq = vals.reduce(function (s, v) { return s + (v - mu) * (v - mu); }, 0);
-                        var sd = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
-
-                        /* ia : 'a' = atypique (rouge), 'm' = manquant (orange), false = normal (vert) */
-                        var ia = vals.map(function (v) {
-                            if (v === 0) return 'm';
-                            if (sd > 0 && Math.abs((v - mu) / sd) > 2) return 'a';
-                            if (mu > 0 && Math.abs((v - mu) / mu) > 0.33) return 'a';
-                            return false;
-                        });
-
-                        /* Cumul FOSA : atypiques & manquants */
-                        var acFosa = 0, missFosa = 0;
-                        _fnList.forEach(function (fn) {
-                            var fV = _last12.map(function (m) {
-                                var rec = _fosaOU[fn] && _fosaOU[fn][m];
-                                return rec ? (Number(rec[ag]) || 0) : 0;
-                            });
-                            var fMu = fV.reduce(function (s, v) { return s + v; }, 0) / fV.length;
-                            var fSq = fV.reduce(function (s, v) { return s + (v - fMu) * (v - fMu); }, 0);
-                            var fSd = fV.length > 1 ? Math.sqrt(fSq / (fV.length - 1)) : 0;
-                            fV.forEach(function (v, mi) {
-                                if (v === 0 && vals[mi] === 0) {
-                                    missFosa++;
-                                } else if (v === 0 && vals[mi] > 0) {
-                                    acFosa++;
-                                } else if (v > 0 && fSd > 0 && Math.abs((v - fMu) / fSd) > 2) {
-                                    acFosa++;
-                                }
-                            });
-                        });
-
-                        var mz = 0; vals.forEach(function (v) { if (sd > 0 && v > 0) { var z = Math.abs((v - mu) / sd); if (z > mz) mz = z; } });
-                        rows.push({ ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia, tot: acFosa, miss: missFosa, ac: acFosa, mz: mz, cv: mu > 0 ? (sd / mu * 100) : 0, mu: mu, sd: sd });
-                    });
-                });
+                _p4Cache.gIdx = gIdx; _p4Cache.ous = ous; _p4Cache._last12 = _last12;
+                var rows = _buildP4Rows();
                 window._p4Det.rows = rows; window._p4Det.flt = rows.slice(); window._p4Det.pg = 0;
-
                 var uOU = ous.sort(), uAG = AG.map(function (a) { return AG_LBL[a]; });
 
                 /* ── Container ── */
                 var db = E('div', 'cb');
-                db.innerHTML = '<h4>\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode \u00b12 SD)</h4>';
+                db.innerHTML = '<h4 id="p4DetTitle">\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode %Var \u00b133% Moy)</h4>';
 
                 /* ── Filtres dropdown checkboxes ── */
                 var fH = '<div style="display:flex;gap:12px;margin:10px 0 14px;flex-wrap:wrap;align-items:flex-start">';
@@ -1900,6 +1876,15 @@
                 fH += '</div></div></div>';
                 db.innerHTML += fH;
 
+                /* ── Options panel ── */
+                var opH = '<div style="display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;flex-wrap:wrap">';
+                opH += '<span style="font-weight:700;font-size:12px;color:#0b3a6f">Mode de calcul :</span>';
+                opH += '<button class="p4ob" id="p4o_var33" onclick="_changeP4Method(\'var33\')" style="padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;background:#0b3a6f;color:#fff">%Var\u00b133% Moy 11 mois</button>';
+                opH += '<button class="p4ob" id="p4o_sd2" onclick="_changeP4Method(\'sd2\')" style="padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;background:#e5e7eb;color:#333">\u00b12 SD Mod\u00e9r\u00e9es</button>';
+                opH += '<button class="p4ob" id="p4o_sd3" onclick="_changeP4Method(\'sd3\')" style="padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;background:#e5e7eb;color:#333">\u00b13 SD Extr\u00eames</button>';
+                opH += '</div>';
+                db.innerHTML += opH;
+
                 /* ── Table + Pagination containers ── */
                 db.innerHTML += '<div id="detTblWrap" style="overflow-x:auto;max-height:520px;overflow-y:auto"></div>';
                 db.innerHTML += '<div id="detPgWrap" style="display:flex;justify-content:center;gap:4px;padding:12px;flex-wrap:wrap"></div>';
@@ -1920,6 +1905,7 @@
                 }
 
                 setTimeout(function () { _renderDetPage(); }, 60);
+                setTimeout(function () { _renderP4Chart(); }, 120);
             })();
             /* Tendance mensuelle */
             var b2 = E('div', 'cb'); b2.innerHTML = '<h4>📈 Tendance atypiques</h4><canvas id="atT" height="50"></canvas>'; c.appendChild(b2);
