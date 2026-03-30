@@ -1840,6 +1840,7 @@
                         var ia = vals.map(function (v) {
                             if (v === 0) return 'm';
                             if (sd > 0 && Math.abs((v - mu) / sd) > 2) return 'a';
+                            if (mu > 0 && Math.abs((v - mu) / mu) > 0.33) return 'a';
                             return false;
                         });
 
