@@ -1938,6 +1938,120 @@
                 });
                 b4.innerHTML += h + '</tbody></table></div>'; c.appendChild(b4);
             }
+
+            /* ═══ NOUVEAU : Tableau détaillé valeurs atypiques (±2 SD) ═══ */
+            /* Ajouté APRÈS tout le contenu existant de P4 */
+            (function () {
+                if (!lastM) return;
+                var olD = getOrgLevel(D);
+                var okD = olD.k;
+                var allMosD = uv(AD, function (r) { return r.period; }).sort();
+                var l12 = allMosD.slice(Math.max(0, allMosD.length - 12));
+                if (!l12.length) return;
+
+                /* Grouper AD par orgK + period */
+                var gD = {};
+                AD.forEach(function (r) {
+                    var ou = r[okD] || '';
+                    if (!ou) return;
+                    var k = ou + '\t' + (r.period || '');
+                    if (!gD[k]) gD[k] = [];
+                    gD[k].push(r);
+                });
+
+                /* Org units du dernier mois filtré */
+                var ldD = D.filter(function (r) { return r.period === lastM; });
+                var ousD = uv(ldD, function (r) { return r[okD]; });
+                if (!ousD.length) return;
+
+                /* Construire les lignes */
+                var dRows = [];
+                ousD.forEach(function (ou) {
+                    AG.forEach(function (ag) {
+                        var vals = l12.map(function (m) {
+                            var arr = gD[ou + '\t' + m];
+                            return arr ? sf(arr, ag) : 0;
+                        });
+                        var tot = 0, miss = 0;
+                        vals.forEach(function (v) { tot += v; if (!v) miss++; });
+                        var nn = vals.length;
+                        var mu = nn > 0 ? tot / nn : 0;
+                        var sqq = 0;
+                        vals.forEach(function (v) { sqq += (v - mu) * (v - mu); });
+                        var sdd = nn > 1 ? Math.sqrt(sqq / (nn - 1)) : 0;
+                        var iaA = vals.map(function (v) {
+                            return v > 0 && sdd > 0 && Math.abs((v - mu) / sdd) > 2;
+                        });
+                        var acC = iaA.filter(Boolean).length;
+                        var mzZ = 0;
+                        vals.forEach(function (v) {
+                            if (sdd > 0 && v > 0) { var z = Math.abs((v - mu) / sdd); if (z > mzZ) mzZ = z; }
+                        });
+                        dRows.push({
+                            ou: ou, ag: ag, lbl: AG_LBL[ag],
+                            vals: vals, ia: iaA, tot: tot, miss: miss,
+                            ac: acC, mz: mzZ,
+                            cv: mu > 0 ? (sdd / mu * 100) : 0
+                        });
+                    });
+                });
+
+                if (!dRows.length) return;
+
+                window._p4Det = { rows: dRows, flt: dRows.slice(), pg: 0, pp: 15, mos: l12, orgL: olD.l };
+
+                var uOU2 = ousD.slice().sort();
+                var uAG2 = AG.map(function (a) { return AG_LBL[a]; });
+
+                var detBox = E('div', 'cb');
+                var dHtml = '<h4>\ud83d\udcca D\u00e9tail valeurs atypiques par ' + olD.l + ' (\u00b12 SD, 12 derniers mois)</h4>';
+
+                /* Filtres */
+                dHtml += '<div style="display:flex;gap:12px;margin:10px 0 14px;flex-wrap:wrap;align-items:flex-start">';
+                dHtml += '<div class="fg" style="flex:1;min-width:200px">';
+                dHtml += '<label style="text-transform:uppercase">' + olD.l + ' <button class="frst" onclick="_rstDetOU()" title="Reset">\u21ba</button></label>';
+                dHtml += '<button class="fbtn" id="detBtnOU" onclick="_togADD(\'detDdOU\')"><span>Tout (' + uOU2.length + ')</span><span class="cn">' + uOU2.length + '</span><span>\u25bc</span></button>';
+                dHtml += '<div class="fd" id="detDdOU">';
+                dHtml += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'detDdOU\')">';
+                dHtml += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'detDdOU\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
+                uOU2.forEach(function (ou) {
+                    dHtml += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_fltDet()"><span>' + tr(ou, 35) + '</span></div>';
+                });
+                dHtml += '</div></div>';
+
+                dHtml += '<div class="fg" style="flex:1;min-width:200px">';
+                dHtml += '<label style="text-transform:uppercase">Antig\u00e8ne <button class="frst" onclick="_rstDetAG()" title="Reset">\u21ba</button></label>';
+                dHtml += '<button class="fbtn" id="detBtnAG" onclick="_togADD(\'detDdAG\')"><span>Tout (' + uAG2.length + ')</span><span class="cn">' + uAG2.length + '</span><span>\u25bc</span></button>';
+                dHtml += '<div class="fd" id="detDdAG">';
+                dHtml += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'detDdAG\')">';
+                dHtml += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'detDdAG\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
+                uAG2.forEach(function (ag) {
+                    dHtml += '<div class="fi"><input type="checkbox" checked value="' + ag.replace(/"/g, '&quot;') + '" onchange="_fltDet()"><span>' + ag + '</span></div>';
+                });
+                dHtml += '</div></div></div>';
+
+                dHtml += '<div id="detTblWrap"></div>';
+                dHtml += '<div id="detPgWrap" style="display:flex;justify-content:center;gap:4px;padding:12px;flex-wrap:wrap"></div>';
+
+                detBox.innerHTML = dHtml;
+                c.appendChild(detBox);
+
+                /* Modal */
+                if (!document.getElementById('detModal')) {
+                    var mdd = document.createElement('div'); mdd.id = 'detModal';
+                    mdd.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:9999;justify-content:center;align-items:center';
+                    mdd.innerHTML = '<div style="background:#fff;border-radius:14px;padding:26px;max-width:750px;width:93%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)">'
+                        + '<div id="detMT" style="font-weight:800;font-size:17px;color:#0b3a6f;margin-bottom:4px"></div>'
+                        + '<div id="detMS" style="font-size:13px;color:#666;margin-bottom:16px"></div>'
+                        + '<canvas id="detMC" height="55"></canvas>'
+                        + '<div style="text-align:right;margin-top:16px"><button onclick="_closeDetModal()" style="padding:9px 28px;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">Fermer</button></div></div>';
+                    mdd.onclick = function (e) { if (e.target === mdd) _closeDetModal(); };
+                    document.body.appendChild(mdd);
+                }
+
+                setTimeout(function () { if (typeof _renderDetPage === 'function') _renderDetPage(); }, 50);
+            })();
+
         }
         window.fltMiss = function () { var sel = document.getElementById('agFlt'); if (!sel) return; var v = sel.value; document.querySelectorAll('#mTbl tbody tr').forEach(function (row) { if (v === 'all') { row.style.display = ''; return; } var m = (row.getAttribute('data-miss') || '').split(','); row.style.display = m.indexOf(v) >= 0 ? '' : 'none'; }); };
 
