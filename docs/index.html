@@ -295,7 +295,7 @@
         }
 
         .fd {
-            display: none;
+            display: block;
             position: absolute;
             top: 100%;
             left: 0;
@@ -677,6 +677,62 @@
             .fs {
                 padding: 8px 10px
             }
+        }
+
+        /* ═══ PERFORMANCE & FLUIDITÉ ═══ */
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility
+        }
+
+        * {
+            will-change: auto;
+            backface-visibility: hidden
+        }
+
+        .fd {
+            transform: translateZ(0);
+            transition: opacity .12s ease, transform .12s ease
+        }
+
+        .fd.sh {
+            opacity: 1;
+            transform: translateZ(0) translateY(0)
+        }
+
+        .fd:not(.sh) {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateZ(0) translateY(-4px)
+        }
+
+        .fi {
+            transition: background .08s ease
+        }
+
+        .fbtn {
+            transition: border-color .1s ease, background .1s ease
+        }
+
+        .dt {
+            contain: layout style
+        }
+
+        .tw {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth
+        }
+
+        .cb {
+            contain: content
+        }
+
+        canvas {
+            image-rendering: auto
         }
     </style>
 </head>
@@ -1107,7 +1163,12 @@
                 it.appendChild(sp2); dd.appendChild(it);
             });
 
-            g.appendChild(dd); container.appendChild(g);
+            g.appendChild(dd);
+            /* Auto-close quand le curseur quitte le dropdown */
+            g.addEventListener('mouseleave', function () {
+                dd.classList.remove('sh');
+            });
+            container.appendChild(g);
         }
 
         /* Fermer les dropdowns en cliquant ailleurs */
@@ -1178,7 +1239,16 @@
             Object.values(S.charts).forEach(function (c) { try { c.destroy(); } catch (e) { } }); S.charts = {};
             var db = document.getElementById('DB'); db.innerHTML = '';
             var tab = TABS[S.tab], pg = tab.pp[S.pg];
-            db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:12px;font-weight:400;color:#666;margin-left:12px">Province: ' + S.filters.province + '</span>'));
+            var _ctxParts = ['Province: ' + S.filters.province];
+            if (S.filters.antenne.length === 1) _ctxParts.push('Antenne: ' + S.filters.antenne[0]);
+            if (S.filters.zs.length === 1) _ctxParts.push('ZS: ' + S.filters.zs[0]);
+            if (S.filters.as.length === 1) _ctxParts.push('AS: ' + S.filters.as[0]);
+            if (S.filters.fosa.length === 1) _ctxParts.push('FOSA: ' + S.filters.fosa[0]);
+            var _perLbl = '';
+            if (S.filters.period.length === 1) { _perLbl = mL(S.filters.period[0]); }
+            else if (S.filters.period.length > 1) { var _ps = S.filters.period.slice().sort(); _perLbl = mL(_ps[0]) + ' \u2013 ' + mL(_ps[_ps.length - 1]); }
+            if (_perLbl) _ctxParts.push('P\u00e9riode: ' + _perLbl);
+            db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' — En construction</h3></div>'; }
@@ -1735,11 +1805,15 @@
             m.style.display = 'flex';
             if (_detModalChart) { try { _detModalChart.destroy(); } catch (e) { } _detModalChart = null; }
             var cv = document.getElementById('detMC');
-            var colors = r.vals.map(function (v, i) { return r.ia[i] ? '#e74c3c' : '#27ae60'; });
+            var colors = r.vals.map(function (v, i) {
+                if (r.ia[i] === 'a') return '#e74c3c';
+                if (r.ia[i] === 'm') return '#f59e0b';
+                return '#27ae60';
+            });
             _detModalChart = new Chart(cv, {
                 type: 'bar',
-                data: { labels: window._p4Det.mos.map(mL), datasets: [{ label: r.lbl, data: r.vals, backgroundColor: colors, borderColor: colors.map(function (c2) { return c2 === '#e74c3c' ? '#b91c1c' : '#16a34a'; }), borderWidth: 1, borderRadius: 5 }] },
-                options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: r.lbl + ' \u2014 ' + r.ou, font: { size: 14 }, color: '#0b3a6f' }, tooltip: { callbacks: { afterLabel: function (ctx) { return r.ia[ctx.dataIndex] ? '\u26a0 Atypique (>2 SD ou >33% var)' : ''; } } } }, scales: { y: { beginAtZero: true }, x: {} } }
+                data: { labels: window._p4Det.mos.map(mL), datasets: [{ label: r.lbl, data: r.vals, backgroundColor: colors, borderColor: colors.map(function (c2) { return c2 === '#e74c3c' ? '#b91c1c' : (c2 === '#f59e0b' ? '#d97706' : '#16a34a'); }), borderWidth: 1, borderRadius: 5 }] },
+                options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: r.lbl + ' \u2014 ' + r.ou, font: { size: 14 }, color: '#0b3a6f' }, tooltip: { callbacks: { afterLabel: function (ctx) { var f = r.ia[ctx.dataIndex]; if (f === 'a') return '\u26a0 Atypique'; if (f === 'm') return '\u26a0 Manquant (0)'; return ''; } } } }, scales: { y: { beginAtZero: true }, x: {} } }
             });
         };
         window._closeDetModal = function () {
@@ -1794,7 +1868,28 @@
             if (S.charts.atBChart) { try { S.charts.atBChart.destroy(); } catch (e) { } }
             var x = document.getElementById('atBChart'); if (!x) return;
             var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
-            (window._p4Det && window._p4Det.rows || []).forEach(function (r) { if (atB[r.ag]) { atB[r.ag].a += r.ac; atB[r.ag].t += r.ac + r.norm; } });
+            /* Utiliser les données filtrées par période (S.flt) et non le cache 12 mois */
+            var _fltD = S.flt || [];
+            var _fltOL = getOrgLevel(_fltD);
+            var _fltMos = uv(_fltD, function (r) { return r.period; });
+            var _fltOUs = uv(_fltD, function (r) { return r[_fltOL.k]; });
+            _fltOUs.forEach(function (ou) {
+                AG.forEach(function (ag) {
+                    _fltMos.forEach(function (m) {
+                        var recs = _fltD.filter(function (r) { return r[_fltOL.k] === ou && r.period === m; });
+                        var val = recs.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                        if (val > 0) {
+                            atB[ag].t++;
+                            /* Calculer mu et sd sur toutes les périodes filtrées pour cet OU+AG */
+                            var allV = _fltMos.map(function (m2) { return _fltD.filter(function (r2) { return r2[_fltOL.k] === ou && r2.period === m2; }).reduce(function (s2, r2) { return s2 + (Number(r2[ag]) || 0); }, 0); });
+                            var mu2 = allV.reduce(function (s, v) { return s + v; }, 0) / allV.length;
+                            var sq2 = allV.reduce(function (s, v) { return s + (v - mu2) * (v - mu2); }, 0);
+                            var sd2 = allV.length > 1 ? Math.sqrt(sq2 / (allV.length - 1)) : 0;
+                            if (_isAtypP4(val, mu2, sd2)) atB[ag].a++;
+                        }
+                    });
+                });
+            });
             var agK = AG.filter(function (a) { return atB[a].t > 0; });
             S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
         }
@@ -1919,26 +2014,60 @@
                 S.charts.atT = new Chart(x, { type: 'line', data: { labels: mos.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
             }, 160);
 
-            /* VAR2 et VAA */
-            var b3 = E('div', 'cb'); b3.innerHTML = '<h4>🔬 FOSA encodant VAR2, VAA, TD</h4><canvas id="v2h" height="50"></canvas>'; c.appendChild(b3);
-            setTimeout(function () {
-                var x = document.getElementById('v2h'); if (!x) return;
-                S.charts.v2h = new Chart(x, {
-                    type: 'bar', data: {
-                        labels: mos.map(mL), datasets: [
-                            { label: 'VAR2>0', data: mos.map(function (m) { return D.filter(function (r) { return r.period === m && isRep(r) && (Number(r.VAR2) || 0) > 0; }).length; }), backgroundColor: 'rgba(156,39,176,.65)', borderRadius: 3 },
-                            { label: 'VAA>0', data: mos.map(function (m) { return D.filter(function (r) { return r.period === m && isRep(r) && (Number(r.VAA) || 0) > 0; }).length; }), backgroundColor: 'rgba(0,150,136,.65)', borderRadius: 3 },
-                            { label: 'TD>0', data: mos.map(function (m) { return D.filter(function (r) { return r.period === m && isRep(r) && (Number(r.TD) || 0) > 0; }).length; }), backgroundColor: 'rgba(255,152,0,.65)', borderRadius: 3 }
-                        ]
-                    }, options: { responsive: true, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { y: { beginAtZero: true } } }
-                });
-            }, 240);
+            /* ═══ Org unit encodant des données non prévues ═══ */
+            var _encOL = getOrgLevel(D);
+            var _encAGs = ['VAR2'];
+            var _isVAPProv = C.VAP_PROV.indexOf(S.filters.province) >= 0;
+            if (!_isVAPProv) { _encAGs = _encAGs.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']); }
+            var _encLbls = { VAR2: 'VAR2 0-11 mois' };
+            if (!_isVAPProv) { _encLbls.VAP1 = 'VAP1'; _encLbls.VAP2 = 'VAP2'; _encLbls.VAP3 = 'VAP3'; _encLbls.VAP4 = 'VAP4'; }
+            var _encColors = { VAR2: '#7b1fa2' };
+            if (!_isVAPProv) { _encColors.VAP1 = '#e65100'; _encColors.VAP2 = '#00838f'; _encColors.VAP3 = '#2e7d32'; _encColors.VAP4 = '#c62828'; }
 
-            /* Données manquantes */
-            if (lastM12) {
+            var b3 = E('div', 'cb');
+            b3.innerHTML = '<h4>\ud83d\udcca ' + _encOL.l + ' encodant des donn\u00e9es non pr\u00e9vues</h4>';
+
+            /* Filtres pour ce graphique */
+            var _encFH = '<div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap">';
+            _encFH += '<select id="encAgFlt" onchange="_renderEncChart()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:11px">';
+            _encAGs.forEach(function (a) { _encFH += '<option value="' + a + '">' + (_encLbls[a] || a) + '</option>'; });
+            _encFH += '</select></div>';
+            b3.innerHTML += _encFH;
+            b3.innerHTML += '<canvas id="v2h" height="' + Math.max(50, Math.min(200, 8 * 30)) + '"></canvas>';
+            c.appendChild(b3);
+
+            window._renderEncChart = function () {
+                if (S.charts.v2h) { try { S.charts.v2h.destroy(); } catch (e) { } }
+                var x2 = document.getElementById('v2h'); if (!x2) return;
+                var selAg = document.getElementById('encAgFlt'); if (!selAg) return;
+                var ag = selAg.value;
+                var orgG = grp(D, function (r) { return r[_encOL.k]; });
+                var orgNames = Object.keys(orgG).filter(Boolean).sort();
+                var encData = [];
+                orgNames.forEach(function (ou) {
+                    var total = orgG[ou].reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                    if (total > 0) encData.push({ ou: ou, val: total });
+                });
+                encData.sort(function (a, b) { return b.val - a.val; });
+                encData = encData.slice(0, 30);
+                if (!encData.length) { x2.parentElement.innerHTML += '<p style="color:#888;font-size:12px">Aucun ' + _encOL.l + ' n\'encode ' + (_encLbls[ag] || ag) + '</p>'; return; }
+                x2.height = Math.max(50, encData.length * 22);
+                S.charts.v2h = new Chart(x2, {
+                    type: 'bar', data: {
+                        labels: encData.map(function (d) { return tr(d.ou, 28); }),
+                        datasets: [{ label: _encLbls[ag] || ag, data: encData.map(function (d) { return d.val; }), backgroundColor: _encColors[ag] || '#1565c0', borderRadius: 4 }]
+                    }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, title: { display: true, text: _encOL.l + ' encodant ' + (_encLbls[ag] || ag), font: { size: 13, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { beginAtZero: true, title: { display: true, text: 'Nombre de vaccin\u00e9s', font: { size: 10 } } }, y: { ticks: { font: { size: 9 } } } } }
+                });
+            };
+            setTimeout(function () { _renderEncChart(); }, 240);
+
+            /* Données manquantes — dynamique par période filtrée */
+            var _missOL = getOrgLevel(D);
+            {
                 var b4 = E('div', 'cb');
-                b4.innerHTML = '<h4>📋 Données manquantes — ' + mL(lastM12) + '</h4><select id="agFlt" onchange="fltMiss()" style="padding:5px;border:1px solid #ddd;border-radius:5px;font-size:11px;margin-bottom:8px"><option value="all">Tous</option>' + AG_ALL.map(function (a) { return '<option value="' + a + '">' + AG_LBL[a] + '</option>'; }).join('') + '</select>';
-                var ld2 = D.filter(function (r) { return r.period === lastM12; });
+                b4.innerHTML = '<h4>\ud83d\udccb Donn\u00e9es manquantes par ' + _missOL.l + '</h4>';
+                b4.innerHTML += '<select id="agFlt" onchange="fltMiss()" style="padding:5px;border:1px solid #ddd;border-radius:5px;font-size:11px;margin-bottom:8px"><option value="all">Tous</option>' + AG_ALL.map(function (a) { return '<option value="' + a + '">' + AG_LBL[a] + '</option>'; }).join('') + '</select>';
+                var ld2 = D;
                 var h = '<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>FOSA</th><th>AS</th><th>ZS</th><th>Rapp</th><th>N</th><th>Tot</th><th>%</th><th>Manquants</th></tr></thead><tbody>';
                 ld2.forEach(function (r) {
                     var rep = isRep(r), nR = cntRens(r), tot = obTotal(r), ex = pct(nR, tot), miss = missAg(r);
