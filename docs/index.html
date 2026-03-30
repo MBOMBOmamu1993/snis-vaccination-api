@@ -2009,37 +2009,31 @@
 
             /* ═══ Org unit encodant des données non prévues ═══ */
             var _encOL = getOrgLevel(D);
-            var _encAGs = ['VAR2'];
+            var _encAGs = ['VAR2', 'HPV'];
             var _isVAPProv = C.VAP_PROV.indexOf(S.filters.province) >= 0;
             if (!_isVAPProv) _encAGs = _encAGs.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']);
-            var _encLbls = { VAR2: 'VAR2 0-11 mois', VAP1: 'VAP1', VAP2: 'VAP2', VAP3: 'VAP3', VAP4: 'VAP4' };
-            var _encColors = { VAR2: '#7b1fa2', VAP1: '#e65100', VAP2: '#00838f', VAP3: '#2e7d32', VAP4: '#c62828' };
+            var _encLbls = { VAR2: 'VAR2 0-11 mois', HPV: 'HPV', VAP1: 'VAP1', VAP2: 'VAP2', VAP3: 'VAP3', VAP4: 'VAP4' };
+            var _encColors = { VAR2: '#7b1fa2', HPV: '#1565c0', VAP1: '#e65100', VAP2: '#00838f', VAP3: '#2e7d32', VAP4: '#c62828' };
             var _encOUs = uv(D, function (r) { return r[_encOL.k]; });
 
             var b3 = E('div', 'cb');
             b3.innerHTML = '<h4>\ud83d\udcca ' + _encOL.l + ' encodant des donn\u00e9es non pr\u00e9vues</h4>';
 
-            /* Filtres multichoix AG + OU */
             var _encFH = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
-
-            /* Filtre Antigène multichoix */
-            _encFH += '<div class="fg" style="min-width:180px"><label style="text-transform:uppercase;font-size:9px">Antig\u00e8ne</label>';
+            /* Filtre AG avec reset */
+            _encFH += '<div class="fg" style="min-width:180px"><label style="text-transform:uppercase;font-size:9px">Antig\u00e8ne <button class="frst" onclick="_rstEncAG()" title="R\u00e9initialiser">\u21ba</button></label>';
             _encFH += '<button class="fbtn" id="encBtnAG" onclick="_togADD(\'encDdAG\')"><span>Tout (' + _encAGs.length + ')</span><span class="cn">' + _encAGs.length + '</span><span>\u25bc</span></button>';
             _encFH += '<div class="fd" id="encDdAG">';
-            _encFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllEnc(this,\'encDdAG\',\'ag\')"><span style="font-weight:700">Tout</span></div>';
+            _encFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllEnc(this,\'encDdAG\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
             _encAGs.forEach(function (a) { _encFH += '<div class="fi"><input type="checkbox" checked value="' + a + '" onchange="_renderEncChart()"><span>' + (_encLbls[a] || a) + '</span></div>'; });
             _encFH += '</div></div>';
-
-            /* Filtre Org Unit multichoix */
-            _encFH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + _encOL.l + '</label>';
+            /* Filtre OU avec reset */
+            _encFH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + _encOL.l + ' <button class="frst" onclick="_rstEncOU()" title="R\u00e9initialiser">\u21ba</button></label>';
             _encFH += '<button class="fbtn" id="encBtnOU" onclick="_togADD(\'encDdOU\')"><span>Tout (' + _encOUs.length + ')</span><span class="cn">' + _encOUs.length + '</span><span>\u25bc</span></button>';
-            _encFH += '<div class="fd" id="encDdOU">';
-            _encFH += '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'encDdOU\')">';
-            _encFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllEnc(this,\'encDdOU\',\'ou\')"><span style="font-weight:700">Tout</span></div>';
+            _encFH += '<div class="fd" id="encDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'encDdOU\')">';
+            _encFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllEnc(this,\'encDdOU\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
             _encOUs.forEach(function (ou) { _encFH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderEncChart()"><span>' + tr(ou, 30) + '</span></div>'; });
-            _encFH += '</div></div>';
-            _encFH += '</div>';
-
+            _encFH += '</div></div></div>';
             b3.innerHTML += _encFH;
             b3.innerHTML += '<div id="encChartWrap"><canvas id="v2h" height="60"></canvas></div>';
             c.appendChild(b3);
@@ -2048,10 +2042,11 @@
                 document.querySelectorAll('#' + ddId + ' .fi:not(.fa) input[type=checkbox]').forEach(function (c2) { c2.checked = cb.checked; });
                 _renderEncChart();
             };
+            window._rstEncAG = function () { document.querySelectorAll('#encDdAG .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; }); _renderEncChart(); };
+            window._rstEncOU = function () { document.querySelectorAll('#encDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; }); _renderEncChart(); };
 
             window._renderEncChart = function () {
                 if (S.charts.v2h) { try { S.charts.v2h.destroy(); } catch (e) { } }
-                /* Lire filtres cochés */
                 var selAGs = [], selOUs = [];
                 document.querySelectorAll('#encDdAG .fi:not(.fa) input:checked').forEach(function (cb) { selAGs.push(cb.value); });
                 document.querySelectorAll('#encDdOU .fi:not(.fa) input:checked').forEach(function (cb) { selOUs.push(cb.value); });
@@ -2060,31 +2055,45 @@
                     if (w3) w3.innerHTML = '<p style="color:#888;padding:16px;text-align:center">S\u00e9lectionnez au moins un antig\u00e8ne et un ' + _encOL.l + '</p>';
                     return;
                 }
-                /* Calculer données */
                 var filtD = D.filter(function (r) { return selOUs.indexOf(r[_encOL.k]) >= 0; });
                 var orgG = grp(filtD, function (r) { return r[_encOL.k]; });
-                var encData = [];
-                Object.keys(orgG).filter(Boolean).forEach(function (ou) {
-                    var total = 0;
-                    selAGs.forEach(function (ag) { total += orgG[ou].reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); });
-                    if (total > 0) encData.push({ ou: ou, val: total });
+                /* Collecter toutes les OU qui ont au moins 1 AG > 0 */
+                var ouSet = {};
+                selAGs.forEach(function (ag) {
+                    Object.keys(orgG).filter(Boolean).forEach(function (ou) {
+                        var v = orgG[ou].reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                        if (v > 0) ouSet[ou] = true;
+                    });
                 });
-                encData.sort(function (a, b) { return b.val - a.val; });
-                encData = encData.slice(0, 40);
-                var agLabel = selAGs.length === _encAGs.length ? 'Tous antig\u00e8nes' : selAGs.map(function (a) { return _encLbls[a] || a; }).join(', ');
-                /* Recréer canvas */
+                var ouList = Object.keys(ouSet).sort();
+                /* Trier par total décroissant */
+                ouList.sort(function (a, b) {
+                    var ta = 0, tb = 0;
+                    selAGs.forEach(function (ag) {
+                        ta += (orgG[a] || []).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                        tb += (orgG[b] || []).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                    });
+                    return tb - ta;
+                });
+                ouList = ouList.slice(0, 40);
                 var w3 = document.getElementById('encChartWrap');
-                if (w3) w3.innerHTML = '<canvas id="v2h" height="' + Math.max(50, encData.length * 20) + '"></canvas>';
+                if (!ouList.length) { if (w3) w3.innerHTML = '<p style="color:#888;padding:16px;text-align:center">Aucun ' + _encOL.l + ' n\'encode ces donn\u00e9es</p>'; return; }
+                if (w3) w3.innerHTML = '<canvas id="v2h" height="' + Math.max(60, ouList.length * 22) + '"></canvas>';
                 var x2 = document.getElementById('v2h'); if (!x2) return;
-                if (!encData.length) { w3.innerHTML = '<p style="color:#888;padding:16px;text-align:center">Aucun ' + _encOL.l + ' n\'encode ces donn\u00e9es</p>'; return; }
-                var barColor = selAGs.length === 1 ? (_encColors[selAGs[0]] || '#1565c0') : '#1565c0';
-                S.charts.v2h = new Chart(x2, {
-                    type: 'bar', data: {
-                        labels: encData.map(function (d) { return tr(d.ou, 28); }),
-                        datasets: [{ label: agLabel, data: encData.map(function (d) { return d.val; }), backgroundColor: barColor, borderRadius: 4 }]
-                    }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: _encOL.l + ' encodant ' + agLabel, font: { size: 13, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 9 } } } } }
+                /* Créer un dataset PAR antigène */
+                var datasets = selAGs.map(function (ag) {
+                    return {
+                        label: _encLbls[ag] || ag,
+                        data: ouList.map(function (ou) { return (orgG[ou] || []).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); }),
+                        backgroundColor: _encColors[ag] || '#999',
+                        borderRadius: 3
+                    };
                 });
-                /* Update boutons labels */
+                S.charts.v2h = new Chart(x2, {
+                    type: 'bar', data: { labels: ouList.map(function (ou) { return tr(ou, 28); }), datasets: datasets },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 10 } } }, title: { display: true, text: _encOL.l + ' encodant des donn\u00e9es non pr\u00e9vues', font: { size: 13, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { stacked: true, beginAtZero: true }, y: { stacked: true, ticks: { font: { size: 9 } } } } }
+                });
+                /* Update boutons */
                 var btnAG = document.getElementById('encBtnAG');
                 if (btnAG) { var n1 = selAGs.length, t1 = _encAGs.length; btnAG.innerHTML = '<span>' + (n1 === t1 ? 'Tout (' + t1 + ')' : n1 + '/' + t1) + '</span><span class="cn">' + n1 + '</span><span>\u25bc</span>'; }
                 var btnOU = document.getElementById('encBtnOU');
@@ -2100,23 +2109,78 @@
                 b4.innerHTML = '<h4>\ud83d\udccb Donn\u00e9es manquantes par ' + _missOL.l + '</h4>';
 
                 /* Filtres : Antigène + Org unit */
-                var _mfH = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
-                _mfH += '<div class="fg"><label style="text-transform:uppercase;font-size:9px">Antig\u00e8ne</label><select id="agFlt" onchange="fltMiss()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:11px"><option value="all">Tous</option>' + AG_ALL.map(function (a) { return '<option value="' + a + '">' + AG_LBL[a] + '</option>'; }).join('') + '</select></div>';
-                _mfH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + _missOL.l + '</label>';
-                _mfH += '<button class="fbtn" id="missBtnOU" onclick="_togADD(\'missDdOU\')"><span>Tout (' + _missOUs.length + ')</span><span class="cn">' + _missOUs.length + '</span><span>\u25bc</span></button>';
-                _mfH += '<div class="fd" id="missDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'missDdOU\')">';
-                _mfH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllMiss(this)"><span style="font-weight:700">Tout</span></div>';
-                _missOUs.forEach(function (ou) { _mfH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderMissTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
-                _mfH += '</div></div></div>';
+                var _mfH =
+                    '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
+
+                /* ── Antigène + bouton reset ───────────────────────── */
+                _mfH +=
+                    '<div class="fg">' +
+                    '<label style="text-transform:uppercase;font-size:9px">' +
+                    'Antig\u00e8ne ' +
+                    '<button class="frst" onclick="document.getElementById(\'agFlt\').value=\'all\';fltMiss()" title="R\u00e9initialiser">\u21ba</button>' +
+                    '</label>' +
+                    '<select id="agFlt" onchange="fltMiss()" ' +
+                    'style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:11px">' +
+                    '<option value="all">Tous</option>' +
+                    AG_ALL.map(function (a) {
+                        return '<option value="' + a + '">' + AG_LBL[a] + '</option>';
+                    }).join('') +
+                    '</select>' +
+                    '</div>';
+
+                /* ── Org unit + bouton reset ───────────────────────── */
+                _mfH +=
+                    '<div class="fg" style="min-width:200px">' +
+                    '<label style="text-transform:uppercase;font-size:9px">' +
+                    _missOL.l + ' ' +
+                    '<button class="frst" onclick="_rstMissOU()" title="R\u00e9initialiser">\u21ba</button>' +
+                    '</label>' +
+
+                    '<button class="fbtn" id="missBtnOU" onclick="_togADD(\'missDdOU\')">' +
+                    '<span>Tout (' + _missOUs.length + ')</span>' +
+                    '<span class="cn">' + _missOUs.length + '</span>' +
+                    '<span>\u25bc</span>' +
+                    '</button>' +
+
+                    '<div class="fd" id="missDdOU">' +
+                    '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'missDdOU\')">' +
+
+                    '<div class="fi fa">' +
+                    '<input type="checkbox" checked onchange="_togAllMiss(this)">' +
+                    '<span style="font-weight:700">Tout</span>' +
+                    '</div>';
+
+                _missOUs.forEach(function (ou) {
+                    _mfH +=
+                        '<div class="fi">' +
+                        '<input type="checkbox" checked ' +
+                        'value="' + ou.replace(/"/g, '&quot;') + '" ' +
+                        'onchange="_renderMissTbl()">' +
+                        '<span>' + tr(ou, 30) + '</span>' +
+                        '</div>';
+                });
+
+                _mfH +=
+                    '</div>' +   // .fd
+                    '</div>' +     // .fg
+                    '</div>';        // conteneur principal
+
                 b4.innerHTML += _mfH;
                 b4.innerHTML += '<div id="missTblWrap"></div>';
                 c.appendChild(b4);
-
+                window._togAllMiss = function (cb) {
+                    document.querySelectorAll('#missDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (c2) { c2.checked = cb.checked; });
+                    _renderMissTbl();
+                };
                 window._togAllMiss = function (cb) {
                     document.querySelectorAll('#missDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (c2) { c2.checked = cb.checked; });
                     _renderMissTbl();
                 };
 
+                window._rstMissOU = function () {
+                    document.querySelectorAll('#missDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
+                    _renderMissTbl();
+                };
                 window._renderMissTbl = function () {
                     var selOUs = [];
                     document.querySelectorAll('#missDdOU .fi:not(.fa) input:checked').forEach(function (cb) { selOUs.push(cb.value); });
