@@ -1140,9 +1140,17 @@
             aC.onchange = function () {
                 if (aC.checked) { S.filters[dimKey] = options.slice(); }
                 else { S.filters[dimKey] = []; }
+
                 if (dimKey !== 'period') computeCascade(false);
-                rFlt();                    // 🔄 refresh cascaded lists + button labels
-                apFlt(); render();
+                apFlt();                    // 1) met à jour les données
+                rFlt(); render();           // 2) reconstruit l’UI
+
+                /* 3) garde le ruban ouvert tant que le curseur y reste */
+                requestAnimationFrame(function () {
+                    var dd = document.getElementById('fd-' + dimKey);
+                    if (dd) dd.classList.add('sh');
+                });
+
                 dd.querySelectorAll('.fi:not(.fa) input[type=checkbox]').forEach(function (c2) {
                     c2.checked = aC.checked;
                 });
@@ -1150,9 +1158,10 @@
                 if (_bt3) {
                     var _nS3 = S.filters[dimKey].length, _nT3 = options.length;
                     var _lb3 = (_nS3 === _nT3 && _nT3 > 0) ? 'Tout (' + _nT3 + ')' : _nS3 + '/' + _nT3;
-                    _bt3.innerHTML = '<span>' + _lb3 + '</span><span class="cn">' + _nS3 + '</span><span>\u25bc</span>';
+                    _bt3.innerHTML = '<span>' + _lb3 + '</span><span class="cn">' + _nS3 + '</span><span>▼</span>';
                 }
             };
+
             aD.appendChild(aC);
             var aS = document.createElement('span'); aS.textContent = 'Tout sélectionner'; aS.style.fontWeight = '700';
             aD.appendChild(aS); dd.appendChild(aD);
@@ -1165,15 +1174,23 @@
                 cb.onchange = function () {
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
+
                     if (dimKey !== 'period') computeCascade(false);
-                    rFlt();                    // 🔄 refresh cascaded lists + button labels
-                    apFlt(); render();
-                    /* Reconstruire le bouton label sans fermer */
+                    apFlt();
+                    rFlt(); render();
+
+                    requestAnimationFrame(function () {
+                        var dd = document.getElementById('fd-' + dimKey);
+                        if (dd) dd.classList.add('sh');   // le menu reste ouvert
+                    });
+
                     var _bt2 = g.querySelector('.fbtn');
                     if (_bt2) {
                         var _nS2 = S.filters[dimKey].length, _nT2 = options.length;
-                        var _lb2 = (dimKey === 'period' && _nS2 === 1) ? mL(S.filters[dimKey][0]) : (_nS2 === _nT2 && _nT2 > 0) ? 'Tout (' + _nT2 + ')' : _nS2 + '/' + _nT2;
-                        _bt2.innerHTML = '<span>' + _lb2 + '</span><span class="cn">' + _nS2 + '</span><span>\u25bc</span>';
+                        var _lb2 = (dimKey === 'period' && _nS2 === 1) ? mL(S.filters[dimKey][0])
+                            : (_nS2 === _nT2 && _nT2 > 0) ? 'Tout (' + _nT2 + ')'
+                                : _nS2 + '/' + _nT2;
+                        _bt2.innerHTML = '<span>' + _lb2 + '</span><span class="cn">' + _nS2 + '</span><span>▼</span>';
                     }
                 };
                 it.appendChild(cb);
