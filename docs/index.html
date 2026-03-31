@@ -1116,6 +1116,7 @@
             var tot = options.length, nSel = selected.length;
             var btnLabel;
             if (dimKey === 'period' && nSel === 1) { btnLabel = mL(selected[0]); }
+            else if (nSel === 1) { btnLabel = tr(selected[0], 22); }
             else if (nSel === tot && tot > 0) { btnLabel = 'Tout (' + tot + ')'; }
             else { btnLabel = nSel + '/' + tot; }
             bt.innerHTML = '<span>' + btnLabel + '</span><span class="cn">' + nSel + '</span><span>▼</span>';
@@ -2109,62 +2110,15 @@
                 b4.innerHTML = '<h4>\ud83d\udccb Donn\u00e9es manquantes par ' + _missOL.l + '</h4>';
 
                 /* Filtres : Antigène + Org unit */
-                var _mfH =
-                    '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
-
-                /* ── Antigène + bouton reset ───────────────────────── */
-                _mfH +=
-                    '<div class="fg">' +
-                    '<label style="text-transform:uppercase;font-size:9px">' +
-                    'Antig\u00e8ne ' +
-                    '<button class="frst" onclick="document.getElementById(\'agFlt\').value=\'all\';fltMiss()" title="R\u00e9initialiser">\u21ba</button>' +
-                    '</label>' +
-                    '<select id="agFlt" onchange="fltMiss()" ' +
-                    'style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:11px">' +
-                    '<option value="all">Tous</option>' +
-                    AG_ALL.map(function (a) {
-                        return '<option value="' + a + '">' + AG_LBL[a] + '</option>';
-                    }).join('') +
-                    '</select>' +
-                    '</div>';
-
-                /* ── Org unit + bouton reset ───────────────────────── */
-                _mfH +=
-                    '<div class="fg" style="min-width:200px">' +
-                    '<label style="text-transform:uppercase;font-size:9px">' +
-                    _missOL.l + ' ' +
-                    '<button class="frst" onclick="_rstMissOU()" title="R\u00e9initialiser">\u21ba</button>' +
-                    '</label>' +
-
-                    '<button class="fbtn" id="missBtnOU" onclick="_togADD(\'missDdOU\')">' +
-                    '<span>Tout (' + _missOUs.length + ')</span>' +
-                    '<span class="cn">' + _missOUs.length + '</span>' +
-                    '<span>\u25bc</span>' +
-                    '</button>' +
-
-                    '<div class="fd" id="missDdOU">' +
-                    '<input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'missDdOU\')">' +
-
-                    '<div class="fi fa">' +
-                    '<input type="checkbox" checked onchange="_togAllMiss(this)">' +
-                    '<span style="font-weight:700">Tout</span>' +
-                    '</div>';
-
-                _missOUs.forEach(function (ou) {
-                    _mfH +=
-                        '<div class="fi">' +
-                        '<input type="checkbox" checked ' +
-                        'value="' + ou.replace(/"/g, '&quot;') + '" ' +
-                        'onchange="_renderMissTbl()">' +
-                        '<span>' + tr(ou, 30) + '</span>' +
-                        '</div>';
-                });
-
-                _mfH +=
-                    '</div>' +   // .fd
-                    '</div>' +     // .fg
-                    '</div>';        // conteneur principal
-
+                var _mfH = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
+                _mfH += '<div class="fg"><label style="text-transform:uppercase;font-size:9px">Antig\u00e8ne <button class="frst" onclick="document.getElementById(\'agFlt\').value=\'all\';fltMiss()" title="R\u00e9initialiser">\u21ba</button></label>';
+                _mfH += '<select id="agFlt" onchange="fltMiss()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:11px"><option value="all">Tous</option>' + AG_ALL.map(function (a) { return '<option value="' + a + '">' + AG_LBL[a] + '</option>'; }).join('') + '</select></div>';
+                _mfH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + _missOL.l + ' <button class="frst" onclick="_rstMissOU()" title="R\u00e9initialiser">\u21ba</button></label>';
+                _mfH += '<button class="fbtn" id="missBtnOU" onclick="_togADD(\'missDdOU\')"><span>Tout (' + _missOUs.length + ')</span><span class="cn">' + _missOUs.length + '</span><span>\u25bc</span></button>';
+                _mfH += '<div class="fd" id="missDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'missDdOU\')">';
+                _mfH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllMiss(this)"><span style="font-weight:700">Tout</span></div>';
+                _missOUs.forEach(function (ou) { _mfH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderMissTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
+                _mfH += '</div></div></div>';
                 b4.innerHTML += _mfH;
                 b4.innerHTML += '<div id="missTblWrap"></div>';
                 c.appendChild(b4);
@@ -2185,16 +2139,27 @@
                     var selOUs = [];
                     document.querySelectorAll('#missDdOU .fi:not(.fa) input:checked').forEach(function (cb) { selOUs.push(cb.value); });
                     var ld2 = D.filter(function (r) { return selOUs.indexOf(r[_missOL.k]) >= 0; });
+                    /* Agréger par org unit */
+                    var ouGrp = grp(ld2, function (r) { return r[_missOL.k]; });
                     var h = '<div class="tw"><table class="dt" id="mTbl"><thead><tr><th>' + _missOL.l + '</th><th>Rapportage</th><th>Nombre renseign\u00e9s</th><th>Total attendu</th><th>Compl\u00e9tude %</th><th>Antig\u00e8nes manquants</th></tr></thead><tbody>';
-                    ld2.forEach(function (r) {
-                        var rep = isRep(r), nR = cntRens(r), tot2 = obTotal(r), ex = pct(nR, tot2), miss = missAg(r);
-                        h += '<tr data-miss="' + miss.join(',') + '" data-ou="' + (r[_missOL.k] || '') + '"><td>' + tr(r[_missOL.k], 30) + '</td><td class="' + (rep ? 'cg' : 'crd') + '">' + (rep ? 'Oui' : 'Non') + '</td><td>' + nR + '</td><td>' + tot2 + '</td><td class="' + ccl(ex) + '">' + ex.toFixed(0) + '%</td><td style="font-size:10px"><span class="tr">' + miss.map(function (a) { return AG_LBL[a]; }).join(', ') + '</span></td></tr>';
+                    Object.keys(ouGrp).filter(Boolean).sort().forEach(function (ouName) {
+                        var recs = ouGrp[ouName];
+                        var hasRep = recs.some(isRep);
+                        /* Compter antigènes renseignés : un AG est renseigné si au moins 1 FOSA l'a renseigné */
+                        var agList = recs[0] && recs[0].isVAP ? AG.concat(AG_VAP) : AG;
+                        var tot2 = agList.length;
+                        var renseignes = 0;
+                        var missArr = [];
+                        agList.forEach(function (ag) {
+                            var anyVal = recs.some(function (r) { return (Number(r[ag + '_f']) || 0) > 0; });
+                            if (anyVal) { renseignes++; } else { missArr.push(ag); }
+                        });
+                        var ex = pct(renseignes, tot2);
+                        h += '<tr data-miss="' + missArr.join(',') + '"><td>' + tr(ouName, 30) + '</td><td class="' + (hasRep ? 'cg' : 'crd') + '">' + (hasRep ? 'Oui' : 'Non') + '</td><td>' + renseignes + '</td><td>' + tot2 + '</td><td class="' + ccl(ex) + '">' + ex.toFixed(0) + '%</td><td style="font-size:10px"><span class="tr">' + missArr.map(function (a) { return AG_LBL[a]; }).join(', ') + '</span></td></tr>';
                     });
                     h += '</tbody></table></div>';
                     var w4 = document.getElementById('missTblWrap'); if (w4) w4.innerHTML = h;
-                    /* Appliquer filtre AG si actif */
                     fltMiss();
-                    /* Update bouton */
                     var btn = document.getElementById('missBtnOU');
                     if (btn) { var n = selOUs.length, t = _missOUs.length; btn.innerHTML = '<span>' + (n === t ? 'Tout (' + t + ')' : n + '/' + t) + '</span><span class="cn">' + n + '</span><span>\u25bc</span>'; }
                 };
