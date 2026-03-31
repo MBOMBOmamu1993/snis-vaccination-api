@@ -1107,7 +1107,8 @@
                 if (dimKey === 'period') { S.filters.period = getDefaultPeriod(S.vals.period); }
                 else { S.filters[dimKey] = (S.cascaded[dimKey] || options).slice(); }
                 if (dimKey !== 'period') computeCascade(false);
-                apFlt(); rFlt(); render();
+                rFlt();                    // 🔄 refresh cascaded lists + button labels
+                apFlt(); render();
             };
             lbl.appendChild(rst);
             g.appendChild(lbl);
@@ -1140,6 +1141,7 @@
                 if (aC.checked) { S.filters[dimKey] = options.slice(); }
                 else { S.filters[dimKey] = []; }
                 if (dimKey !== 'period') computeCascade(false);
+                rFlt();                    // 🔄 refresh cascaded lists + button labels
                 apFlt(); render();
                 dd.querySelectorAll('.fi:not(.fa) input[type=checkbox]').forEach(function (c2) {
                     c2.checked = aC.checked;
@@ -1164,6 +1166,7 @@
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
                     if (dimKey !== 'period') computeCascade(false);
+                    rFlt();                    // 🔄 refresh cascaded lists + button labels
                     apFlt(); render();
                     /* Reconstruire le bouton label sans fermer */
                     var _bt2 = g.querySelector('.fbtn');
