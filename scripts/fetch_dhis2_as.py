@@ -23,74 +23,184 @@ from urllib3.util.retry import Retry
 # Exemple:
 # DX_LIST = "dx1;dx2;dx3"
 DX_LIST = """
-"W25tOXS0rxS.dqydGQFHahb;W25tOXS0rxS.NOHlOxLczjc;W25tOXS0rxS.vbx8t4WAbR8;" 
-          "W25tOXS0rxS.KPDzIsWq7JK;W25tOXS0rxS.oSYTyzezWif;W25tOXS0rxS.Dr4rWTqepnP;" 
-          "uNdFg1eymsa.dqydGQFHahb;uNdFg1eymsa.NOHlOxLczjc;uNdFg1eymsa.vbx8t4WAbR8;" 
-          "uNdFg1eymsa.KPDzIsWq7JK;uNdFg1eymsa.oSYTyzezWif;uNdFg1eymsa.Dr4rWTqepnP;" 
-          "YYKXOc7xBUi.dqydGQFHahb;YYKXOc7xBUi.NOHlOxLczjc;YYKXOc7xBUi.vbx8t4WAbR8;" 
-          "YYKXOc7xBUi.KPDzIsWq7JK;YYKXOc7xBUi.oSYTyzezWif;YYKXOc7xBUi.Dr4rWTqepnP;" 
-          "WWxqaHSeiwd.dqydGQFHahb;WWxqaHSeiwd.NOHlOxLczjc;WWxqaHSeiwd.vbx8t4WAbR8;" 
-          "WWxqaHSeiwd.KPDzIsWq7JK;WWxqaHSeiwd.oSYTyzezWif;WWxqaHSeiwd.Dr4rWTqepnP;" 
-          "SPGaDDw2JzG.dqydGQFHahb;SPGaDDw2JzG.NOHlOxLczjc;SPGaDDw2JzG.vbx8t4WAbR8;" 
-          "SPGaDDw2JzG.KPDzIsWq7JK;SPGaDDw2JzG.oSYTyzezWif;SPGaDDw2JzG.Dr4rWTqepnP;" 
-          "I6tLH3nk9tw.dqydGQFHahb;I6tLH3nk9tw.NOHlOxLczjc;I6tLH3nk9tw.vbx8t4WAbR8;" 
-          "I6tLH3nk9tw.KPDzIsWq7JK;I6tLH3nk9tw.oSYTyzezWif;I6tLH3nk9tw.Dr4rWTqepnP;" 
-          "wwde2QtlIRN.dqydGQFHahb;wwde2QtlIRN.NOHlOxLczjc;wwde2QtlIRN.vbx8t4WAbR8;" 
-          "wwde2QtlIRN.KPDzIsWq7JK;wwde2QtlIRN.oSYTyzezWif;wwde2QtlIRN.Dr4rWTqepnP;" 
-          "c4VvzI5zTep.dqydGQFHahb;c4VvzI5zTep.vbx8t4WAbR8;c4VvzI5zTep.oSYTyzezWif;" 
-          "J8R3WFpMAZI.dqydGQFHahb;J8R3WFpMAZI.NOHlOxLczjc;J8R3WFpMAZI.vbx8t4WAbR8;" 
-          "J8R3WFpMAZI.KPDzIsWq7JK;J8R3WFpMAZI.oSYTyzezWif;J8R3WFpMAZI.Dr4rWTqepnP;" 
-          "pak21wvkWJC.dqydGQFHahb;cTLKwfG8pSv.NOHlOxLczjc;pak21wvkWJC.vbx8t4WAbR8;" 
-          "cTLKwfG8pSv.KPDzIsWq7JK;pak21wvkWJC.oSYTyzezWif;cTLKwfG8pSv.Dr4rWTqepnP;" 
-          "i5zmivDIHN8.g6mIyKoGIh2;i5zmivDIHN8.QRyK6yxKBU3;i5zmivDIHN8.Rby9Jdri29F;" 
-          "i5zmivDIHN8.FCXzheCQXtr;i5zmivDIHN8.VrEj0UVVGr4;M2JQW0H44dI;" 
-          "s5EUr8GznWY;lHB57kjRtUz;h7bxqdKWYCa;" 
-          "gDnbubwzuts;WLSKVyA8LoY;IRuHNExvC4m;" 
-          "pVOrmIskonM;nGZz4qgNal7;YvO03GnK1oQ;" 
-          "E4BX1ea2iDJ.REPORTING_RATE;E4BX1ea2iDJ.REPORTING_RATE_ON_TIME;s5EUr8GznWY.HVViCmJi85w;" 
-          "lHB57kjRtUz.HVViCmJi85w;s5EUr8GznWY.TG2PxzbbIjT;lHB57kjRtUz.TG2PxzbbIjT;" 
-          "s5EUr8GznWY.aE55ruo9YeU;lHB57kjRtUz.aE55ruo9YeU;ppMFLxX6NvU.FGpuKKTof4X;" 
-          "ppMFLxX6NvU.RD9Iut5kjja;ppMFLxX6NvU.LnwvJBIlzxk;ppMFLxX6NvU.RMMpx7TBreP;" 
-          "ppMFLxX6NvU.ZYkCdGglDmr;ppMFLxX6NvU.aZmhNMRCrmZ;DZ2xt2mgVzQ.FGpuKKTof4X;" 
-          "DZ2xt2mgVzQ.RD9Iut5kjja;DZ2xt2mgVzQ.LnwvJBIlzxk;DZ2xt2mgVzQ.RMMpx7TBreP;" 
-          "DZ2xt2mgVzQ.ZYkCdGglDmr;DZ2xt2mgVzQ.aZmhNMRCrmZ;SnhwwhcaDRS;fycXkvxPUjH;" 
-          "Nyke8sWJbn9.oSYTyzezWif;Nyke8sWJbn9.vbx8t4WAbR8;slj1Yy0YgAc.dqydGQFHahb;" 
-          "slj1Yy0YgAc.vbx8t4WAbR8;slj1Yy0YgAc.oSYTyzezWif;OnKbxNJzsCw.dqydGQFHahb;" 
-          "OnKbxNJzsCw.vbx8t4WAbR8;OnKbxNJzsCw.oSYTyzezWif;KVjtJyNKcYQ.g6mIyKoGIh2;" 
-          "KVjtJyNKcYQ.Rby9Jdri29F;KVjtJyNKcYQ.FCXzheCQXtr;WzOgzB6fLCW;" 
-          "E4BX1ea2iDJ;i5zmivDIHN8.dqydGQFHahb;i5zmivDIHN8.vbx8t4WAbR8;" 
-          "i5zmivDIHN8.oSYTyzezWif;SnhwwhcaDRS.M7I3dsr9L5Z;fycXkvxPUjH.M7I3dsr9L5Z;" 
-          "CKhvpizB7wo.M7I3dsr9L5Z;OkgUUlDsGAN.M7I3dsr9L5Z;SnhwwhcaDRS.eX294IHIRVM;" 
-          "fycXkvxPUjH.eX294IHIRVM;CKhvpizB7wo.eX294IHIRVM;OkgUUlDsGAN.eX294IHIRVM;" 
-          "SnhwwhcaDRS.QeTSJLfbwEw;fycXkvxPUjH.QeTSJLfbwEw;CKhvpizB7wo.QeTSJLfbwEw;" 
-          "OkgUUlDsGAN.QeTSJLfbwEw;SnhwwhcaDRS.rJgTQZ63hnO;fycXkvxPUjH.rJgTQZ63hnO;" 
-          "CKhvpizB7wo.rJgTQZ63hnO;OkgUUlDsGAN.rJgTQZ63hnO;SnhwwhcaDRS.YWikHnhDAXE;" 
-          "fycXkvxPUjH.YWikHnhDAXE;CKhvpizB7wo.YWikHnhDAXE;OkgUUlDsGAN.YWikHnhDAXE;" 
-          "SnhwwhcaDRS.lvDrwyxXMq2;fycXkvxPUjH.lvDrwyxXMq2;CKhvpizB7wo.lvDrwyxXMq2;" 
-          "OkgUUlDsGAN.lvDrwyxXMq2;SnhwwhcaDRS.QOXbI3fshPV;fycXkvxPUjH.QOXbI3fshPV;" 
-          "CKhvpizB7wo.QOXbI3fshPV;OkgUUlDsGAN.QOXbI3fshPV;SnhwwhcaDRS.IdjExsz3izf;" 
-          "fycXkvxPUjH.IdjExsz3izf;CKhvpizB7wo.IdjExsz3izf;OkgUUlDsGAN.IdjExsz3izf;" 
-          "SnhwwhcaDRS.OdTBbi5jfhb;fycXkvxPUjH.OdTBbi5jfhb;CKhvpizB7wo.OdTBbi5jfhb;" 
-          "OkgUUlDsGAN.OdTBbi5jfhb;SnhwwhcaDRS.WbtfH2Deu6j;fycXkvxPUjH.WbtfH2Deu6j;" 
-          "CKhvpizB7wo.WbtfH2Deu6j;OkgUUlDsGAN.WbtfH2Deu6j;SnhwwhcaDRS.hiiCMvb0tTp;" 
-          "fycXkvxPUjH.hiiCMvb0tTp;CKhvpizB7wo.hiiCMvb0tTp;OkgUUlDsGAN.hiiCMvb0tTp;" 
-          "CKhvpizB7wo;f1MiAAIu366.dqydGQFHahb;f1MiAAIu366.NOHlOxLczjc;" 
-          "f1MiAAIu366.vbx8t4WAbR8;f1MiAAIu366.KPDzIsWq7JK;f1MiAAIu366.oSYTyzezWif;" 
-          "f1MiAAIu366.Dr4rWTqepnP;j3P9bSnwF12.dqydGQFHahb;j3P9bSnwF12.NOHlOxLczjc;" 
-          "j3P9bSnwF12.vbx8t4WAbR8;j3P9bSnwF12.KPDzIsWq7JK;j3P9bSnwF12.oSYTyzezWif;" 
-          "j3P9bSnwF12.Dr4rWTqepnP;ozVdkud4F03.dqydGQFHahb;ozVdkud4F03.NOHlOxLczjc;" 
-          "ozVdkud4F03.vbx8t4WAbR8;ozVdkud4F03.KPDzIsWq7JK;ozVdkud4F03.oSYTyzezWif;" 
-          "ozVdkud4F03.Dr4rWTqepnP;CgR8kWNdK3W.dqydGQFHahb;CgR8kWNdK3W.NOHlOxLczjc;" 
-          "CgR8kWNdK3W.vbx8t4WAbR8;CgR8kWNdK3W.KPDzIsWq7JK;CgR8kWNdK3W.oSYTyzezWif;" 
-          "CgR8kWNdK3W.Dr4rWTqepnP;WGu60o5mePq.dqydGQFHahb;WGu60o5mePq.NOHlOxLczjc;" 
-          "WGu60o5mePq.vbx8t4WAbR8;WGu60o5mePq.KPDzIsWq7JK;WGu60o5mePq.oSYTyzezWif;" 
-          "WGu60o5mePq.Dr4rWTqepnP;TLKusYaKY5A.dqydGQFHahb;TLKusYaKY5A.vbx8t4WAbR8;" 
-          "TLKusYaKY5A.oSYTyzezWif;GzSBTZkxSZf.dqydGQFHahb;GzSBTZkxSZf.vbx8t4WAbR8;" 
+          "W25tOXS0rxS.dqydGQFHahb;W25tOXS0rxS.NOHlOxLczjc;W25tOXS0rxS.vbx8t4WAbR8;"
+          "W25tOXS0rxS.KPDzIsWq7JK;W25tOXS0rxS.oSYTyzezWif;W25tOXS0rxS.Dr4rWTqepnP;"
+          "uNdFg1eymsa.dqydGQFHahb;uNdFg1eymsa.NOHlOxLczjc;uNdFg1eymsa.vbx8t4WAbR8;"
+          "uNdFg1eymsa.KPDzIsWq7JK;uNdFg1eymsa.oSYTyzezWif;uNdFg1eymsa.Dr4rWTqepnP;"
+          "YYKXOc7xBUi.dqydGQFHahb;YYKXOc7xBUi.NOHlOxLczjc;YYKXOc7xBUi.vbx8t4WAbR8;"
+          "YYKXOc7xBUi.KPDzIsWq7JK;YYKXOc7xBUi.oSYTyzezWif;YYKXOc7xBUi.Dr4rWTqepnP;"
+          "WWxqaHSeiwd.dqydGQFHahb;WWxqaHSeiwd.NOHlOxLczjc;WWxqaHSeiwd.vbx8t4WAbR8;"
+          "WWxqaHSeiwd.KPDzIsWq7JK;WWxqaHSeiwd.oSYTyzezWif;WWxqaHSeiwd.Dr4rWTqepnP;"
+          "SPGaDDw2JzG.dqydGQFHahb;SPGaDDw2JzG.NOHlOxLczjc;SPGaDDw2JzG.vbx8t4WAbR8;"
+          "SPGaDDw2JzG.KPDzIsWq7JK;SPGaDDw2JzG.oSYTyzezWif;SPGaDDw2JzG.Dr4rWTqepnP;"
+          "I6tLH3nk9tw.dqydGQFHahb;I6tLH3nk9tw.NOHlOxLczjc;I6tLH3nk9tw.vbx8t4WAbR8;"
+          "I6tLH3nk9tw.KPDzIsWq7JK;I6tLH3nk9tw.oSYTyzezWif;I6tLH3nk9tw.Dr4rWTqepnP;"
+          "wwde2QtlIRN.dqydGQFHahb;wwde2QtlIRN.NOHlOxLczjc;wwde2QtlIRN.vbx8t4WAbR8;"
+          "wwde2QtlIRN.KPDzIsWq7JK;wwde2QtlIRN.oSYTyzezWif;wwde2QtlIRN.Dr4rWTqepnP;"
+          "c4VvzI5zTep.dqydGQFHahb;c4VvzI5zTep.vbx8t4WAbR8;c4VvzI5zTep.oSYTyzezWif;"
+          "J8R3WFpMAZI.dqydGQFHahb;J8R3WFpMAZI.NOHlOxLczjc;J8R3WFpMAZI.vbx8t4WAbR8;"
+          "J8R3WFpMAZI.KPDzIsWq7JK;J8R3WFpMAZI.oSYTyzezWif;J8R3WFpMAZI.Dr4rWTqepnP;"
+          "pak21wvkWJC.dqydGQFHahb;cTLKwfG8pSv.NOHlOxLczjc;pak21wvkWJC.vbx8t4WAbR8;"
+          "cTLKwfG8pSv.KPDzIsWq7JK;pak21wvkWJC.oSYTyzezWif;cTLKwfG8pSv.Dr4rWTqepnP;"
+          "i5zmivDIHN8.g6mIyKoGIh2;i5zmivDIHN8.QRyK6yxKBU3;i5zmivDIHN8.Rby9Jdri29F;"
+          "i5zmivDIHN8.FCXzheCQXtr;i5zmivDIHN8.VrEj0UVVGr4;M2JQW0H44dI;"
+          "s5EUr8GznWY;lHB57kjRtUz;h7bxqdKWYCa;"
+          "gDnbubwzuts;WLSKVyA8LoY;IRuHNExvC4m;"
+          "pVOrmIskonM;nGZz4qgNal7;YvO03GnK1oQ;"
+          "E4BX1ea2iDJ.REPORTING_RATE;E4BX1ea2iDJ.REPORTING_RATE_ON_TIME;s5EUr8GznWY.HVViCmJi85w;"
+          "lHB57kjRtUz.HVViCmJi85w;s5EUr8GznWY.TG2PxzbbIjT;lHB57kjRtUz.TG2PxzbbIjT;"
+          "s5EUr8GznWY.aE55ruo9YeU;lHB57kjRtUz.aE55ruo9YeU;ppMFLxX6NvU.FGpuKKTof4X;"
+          "ppMFLxX6NvU.RD9Iut5kjja;ppMFLxX6NvU.LnwvJBIlzxk;ppMFLxX6NvU.RMMpx7TBreP;"
+          "ppMFLxX6NvU.ZYkCdGglDmr;ppMFLxX6NvU.aZmhNMRCrmZ;DZ2xt2mgVzQ.FGpuKKTof4X;"
+          "DZ2xt2mgVzQ.RD9Iut5kjja;DZ2xt2mgVzQ.LnwvJBIlzxk;DZ2xt2mgVzQ.RMMpx7TBreP;"
+          "DZ2xt2mgVzQ.ZYkCdGglDmr;DZ2xt2mgVzQ.aZmhNMRCrmZ;SnhwwhcaDRS;fycXkvxPUjH;"
+          "Nyke8sWJbn9.oSYTyzezWif;Nyke8sWJbn9.vbx8t4WAbR8;slj1Yy0YgAc.dqydGQFHahb;"
+          "slj1Yy0YgAc.vbx8t4WAbR8;slj1Yy0YgAc.oSYTyzezWif;OnKbxNJzsCw.dqydGQFHahb;"
+          "OnKbxNJzsCw.vbx8t4WAbR8;OnKbxNJzsCw.oSYTyzezWif;KVjtJyNKcYQ.g6mIyKoGIh2;"
+          "KVjtJyNKcYQ.Rby9Jdri29F;KVjtJyNKcYQ.FCXzheCQXtr;WzOgzB6fLCW;"
+          "E4BX1ea2iDJ;i5zmivDIHN8.dqydGQFHahb;i5zmivDIHN8.vbx8t4WAbR8;"
+          "i5zmivDIHN8.oSYTyzezWif;SnhwwhcaDRS.M7I3dsr9L5Z;fycXkvxPUjH.M7I3dsr9L5Z;"
+          "CKhvpizB7wo.M7I3dsr9L5Z;OkgUUlDsGAN.M7I3dsr9L5Z;SnhwwhcaDRS.eX294IHIRVM;"
+          "fycXkvxPUjH.eX294IHIRVM;CKhvpizB7wo.eX294IHIRVM;OkgUUlDsGAN.eX294IHIRVM;"
+          "SnhwwhcaDRS.QeTSJLfbwEw;fycXkvxPUjH.QeTSJLfbwEw;CKhvpizB7wo.QeTSJLfbwEw;"
+          "OkgUUlDsGAN.QeTSJLfbwEw;SnhwwhcaDRS.rJgTQZ63hnO;fycXkvxPUjH.rJgTQZ63hnO;"
+          "CKhvpizB7wo.rJgTQZ63hnO;OkgUUlDsGAN.rJgTQZ63hnO;SnhwwhcaDRS.YWikHnhDAXE;"
+          "fycXkvxPUjH.YWikHnhDAXE;CKhvpizB7wo.YWikHnhDAXE;OkgUUlDsGAN.YWikHnhDAXE;"
+          "SnhwwhcaDRS.lvDrwyxXMq2;fycXkvxPUjH.lvDrwyxXMq2;CKhvpizB7wo.lvDrwyxXMq2;"
+          "OkgUUlDsGAN.lvDrwyxXMq2;SnhwwhcaDRS.QOXbI3fshPV;fycXkvxPUjH.QOXbI3fshPV;"
+          "CKhvpizB7wo.QOXbI3fshPV;OkgUUlDsGAN.QOXbI3fshPV;SnhwwhcaDRS.IdjExsz3izf;"
+          "fycXkvxPUjH.IdjExsz3izf;CKhvpizB7wo.IdjExsz3izf;OkgUUlDsGAN.IdjExsz3izf;"
+          "SnhwwhcaDRS.OdTBbi5jfhb;fycXkvxPUjH.OdTBbi5jfhb;CKhvpizB7wo.OdTBbi5jfhb;"
+          "OkgUUlDsGAN.OdTBbi5jfhb;SnhwwhcaDRS.WbtfH2Deu6j;fycXkvxPUjH.WbtfH2Deu6j;"
+          "CKhvpizB7wo.WbtfH2Deu6j;OkgUUlDsGAN.WbtfH2Deu6j;SnhwwhcaDRS.hiiCMvb0tTp;"
+          "fycXkvxPUjH.hiiCMvb0tTp;CKhvpizB7wo.hiiCMvb0tTp;OkgUUlDsGAN.hiiCMvb0tTp;"
+          "CKhvpizB7wo;f1MiAAIu366.dqydGQFHahb;f1MiAAIu366.NOHlOxLczjc;"
+          "f1MiAAIu366.vbx8t4WAbR8;f1MiAAIu366.KPDzIsWq7JK;f1MiAAIu366.oSYTyzezWif;"
+          "f1MiAAIu366.Dr4rWTqepnP;j3P9bSnwF12.dqydGQFHahb;j3P9bSnwF12.NOHlOxLczjc;"
+          "j3P9bSnwF12.vbx8t4WAbR8;j3P9bSnwF12.KPDzIsWq7JK;j3P9bSnwF12.oSYTyzezWif;"
+          "j3P9bSnwF12.Dr4rWTqepnP;ozVdkud4F03.dqydGQFHahb;ozVdkud4F03.NOHlOxLczjc;"
+          "ozVdkud4F03.vbx8t4WAbR8;ozVdkud4F03.KPDzIsWq7JK;ozVdkud4F03.oSYTyzezWif;"
+          "ozVdkud4F03.Dr4rWTqepnP;CgR8kWNdK3W.dqydGQFHahb;CgR8kWNdK3W.NOHlOxLczjc;"
+          "CgR8kWNdK3W.vbx8t4WAbR8;CgR8kWNdK3W.KPDzIsWq7JK;CgR8kWNdK3W.oSYTyzezWif;"
+          "CgR8kWNdK3W.Dr4rWTqepnP;WGu60o5mePq.dqydGQFHahb;WGu60o5mePq.NOHlOxLczjc;"
+          "WGu60o5mePq.vbx8t4WAbR8;WGu60o5mePq.KPDzIsWq7JK;WGu60o5mePq.oSYTyzezWif;"
+          "WGu60o5mePq.Dr4rWTqepnP;TLKusYaKY5A.dqydGQFHahb;TLKusYaKY5A.vbx8t4WAbR8;"
+          "TLKusYaKY5A.oSYTyzezWif;GzSBTZkxSZf.dqydGQFHahb;GzSBTZkxSZf.vbx8t4WAbR8;"
           "GzSBTZkxSZf.oSYTyzezWif;"
           "Nyke8sWJbn9.dqydGQFHahb;"
           "bzD4QxaNkJm.dqydGQFHahb;bzD4QxaNkJm.NOHlOxLczjc;bzD4QxaNkJm.vbx8t4WAbR8;"
           "bzD4QxaNkJm.KPDzIsWq7JK;bzD4QxaNkJm.oSYTyzezWif;bzD4QxaNkJm.Dr4rWTqepnP;"
-          "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv"
+          "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv;"
+          "uAWIVDnGPGH.dxDQKDcTn6Z;uAWIVDnGPGH.XEN3ucCGa07;uAWIVDnGPGH.J8mw9rFkY4v;"
+          "uAWIVDnGPGH.WZwmzIuRvwV;uAWIVDnGPGH.GSCwhT2SCCr;uAWIVDnGPGH.pdKyvaYRqCj;"
+          "uAWIVDnGPGH.kOWsLrtvrhn;uAWIVDnGPGH.mZLRF4eSPIk;"
+          "l1bhrYUPsde.dxDQKDcTn6Z;l1bhrYUPsde.XEN3ucCGa07;l1bhrYUPsde.J8mw9rFkY4v;"
+          "l1bhrYUPsde.WZwmzIuRvwV;l1bhrYUPsde.GSCwhT2SCCr;l1bhrYUPsde.pdKyvaYRqCj;"
+          "l1bhrYUPsde.kOWsLrtvrhn;l1bhrYUPsde.mZLRF4eSPIk;"
+          "Hjlw6DpooIo.dxDQKDcTn6Z;Hjlw6DpooIo.XEN3ucCGa07;Hjlw6DpooIo.J8mw9rFkY4v;"
+          "Hjlw6DpooIo.WZwmzIuRvwV;Hjlw6DpooIo.GSCwhT2SCCr;Hjlw6DpooIo.pdKyvaYRqCj;"
+          "Hjlw6DpooIo.kOWsLrtvrhn;Hjlw6DpooIo.mZLRF4eSPIk;"
+          "BCXcLiQNI8M.dxDQKDcTn6Z;BCXcLiQNI8M.XEN3ucCGa07;BCXcLiQNI8M.J8mw9rFkY4v;"
+          "BCXcLiQNI8M.WZwmzIuRvwV;BCXcLiQNI8M.GSCwhT2SCCr;BCXcLiQNI8M.pdKyvaYRqCj;"
+          "BCXcLiQNI8M.kOWsLrtvrhn;BCXcLiQNI8M.mZLRF4eSPIk;"
+          "IisI6JudbS8.dxDQKDcTn6Z;IisI6JudbS8.XEN3ucCGa07;IisI6JudbS8.J8mw9rFkY4v;"
+          "IisI6JudbS8.WZwmzIuRvwV;IisI6JudbS8.GSCwhT2SCCr;IisI6JudbS8.pdKyvaYRqCj;"
+          "IisI6JudbS8.mZLRF4eSPIk;IisI6JudbS8.kOWsLrtvrhn;"
+          "vrTdwvAQSUc.dxDQKDcTn6Z;vrTdwvAQSUc.XEN3ucCGa07;vrTdwvAQSUc.J8mw9rFkY4v;"
+          "vrTdwvAQSUc.WZwmzIuRvwV;vrTdwvAQSUc.GSCwhT2SCCr;vrTdwvAQSUc.pdKyvaYRqCj;"
+          "vrTdwvAQSUc.kOWsLrtvrhn;vrTdwvAQSUc.mZLRF4eSPIk;"
+          "iFMn6ceqdIN.dxDQKDcTn6Z;iFMn6ceqdIN.XEN3ucCGa07;iFMn6ceqdIN.J8mw9rFkY4v;"
+          "iFMn6ceqdIN.WZwmzIuRvwV;iFMn6ceqdIN.GSCwhT2SCCr;iFMn6ceqdIN.pdKyvaYRqCj;"
+          "iFMn6ceqdIN.kOWsLrtvrhn;iFMn6ceqdIN.mZLRF4eSPIk;"
+          "hqqlXMmY95c.dxDQKDcTn6Z;hqqlXMmY95c.XEN3ucCGa07;hqqlXMmY95c.J8mw9rFkY4v;"
+          "hqqlXMmY95c.WZwmzIuRvwV;hqqlXMmY95c.GSCwhT2SCCr;hqqlXMmY95c.pdKyvaYRqCj;"
+          "MJrLCya7qzt.dxDQKDcTn6Z;MJrLCya7qzt.XEN3ucCGa07;MJrLCya7qzt.J8mw9rFkY4v;"
+          "MJrLCya7qzt.WZwmzIuRvwV;MJrLCya7qzt.GSCwhT2SCCr;MJrLCya7qzt.pdKyvaYRqCj;"
+          "RYaAzE1eqya.dxDQKDcTn6Z;RYaAzE1eqya.XEN3ucCGa07;RYaAzE1eqya.J8mw9rFkY4v;"
+          "RYaAzE1eqya.WZwmzIuRvwV;RYaAzE1eqya.GSCwhT2SCCr;RYaAzE1eqya.pdKyvaYRqCj;"
+          "BfoCv6bUeBk.dxDQKDcTn6Z;BfoCv6bUeBk.XEN3ucCGa07;BfoCv6bUeBk.J8mw9rFkY4v;"
+          "BfoCv6bUeBk.WZwmzIuRvwV;BfoCv6bUeBk.GSCwhT2SCCr;BfoCv6bUeBk.pdKyvaYRqCj;"
+          "laQa8YfpVrp.dxDQKDcTn6Z;laQa8YfpVrp.XEN3ucCGa07;laQa8YfpVrp.J8mw9rFkY4v;"
+          "laQa8YfpVrp.WZwmzIuRvwV;laQa8YfpVrp.GSCwhT2SCCr;laQa8YfpVrp.pdKyvaYRqCj;"
+          "nnSKbBscmxH.dxDQKDcTn6Z;nnSKbBscmxH.XEN3ucCGa07;nnSKbBscmxH.J8mw9rFkY4v;"
+          "nnSKbBscmxH.WZwmzIuRvwV;nnSKbBscmxH.GSCwhT2SCCr;nnSKbBscmxH.pdKyvaYRqCj;"
+          "fQfJhi742vt.dxDQKDcTn6Z;fQfJhi742vt.XEN3ucCGa07;fQfJhi742vt.J8mw9rFkY4v;"
+          "fQfJhi742vt.WZwmzIuRvwV;fQfJhi742vt.GSCwhT2SCCr;fQfJhi742vt.pdKyvaYRqCj;"
+          "bwUoJJgDst9.dxDQKDcTn6Z;bwUoJJgDst9.XEN3ucCGa07;bwUoJJgDst9.J8mw9rFkY4v;"
+          "bwUoJJgDst9.WZwmzIuRvwV;bwUoJJgDst9.GSCwhT2SCCr;bwUoJJgDst9.pdKyvaYRqCj;"
+          "blfdHcia9nP.dxDQKDcTn6Z;blfdHcia9nP.XEN3ucCGa07;blfdHcia9nP.J8mw9rFkY4v;"
+          "blfdHcia9nP.WZwmzIuRvwV;blfdHcia9nP.GSCwhT2SCCr;blfdHcia9nP.pdKyvaYRqCj;"
+          "bqJvWJtJwtK.dxDQKDcTn6Z;bqJvWJtJwtK.XEN3ucCGa07;bqJvWJtJwtK.J8mw9rFkY4v;"
+          "bqJvWJtJwtK.WZwmzIuRvwV;bqJvWJtJwtK.GSCwhT2SCCr;bqJvWJtJwtK.pdKyvaYRqCj;"
+          "DNZEo533IMh.dxDQKDcTn6Z;DNZEo533IMh.XEN3ucCGa07;DNZEo533IMh.J8mw9rFkY4v;"
+          "DNZEo533IMh.WZwmzIuRvwV;DNZEo533IMh.GSCwhT2SCCr;DNZEo533IMh.pdKyvaYRqCj;"
+          "ZMcyV45XAkW.dxDQKDcTn6Z;ZMcyV45XAkW.XEN3ucCGa07;ZMcyV45XAkW.J8mw9rFkY4v;"
+          "ZMcyV45XAkW.WZwmzIuRvwV;ZMcyV45XAkW.GSCwhT2SCCr;ZMcyV45XAkW.pdKyvaYRqCj;"
+          "gzPW3f2ijo5.dxDQKDcTn6Z;gzPW3f2ijo5.XEN3ucCGa07;gzPW3f2ijo5.J8mw9rFkY4v;"
+          "gzPW3f2ijo5.WZwmzIuRvwV;gzPW3f2ijo5.GSCwhT2SCCr;gzPW3f2ijo5.pdKyvaYRqCj;"
+          "tmp1zLSXw0Q.dxDQKDcTn6Z;tmp1zLSXw0Q.XEN3ucCGa07;tmp1zLSXw0Q.J8mw9rFkY4v;"
+          "tmp1zLSXw0Q.WZwmzIuRvwV;tmp1zLSXw0Q.GSCwhT2SCCr;tmp1zLSXw0Q.pdKyvaYRqCj;"
+          "jJUIodWQH0T.dxDQKDcTn6Z;jJUIodWQH0T.XEN3ucCGa07;jJUIodWQH0T.J8mw9rFkY4v;"
+          "jJUIodWQH0T.WZwmzIuRvwV;jJUIodWQH0T.GSCwhT2SCCr;jJUIodWQH0T.pdKyvaYRqCj;"
+          "K8Yt0p1z21M.dxDQKDcTn6Z;K8Yt0p1z21M.XEN3ucCGa07;K8Yt0p1z21M.J8mw9rFkY4v;"
+          "K8Yt0p1z21M.WZwmzIuRvwV;K8Yt0p1z21M.GSCwhT2SCCr;K8Yt0p1z21M.pdKyvaYRqCj;"
+          "W25tOXS0rxS.g6mIyKoGIh2;W25tOXS0rxS.QRyK6yxKBU3;W25tOXS0rxS.Rby9Jdri29F;"
+          "W25tOXS0rxS.FCXzheCQXtr;W25tOXS0rxS.VrEj0UVVGr4;"
+          "uNdFg1eymsa.g6mIyKoGIh2;uNdFg1eymsa.QRyK6yxKBU3;uNdFg1eymsa.Rby9Jdri29F;"
+          "uNdFg1eymsa.FCXzheCQXtr;uNdFg1eymsa.VrEj0UVVGr4;"
+          "YYKXOc7xBUi.g6mIyKoGIh2;YYKXOc7xBUi.QRyK6yxKBU3;YYKXOc7xBUi.Rby9Jdri29F;"
+          "YYKXOc7xBUi.FCXzheCQXtr;YYKXOc7xBUi.VrEj0UVVGr4;"
+          "WWxqaHSeiwd.g6mIyKoGIh2;WWxqaHSeiwd.QRyK6yxKBU3;WWxqaHSeiwd.Rby9Jdri29F;"
+          "WWxqaHSeiwd.FCXzheCQXtr;WWxqaHSeiwd.VrEj0UVVGr4;"
+          "f1MiAAIu366.g6mIyKoGIh2;f1MiAAIu366.QRyK6yxKBU3;f1MiAAIu366.Rby9Jdri29F;"
+          "f1MiAAIu366.FCXzheCQXtr;f1MiAAIu366.VrEj0UVVGr4;"
+          "j3P9bSnwF12.g6mIyKoGIh2;j3P9bSnwF12.QRyK6yxKBU3;j3P9bSnwF12.Rby9Jdri29F;"
+          "j3P9bSnwF12.FCXzheCQXtr;j3P9bSnwF12.VrEj0UVVGr4;"
+          "ozVdkud4F03.g6mIyKoGIh2;ozVdkud4F03.QRyK6yxKBU3;ozVdkud4F03.Rby9Jdri29F;"
+          "ozVdkud4F03.FCXzheCQXtr;ozVdkud4F03.VrEj0UVVGr4;"
+          "SPGaDDw2JzG.g6mIyKoGIh2;SPGaDDw2JzG.QRyK6yxKBU3;SPGaDDw2JzG.Rby9Jdri29F;"
+          "SPGaDDw2JzG.FCXzheCQXtr;SPGaDDw2JzG.VrEj0UVVGr4;"
+          "I6tLH3nk9tw.g6mIyKoGIh2;I6tLH3nk9tw.QRyK6yxKBU3;I6tLH3nk9tw.Rby9Jdri29F;"
+          "I6tLH3nk9tw.FCXzheCQXtr;I6tLH3nk9tw.VrEj0UVVGr4;"
+          "wwde2QtlIRN.g6mIyKoGIh2;wwde2QtlIRN.QRyK6yxKBU3;wwde2QtlIRN.Rby9Jdri29F;"
+          "wwde2QtlIRN.FCXzheCQXtr;wwde2QtlIRN.VrEj0UVVGr4;"
+          "CgR8kWNdK3W.g6mIyKoGIh2;CgR8kWNdK3W.QRyK6yxKBU3;CgR8kWNdK3W.Rby9Jdri29F;"
+          "CgR8kWNdK3W.FCXzheCQXtr;CgR8kWNdK3W.VrEj0UVVGr4;"
+          "WGu60o5mePq.g6mIyKoGIh2;WGu60o5mePq.QRyK6yxKBU3;WGu60o5mePq.Rby9Jdri29F;"
+          "WGu60o5mePq.FCXzheCQXtr;WGu60o5mePq.VrEj0UVVGr4;"
+          "J8R3WFpMAZI.g6mIyKoGIh2;J8R3WFpMAZI.QRyK6yxKBU3;J8R3WFpMAZI.Rby9Jdri29F;"
+          "J8R3WFpMAZI.FCXzheCQXtr;J8R3WFpMAZI.VrEj0UVVGr4;"
+          "TLKusYaKY5A.g6mIyKoGIh2;TLKusYaKY5A.Rby9Jdri29F;TLKusYaKY5A.FCXzheCQXtr;"
+          "GzSBTZkxSZf.g6mIyKoGIh2;GzSBTZkxSZf.Rby9Jdri29F;GzSBTZkxSZf.FCXzheCQXtr;"
+          "c4VvzI5zTep.g6mIyKoGIh2;c4VvzI5zTep.Rby9Jdri29F;c4VvzI5zTep.FCXzheCQXtr;"
+          "pak21wvkWJC.g6mIyKoGIh2;cTLKwfG8pSv.QRyK6yxKBU3;pak21wvkWJC.Rby9Jdri29F;"
+          "cTLKwfG8pSv.Rby9Jdri29F;pak21wvkWJC.FCXzheCQXtr;cTLKwfG8pSv.VrEj0UVVGr4;"
+          "i5zmivDIHN8.g6mIyKoGIh2;i5zmivDIHN8.QRyK6yxKBU3;i5zmivDIHN8.Rby9Jdri29F;"
+          "i5zmivDIHN8.FCXzheCQXtr;i5zmivDIHN8.VrEj0UVVGr4;"
+          "bzD4QxaNkJm.g6mIyKoGIh2;bzD4QxaNkJm.QRyK6yxKBU3;bzD4QxaNkJm.Rby9Jdri29F;"
+          "bzD4QxaNkJm.FCXzheCQXtr;bzD4QxaNkJm.VrEj0UVVGr4;"
+          "M2JQW0H44dI.QRyK6yxKBU3;M2JQW0H44dI.VrEj0UVVGr4;"
+          "W25tOXS0rxS.tWyeOXJgU3A;W25tOXS0rxS.cI92X1TYlnD;W25tOXS0rxS.BisCHS3wArx;"
+          "uNdFg1eymsa.tWyeOXJgU3A;uNdFg1eymsa.cI92X1TYlnD;uNdFg1eymsa.BisCHS3wArx;"
+          "YYKXOc7xBUi.tWyeOXJgU3A;YYKXOc7xBUi.cI92X1TYlnD;YYKXOc7xBUi.BisCHS3wArx;"
+          "WWxqaHSeiwd.tWyeOXJgU3A;WWxqaHSeiwd.cI92X1TYlnD;WWxqaHSeiwd.BisCHS3wArx;"
+          "f1MiAAIu366.tWyeOXJgU3A;f1MiAAIu366.cI92X1TYlnD;f1MiAAIu366.BisCHS3wArx;"
+          "j3P9bSnwF12.tWyeOXJgU3A;j3P9bSnwF12.cI92X1TYlnD;j3P9bSnwF12.BisCHS3wArx;"
+          "ozVdkud4F03.tWyeOXJgU3A;ozVdkud4F03.cI92X1TYlnD;ozVdkud4F03.BisCHS3wArx;"
+          "SPGaDDw2JzG.tWyeOXJgU3A;SPGaDDw2JzG.cI92X1TYlnD;SPGaDDw2JzG.BisCHS3wArx;"
+          "I6tLH3nk9tw.tWyeOXJgU3A;I6tLH3nk9tw.cI92X1TYlnD;I6tLH3nk9tw.BisCHS3wArx;"
+          "wwde2QtlIRN.tWyeOXJgU3A;wwde2QtlIRN.cI92X1TYlnD;wwde2QtlIRN.BisCHS3wArx;"
+          "CgR8kWNdK3W.tWyeOXJgU3A;CgR8kWNdK3W.cI92X1TYlnD;CgR8kWNdK3W.BisCHS3wArx;"
+          "WGu60o5mePq.tWyeOXJgU3A;WGu60o5mePq.cI92X1TYlnD;WGu60o5mePq.BisCHS3wArx;"
+          "J8R3WFpMAZI.tWyeOXJgU3A;J8R3WFpMAZI.cI92X1TYlnD;J8R3WFpMAZI.BisCHS3wArx;"
+          "TLKusYaKY5A.tWyeOXJgU3A;TLKusYaKY5A.cI92X1TYlnD;TLKusYaKY5A.BisCHS3wArx;"
+          "GzSBTZkxSZf.tWyeOXJgU3A;GzSBTZkxSZf.cI92X1TYlnD;GzSBTZkxSZf.BisCHS3wArx;"
+          "c4VvzI5zTep.tWyeOXJgU3A;c4VvzI5zTep.cI92X1TYlnD;c4VvzI5zTep.BisCHS3wArx;"
+          "pak21wvkWJC.tWyeOXJgU3A;cTLKwfG8pSv.tWyeOXJgU3A;pak21wvkWJC.cI92X1TYlnD;"
+          "cTLKwfG8pSv.cI92X1TYlnD;pak21wvkWJC.BisCHS3wArx;cTLKwfG8pSv.BisCHS3wArx;"
+          "i5zmivDIHN8.tWyeOXJgU3A;i5zmivDIHN8.cI92X1TYlnD;i5zmivDIHN8.BisCHS3wArx;"
+          "bzD4QxaNkJm.tWyeOXJgU3A;bzD4QxaNkJm.cI92X1TYlnD;bzD4QxaNkJm.BisCHS3wArx;"
+          "tjcH6RS9mXd"
 """.strip().replace("\n", "").replace(" ", "").replace('"', "")
 
 # (B) AJOUTE ICI TON RENAME_MAP COMPLET
@@ -341,6 +451,383 @@ RENAME_MAP: Dict[str, str] = {
     "hGBtbI7kjvb": "Td 3",
     "bZDbSvdUcPC": "Td 4",
     "lXsTq1MDSv": "Td 5",
+
+         # ============================================
+    # LOGISTIQUES - RENAME MAP
+    # ============================================
+    "uAWIVDnGPGH.dxDQKDcTn6Z": "DTC doses-administree",
+    "uAWIVDnGPGH.XEN3ucCGa07": "DTC doses-jour rupture stock",
+    "uAWIVDnGPGH.J8mw9rFkY4v": "DTC doses-perdue",
+    "uAWIVDnGPGH.WZwmzIuRvwV": "DTC doses-recue mois",
+    "uAWIVDnGPGH.GSCwhT2SCCr": "DTC dose-stock debut mois",
+    "uAWIVDnGPGH.pdKyvaYRqCj": "DTC dose-utilisee",
+    "uAWIVDnGPGH.kOWsLrtvrhn": "DTC dose-stock disponible utilisable",
+    "uAWIVDnGPGH.mZLRF4eSPIk": "DTC dose-sortie",
+
+    "l1bhrYUPsde.dxDQKDcTn6Z": "BCG dose-administree",
+    "l1bhrYUPsde.XEN3ucCGa07": "BCG dose-jour rupture stock",
+    "l1bhrYUPsde.J8mw9rFkY4v": "BCG dose-perdue",
+    "l1bhrYUPsde.WZwmzIuRvwV": "BCG dose-recue mois",
+    "l1bhrYUPsde.GSCwhT2SCCr": "BCG dose-stock debut mois",
+    "l1bhrYUPsde.pdKyvaYRqCj": "BCG dose-utilisee",
+    "l1bhrYUPsde.kOWsLrtvrhn": "BCG dose-stock disponible utilisable",
+    "l1bhrYUPsde.mZLRF4eSPIk": "BCG dose-sortie",
+
+    "Hjlw6DpooIo.dxDQKDcTn6Z": "VAR dose-administree",
+    "Hjlw6DpooIo.XEN3ucCGa07": "VAR dose-jour rupture stock",
+    "Hjlw6DpooIo.J8mw9rFkY4v": "VAR dose-perdue",
+    "Hjlw6DpooIo.WZwmzIuRvwV": "VAR dose-recue mois",
+    "Hjlw6DpooIo.GSCwhT2SCCr": "VAR dose-stock debut mois",
+    "Hjlw6DpooIo.pdKyvaYRqCj": "VAR dose-utilisee",
+    "Hjlw6DpooIo.kOWsLrtvrhn": "VAR dose-stock disponible utilisable",
+    "Hjlw6DpooIo.mZLRF4eSPIk": "VAR dose-sortie",
+
+    "BCXcLiQNI8M.dxDQKDcTn6Z": "VPO dose-administree",
+    "BCXcLiQNI8M.XEN3ucCGa07": "VPO dose-jour rupture stock",
+    "BCXcLiQNI8M.J8mw9rFkY4v": "VPO dose-perdue",
+    "BCXcLiQNI8M.WZwmzIuRvwV": "VPO dose-recue mois",
+    "BCXcLiQNI8M.GSCwhT2SCCr": "VPO dose-stock debut mois",
+    "BCXcLiQNI8M.pdKyvaYRqCj": "VPO dose-utilisee",
+    "BCXcLiQNI8M.kOWsLrtvrhn": "VPO dose-stock disponible utilisable",
+    "BCXcLiQNI8M.mZLRF4eSPIk": "VPO dose-sortie",
+
+    "IisI6JudbS8.dxDQKDcTn6Z": "VPI dose-administree",
+    "IisI6JudbS8.XEN3ucCGa07": "VPI dose-jour rupture stock",
+    "IisI6JudbS8.J8mw9rFkY4v": "VPI dose-perdue",
+    "IisI6JudbS8.WZwmzIuRvwV": "VPI dose-recue mois",
+    "IisI6JudbS8.GSCwhT2SCCr": "VPI dose-stock debut mois",
+    "IisI6JudbS8.pdKyvaYRqCj": "VPI dose-utilisee",
+    "IisI6JudbS8.mZLRF4eSPIk": "VPI dose-sortie",
+    "IisI6JudbS8.kOWsLrtvrhn": "VPI dose-stock disponible utilisable",
+
+    "vrTdwvAQSUc.dxDQKDcTn6Z": "VAA dose-administree",
+    "vrTdwvAQSUc.XEN3ucCGa07": "VAA dose-jour rupture",
+    "vrTdwvAQSUc.J8mw9rFkY4v": "VAA dose-perdue",
+    "vrTdwvAQSUc.WZwmzIuRvwV": "VAA dose-recue mois",
+    "vrTdwvAQSUc.GSCwhT2SCCr": "VAA dose-stock debut mois",
+    "vrTdwvAQSUc.pdKyvaYRqCj": "VAA dose-utilisee",
+    "vrTdwvAQSUc.kOWsLrtvrhn": "VAA dose-stock disponible utilisable",
+    "vrTdwvAQSUc.mZLRF4eSPIk": "VAA dose-sortie",
+
+    "iFMn6ceqdIN.dxDQKDcTn6Z": "VAT dose-administree",
+    "iFMn6ceqdIN.XEN3ucCGa07": "VAT dose-jour rupture",
+    "iFMn6ceqdIN.J8mw9rFkY4v": "VAT dose-perdue",
+    "iFMn6ceqdIN.WZwmzIuRvwV": "VAT dose-recue mois",
+    "iFMn6ceqdIN.GSCwhT2SCCr": "VAT dose-stock debut mois",
+    "iFMn6ceqdIN.pdKyvaYRqCj": "VAT dose-utilisee",
+    "iFMn6ceqdIN.kOWsLrtvrhn": "VAT dose-stock disponible utilisable",
+    "iFMn6ceqdIN.mZLRF4eSPIk": "VAT dose-sortie",
+
+    "hqqlXMmY95c.dxDQKDcTn6Z": "PCV13 dose-administree",
+    "hqqlXMmY95c.XEN3ucCGa07": "PCV13 dose-jour rupture",
+    "hqqlXMmY95c.J8mw9rFkY4v": "PCV13 dose-perdue",
+    "hqqlXMmY95c.WZwmzIuRvwV": "PCV13 dose-recue mois",
+    "hqqlXMmY95c.GSCwhT2SCCr": "PCV13 dose-stock debut mois",
+    "hqqlXMmY95c.pdKyvaYRqCj": "PCV13 dose-utilise",
+
+    "MJrLCya7qzt.dxDQKDcTn6Z": "ROTA dose-administree",
+    "MJrLCya7qzt.XEN3ucCGa07": "ROTA dose-jour rupture",
+    "MJrLCya7qzt.J8mw9rFkY4v": "ROTA dose-perdue",
+    "MJrLCya7qzt.WZwmzIuRvwV": "ROTA dose-recue mois",
+    "MJrLCya7qzt.GSCwhT2SCCr": "ROTA dose-stock debut mois",
+    "MJrLCya7qzt.pdKyvaYRqCj": "ROTA dose-utilise",
+
+    "RYaAzE1eqya.dxDQKDcTn6Z": "VAP dose-administree",
+    "RYaAzE1eqya.XEN3ucCGa07": "VAP dose-jour rupture",
+    "RYaAzE1eqya.J8mw9rFkY4v": "VAP dose-perdue",
+    "RYaAzE1eqya.WZwmzIuRvwV": "VAP dose-recue mois",
+    "RYaAzE1eqya.GSCwhT2SCCr": "VAP dose-stock debut mois",
+    "RYaAzE1eqya.pdKyvaYRqCj": "VAP dose-utilisee",
+
+    "BfoCv6bUeBk.dxDQKDcTn6Z": "HPV dose-administree",
+    "BfoCv6bUeBk.XEN3ucCGa07": "HPV dose-jour rupture",
+    "BfoCv6bUeBk.J8mw9rFkY4v": "HPV dose-perdue",
+    "BfoCv6bUeBk.WZwmzIuRvwV": "HPV dose-recue mois",
+    "BfoCv6bUeBk.GSCwhT2SCCr": "HPV dose-stock debut mois",
+    "BfoCv6bUeBk.pdKyvaYRqCj": "HPV dose-utilisee",
+
+    "laQa8YfpVrp.dxDQKDcTn6Z": "Diluant BCG dose-administree",
+    "laQa8YfpVrp.XEN3ucCGa07": "Diluant BCG dose-jour rupture",
+    "laQa8YfpVrp.J8mw9rFkY4v": "Diluant BCG dose-perdue",
+    "laQa8YfpVrp.WZwmzIuRvwV": "Diluant BCG dose-recue mois",
+    "laQa8YfpVrp.GSCwhT2SCCr": "Diluant BCG dose-stock debut mois",
+    "laQa8YfpVrp.pdKyvaYRqCj": "Diluant BCG dose-utilisee",
+
+    "nnSKbBscmxH.dxDQKDcTn6Z": "Diluant VAR dose-administree",
+    "nnSKbBscmxH.XEN3ucCGa07": "Diluant VAR dose-jour rupture",
+    "nnSKbBscmxH.J8mw9rFkY4v": "Diluant VAR dose-perdue",
+    "nnSKbBscmxH.WZwmzIuRvwV": "Diluant VAR dose-recue mois",
+    "nnSKbBscmxH.GSCwhT2SCCr": "Diluant VAR dose-stock debut mois",
+    "nnSKbBscmxH.pdKyvaYRqCj": "Diluant VAR dose-utilisee",
+
+    "fQfJhi742vt.dxDQKDcTn6Z": "Diluant VAA dose-administree",
+    "fQfJhi742vt.XEN3ucCGa07": "Diluant VAA dose-jour rupture",
+    "fQfJhi742vt.J8mw9rFkY4v": "Diluant VAA dose-perdue",
+    "fQfJhi742vt.WZwmzIuRvwV": "Diluant VAA dose-recue mois",
+    "fQfJhi742vt.GSCwhT2SCCr": "Diluant VAA dose-stock debut mois",
+    "fQfJhi742vt.pdKyvaYRqCj": "Diluant VAA dose-utilisee",
+
+    "bwUoJJgDst9.dxDQKDcTn6Z": "SAB BCG 005ml dose-administree",
+    "bwUoJJgDst9.XEN3ucCGa07": "SAB BCG 005ml dose-jour rupture",
+    "bwUoJJgDst9.J8mw9rFkY4v": "SAB BCG 005ml dose-perdue",
+    "bwUoJJgDst9.WZwmzIuRvwV": "SAB BCG 005ml dose-recue mois",
+    "bwUoJJgDst9.GSCwhT2SCCr": "SAB BCG 005ml dose-stock debut mois",
+    "bwUoJJgDst9.pdKyvaYRqCj": "SAB BCG 005ml dose-utilisee",
+
+    "blfdHcia9nP.dxDQKDcTn6Z": "SAB 05ml dose-administree",
+    "blfdHcia9nP.XEN3ucCGa07": "SAB 05ml dose-jour rupture",
+    "blfdHcia9nP.J8mw9rFkY4v": "SAB 05ml dose-perdue",
+    "blfdHcia9nP.WZwmzIuRvwV": "SAB 05ml dose-recue mois",
+    "blfdHcia9nP.GSCwhT2SCCr": "SAB 05ml dose-stock debut mois",
+    "blfdHcia9nP.pdKyvaYRqCj": "SAB 05ml dose-utilisee",
+
+    "bqJvWJtJwtK.dxDQKDcTn6Z": "Dilution 2ml dose-administree",
+    "bqJvWJtJwtK.XEN3ucCGa07": "Dilution 2ml dose-jour rupture",
+    "bqJvWJtJwtK.J8mw9rFkY4v": "Dilution 2ml dose-perdue",
+    "bqJvWJtJwtK.WZwmzIuRvwV": "Dilution 2ml dose-recue mois",
+    "bqJvWJtJwtK.GSCwhT2SCCr": "Dilution 2ml dose-stock debut mois",
+    "bqJvWJtJwtK.pdKyvaYRqCj": "Dilution 2ml dose-utilisee",
+
+    "DNZEo533IMh.dxDQKDcTn6Z": "Dilution 5ml dose-administree",
+    "DNZEo533IMh.XEN3ucCGa07": "Dilution 5ml dose-jour rupture",
+    "DNZEo533IMh.J8mw9rFkY4v": "Dilution 5ml dose-perdue",
+    "DNZEo533IMh.WZwmzIuRvwV": "Dilution 5ml dose-recue mois",
+    "DNZEo533IMh.GSCwhT2SCCr": "Dilution 5ml dose-stock debut mois",
+    "DNZEo533IMh.pdKyvaYRqCj": "Dilution 5ml dose-utilisee",
+
+    "ZMcyV45XAkW.dxDQKDcTn6Z": "SAB 03ml dose-administree",
+    "ZMcyV45XAkW.XEN3ucCGa07": "SAB 03ml dose-jour rupture",
+    "ZMcyV45XAkW.J8mw9rFkY4v": "SAB 03ml dose-perdue",
+    "ZMcyV45XAkW.WZwmzIuRvwV": "SAB 03ml dose-recue mois",
+    "ZMcyV45XAkW.GSCwhT2SCCr": "SAB 03ml dose-stock debut mois",
+    "ZMcyV45XAkW.pdKyvaYRqCj": "SAB 03ml dose-utilisee",
+
+    "gzPW3f2ijo5.dxDQKDcTn6Z": "Dilution 6ml dose-administree",
+    "gzPW3f2ijo5.XEN3ucCGa07": "Dilution 6ml dose-jour rupture",
+    "gzPW3f2ijo5.J8mw9rFkY4v": "Dilution 6ml dose-perdue",
+    "gzPW3f2ijo5.WZwmzIuRvwV": "Dilution 6ml dose-recue mois",
+    "gzPW3f2ijo5.GSCwhT2SCCr": "Dilution 6ml dose-stock debut mois",
+    "gzPW3f2ijo5.pdKyvaYRqCj": "Dilution 6ml dose-utilisee",
+
+    "tmp1zLSXw0Q.dxDQKDcTn6Z": "Adaptateur ROTAVIRUS dose-administree",
+    "tmp1zLSXw0Q.XEN3ucCGa07": "Adaptateur ROTAVIRUS dose-jour rupture",
+    "tmp1zLSXw0Q.J8mw9rFkY4v": "Adaptateur ROTAVIRUS dose-perdue",
+    "tmp1zLSXw0Q.WZwmzIuRvwV": "Adaptateur ROTAVIRUS dose-recue mois",
+    "tmp1zLSXw0Q.GSCwhT2SCCr": "Adaptateur ROTAVIRUS dose-stock debut mois",
+    "tmp1zLSXw0Q.pdKyvaYRqCj": "Adaptateur ROTAVIRUS dose-utilisee",
+
+    "jJUIodWQH0T.dxDQKDcTn6Z": "Compte-goutte dose-administree",
+    "jJUIodWQH0T.XEN3ucCGa07": "Compte-goutte dose-jour rupture",
+    "jJUIodWQH0T.J8mw9rFkY4v": "Compte-goutte dose-perdue",
+    "jJUIodWQH0T.WZwmzIuRvwV": "Compte-goutte dose-recue mois",
+    "jJUIodWQH0T.GSCwhT2SCCr": "Compte-goutte dose-stock debut mois",
+    "jJUIodWQH0T.pdKyvaYRqCj": "Compte-goutte dose-utilisee",
+
+    "K8Yt0p1z21M.dxDQKDcTn6Z": "Receptacle dose-administree",
+    "K8Yt0p1z21M.XEN3ucCGa07": "Receptacle dose-jour rupture",
+    "K8Yt0p1z21M.J8mw9rFkY4v": "Receptacle dose-perdue",
+    "K8Yt0p1z21M.WZwmzIuRvwV": "Receptacle dose-recue mois",
+    "K8Yt0p1z21M.GSCwhT2SCCr": "Receptacle dose-stock debut mois",
+    "K8Yt0p1z21M.pdKyvaYRqCj": "Receptacle dose-utilisee",
+
+    # ============================================
+    # ANTIGÈNES 12-23 MOIS - RENAME MAP
+    # ============================================
+    "W25tOXS0rxS.g6mIyKoGIh2": "BCG 12-23 mois fixe1",
+    "W25tOXS0rxS.QRyK6yxKBU3": "BCG 12-23 mois fixe2",
+    "W25tOXS0rxS.Rby9Jdri29F": "BCG 12-23 mois avance",
+    "W25tOXS0rxS.FCXzheCQXtr": "BCG 12-23 mois mobile1",
+    "W25tOXS0rxS.VrEj0UVVGr4": "BCG 12-23 mois mobile2",
+
+    "uNdFg1eymsa.g6mIyKoGIh2": "Penta1 12-23 mois fixe1",
+    "uNdFg1eymsa.QRyK6yxKBU3": "Penta1 12-23 mois fixe2",
+    "uNdFg1eymsa.Rby9Jdri29F": "Penta1 12-23 mois avance",
+    "uNdFg1eymsa.FCXzheCQXtr": "Penta1 12-23 mois mobile1",
+    "uNdFg1eymsa.VrEj0UVVGr4": "Penta1 12-23 mois mobile2",
+
+    "YYKXOc7xBUi.g6mIyKoGIh2": "Penta2 12-23 mois fixe1",
+    "YYKXOc7xBUi.QRyK6yxKBU3": "Penta2 12-23 mois fixe2",
+    "YYKXOc7xBUi.Rby9Jdri29F": "Penta2 12-23 mois avance",
+    "YYKXOc7xBUi.FCXzheCQXtr": "Penta2 12-23 mois mobile1",
+    "YYKXOc7xBUi.VrEj0UVVGr4": "Penta2 12-23 mois mobile2",
+
+    "WWxqaHSeiwd.g6mIyKoGIh2": "Penta3 12-23 mois fixe1",
+    "WWxqaHSeiwd.QRyK6yxKBU3": "Penta3 12-23 mois fixe2",
+    "WWxqaHSeiwd.Rby9Jdri29F": "Penta3 12-23 mois avance",
+    "WWxqaHSeiwd.FCXzheCQXtr": "Penta3 12-23 mois mobile1",
+    "WWxqaHSeiwd.VrEj0UVVGr4": "Penta3 12-23 mois mobile2",
+
+    "f1MiAAIu366.g6mIyKoGIh2": "VPO0 12-23 mois fixe1",
+    "f1MiAAIu366.QRyK6yxKBU3": "VPO0 12-23 mois fixe2",
+    "f1MiAAIu366.Rby9Jdri29F": "VPO0 12-23 mois avance",
+    "f1MiAAIu366.FCXzheCQXtr": "VPO0 12-23 mois mobile1",
+    "f1MiAAIu366.VrEj0UVVGr4": "VPO0 12-23 mois mobile2",
+
+    "j3P9bSnwF12.g6mIyKoGIh2": "VPO1 12-23 mois fixe1",
+    "j3P9bSnwF12.QRyK6yxKBU3": "VPO1 12-23 mois fixe2",
+    "j3P9bSnwF12.Rby9Jdri29F": "VPO1 12-23 mois avance",
+    "j3P9bSnwF12.FCXzheCQXtr": "VPO1 12-23 mois mobile1",
+    "j3P9bSnwF12.VrEj0UVVGr4": "VPO1 12-23 mois mobile2",
+
+    "ozVdkud4F03.g6mIyKoGIh2": "VPO2 12-23 mois fixe1",
+    "ozVdkud4F03.QRyK6yxKBU3": "VPO2 12-23 mois fixe2",
+    "ozVdkud4F03.Rby9Jdri29F": "VPO2 12-23 mois avance",
+    "ozVdkud4F03.FCXzheCQXtr": "VPO2 12-23 mois mobile1",
+    "ozVdkud4F03.VrEj0UVVGr4": "VPO2 12-23 mois mobile2",
+
+    "SPGaDDw2JzG.g6mIyKoGIh2": "VPO3 12-23 mois fixe1",
+    "SPGaDDw2JzG.QRyK6yxKBU3": "VPO3 12-23 mois fixe2",
+    "SPGaDDw2JzG.Rby9Jdri29F": "VPO3 12-23 mois avance",
+    "SPGaDDw2JzG.FCXzheCQXtr": "VPO3 12-23 mois mobile1",
+    "SPGaDDw2JzG.VrEj0UVVGr4": "VPO3 12-23 mois mobile2",
+
+    "I6tLH3nk9tw.g6mIyKoGIh2": "VPI1 12-23 mois fixe1",
+    "I6tLH3nk9tw.QRyK6yxKBU3": "VPI1 12-23 mois fixe2",
+    "I6tLH3nk9tw.Rby9Jdri29F": "VPI1 12-23 mois avance",
+    "I6tLH3nk9tw.FCXzheCQXtr": "VPI1 12-23 mois mobile1",
+    "I6tLH3nk9tw.VrEj0UVVGr4": "VPI1 12-23 mois mobile2",
+
+    "wwde2QtlIRN.g6mIyKoGIh2": "VPI2 12-23 mois fixe1",
+    "wwde2QtlIRN.QRyK6yxKBU3": "VPI2 12-23 mois fixe2",
+    "wwde2QtlIRN.Rby9Jdri29F": "VPI2 12-23 mois avance",
+    "wwde2QtlIRN.FCXzheCQXtr": "VPI2 12-23 mois mobile1",
+    "wwde2QtlIRN.VrEj0UVVGr4": "VPI2 12-23 mois mobile2",
+
+    "CgR8kWNdK3W.g6mIyKoGIh2": "PCV13_1 12-23 mois fixe1",
+    "CgR8kWNdK3W.QRyK6yxKBU3": "PCV13_1 12-23 mois fixe2",
+    "CgR8kWNdK3W.Rby9Jdri29F": "PCV13_1 12-23 mois avance",
+    "CgR8kWNdK3W.FCXzheCQXtr": "PCV13_1 12-23 mois mobile1",
+    "CgR8kWNdK3W.VrEj0UVVGr4": "PCV13_1 12-23 mois mobile2",
+
+    "WGu60o5mePq.g6mIyKoGIh2": "PCV13_2 12-23 mois fixe1",
+    "WGu60o5mePq.QRyK6yxKBU3": "PCV13_2 12-23 mois fixe2",
+    "WGu60o5mePq.Rby9Jdri29F": "PCV13_2 12-23 mois avance",
+    "WGu60o5mePq.FCXzheCQXtr": "PCV13_2 12-23 mois mobile1",
+    "WGu60o5mePq.VrEj0UVVGr4": "PCV13_2 12-23 mois mobile2",
+
+    "J8R3WFpMAZI.g6mIyKoGIh2": "PCV13_3 12-23 mois fixe1",
+    "J8R3WFpMAZI.QRyK6yxKBU3": "PCV13_3 12-23 mois fixe2",
+    "J8R3WFpMAZI.Rby9Jdri29F": "PCV13_3 12-23 mois avance",
+    "J8R3WFpMAZI.FCXzheCQXtr": "PCV13_3 12-23 mois mobile1",
+    "J8R3WFpMAZI.VrEj0UVVGr4": "PCV13_3 12-23 mois mobile2",
+
+    "TLKusYaKY5A.g6mIyKoGIh2": "ROTA1 12-23 mois fixe",
+    "TLKusYaKY5A.Rby9Jdri29F": "ROTA1 12-23 mois avance",
+    "TLKusYaKY5A.FCXzheCQXtr": "ROTA1 12-23 mois mobile",
+
+    "GzSBTZkxSZf.g6mIyKoGIh2": "ROTA2 12-23 mois fixe",
+    "GzSBTZkxSZf.Rby9Jdri29F": "ROTA2 12-23 mois avance",
+    "GzSBTZkxSZf.FCXzheCQXtr": "ROTA2 12-23 mois mobile",
+
+    "c4VvzI5zTep.g6mIyKoGIh2": "ROTA3 12-23 mois fixe",
+    "c4VvzI5zTep.Rby9Jdri29F": "ROTA3 12-23 mois avance",
+    "c4VvzI5zTep.FCXzheCQXtr": "ROTA3 12-23 mois mobile",
+
+    "pak21wvkWJC.g6mIyKoGIh2": "VAR1 12-23 mois fixe1",
+    "cTLKwfG8pSv.QRyK6yxKBU3": "VAR1 12-23 mois fixe2",
+    "pak21wvkWJC.Rby9Jdri29F": "VAR1 12-23 mois avance1",
+    "cTLKwfG8pSv.Rby9Jdri29F": "VAR1 12-23 mois avance2",
+    "pak21wvkWJC.FCXzheCQXtr": "VAR1 12-23 mois mobile1",
+    "cTLKwfG8pSv.VrEj0UVVGr4": "VAR1 12-23 mois mobile2",
+
+    "i5zmivDIHN8.g6mIyKoGIh2": "VAR2 12-23 mois fixe1",
+    "i5zmivDIHN8.QRyK6yxKBU3": "VAR2 12-23 mois fixe2",
+    "i5zmivDIHN8.Rby9Jdri29F": "VAR2 12-23 mois avance",
+    "i5zmivDIHN8.FCXzheCQXtr": "VAR2 12-23 mois mobile1",
+    "i5zmivDIHN8.VrEj0UVVGr4": "VAR2 12-23 mois mobile2",
+
+    "bzD4QxaNkJm.g6mIyKoGIh2": "VAA 12-23 mois fixe1",
+    "bzD4QxaNkJm.QRyK6yxKBU3": "VAA 12-23 mois fixe2",
+    "bzD4QxaNkJm.Rby9Jdri29F": "VAA 12-23 mois avance",
+    "bzD4QxaNkJm.FCXzheCQXtr": "VAA 12-23 mois mobile1",
+    "bzD4QxaNkJm.VrEj0UVVGr4": "VAA 12-23 mois mobile2",
+
+    "M2JQW0H44dI.QRyK6yxKBU3": "ECV 12-23 mois fixe",
+    "M2JQW0H44dI.VrEj0UVVGr4": "ECV 12-23 mois mobile",
+
+    # ============================================
+    # ANTIGÈNES 24-59 MOIS - RENAME MAP
+    # ============================================
+    "W25tOXS0rxS.tWyeOXJgU3A": "BCG 24-59 mois fixe",
+    "W25tOXS0rxS.cI92X1TYlnD": "BCG 24-59 mois avance",
+    "W25tOXS0rxS.BisCHS3wArx": "BCG 24-59 mois mobile",
+
+    "uNdFg1eymsa.tWyeOXJgU3A": "Penta1 24-59 mois fixe",
+    "uNdFg1eymsa.cI92X1TYlnD": "Penta1 24-59 mois avance",
+    "uNdFg1eymsa.BisCHS3wArx": "Penta1 24-59 mois mobile",
+
+    "YYKXOc7xBUi.tWyeOXJgU3A": "Penta2 24-59 mois fixe",
+    "YYKXOc7xBUi.cI92X1TYlnD": "Penta2 24-59 mois avance",
+    "YYKXOc7xBUi.BisCHS3wArx": "Penta2 24-59 mois mobile",
+
+    "WWxqaHSeiwd.tWyeOXJgU3A": "Penta3 24-59 mois fixe",
+    "WWxqaHSeiwd.cI92X1TYlnD": "Penta3 24-59 mois avance",
+    "WWxqaHSeiwd.BisCHS3wArx": "Penta3 24-59 mois mobile",
+
+    "f1MiAAIu366.tWyeOXJgU3A": "VPO0 24-59 mois fixe",
+    "f1MiAAIu366.cI92X1TYlnD": "VPO0 24-59 mois avance",
+    "f1MiAAIu366.BisCHS3wArx": "VPO0 24-59 mois mobile",
+
+    "j3P9bSnwF12.tWyeOXJgU3A": "VPO1 24-59 mois fixe",
+    "j3P9bSnwF12.cI92X1TYlnD": "VPO1 24-59 mois avance",
+    "j3P9bSnwF12.BisCHS3wArx": "VPO1 24-59 mois mobile",
+
+    "ozVdkud4F03.tWyeOXJgU3A": "VPO2 24-59 mois fixe",
+    "ozVdkud4F03.cI92X1TYlnD": "VPO2 24-59 mois avance",
+    "ozVdkud4F03.BisCHS3wArx": "VPO2 24-59 mois mobile",
+
+    "SPGaDDw2JzG.tWyeOXJgU3A": "VPO3 24-59 mois fixe",
+    "SPGaDDw2JzG.cI92X1TYlnD": "VPO3 24-59 mois avance",
+    "SPGaDDw2JzG.BisCHS3wArx": "VPO3 24-59 mois mobile",
+
+    "I6tLH3nk9tw.tWyeOXJgU3A": "VPI1 24-59 mois fixe",
+    "I6tLH3nk9tw.cI92X1TYlnD": "VPI1 24-59 mois avance",
+    "I6tLH3nk9tw.BisCHS3wArx": "VPI1 24-59 mois mobile",
+
+    "wwde2QtlIRN.tWyeOXJgU3A": "VPI2 24-59 mois fixe",
+    "wwde2QtlIRN.cI92X1TYlnD": "VPI2 24-59 mois avance",
+    "wwde2QtlIRN.BisCHS3wArx": "VPI2 24-59 mois mobile",
+
+    "CgR8kWNdK3W.tWyeOXJgU3A": "PCV13_1 24-59 mois fixe",
+    "CgR8kWNdK3W.cI92X1TYlnD": "PCV13_1 24-59 mois avance",
+    "CgR8kWNdK3W.BisCHS3wArx": "PCV13_1 24-59 mois mobile",
+
+    "WGu60o5mePq.tWyeOXJgU3A": "PCV13_2 24-59 mois fixe",
+    "WGu60o5mePq.cI92X1TYlnD": "PCV13_2 24-59 mois avance",
+    "WGu60o5mePq.BisCHS3wArx": "PCV13_2 24-59 mois mobile",
+
+    "J8R3WFpMAZI.tWyeOXJgU3A": "PCV13_3 24-59 mois fixe",
+    "J8R3WFpMAZI.cI92X1TYlnD": "PCV13_3 24-59 mois avance",
+    "J8R3WFpMAZI.BisCHS3wArx": "PCV13_3 24-59 mois mobile",
+
+    "TLKusYaKY5A.tWyeOXJgU3A": "ROTA1 24-59 mois fixe",
+    "TLKusYaKY5A.cI92X1TYlnD": "ROTA1 24-59 mois avance",
+    "TLKusYaKY5A.BisCHS3wArx": "ROTA1 24-59 mois mobile",
+
+    "GzSBTZkxSZf.tWyeOXJgU3A": "ROTA2 24-59 mois fixe",
+    "GzSBTZkxSZf.cI92X1TYlnD": "ROTA2 24-59 mois avance",
+    "GzSBTZkxSZf.BisCHS3wArx": "ROTA2 24-59 mois mobile",
+
+    "c4VvzI5zTep.tWyeOXJgU3A": "ROTA3 24-59 mois fixe",
+    "c4VvzI5zTep.cI92X1TYlnD": "ROTA3 24-59 mois avance",
+    "c4VvzI5zTep.BisCHS3wArx": "ROTA3 24-59 mois mobile",
+
+    "pak21wvkWJC.tWyeOXJgU3A": "VAR1 24-59 mois fixe1",
+    "cTLKwfG8pSv.tWyeOXJgU3A": "VAR1 24-59 mois fixe2",
+    "pak21wvkWJC.cI92X1TYlnD": "VAR1 24-59 mois avance1",
+    "cTLKwfG8pSv.cI92X1TYlnD": "VAR1 24-59 mois avance2",
+    "pak21wvkWJC.BisCHS3wArx": "VAR1 24-59 mois mobile1",
+    "cTLKwfG8pSv.BisCHS3wArx": "VAR1 24-59 mois mobile2",
+
+    "i5zmivDIHN8.tWyeOXJgU3A": "VAR2 24-59 mois fixe",
+    "i5zmivDIHN8.cI92X1TYlnD": "VAR2 24-59 mois avance",
+    "i5zmivDIHN8.BisCHS3wArx": "VAR2 24-59 mois mobile",
+
+    "bzD4QxaNkJm.tWyeOXJgU3A": "VAA 24-59 mois fixe",
+    "bzD4QxaNkJm.cI92X1TYlnD": "VAA 24-59 mois avance",
+    "bzD4QxaNkJm.BisCHS3wArx": "VAA 24-59 mois mobile",
+
+    "tjcH6RS9mXd": "Td 1",
 }
 
 # ============================================================
