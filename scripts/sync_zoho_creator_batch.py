@@ -13,6 +13,12 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import requests
 
 
+# ============================================================
+# Drapeau principal : mettre à True pour réactiver Zoho
+# ============================================================
+ZOHO_ENABLED = False
+
+
 # ---------------------------
 # Zoho DC routing
 # ---------------------------
@@ -437,7 +443,13 @@ def antenne_from(org2: str, org3: str, antenne_rules: Dict[str, Dict[str, str]])
     return ""
 
 
+# ==========================================================
+# SOMMATIONS PRIMAIRES — à partir des champs DHIS2 bruts
+# ==========================================================
 GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
+    # ----------------------------------------------------------
+    # ANTIGÈNES 0-11 MOIS (existants — inchangés)
+    # ----------------------------------------------------------
     "BCG_0_11": [
         "BCG fixe1", "BCG fixe2",
         "BCG avancé1", "BCG avancé2",
@@ -545,6 +557,242 @@ GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
     "Td_2_plus": [
         "Td 2", "Td 3", "Td 4", "Td 5",
     ],
+
+    # ----------------------------------------------------------
+    # ANTIGÈNES 12-23 MOIS (NOUVEAU)
+    # ----------------------------------------------------------
+    "BCG_12_23": [
+        "BCG 12-23 mois fixe1", "BCG 12-23 mois fixe2",
+        "BCG 12-23 mois avancé1", "BCG 12-23 mois avancé2",
+        "BCG 12-23 mois mobile1",
+    ],
+    "DTC1_12_23": [
+        "Penta1 12-23 mois fixe1", "Penta1 12-23 mois fixe2",
+        "Penta1 12-23 mois avancé1", "Penta1 12-23 mois avancé2",
+        "Penta1 12-23 mois mobile1",
+    ],
+    "DTC2_12_23": [
+        "Penta2 12-23 mois fixe1", "Penta2 12-23 mois fixe2",
+        "Penta2 12-23 mois avancé1", "Penta2 12-23 mois avancé2",
+        "Penta2 12-23 mois mobile1",
+    ],
+    "DTC3_12_23": [
+        "Penta3 12-23 mois fixe1", "Penta3 12-23 mois fixe2",
+        "Penta3 12-23 mois avancé1", "Penta3 12-23 mois avancé2",
+        "Penta3 12-23 mois mobile1",
+    ],
+    "VPO0_12_23": [
+        "VPO0 12-23 mois fixe1", "VPO0 12-23 mois fixe2",
+        "VPO0 12-23 mois mobile1",
+    ],
+    "VPO1_12_23": [
+        "VPO1 12-23 mois fixe1", "VPO1 12-23 mois fixe2",
+        "VPO1 12-23 mois avancé1", "VPO1 12-23 mois avancé2",
+        "VPO1 12-23 mois mobile1",
+    ],
+    "VPO2_12_23": [
+        "VPO2 12-23 mois fixe1", "VPO2 12-23 mois fixe2",
+        "VPO2 12-23 mois avancé1", "VPO2 12-23 mois avancé2",
+        "VPO2 12-23 mois mobile1",
+    ],
+    "VPO3_12_23": [
+        "VPO3 12-23 mois fixe1", "VPO3 12-23 mois fixe2",
+        "VPO3 12-23 mois avancé1", "VPO3 12-23 mois avancé2",
+        "VPO3 12-23 mois mobile1",
+    ],
+    "VPI1_12_23": [
+        "VPI1 12-23 mois fixe1", "VPI1 12-23 mois fixe2",
+        "VPI1 12-23 mois avancé1", "VPI1 12-23 mois avancé2",
+        "VPI1 12-23 mois mobile1",
+    ],
+    "VPI2_12_23": [
+        "VPI2 12-23 mois fixe1", "VPI2 12-23 mois fixe2",
+        "VPI2 12-23 mois avancé1", "VPI2 12-23 mois avancé2",
+        "VPI2 12-23 mois mobile1",
+    ],
+    "PCV13_1_12_23": [
+        "PCV13(1) 12-23 mois fixe1", "PCV13(1) 12-23 mois fixe2",
+        "PCV13(1) 12-23 mois avancé1", "PCV13(1) 12-23 mois avancé2",
+        "PCV13(1) 12-23 mois mobile1",
+    ],
+    "PCV13_2_12_23": [
+        "PCV13(2) 12-23 mois fixe1", "PCV13(2) 12-23 mois fixe2",
+        "PCV13(2) 12-23 mois avancé1", "PCV13(2) 12-23 mois avancé2",
+        "PCV13(2) 12-23 mois mobile1",
+    ],
+    "PCV13_3_12_23": [
+        "PCV13(3) 12-23 mois fixe1", "PCV13(3) 12-23 mois fixe2",
+        "PCV13(3) 12-23 mois avancé1", "PCV13(3) 12-23 mois avancé2",
+        "PCV13(3) 12-23 mois mobile1",
+    ],
+    "ROTA1_12_23": [
+        "ROTA1 12-23 mois fixe1", "ROTA1 12-23 mois fixe2",
+        "ROTA1 12-23 mois avancé1", "ROTA1 12-23 mois avancé2",
+        "ROTA1 12-23 mois mobile1",
+    ],
+    "ROTA2_12_23": [
+        "ROTA2 12-23 mois fixe1", "ROTA2 12-23 mois fixe2",
+        "ROTA2 12-23 mois avancé1", "ROTA2 12-23 mois avancé2",
+        "ROTA2 12-23 mois mobile1",
+    ],
+    "ROTA3_12_23": [
+        "ROTA3 12-23 mois fixe1", "ROTA3 12-23 mois fixe2",
+        "ROTA3 12-23 mois mobile1",
+    ],
+    "VAR1_12_23": [
+        "VAR1 12-23 mois fixe1",
+        "VAR1 12-23 mois avancé1",
+        "VAR1 12-23 mois mobile1",
+    ],
+    "VAR2_12_23": [
+        "VAR2 12-23 mois fixe1",
+        "VAR2 12-23 mois avancé1",
+        "VAR2 12-23 mois mobile1",
+    ],
+    "VAA_12_23": [
+        "VAA 12-23 mois fixe1",
+        "VAA 12-23 mois avancé1",
+        "VAA 12-23 mois mobile1",
+    ],
+    "ECV_12_23": [
+        "ECV 12-23 mois fixe1",
+        "ECV 12-23 mois avancé1",
+        "ECV 12-23 mois mobile1",
+    ],
+    "HPV_12_23": [
+        "HPV 12-23 mois fixe1", "HPV 12-23 mois fixe2",
+        "HPV 12-23 mois avancé1", "HPV 12-23 mois avancé2",
+        "HPV 12-23 mois mobile1",
+    ],
+
+    # ----------------------------------------------------------
+    # ANTIGÈNES 24-59 MOIS (NOUVEAU)
+    # ----------------------------------------------------------
+    "BCG_24_59": [
+        "BCG 24-59 mois fixe", "BCG 24-59 mois avancé", "BCG 24-59 mois mobile",
+    ],
+    "DTC1_24_59": [
+        "Penta1 24-59 mois fixe", "Penta1 24-59 mois avancé", "Penta1 24-59 mois mobile",
+    ],
+    "DTC2_24_59": [
+        "Penta2 24-59 mois fixe", "Penta2 24-59 mois avancé", "Penta2 24-59 mois mobile",
+    ],
+    "DTC3_24_59": [
+        "Penta3 24-59 mois fixe", "Penta3 24-59 mois avancé", "Penta3 24-59 mois mobile",
+    ],
+    "VPO0_24_59": [
+        "VPO0 24-59 mois fixe", "VPO0 24-59 mois avancé", "VPO0 24-59 mois mobile",
+    ],
+    "VPO1_24_59": [
+        "VPO1 24-59 mois fixe", "VPO1 24-59 mois avancé", "VPO1 24-59 mois mobile",
+    ],
+    "VPO2_24_59": [
+        "VPO2 24-59 mois fixe", "VPO2 24-59 mois avancé", "VPO2 24-59 mois mobile",
+    ],
+    "VPO3_24_59": [
+        "VPO3 24-59 mois fixe", "VPO3 24-59 mois avancé", "VPO3 24-59 mois mobile",
+    ],
+    "VPI1_24_59": [
+        "VPI1 24-59 mois fixe", "VPI1 24-59 mois avancé", "VPI1 24-59 mois mobile",
+    ],
+    "VPI2_24_59": [
+        "VPI2 24-59 mois fixe", "VPI2 24-59 mois avancé", "VPI2 24-59 mois mobile",
+    ],
+    "PCV13_1_24_59": [
+        "PCV13(1) 24-59 mois fixe", "PCV13(1) 24-59 mois avancé", "PCV13(1) 24-59 mois mobile",
+    ],
+    "PCV13_2_24_59": [
+        "PCV13(2) 24-59 mois fixe", "PCV13(2) 24-59 mois avancé", "PCV13(2) 24-59 mois mobile",
+    ],
+    "PCV13_3_24_59": [
+        "PCV13(3) 24-59 mois fixe", "PCV13(3) 24-59 mois avancé", "PCV13(3) 24-59 mois mobile",
+    ],
+    "ROTA1_24_59": [
+        "ROTA1 24-59 mois fixe", "ROTA1 24-59 mois avancé", "ROTA1 24-59 mois mobile",
+    ],
+    "ROTA2_24_59": [
+        "ROTA2 24-59 mois fixe", "ROTA2 24-59 mois avancé", "ROTA2 24-59 mois mobile",
+    ],
+    "ROTA3_24_59": [
+        "ROTA3 24-59 mois fixe", "ROTA3 24-59 mois avancé", "ROTA3 24-59 mois mobile",
+    ],
+    "VAR1_24_59": [
+        "VAR1 24-59 mois fixe", "VAR1 24-59 mois mobile",
+    ],
+    "VAR2_24_59": [
+        "VAR2 24-59 mois fixe", "VAR2 24-59 mois mobile",
+    ],
+    "VAA_24_59": [
+        "VAA 24-59 mois fixe", "VAA 24-59 mois mobile",
+    ],
+    "ECV_24_59": [
+        "ECV 24-59 mois fixe", "ECV 24-59 mois mobile",
+    ],
+    "VAP_24_59": [
+        "VAP 24-59 mois fixe", "VAP 24-59 mois avancé", "VAP 24-59 mois mobile",
+    ],
+    "HPV_24_59": [
+        "HPV 24-59 mois fixe", "HPV 24-59 mois avancé", "HPV 24-59 mois mobile",
+    ],
+
+    # ----------------------------------------------------------
+    # Td total (1-5) = Td1 + Td2 + Td3 + Td4 + Td5
+    # Td1 n'a PAS de tranche d'âge — c'est un champ brut unique
+    # ----------------------------------------------------------
+    "Td_total": [
+        "Td 1", "Td 2", "Td 3", "Td 4", "Td 5",
+    ],
+}
+
+
+# ==========================================================
+# SOMMATIONS DÉRIVÉES — calculées à partir des sommes primaires
+# ==========================================================
+DERIVED_SUM_SPECS: Dict[str, List[str]] = {
+    # --- 12-59 mois = 12-23m + 24-59m ---
+    "BCG_12_59":      ["BCG_12_23", "BCG_24_59"],
+    "DTC1_12_59":     ["DTC1_12_23", "DTC1_24_59"],
+    "DTC2_12_59":     ["DTC2_12_23", "DTC2_24_59"],
+    "DTC3_12_59":     ["DTC3_12_23", "DTC3_24_59"],
+    "VPO0_12_59":     ["VPO0_12_23", "VPO0_24_59"],
+    "VPO1_12_59":     ["VPO1_12_23", "VPO1_24_59"],
+    "VPO2_12_59":     ["VPO2_12_23", "VPO2_24_59"],
+    "VPO3_12_59":     ["VPO3_12_23", "VPO3_24_59"],
+    "VPI1_12_59":     ["VPI1_12_23", "VPI1_24_59"],
+    "VPI2_12_59":     ["VPI2_12_23", "VPI2_24_59"],
+    "PCV13_1_12_59":  ["PCV13_1_12_23", "PCV13_1_24_59"],
+    "PCV13_2_12_59":  ["PCV13_2_12_23", "PCV13_2_24_59"],
+    "PCV13_3_12_59":  ["PCV13_3_12_23", "PCV13_3_24_59"],
+    "ROTA1_12_59":    ["ROTA1_12_23", "ROTA1_24_59"],
+    "ROTA2_12_59":    ["ROTA2_12_23", "ROTA2_24_59"],
+    "ROTA3_12_59":    ["ROTA3_12_23", "ROTA3_24_59"],
+    "VAR1_12_59":     ["VAR1_12_23", "VAR1_24_59"],
+    "VAR2_12_59":     ["VAR2_12_23", "VAR2_24_59"],
+    "VAA_12_59":      ["VAA_12_23", "VAA_24_59"],
+    "ECV_12_59":      ["ECV_12_23", "ECV_24_59"],
+    "VAP_12_59":      ["VAP4_12_23", "VAP_24_59"],
+    "HPV_12_59":      ["HPV_12_23", "HPV_24_59"],
+
+    # --- Toutes tranches = 0-11m + 12-59m ---
+    "BCG_all":        ["BCG_0_11", "BCG_12_59"],
+    "DTC1_all":       ["DTC1_0_11", "DTC1_12_59"],
+    "DTC2_all":       ["DTC2_0_11", "DTC2_12_59"],
+    "DTC3_all":       ["DTC3_0_11", "DTC3_12_59"],
+    "VPO0_all":       ["VPO0_0_11", "VPO0_12_59"],
+    "VPO1_all":       ["VPO1_0_11", "VPO1_12_59"],
+    "VPO2_all":       ["VPO2_0_11", "VPO2_12_59"],
+    "VPO3_all":       ["VPO3_0_11", "VPO3_12_59"],
+    "VPI1_all":       ["VPI1_0_11", "VPI1_12_59"],
+    "VPI2_all":       ["VPI2_0_11", "VPI2_12_59"],
+    "PCV13_1_all":    ["PCV13_1_0_11", "PCV13_1_12_59"],
+    "PCV13_2_all":    ["PCV13_2_0_11", "PCV13_2_12_59"],
+    "PCV13_3_all":    ["PCV13_3_0_11", "PCV13_3_12_59"],
+    "ROTA1_all":      ["ROTA1_0_11", "ROTA1_12_59"],
+    "ROTA2_all":      ["ROTA2_0_11", "ROTA2_12_59"],
+    "ROTA3_all":      ["ROTA3_0_11", "ROTA3_12_59"],
+    "VAR1_all":       ["VAR1_0_11", "VAR1_12_59"],
+    "VAR2_all":       ["VAR2_0_11", "VAR2_12_59"],
+    "VAA_all":        ["VAA_0_11", "VAA_12_59"],
 }
 
 
@@ -594,9 +842,14 @@ def build_zoho_record(
             continue
         rec[k] = v
 
+    # Sommations primaires (à partir des champs bruts DHIS2)
     for out_field, source_labels in GLOBAL_SUM_SPECS.items():
         source_links = [zoho_rename_map.get(label, label) for label in source_labels]
         rec[out_field] = _sum_by_link(row, *source_links)
+
+    # Sommations dérivées (12-59m, toutes tranches — à partir des sommes primaires)
+    for out_field, source_fields in DERIVED_SUM_SPECS.items():
+        rec[out_field] = _sum_by_link(rec, *source_fields)
 
     return rec
 
@@ -768,17 +1021,6 @@ def main() -> int:
 
     args = ap.parse_args()
 
-    cfg = ZohoConfig(
-        dc=os.environ.get("ZOHO_DC", "com"),
-        client_id=os.environ["ZOHO_CLIENT_ID"],
-        client_secret=os.environ["ZOHO_CLIENT_SECRET"],
-        refresh_token=os.environ["ZOHO_REFRESH_TOKEN"],
-        owner=os.environ.get("ZOHO_OWNER", "drcongo"),
-        app_link_name=os.environ.get("ZOHO_APP_LINK", "vaccination-de-routine-dhis2-rdc"),
-        form_link_name=os.environ.get("ZOHO_FORM_LINK", "Donn_es_PEV_FOSA"),
-        report_link_name=os.environ.get("ZOHO_REPORT_LINK", "Donn_es_PEV_FOSA_Report"),
-    )
-
     repo_root = Path(args.repo_root).resolve()
     index_path = repo_root / args.index
     state_path = repo_root / args.state
@@ -790,9 +1032,30 @@ def main() -> int:
     antenne_rules = load_json_file(antenne_rules_path)
     excluded_raw_links = build_excluded_raw_links(zoho_rename_map)
 
-    client = ZohoCreatorClient(cfg)
+    # ----------------------------------------------------------
+    # Zoho Creator sync — DÉSACTIVÉE par défaut
+    # ----------------------------------------------------------
+    client: Optional[ZohoCreatorClient] = None
 
-    if args.purge_all:
+    if not ZOHO_ENABLED:
+        print("INFO: Zoho sync DÉSACTIVÉE (ZOHO_ENABLED=False).", flush=True)
+        print("INFO: Traitement local uniquement (sommations + sauvegarde).", flush=True)
+    else:
+        cfg = ZohoConfig(
+            dc=os.environ.get("ZOHO_DC", "com"),
+            client_id=os.environ["ZOHO_CLIENT_ID"],
+            client_secret=os.environ["ZOHO_CLIENT_SECRET"],
+            refresh_token=os.environ["ZOHO_REFRESH_TOKEN"],
+            owner=os.environ.get("ZOHO_OWNER", "drcongo"),
+            app_link_name=os.environ.get("ZOHO_APP_LINK", "vaccination-de-routine-dhis2-rdc"),
+            form_link_name=os.environ.get("ZOHO_FORM_LINK", "Donn_es_PEV_FOSA"),
+            report_link_name=os.environ.get("ZOHO_REPORT_LINK", "Donn_es_PEV_FOSA_Report"),
+        )
+        client = ZohoCreatorClient(cfg)
+
+    if args.purge_all and not ZOHO_ENABLED:
+        print("WARN: --purge_all ignoré car ZOHO_ENABLED=False", flush=True)
+    elif args.purge_all and ZOHO_ENABLED and client is not None:
         print("PURGE ALL: deleting all records in Zoho report until empty...", flush=True)
         deleted = purge_all_records(
             client,
@@ -850,6 +1113,16 @@ def main() -> int:
             print(f"[{m}] skip: no parts", flush=True)
             continue
 
+        if not ZOHO_ENABLED or client is None:
+            print(f"[{m}] Zoho désactivé — skip Zoho upload, local processing only.", flush=True)
+            done_months[m] = {
+                "done": True,
+                "refreshed": True,
+                "last_sync": time.time(),
+                "mode": "local_only_zoho_disabled",
+            }
+            continue
+
         print(f"[{m}] add-only import (assumes Zoho month already deleted by Deluge)...", flush=True)
         stats = insert_month_from_parts_add_only(
             client=client,
@@ -884,6 +1157,16 @@ def main() -> int:
                 continue
             if done_months.get(m, {}).get("done") is True:
                 print(f"[{m}] skip: already done (historical)", flush=True)
+                continue
+
+            if not ZOHO_ENABLED or client is None:
+                print(f"[{m}] Zoho désactivé — skip historical upload.", flush=True)
+                done_months[m] = {
+                    "done": True,
+                    "refreshed": False,
+                    "last_sync": time.time(),
+                    "mode": "local_only_zoho_disabled",
+                }
                 continue
 
             print(f"[{m}] import historical month (add only)...", flush=True)
