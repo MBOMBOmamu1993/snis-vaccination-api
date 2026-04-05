@@ -13,6 +13,12 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import requests
 
 
+# ============================================================
+# Drapeau principal : mettre à True pour réactiver Zoho
+# ============================================================
+ZOHO_ENABLED = False
+
+
 # ---------------------------
 # Zoho DC routing
 # ---------------------------
@@ -51,15 +57,6 @@ class ZohoConfig:
 
 
 class ZohoCreatorClient:
-    """
-    Robuste:
-    - On évite DELETE bulk via API en routine.
-    - GET avec criteria peut renvoyer 400 code=9280 => traité comme "0 record".
-    - Pagination parfois instable:
-        * certains DC supportent record_cursor
-        * d'autres supportent page/per_page
-    """
-
     def __init__(self, cfg: ZohoConfig, timeout_s: int = 180) -> None:
         self.cfg = cfg
         self.timeout_s = timeout_s
@@ -134,7 +131,6 @@ class ZohoCreatorClient:
 
             if last_text.strip() == "":
                 return {}
-
             try:
                 return r.json()
             except Exception:
@@ -162,20 +158,16 @@ class ZohoCreatorClient:
         record_cursor: Optional[str] = None,
     ) -> Dict[str, Any]:
         url = f"{self.cfg.creator_base}/data/{self.cfg.owner}/{self.cfg.app_link_name}/report/{self.cfg.report_link_name}"
-
         params: Dict[str, Any] = {"fields": fields}
         if criteria:
             params["criteria"] = criteria
-
         if record_cursor is not None:
             params["max_records"] = str(int(per_page))
             params["record_cursor"] = record_cursor
             return self._req("GET", url, params=params)
-
         if page is None:
             params["max_records"] = str(int(per_page))
             return self._req("GET", url, params=params)
-
         params["page"] = str(int(page))
         params["per_page"] = str(int(per_page))
         return self._req("GET", url, params=params)
@@ -212,60 +204,42 @@ class ZohoCreatorClient:
         cursor: Optional[str] = None
         first = True
         pages = 0
-
         while True:
             pages += 1
             if pages > hard_max_pages:
-                raise RuntimeError("iter_records: too many pages, aborting for safety.")
-
+                raise RuntimeError("iter_records: too many pages, aborting.")
             resp = self.fetch_records_page(
-                criteria=criteria,
-                fields=fields,
-                per_page=per_page,
-                page=None,
-                record_cursor=cursor if not first else None,
+                criteria=criteria, fields=fields, per_page=per_page,
+                page=None, record_cursor=cursor if not first else None,
             )
             data = self._extract_data_list(resp)
             info = self._extract_info(resp)
-
             for r in data:
                 yield r
-
             next_cursor = info.get("record_cursor") or info.get("next_record_cursor") or info.get("next_cursor")
-
             if next_cursor:
                 cursor = str(next_cursor)
                 first = False
                 if throttle_s > 0:
                     time.sleep(throttle_s)
                 continue
-
             if len(data) < per_page:
                 return
-
             break
 
         page = 1
         while True:
             pages += 1
             if pages > hard_max_pages:
-                raise RuntimeError("iter_records(page): too many pages, aborting for safety.")
-
+                raise RuntimeError("iter_records(page): too many pages, aborting.")
             resp = self.fetch_records_page(
-                criteria=criteria,
-                fields=fields,
-                per_page=per_page,
-                page=page,
-                record_cursor=None,
+                criteria=criteria, fields=fields, per_page=per_page, page=page, record_cursor=None,
             )
             data = self._extract_data_list(resp)
-
             for r in data:
                 yield r
-
             if not data or len(data) < per_page:
                 return
-
             page += 1
             if throttle_s > 0:
                 time.sleep(throttle_s)
@@ -285,11 +259,6 @@ def sorted_months(index: Dict[str, Any]) -> List[str]:
 
 
 def last_n_previous_months(months_sorted: List[str], n: int) -> List[str]:
-    """
-    "Deux derniers mois précédents" = on EXCLUT le dernier mois de l'index,
-    puis on prend les N derniers dans le reste.
-    Ex: [..., 202601, 202602, 202603] et n=2 => [202601, 202602]
-    """
     if n <= 0:
         return []
     if len(months_sorted) <= 1:
@@ -308,30 +277,14 @@ def load_json_file(path: Path) -> Dict[str, Any]:
 
 
 def load_ou_map(repo_root: Path) -> Dict[str, Dict[str, str]]:
-    candidates = [
-        repo_root / "docs" / "data_as" / "ou_map_as.json.gz",
-        repo_root / "docs" / "data_as" / "ou_map_as.json",
-        repo_root / "docs" / "data_as" / "ou_map.json.gz",
-        repo_root / "docs" / "data_as" / "ou_map.json",
-        repo_root / "docs" / "data" / "ou_map.json.gz",
-        repo_root / "docs" / "data" / "ou_map.json",
-    ]
-
-    for p in candidates:
-        if not p.exists():
-            continue
-        try:
-            if p.suffix == ".gz":
-                raw = gzip.open(p, "rb").read()
-                return json.loads(raw.decode("utf-8"))
-            return json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-
-    raise FileNotFoundError(
-        "Missing docs/data_as/ou_map_as.json(.gz) and docs/data/ou_map.json(.gz). "
-        "Run build_ou_map.py first."
-    )
+    gz_path = repo_root / "docs" / "data" / "ou_map.json.gz"
+    js_path = repo_root / "docs" / "data" / "ou_map.json"
+    if gz_path.exists():
+        raw = gzip.open(gz_path, "rb").read()
+        return json.loads(raw.decode("utf-8"))
+    if js_path.exists():
+        return json.loads(js_path.read_text(encoding="utf-8"))
+    raise FileNotFoundError("Missing docs/data/ou_map.json(.gz).")
 
 
 def iter_ndjson_with_raw(file_path: Path) -> List[Tuple[Dict[str, Any], str]]:
@@ -393,60 +346,30 @@ def _to_number(v: Any) -> float:
     return 0.0
 
 
-def _number_out(v: float) -> int:
-    return int(round(float(v)))
+def _number_out(v: float) -> int | float:
+    if float(v).is_integer():
+        return int(v)
+    return v
 
 
-def _sum_by_link(row: Dict[str, Any], *links: str) -> int:
+def _sum_by_link(row: Dict[str, Any], *links: str) -> int | float:
     total = 0.0
     for link in links:
         total += _to_number(row.get(link))
     return _number_out(total)
 
 
-def _sanitize_record_numbers(rec: Dict[str, Any]) -> Dict[str, Any]:
-    keep_as_text = {
-        "Key",
-        "RowHash",
-        "Org2",
-        "Org3",
-        "Org4",
-        "Org4_UID",
-        "Period",
-        "Antenne",
-    }
-
-    out: Dict[str, Any] = {}
-    for k, v in rec.items():
-        if k in keep_as_text:
-            out[k] = v
-            continue
-
-        if isinstance(v, (int, float, bool)) or v is None or isinstance(v, str):
-            out[k] = _number_out(_to_number(v))
-        else:
-            out[k] = v
-
-    return out
-
-
 def _normalize_org3_name(org3: str) -> str:
     s = str(org3 or "").strip()
     if not s:
         return ""
-
     if len(s) > 3 and s[2] == " ":
         s = s[3:].strip()
-
-    suffixes = [
-        " Zone de Santé",
-        " Zone de Sante",
-    ]
+    suffixes = [" Zone de Santé", " Zone de Sante"]
     for suf in suffixes:
         if s.endswith(suf):
             s = s[: -len(suf)].strip()
             break
-
     return s
 
 
@@ -454,26 +377,27 @@ def antenne_from(org2: str, org3: str, antenne_rules: Dict[str, Dict[str, str]])
     province = str(org2 or "").strip()
     zone_raw = str(org3 or "").strip()
     zone = _normalize_org3_name(zone_raw)
-
     if not province or not zone:
         return ""
-
     province_rules = antenne_rules.get(province)
     if not isinstance(province_rules, dict):
         return ""
-
     val = province_rules.get(zone)
     if val:
         return str(val).strip()
-
     val = province_rules.get(zone_raw)
     if val:
         return str(val).strip()
-
     return ""
 
 
+# ==========================================================
+# SOMMATIONS PRIMAIRES — identiques au niveau FOSA
+# ==========================================================
 GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
+    # ----------------------------------------------------------
+    # ANTIGÈNES 0-11 MOIS
+    # ----------------------------------------------------------
     "BCG_0_11": [
         "BCG fixe1", "BCG fixe2",
         "BCG avancé1", "BCG avancé2",
@@ -581,6 +505,240 @@ GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
     "Td_2_plus": [
         "Td 2", "Td 3", "Td 4", "Td 5",
     ],
+
+    # ----------------------------------------------------------
+    # ANTIGÈNES 12-23 MOIS
+    # ----------------------------------------------------------
+    "BCG_12_23": [
+        "BCG 12-23 mois fixe1", "BCG 12-23 mois fixe2",
+        "BCG 12-23 mois avancé1", "BCG 12-23 mois avancé2",
+        "BCG 12-23 mois mobile1",
+    ],
+    "DTC1_12_23": [
+        "Penta1 12-23 mois fixe1", "Penta1 12-23 mois fixe2",
+        "Penta1 12-23 mois avancé1", "Penta1 12-23 mois avancé2",
+        "Penta1 12-23 mois mobile1",
+    ],
+    "DTC2_12_23": [
+        "Penta2 12-23 mois fixe1", "Penta2 12-23 mois fixe2",
+        "Penta2 12-23 mois avancé1", "Penta2 12-23 mois avancé2",
+        "Penta2 12-23 mois mobile1",
+    ],
+    "DTC3_12_23": [
+        "Penta3 12-23 mois fixe1", "Penta3 12-23 mois fixe2",
+        "Penta3 12-23 mois avancé1", "Penta3 12-23 mois avancé2",
+        "Penta3 12-23 mois mobile1",
+    ],
+    "VPO0_12_23": [
+        "VPO0 12-23 mois fixe1", "VPO0 12-23 mois fixe2",
+        "VPO0 12-23 mois mobile1",
+    ],
+    "VPO1_12_23": [
+        "VPO1 12-23 mois fixe1", "VPO1 12-23 mois fixe2",
+        "VPO1 12-23 mois avancé1", "VPO1 12-23 mois avancé2",
+        "VPO1 12-23 mois mobile1",
+    ],
+    "VPO2_12_23": [
+        "VPO2 12-23 mois fixe1", "VPO2 12-23 mois fixe2",
+        "VPO2 12-23 mois avancé1", "VPO2 12-23 mois avancé2",
+        "VPO2 12-23 mois mobile1",
+    ],
+    "VPO3_12_23": [
+        "VPO3 12-23 mois fixe1", "VPO3 12-23 mois fixe2",
+        "VPO3 12-23 mois avancé1", "VPO3 12-23 mois avancé2",
+        "VPO3 12-23 mois mobile1",
+    ],
+    "VPI1_12_23": [
+        "VPI1 12-23 mois fixe1", "VPI1 12-23 mois fixe2",
+        "VPI1 12-23 mois avancé1", "VPI1 12-23 mois avancé2",
+        "VPI1 12-23 mois mobile1",
+    ],
+    "VPI2_12_23": [
+        "VPI2 12-23 mois fixe1", "VPI2 12-23 mois fixe2",
+        "VPI2 12-23 mois avancé1", "VPI2 12-23 mois avancé2",
+        "VPI2 12-23 mois mobile1",
+    ],
+    "PCV13_1_12_23": [
+        "PCV13(1) 12-23 mois fixe1", "PCV13(1) 12-23 mois fixe2",
+        "PCV13(1) 12-23 mois avancé1", "PCV13(1) 12-23 mois avancé2",
+        "PCV13(1) 12-23 mois mobile1",
+    ],
+    "PCV13_2_12_23": [
+        "PCV13(2) 12-23 mois fixe1", "PCV13(2) 12-23 mois fixe2",
+        "PCV13(2) 12-23 mois avancé1", "PCV13(2) 12-23 mois avancé2",
+        "PCV13(2) 12-23 mois mobile1",
+    ],
+    "PCV13_3_12_23": [
+        "PCV13(3) 12-23 mois fixe1", "PCV13(3) 12-23 mois fixe2",
+        "PCV13(3) 12-23 mois avancé1", "PCV13(3) 12-23 mois avancé2",
+        "PCV13(3) 12-23 mois mobile1",
+    ],
+    "ROTA1_12_23": [
+        "ROTA1 12-23 mois fixe1", "ROTA1 12-23 mois fixe2",
+        "ROTA1 12-23 mois avancé1", "ROTA1 12-23 mois avancé2",
+        "ROTA1 12-23 mois mobile1",
+    ],
+    "ROTA2_12_23": [
+        "ROTA2 12-23 mois fixe1", "ROTA2 12-23 mois fixe2",
+        "ROTA2 12-23 mois avancé1", "ROTA2 12-23 mois avancé2",
+        "ROTA2 12-23 mois mobile1",
+    ],
+    "ROTA3_12_23": [
+        "ROTA3 12-23 mois fixe1", "ROTA3 12-23 mois fixe2",
+        "ROTA3 12-23 mois mobile1",
+    ],
+    "VAR1_12_23": [
+        "VAR1 12-23 mois fixe1",
+        "VAR1 12-23 mois avancé1",
+        "VAR1 12-23 mois mobile1",
+    ],
+    "VAR2_12_23": [
+        "VAR2 12-23 mois fixe1",
+        "VAR2 12-23 mois avancé1",
+        "VAR2 12-23 mois mobile1",
+    ],
+    "VAA_12_23": [
+        "VAA 12-23 mois fixe1",
+        "VAA 12-23 mois avancé1",
+        "VAA 12-23 mois mobile1",
+    ],
+    "ECV_12_23": [
+        "ECV 12-23 mois fixe1",
+        "ECV 12-23 mois avancé1",
+        "ECV 12-23 mois mobile1",
+    ],
+    "HPV_12_23": [
+        "HPV 12-23 mois fixe1", "HPV 12-23 mois fixe2",
+        "HPV 12-23 mois avancé1", "HPV 12-23 mois avancé2",
+        "HPV 12-23 mois mobile1",
+    ],
+
+    # ----------------------------------------------------------
+    # ANTIGÈNES 24-59 MOIS
+    # ----------------------------------------------------------
+    "BCG_24_59": [
+        "BCG 24-59 mois fixe", "BCG 24-59 mois avancé", "BCG 24-59 mois mobile",
+    ],
+    "DTC1_24_59": [
+        "Penta1 24-59 mois fixe", "Penta1 24-59 mois avancé", "Penta1 24-59 mois mobile",
+    ],
+    "DTC2_24_59": [
+        "Penta2 24-59 mois fixe", "Penta2 24-59 mois avancé", "Penta2 24-59 mois mobile",
+    ],
+    "DTC3_24_59": [
+        "Penta3 24-59 mois fixe", "Penta3 24-59 mois avancé", "Penta3 24-59 mois mobile",
+    ],
+    "VPO0_24_59": [
+        "VPO0 24-59 mois fixe", "VPO0 24-59 mois avancé", "VPO0 24-59 mois mobile",
+    ],
+    "VPO1_24_59": [
+        "VPO1 24-59 mois fixe", "VPO1 24-59 mois avancé", "VPO1 24-59 mois mobile",
+    ],
+    "VPO2_24_59": [
+        "VPO2 24-59 mois fixe", "VPO2 24-59 mois avancé", "VPO2 24-59 mois mobile",
+    ],
+    "VPO3_24_59": [
+        "VPO3 24-59 mois fixe", "VPO3 24-59 mois avancé", "VPO3 24-59 mois mobile",
+    ],
+    "VPI1_24_59": [
+        "VPI1 24-59 mois fixe", "VPI1 24-59 mois avancé", "VPI1 24-59 mois mobile",
+    ],
+    "VPI2_24_59": [
+        "VPI2 24-59 mois fixe", "VPI2 24-59 mois avancé", "VPI2 24-59 mois mobile",
+    ],
+    "PCV13_1_24_59": [
+        "PCV13(1) 24-59 mois fixe", "PCV13(1) 24-59 mois avancé", "PCV13(1) 24-59 mois mobile",
+    ],
+    "PCV13_2_24_59": [
+        "PCV13(2) 24-59 mois fixe", "PCV13(2) 24-59 mois avancé", "PCV13(2) 24-59 mois mobile",
+    ],
+    "PCV13_3_24_59": [
+        "PCV13(3) 24-59 mois fixe", "PCV13(3) 24-59 mois avancé", "PCV13(3) 24-59 mois mobile",
+    ],
+    "ROTA1_24_59": [
+        "ROTA1 24-59 mois fixe", "ROTA1 24-59 mois avancé", "ROTA1 24-59 mois mobile",
+    ],
+    "ROTA2_24_59": [
+        "ROTA2 24-59 mois fixe", "ROTA2 24-59 mois avancé", "ROTA2 24-59 mois mobile",
+    ],
+    "ROTA3_24_59": [
+        "ROTA3 24-59 mois fixe", "ROTA3 24-59 mois avancé", "ROTA3 24-59 mois mobile",
+    ],
+    "VAR1_24_59": [
+        "VAR1 24-59 mois fixe", "VAR1 24-59 mois mobile",
+    ],
+    "VAR2_24_59": [
+        "VAR2 24-59 mois fixe", "VAR2 24-59 mois mobile",
+    ],
+    "VAA_24_59": [
+        "VAA 24-59 mois fixe", "VAA 24-59 mois mobile",
+    ],
+    "ECV_24_59": [
+        "ECV 24-59 mois fixe", "ECV 24-59 mois mobile",
+    ],
+    "VAP_24_59": [
+        "VAP 24-59 mois fixe", "VAP 24-59 mois avancé", "VAP 24-59 mois mobile",
+    ],
+    "HPV_24_59": [
+        "HPV 24-59 mois fixe", "HPV 24-59 mois avancé", "HPV 24-59 mois mobile",
+    ],
+
+    # ----------------------------------------------------------
+    # Td total = Td1 + Td2 + Td3 + Td4 + Td5
+    # Td1 n'a PAS de tranche d'âge
+    # ----------------------------------------------------------
+    "Td_total": [
+        "Td 1", "Td 2", "Td 3", "Td 4", "Td 5",
+    ],
+}
+
+
+# ==========================================================
+# SOMMATIONS DÉRIVÉES
+# ==========================================================
+DERIVED_SUM_SPECS: Dict[str, List[str]] = {
+    "BCG_12_59":      ["BCG_12_23", "BCG_24_59"],
+    "DTC1_12_59":     ["DTC1_12_23", "DTC1_24_59"],
+    "DTC2_12_59":     ["DTC2_12_23", "DTC2_24_59"],
+    "DTC3_12_59":     ["DTC3_12_23", "DTC3_24_59"],
+    "VPO0_12_59":     ["VPO0_12_23", "VPO0_24_59"],
+    "VPO1_12_59":     ["VPO1_12_23", "VPO1_24_59"],
+    "VPO2_12_59":     ["VPO2_12_23", "VPO2_24_59"],
+    "VPO3_12_59":     ["VPO3_12_23", "VPO3_24_59"],
+    "VPI1_12_59":     ["VPI1_12_23", "VPI1_24_59"],
+    "VPI2_12_59":     ["VPI2_12_23", "VPI2_24_59"],
+    "PCV13_1_12_59":  ["PCV13_1_12_23", "PCV13_1_24_59"],
+    "PCV13_2_12_59":  ["PCV13_2_12_23", "PCV13_2_24_59"],
+    "PCV13_3_12_59":  ["PCV13_3_12_23", "PCV13_3_24_59"],
+    "ROTA1_12_59":    ["ROTA1_12_23", "ROTA1_24_59"],
+    "ROTA2_12_59":    ["ROTA2_12_23", "ROTA2_24_59"],
+    "ROTA3_12_59":    ["ROTA3_12_23", "ROTA3_24_59"],
+    "VAR1_12_59":     ["VAR1_12_23", "VAR1_24_59"],
+    "VAR2_12_59":     ["VAR2_12_23", "VAR2_24_59"],
+    "VAA_12_59":      ["VAA_12_23", "VAA_24_59"],
+    "ECV_12_59":      ["ECV_12_23", "ECV_24_59"],
+    "VAP_12_59":      ["VAP4_12_23", "VAP_24_59"],
+    "HPV_12_59":      ["HPV_12_23", "HPV_24_59"],
+
+    "BCG_all":        ["BCG_0_11", "BCG_12_59"],
+    "DTC1_all":       ["DTC1_0_11", "DTC1_12_59"],
+    "DTC2_all":       ["DTC2_0_11", "DTC2_12_59"],
+    "DTC3_all":       ["DTC3_0_11", "DTC3_12_59"],
+    "VPO0_all":       ["VPO0_0_11", "VPO0_12_59"],
+    "VPO1_all":       ["VPO1_0_11", "VPO1_12_59"],
+    "VPO2_all":       ["VPO2_0_11", "VPO2_12_59"],
+    "VPO3_all":       ["VPO3_0_11", "VPO3_12_59"],
+    "VPI1_all":       ["VPI1_0_11", "VPI1_12_59"],
+    "VPI2_all":       ["VPI2_0_11", "VPI2_12_59"],
+    "PCV13_1_all":    ["PCV13_1_0_11", "PCV13_1_12_59"],
+    "PCV13_2_all":    ["PCV13_2_0_11", "PCV13_2_12_59"],
+    "PCV13_3_all":    ["PCV13_3_0_11", "PCV13_3_12_59"],
+    "ROTA1_all":      ["ROTA1_0_11", "ROTA1_12_59"],
+    "ROTA2_all":      ["ROTA2_0_11", "ROTA2_12_59"],
+    "ROTA3_all":      ["ROTA3_0_11", "ROTA3_12_59"],
+    "VAR1_all":       ["VAR1_0_11", "VAR1_12_59"],
+    "VAR2_all":       ["VAR2_0_11", "VAR2_12_59"],
+    "VAA_all":        ["VAA_0_11", "VAA_12_59"],
 }
 
 
@@ -592,6 +750,9 @@ def build_excluded_raw_links(zoho_rename_map: Dict[str, str]) -> set[str]:
     return excluded
 
 
+# ============================================================
+# build_zoho_record — niveau AS (org4)
+# ============================================================
 def build_zoho_record(
     row: Dict[str, Any],
     raw_line: str,
@@ -609,6 +770,7 @@ def build_zoho_record(
     meta = ou_map.get(ou) or {}
     rec: Dict[str, Any] = {}
 
+    # --- Clé AS : Org4_UID | Period ---
     rec["Org4_UID"] = ou
     rec["Period"] = period
     rec["Key"] = f"{ou}|{period}"
@@ -619,6 +781,7 @@ def build_zoho_record(
     rec["Org2"] = meta.get("Org2", "")
     rec["Org3"] = meta.get("Org3", "")
     rec["Org4"] = meta.get("Org4", "")
+
     rec["Antenne"] = antenne_from(rec["Org2"], rec["Org3"], antenne_rules)
 
     for k, v in row.items():
@@ -628,15 +791,20 @@ def build_zoho_record(
             continue
         rec[k] = v
 
+    # Sommations primaires
     for out_field, source_labels in GLOBAL_SUM_SPECS.items():
         source_links = [zoho_rename_map.get(label, label) for label in source_labels]
         rec[out_field] = _sum_by_link(row, *source_links)
 
-    return _sanitize_record_numbers(rec)
+    # Sommations dérivées
+    for out_field, source_fields in DERIVED_SUM_SPECS.items():
+        rec[out_field] = _sum_by_link(rec, *source_fields)
+
+    return rec
 
 
 # ---------------------------
-# PURGE helpers (manual only)
+# PURGE helpers
 # ---------------------------
 def purge_by_criteria_until_empty(
     client: ZohoCreatorClient,
@@ -651,8 +819,7 @@ def purge_by_criteria_until_empty(
     while True:
         loops += 1
         if loops > hard_limit_loops:
-            raise RuntimeError("purge_by_criteria_until_empty: too many loops, aborting for safety.")
-
+            raise RuntimeError("purge: too many loops.")
         ids: List[str] = []
         for r in client.iter_records(criteria=criteria, fields="ID", per_page=min(200, batch_limit), throttle_s=0.0):
             rid = r.get("ID") or r.get("id")
@@ -660,19 +827,15 @@ def purge_by_criteria_until_empty(
                 ids.append(str(rid))
             if len(ids) >= batch_limit:
                 break
-
         if not ids:
             break
-
         for rid in ids:
             client.delete_record_by_id(rid)
             deleted += 1
             if throttle_s > 0:
                 time.sleep(throttle_s)
-
         if throttle_s > 0:
             time.sleep(min(0.5, throttle_s))
-
     return deleted
 
 
@@ -681,7 +844,7 @@ def purge_all_records(client: ZohoCreatorClient, *, throttle_s: float, batch_lim
 
 
 # ---------------------------
-# ADD-only import for a month (batch) with safe fallback
+# ADD-only import
 # ---------------------------
 def _robust_add_records(
     client: ZohoCreatorClient,
@@ -693,7 +856,6 @@ def _robust_add_records(
 ) -> Tuple[int, int]:
     if not records:
         return (0, 0)
-
     try:
         client.add_records(records)
         if throttle_s > 0:
@@ -701,16 +863,12 @@ def _robust_add_records(
         return (len(records), 0)
     except Exception as e:
         if len(records) == 1 or depth >= max_depth:
-            print(f"Add failed (record skipped). reason={e}", flush=True)
+            print(f"Add failed (skipped). reason={e}", flush=True)
             return (0, len(records))
-
         mid = len(records) // 2
-        left = records[:mid]
-        right = records[mid:]
-
-        ins_l, fail_l = _robust_add_records(client, left, throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
-        ins_r, fail_r = _robust_add_records(client, right, throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
-        return (ins_l + ins_r, fail_l + fail_r)
+        ins_l, f_l = _robust_add_records(client, records[:mid], throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
+        ins_r, f_r = _robust_add_records(client, records[mid:], throttle_s=throttle_s, depth=depth + 1, max_depth=max_depth)
+        return (ins_l + ins_r, f_l + f_r)
 
 
 def insert_month_from_parts_add_only(
@@ -726,7 +884,8 @@ def insert_month_from_parts_add_only(
     batch_size: int,
     throttle_s: float,
 ) -> Dict[str, Any]:
-    month_dir = repo_root / "docs" / "data_as" / "monthly" / yyyymm
+    # --- Niveau AS : les fichiers sont dans monthly_as/ ---
+    month_dir = repo_root / "docs" / "data" / "monthly_as" / yyyymm
 
     total_local = 0
     skipped_no_key = 0
@@ -738,19 +897,15 @@ def insert_month_from_parts_add_only(
         plain = p.get("plain")
         if not plain:
             continue
-
         fp = month_dir / str(plain)
         if not fp.exists():
             continue
 
         rows = iter_ndjson_with_raw(fp)
-
         zoho_recs: List[Dict[str, Any]] = []
         for obj, raw in rows:
             rec = build_zoho_record(
-                row=obj,
-                raw_line=raw,
-                ou_map=ou_map,
+                row=obj, raw_line=raw, ou_map=ou_map,
                 zoho_rename_map=zoho_rename_map,
                 antenne_rules=antenne_rules,
                 excluded_raw_links=excluded_raw_links,
@@ -781,38 +936,18 @@ def insert_month_from_parts_add_only(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--repo_root", default=".", help="Repository root (default: .)")
-    ap.add_argument("--index", default="docs/data_as/index.json")
-    ap.add_argument("--state", default="docs/data_as/zoho_sync_state.json")
-
-    ap.add_argument(
-        "--refresh_last_n",
-        type=int,
-        default=2,
-        help="ADD-ONLY for the last N PREVIOUS months (M-1..). Recommended=2.",
-    )
+    ap = argparse.ArgumentParser(description="Sync AS-level vaccination data to Zoho Creator")
+    ap.add_argument("--repo_root", default=".")
+    ap.add_argument("--index", default="docs/data/index_as.json")
+    ap.add_argument("--state", default="docs/data/zoho_sync_as_state.json")
+    ap.add_argument("--refresh_last_n", type=int, default=2)
     ap.add_argument("--batch_size", type=int, default=200)
     ap.add_argument("--throttle_seconds", type=float, default=1.5)
-
     ap.add_argument("--purge_all", action="store_true")
     ap.add_argument("--purge_only", action="store_true")
     ap.add_argument("--purge_batch_limit", type=int, default=200)
-
-    ap.add_argument("--import_historical", action="store_true", help="Import all historical months (add only).")
-
+    ap.add_argument("--import_historical", action="store_true")
     args = ap.parse_args()
-
-    cfg = ZohoConfig(
-        dc=os.environ.get("ZOHO_DC", "com"),
-        client_id=os.environ["ZOHO_CLIENT_ID"],
-        client_secret=os.environ["ZOHO_CLIENT_SECRET"],
-        refresh_token=os.environ["ZOHO_REFRESH_TOKEN"],
-        owner=os.environ.get("ZOHO_OWNER", "drcongo"),
-        app_link_name=os.environ.get("ZOHO_APP_LINK", "vaccination-de-routine-dhis2-rdc"),
-        form_link_name=os.environ.get("ZOHO_FORM_LINK", "Donn_es_PEV_AS"),
-        report_link_name=os.environ.get("ZOHO_REPORT_LINK", "Donn_es_PEV_AS_Report"),
-    )
 
     repo_root = Path(args.repo_root).resolve()
     index_path = repo_root / args.index
@@ -825,17 +960,30 @@ def main() -> int:
     antenne_rules = load_json_file(antenne_rules_path)
     excluded_raw_links = build_excluded_raw_links(zoho_rename_map)
 
-    client = ZohoCreatorClient(cfg)
+    client: Optional[ZohoCreatorClient] = None
 
-    if args.purge_all:
-        print("PURGE ALL: deleting all records in Zoho report until empty...", flush=True)
-        deleted = purge_all_records(
-            client,
-            throttle_s=args.throttle_seconds,
-            batch_limit=args.purge_batch_limit,
+    if not ZOHO_ENABLED:
+        print("INFO: Zoho sync DÉSACTIVÉE (ZOHO_ENABLED=False). Niveau AS.", flush=True)
+        print("INFO: Traitement local uniquement (sommations + sauvegarde).", flush=True)
+    else:
+        cfg = ZohoConfig(
+            dc=os.environ.get("ZOHO_DC", "com"),
+            client_id=os.environ["ZOHO_CLIENT_ID"],
+            client_secret=os.environ["ZOHO_CLIENT_SECRET"],
+            refresh_token=os.environ["ZOHO_REFRESH_TOKEN"],
+            owner=os.environ.get("ZOHO_OWNER", "drcongo"),
+            app_link_name=os.environ.get("ZOHO_APP_LINK_AS", "vaccination-de-routine-dhis2-rdc"),
+            form_link_name=os.environ.get("ZOHO_FORM_LINK_AS", "Donn_es_PEV_AS"),
+            report_link_name=os.environ.get("ZOHO_REPORT_LINK_AS", "Donn_es_PEV_AS_Report"),
         )
-        print(f"PURGE ALL done. deleted={deleted}", flush=True)
+        client = ZohoCreatorClient(cfg)
 
+    if args.purge_all and not ZOHO_ENABLED:
+        print("WARN: --purge_all ignoré car ZOHO_ENABLED=False", flush=True)
+    elif args.purge_all and ZOHO_ENABLED and client is not None:
+        print("PURGE ALL AS: deleting all records...", flush=True)
+        deleted = purge_all_records(client, throttle_s=args.throttle_seconds, batch_limit=args.purge_batch_limit)
+        print(f"PURGE ALL AS done. deleted={deleted}", flush=True)
         remaining = []
         for r in client.iter_records(criteria="", fields="ID", per_page=1, throttle_s=0.0):
             rid = r.get("ID") or r.get("id")
@@ -843,12 +991,9 @@ def main() -> int:
                 remaining.append(str(rid))
             break
         if remaining:
-            raise RuntimeError(f"PURGE ALL verification failed: still found records (example ID={remaining[0]}).")
-
-        print("PURGE ALL verification OK: report is empty.", flush=True)
-        print("Resetting zoho_sync_state.json ...", flush=True)
+            raise RuntimeError(f"PURGE ALL AS verification failed: still found records.")
+        print("PURGE ALL AS verification OK.", flush=True)
         reset_state_file(state_path)
-
         if args.purge_only:
             print("PURGE ONLY => exit.", flush=True)
             return 0
@@ -856,103 +1001,99 @@ def main() -> int:
     index = load_index(index_path)
     months_sorted = sorted_months(index)
     if not months_sorted:
-        print("No months found in index.json")
+        print("No months found in index_as.json")
         return 0
 
     months_obj = index.get("months") or {}
-
     ou_map = load_ou_map(repo_root)
-    print(f"OU_MAP loaded: org4={len(ou_map)}", flush=True)
-    print(f"rename_map loaded: {len(zoho_rename_map)} fields", flush=True)
-    print(f"antenne_rules loaded: {len(antenne_rules)} provinces", flush=True)
-    print(f"excluded raw links for Zoho payload: {len(excluded_raw_links)}", flush=True)
+
+    print(f"[AS] OU_MAP loaded: {len(ou_map)} entries", flush=True)
+    print(f"[AS] rename_map: {len(zoho_rename_map)} fields", flush=True)
+    print(f"[AS] antenne_rules: {len(antenne_rules)} provinces", flush=True)
+    print(f"[AS] excluded raw links: {len(excluded_raw_links)}", flush=True)
 
     state = load_state(state_path)
     done_months: Dict[str, Any] = state.get("done_months") or {}
-
     refresh_months = last_n_previous_months(months_sorted, args.refresh_last_n)
 
-    print(f"Months in index: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
-    print(f"ADD-only months (previous N={args.refresh_last_n}) = {refresh_months}", flush=True)
-    print(
-        f"batch_size={args.batch_size} throttle_seconds={args.throttle_seconds} import_historical={args.import_historical}",
-        flush=True,
-    )
+    print(f"[AS] Months: {months_sorted[0]} -> {months_sorted[-1]} (count={len(months_sorted)})", flush=True)
+    print(f"[AS] Refresh months = {refresh_months}", flush=True)
 
     for m in refresh_months:
         parts = (months_obj.get(m) or {}).get("parts") or []
         if not parts:
-            print(f"[{m}] skip: no parts", flush=True)
+            print(f"[AS][{m}] skip: no parts", flush=True)
             continue
 
-        print(f"[{m}] add-only import (assumes Zoho month already deleted by Deluge)...", flush=True)
+        if not ZOHO_ENABLED or client is None:
+            print(f"[AS][{m}] Zoho désactivé — local processing only.", flush=True)
+            done_months[m] = {
+                "done": True, "refreshed": True,
+                "last_sync": time.time(), "mode": "local_only_zoho_disabled",
+            }
+            continue
+
+        print(f"[AS][{m}] add-only import...", flush=True)
         stats = insert_month_from_parts_add_only(
-            client=client,
-            repo_root=repo_root,
-            yyyymm=m,
-            parts_meta=parts,
-            ou_map=ou_map,
+            client=client, repo_root=repo_root, yyyymm=m,
+            parts_meta=parts, ou_map=ou_map,
             zoho_rename_map=zoho_rename_map,
             antenne_rules=antenne_rules,
             excluded_raw_links=excluded_raw_links,
-            batch_size=args.batch_size,
-            throttle_s=args.throttle_seconds,
+            batch_size=args.batch_size, throttle_s=args.throttle_seconds,
         )
         print(
-            f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
-            f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+            f"[AS][{m}] local={stats['local_rows']} batches={stats['batches']} "
+            f"inserted={stats['inserted']} failed={stats['failed']}",
             flush=True,
         )
         done_months[m] = {
-            "done": True,
-            "refreshed": True,
-            "last_sync": time.time(),
-            "mode": "daily_add_only_previous",
+            "done": True, "refreshed": True,
+            "last_sync": time.time(), "mode": "daily_add_only_previous",
         }
 
     if args.import_historical:
         for m in months_sorted:
             if m in refresh_months:
                 continue
-
             parts = (months_obj.get(m) or {}).get("parts") or []
             if not parts:
                 continue
-
             if done_months.get(m, {}).get("done") is True:
-                print(f"[{m}] skip: already done (historical)", flush=True)
+                print(f"[AS][{m}] skip: already done", flush=True)
                 continue
 
-            print(f"[{m}] import historical month (add only)...", flush=True)
+            if not ZOHO_ENABLED or client is None:
+                print(f"[AS][{m}] Zoho désactivé — skip historical.", flush=True)
+                done_months[m] = {
+                    "done": True, "refreshed": False,
+                    "last_sync": time.time(), "mode": "local_only_zoho_disabled",
+                }
+                continue
+
+            print(f"[AS][{m}] import historical...", flush=True)
             stats = insert_month_from_parts_add_only(
-                client=client,
-                repo_root=repo_root,
-                yyyymm=m,
-                parts_meta=parts,
-                ou_map=ou_map,
+                client=client, repo_root=repo_root, yyyymm=m,
+                parts_meta=parts, ou_map=ou_map,
                 zoho_rename_map=zoho_rename_map,
                 antenne_rules=antenne_rules,
                 excluded_raw_links=excluded_raw_links,
-                batch_size=args.batch_size,
-                throttle_s=args.throttle_seconds,
+                batch_size=args.batch_size, throttle_s=args.throttle_seconds,
             )
             print(
-                f"[{m}] local={stats['local_rows']} batches={stats['batches']} "
-                f"inserted={stats['inserted']} failed={stats['failed']} skipped_no_key={stats['skipped_no_key']}",
+                f"[AS][{m}] local={stats['local_rows']} inserted={stats['inserted']} failed={stats['failed']}",
                 flush=True,
             )
             done_months[m] = {
-                "done": True,
-                "refreshed": False,
-                "last_sync": time.time(),
-                "mode": "historical_add_only",
+                "done": True, "refreshed": False,
+                "last_sync": time.time(), "mode": "historical_add_only",
             }
 
     state["done_months"] = done_months
     state["last_run_at"] = time.time()
     save_state(state_path, state)
 
-    print("OK: Zoho sync completed.", flush=True)
+    print("OK: Zoho AS sync completed.", flush=True)
     return 0
 
 
