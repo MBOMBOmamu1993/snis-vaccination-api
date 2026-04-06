@@ -28,8 +28,8 @@ DASH.mkdir(parents=True, exist_ok=True)
 
 
 # ── Load ou_map ──
-ou_map_gz = DATA / "ou_map.json.gz"
-ou_map_js = DATA / "ou_map.json"
+ou_map_gz = DATA / "ou_map_zs.json.gz"
+ou_map_js = DATA / "ou_map_zs.json"
 if ou_map_gz.exists():
     with gzip.open(ou_map_gz, "rt", encoding="utf-8") as f:
         OU_MAP = json.load(f)

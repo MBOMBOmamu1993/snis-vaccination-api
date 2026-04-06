@@ -199,8 +199,8 @@
   "Td 2": "Td_2",
   "Td 3": "Td_3",
   "Td 4": "Td_4",
-  "Td 5": "Td_5"
-    "___LOGISTIQUE_DTC___": "___LOGISTIQUE_DTC___",
+  "Td 5": "Td_5",
+  "___LOGISTIQUE_DTC___": "___LOGISTIQUE_DTC___",
   "DTC stock début": "DTC_stock_d_but",
   "DTC reçues": "DTC_re_ues",
   "DTC utilisées": "DTC_utilis_es",
@@ -566,5 +566,5 @@
   "VAA 24-59 mois mobile": "VAA_24_59_mois_mobile",
   "ECV 24-59 mois fixe": "ECV_24_59_mois_fixe",
   "ECV 24-59 mois mobile": "ECV_24_59_mois_mobile",
-  "Td1": "Td1",
+  "Td1": "Td1"
 }
