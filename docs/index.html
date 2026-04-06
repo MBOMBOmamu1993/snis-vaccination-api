@@ -857,7 +857,15 @@
         function exh(r) { return pct(cntRens(r), obTotal(r)); }
         function missAg(r) { return obAg(r).filter(function (a) { return !(Number(r[a + '_f']) || 0); }); }
         function mAvg(fosa, ag, per, data, N) { var d = data.filter(function (r) { return r.org5 === fosa && r.period < per && (Number(r[ag]) || 0) > 0; }); d.sort(function (a, b) { return b.period < a.period ? -1 : 1; }); var sub = d.slice(0, N); if (!sub.length) return null; return sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length; }
-        function chkCoh(r) { var ok = true; SAME_AGE.forEach(function (g) { for (var i = 0; i < g.v.length - 1; i++) { var a = Number(r[g.v[i]]) || 0, b = Number(r[g.v[i + 1]]) || 0; var den = b || a || 1; if (Math.abs((a - b) / den) > C.CD) ok = false; } }); return ok; }
+        function chkCoh(r) { var tot = 0, bad = 0; SAME_AGE.forEach(function (g) { for (var i = 0; i < g.v.length - 1; i++) { tot++; var a = Number(r[g.v[i]]) || 0, b = Number(r[g.v[i + 1]]) || 0; var den = b || a || 1; if (Math.abs((a - b) / den) > C.CD) bad++; } }); return tot === 0 || (bad / tot) <= 0.30; }
+        var TRIANG_DEFS = [
+            { lbl: 'BCG 0-11 mois', vacs: ['BCG'], stock: 'BCG_stock_d_but', recv: 'BCG_re_ues' },
+            { lbl: 'DTC 0-11 mois', vacs: ['DTC1', 'DTC2', 'DTC3'], stock: 'DTC_stock_d_but', recv: 'DTC_re_ues' },
+            { lbl: 'PCV13 0-11 mois', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'], stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues' },
+            { lbl: 'VAR 0-11 mois', vacs: ['VAR1', 'VAR2'], stock: 'VAR_stock_d_but', recv: 'VAR_re_ues' },
+            { lbl: 'Td (toutes doses)', vacs: ['TD'], stock: 'Td_stock_d_but', recv: 'Td_re_ues' }
+        ];
+        function chkTriang(rc) { var neg = 0; TRIANG_DEFS.forEach(function (ag) { var st = rc.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0); var rv = rc.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0); var vac = ag.vacs.reduce(function (s, v) { return s + rc.reduce(function (s2, r) { return s2 + (Number(r[v]) || 0); }, 0); }, 0); if ((st + rv - vac) < 0) neg++; }); return TRIANG_DEFS.length === 0 || (neg / TRIANG_DEFS.length) <= 0.30; }
         function ccl(v) { return v >= 80 ? 'cg' : v >= 50 ? 'cy' : 'crd'; }
         function sB(val, bar) { for (var i = 0; i < bar.length; i++) { if (val >= bar[i][0]) return bar[i][1]; } return 0; }
         function sBA(v) { if (v <= 5) return 20; if (v <= 10) return 16; if (v <= 20) return 12; if (v <= 30) return 8; if (v <= 50) return 4; return 0; }
@@ -897,6 +905,9 @@
                 var val = src ? (Number(r[src]) || 0) : 0;
                 rec[ag] = val; rec[ag + '_f'] = val;
             });
+            ['BCG_stock_d_but','BCG_re_ues','DTC_stock_d_but','DTC_re_ues',
+             'PCV13_stock_d_but','PCV13_re_ues','VAR_stock_d_but','VAR_re_ues',
+             'Td_stock_d_but','Td_re_ues'].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
             return rec;
         }
 
@@ -1710,30 +1721,114 @@
 
             if (lastM) {
                 var ol3 = getOrgLevel(D);
-                var tBox = E('div', 'cb'); tBox.innerHTML = '<h4>📋 Vaccins même âge</h4>';
                 var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
-                var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol3.l + '</th>';
-                SAME_AGE.forEach(function (g) { h += '<th>' + g.age + '</th><th>%Var</th>'; });
-                h += '<th>Cohérence</th></tr></thead><tbody>';
+                var ouList3 = uv(ld, function (r) { return r[ol3.k]; });
+                window._p3LD = ld; window._p3OL = ol3; window._p3OUs = ouList3;
 
-                ld.slice(0, 60).forEach(function (r) {
-                    h += '<tr><td>' + tr(r[ol3.k], 24) + '</td>';
-                    var bad = false;
-                    SAME_AGE.forEach(function (g) {
-                        var vs = g.v.map(function (v) { return AG_LBL[v] + ':' + (Number(r[v]) || 0); }).join(', ');
-                        h += '<td style="font-size:9px">' + vs + '</td>';
-                        var parts = [];
-                        for (var j = 0; j < g.v.length - 1; j++) {
-                            var a2 = Number(r[g.v[j]]) || 0, b2 = Number(r[g.v[j + 1]]) || 0, den = b2 || a2 || 1;
-                            var pv = den > 0 ? ((a2 - b2) / den * 100) : 0;
-                            if (Math.abs(pv) > 10) bad = true;
-                            parts.push('<span style="color:' + (Math.abs(pv) > 10 ? '#e74c3c' : '#27ae60') + '">' + pv.toFixed(1) + '%</span>');
-                        }
-                        h += '<td style="font-size:9px">' + parts.join(' ') + '</td>';
+                /* ── Tableau Vaccins même âge avec filtres ── */
+                var tBox = E('div', 'cb');
+                var tfH = '<h4>📋 Vaccins même âge — Cohérence <small style="font-weight:400">(Oui si ≤30% des comparaisons hors tolérance ±' + Math.round(thr * 100) + '%)</small></h4>';
+                tfH += '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
+                tfH += '<div class="fg" style="min-width:180px"><label style="text-transform:uppercase;font-size:9px">' + ol3.l + ' <button class="frst" onclick="_rstP3OU()" title="Réinitialiser">↺</button></label>';
+                tfH += '<button class="fbtn" id="p3BtnOU" onclick="_togADD(\'p3DdOU\')"><span>Tout (' + ouList3.length + ')</span><span class="cn">' + ouList3.length + '</span><span>▼</span></button>';
+                tfH += '<div class="fd" id="p3DdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'p3DdOU\')">';
+                tfH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'p3DdOU\')"><span style="font-weight:700">Tout</span></div>';
+                ouList3.forEach(function (ou) { tfH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_fltP3()"><span>' + tr(ou, 30) + '</span></div>'; });
+                tfH += '</div></div>';
+                tfH += '<div class="fg"><label style="text-transform:uppercase;font-size:9px">Groupe d\'âge <button class="frst" onclick="_rstP3AG()" title="Réinitialiser">↺</button></label>';
+                tfH += '<button class="fbtn" id="p3BtnAG" onclick="_togADD(\'p3DdAG\')"><span>Tout (' + SAME_AGE.length + ')</span><span class="cn">' + SAME_AGE.length + '</span><span>▼</span></button>';
+                tfH += '<div class="fd" id="p3DdAG"><div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'p3DdAG\')"><span style="font-weight:700">Tout</span></div>';
+                SAME_AGE.forEach(function (g, gi) { tfH += '<div class="fi"><input type="checkbox" checked value="' + gi + '" onchange="_fltP3()"><span>' + g.age + '</span></div>'; });
+                tfH += '</div></div></div><div id="p3TblWrap"></div>';
+                tBox.innerHTML = tfH; c.appendChild(tBox);
+
+                window._fltP3 = function () {
+                    var selOU = []; document.querySelectorAll('#p3DdOU .fi:not(.fa) input:checked').forEach(function (cb) { selOU.push(cb.value); });
+                    var selAG = []; document.querySelectorAll('#p3DdAG .fi:not(.fa) input:checked').forEach(function (cb) { selAG.push(parseInt(cb.value)); });
+                    var ol = window._p3OL, ld2 = window._p3LD;
+                    var fLD = ld2.filter(function (r) { return selOU.indexOf(r[ol.k]) >= 0; });
+                    var fGrps = SAME_AGE.filter(function (g, gi) { return selAG.indexOf(gi) >= 0; });
+                    if (!fGrps.length) fGrps = SAME_AGE;
+                    var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol.l + '</th>';
+                    fGrps.forEach(function (g) { h += '<th>' + g.age + '</th><th>%Var</th>'; });
+                    h += '<th>Cohérence vaccins<br><small>même âge</small></th></tr></thead><tbody>';
+                    fLD.slice(0, 60).forEach(function (r) {
+                        h += '<tr><td>' + tr(r[ol.k], 24) + '</td>';
+                        var totC = 0, badC = 0;
+                        SAME_AGE.forEach(function (g) { for (var j = 0; j < g.v.length - 1; j++) { totC++; var a2 = Number(r[g.v[j]]) || 0, b2 = Number(r[g.v[j + 1]]) || 0, den = b2 || a2 || 1; if (Math.abs((a2 - b2) / den * 100) > 10) badC++; } });
+                        var cohOui = totC === 0 || (badC / totC) <= 0.30;
+                        fGrps.forEach(function (g) {
+                            h += '<td style="font-size:9px">' + g.v.map(function (v) { return AG_LBL[v] + ':' + (Number(r[v]) || 0); }).join(', ') + '</td>';
+                            var pts = [];
+                            for (var j = 0; j < g.v.length - 1; j++) { var a2 = Number(r[g.v[j]]) || 0, b2 = Number(r[g.v[j + 1]]) || 0, den = b2 || a2 || 1, pv = den > 0 ? ((a2 - b2) / den * 100) : 0; pts.push('<span style="color:' + (Math.abs(pv) > 10 ? '#e74c3c' : '#27ae60') + '">' + pv.toFixed(1) + '%</span>'); }
+                            h += '<td style="font-size:9px">' + pts.join(' ') + '</td>';
+                        });
+                        h += '<td class="' + (cohOui ? 'cg' : 'crd') + '">' + (cohOui ? 'Oui' : 'Non') + '</td></tr>';
                     });
-                    h += '<td class="' + (bad ? 'crd' : 'cg') + '">' + (bad ? 'Non' : 'Oui') + '</td></tr>';
-                });
-                tBox.innerHTML += h + '</tbody></table></div>'; c.appendChild(tBox);
+                    h += '</tbody></table></div>';
+                    var w = document.getElementById('p3TblWrap'); if (w) w.innerHTML = h;
+                    _updABtn('p3DdOU', 'p3BtnOU'); _updABtn('p3DdAG', 'p3BtnAG');
+                };
+                window._rstP3OU = function () { document.querySelectorAll('#p3DdOU .fi input').forEach(function (cb) { cb.checked = true; }); _fltP3(); };
+                window._rstP3AG = function () { document.querySelectorAll('#p3DdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltP3(); };
+                setTimeout(function () { _fltP3(); }, 100);
+
+                /* ── Tableau Triangulation ── */
+                var triBox = E('div', 'cb');
+                var trFH = '<h4>🔺 Triangulation données de vaccination et doses de vaccins disponibles au cours du mois</h4>';
+                trFH += '<div style="display:flex;gap:10px;margin:8px 0 10px;flex-wrap:wrap;align-items:flex-start">';
+                trFH += '<div class="fg" style="min-width:180px"><label style="text-transform:uppercase;font-size:9px">' + ol3.l + ' <button class="frst" onclick="_rstTriOU()" title="Réinitialiser">↺</button></label>';
+                trFH += '<button class="fbtn" id="triBtnOU" onclick="_togADD(\'triDdOU\')"><span>Tout (' + ouList3.length + ')</span><span class="cn">' + ouList3.length + '</span><span>▼</span></button>';
+                trFH += '<div class="fd" id="triDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'triDdOU\')">';
+                trFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'triDdOU\')"><span style="font-weight:700">Tout</span></div>';
+                ouList3.forEach(function (ou) { trFH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_fltTri()"><span>' + tr(ou, 30) + '</span></div>'; });
+                trFH += '</div></div>';
+                trFH += '<div class="fg"><label style="text-transform:uppercase;font-size:9px">Antigène <button class="frst" onclick="_rstTriAG()" title="Réinitialiser">↺</button></label>';
+                trFH += '<button class="fbtn" id="triBtnAG" onclick="_togADD(\'triDdAG\')"><span>Tout (' + TRIANG_DEFS.length + ')</span><span class="cn">' + TRIANG_DEFS.length + '</span><span>▼</span></button>';
+                trFH += '<div class="fd" id="triDdAG"><div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'triDdAG\')"><span style="font-weight:700">Tout</span></div>';
+                TRIANG_DEFS.forEach(function (ag, ai) { trFH += '<div class="fi"><input type="checkbox" checked value="' + ai + '" onchange="_fltTri()"><span>' + ag.lbl + '</span></div>'; });
+                trFH += '</div></div></div>';
+                trFH += '<p style="font-size:10px;color:#555;margin:0 0 8px"><em>Dose disponible = Stock début + Reçues au cours du mois. Écart négatif (rouge) = doses insuffisantes. Cohérence : Oui si ≤30% d\'antigènes ont un écart négatif.</em></p>';
+                trFH += '<div id="triTblWrap"></div>';
+                triBox.innerHTML = trFH; c.appendChild(triBox);
+
+                window._fltTri = function () {
+                    var selOU = []; document.querySelectorAll('#triDdOU .fi:not(.fa) input:checked').forEach(function (cb) { selOU.push(cb.value); });
+                    var selAG = []; document.querySelectorAll('#triDdAG .fi:not(.fa) input:checked').forEach(function (cb) { selAG.push(parseInt(cb.value)); });
+                    var ol = window._p3OL, ld2 = window._p3LD;
+                    var fLD = ld2.filter(function (r) { return selOU.indexOf(r[ol.k]) >= 0; });
+                    var fAgs = TRIANG_DEFS.filter(function (ag, ai) { return selAG.indexOf(ai) >= 0; });
+                    if (!fAgs.length) fAgs = TRIANG_DEFS;
+                    var ouG = grp(fLD, function (r) { return r[ol.k]; });
+                    var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol.l + '</th><th>Antigène</th><th style="text-align:right">Dose disponible</th><th style="text-align:right">Vaccinés</th><th style="text-align:right">Écart</th><th>Prop. écarts négatifs</th><th>Cohérence<br><small>vaccinés-doses</small></th></tr></thead><tbody>';
+                    Object.keys(ouG).filter(Boolean).sort().forEach(function (ouName) {
+                        var recs = ouG[ouName], neg = 0;
+                        fAgs.forEach(function (ag) {
+                            var st = recs.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0);
+                            var rv = recs.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0);
+                            var dd = st + rv;
+                            var vac = ag.vacs.reduce(function (s, v) { return s + recs.reduce(function (s2, r) { return s2 + (Number(r[v]) || 0); }, 0); }, 0);
+                            var ec = dd - vac;
+                            if (ec < 0) neg++;
+                            h += '<tr><td style="font-size:10px">' + tr(ouName, 22) + '</td><td style="font-size:10px">' + ag.lbl + '</td>';
+                            h += '<td style="text-align:right">' + dd.toLocaleString() + '</td>';
+                            h += '<td style="text-align:right">' + vac.toLocaleString() + '</td>';
+                            h += '<td style="text-align:right;font-weight:700;color:' + (ec < 0 ? '#e74c3c' : '#27ae60') + '">' + (ec >= 0 ? '+' : '') + ec.toLocaleString() + '</td>';
+                            h += '<td></td><td></td></tr>';
+                        });
+                        var propNeg = fAgs.length > 0 ? (neg / fAgs.length * 100) : 0;
+                        var cohOui = propNeg <= 30;
+                        h += '<tr style="background:#eef2ff"><td colspan="5" style="font-weight:700;font-size:10px">' + tr(ouName, 22) + ' — Résumé</td>';
+                        h += '<td style="font-weight:700;color:' + (propNeg > 30 ? '#e74c3c' : '#27ae60') + '">' + propNeg.toFixed(0) + '%</td>';
+                        h += '<td class="' + (cohOui ? 'cg' : 'crd') + '" style="font-weight:800">' + (cohOui ? 'Oui ✓' : 'Non ✗') + '</td></tr>';
+                    });
+                    h += '</tbody></table></div>';
+                    var w = document.getElementById('triTblWrap'); if (w) w.innerHTML = h;
+                    _updABtn('triDdOU', 'triBtnOU'); _updABtn('triDdAG', 'triBtnAG');
+                };
+                window._rstTriOU = function () { document.querySelectorAll('#triDdOU .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
+                window._rstTriAG = function () { document.querySelectorAll('#triDdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
+                setTimeout(function () { _fltTri(); }, 200);
             }
 
             /* Dropout DTC1-DTC3 */
@@ -2202,52 +2297,143 @@
 
         /* ═══ P5: SCORE QUALITÉ ═══ */
         function rP5(c) {
-            c.innerHTML = '<div class="stt" id="sTabs"><div class="stb act" onclick="sSL(0)">FOSA</div><div class="stb" onclick="sSL(1)">AS</div><div class="stb" onclick="sSL(2)">ZS</div><div class="stb" onclick="sSL(3)">Antenne</div></div><div id="sC"></div>';
+            c.innerHTML = '<div class="stt" id="sTabs"><div class="stb act" onclick="sSL(0)">FOSA</div><div class="stb" onclick="sSL(1)">AS</div><div class="stb" onclick="sSL(2)">ZS</div><div class="stb" onclick="sSL(3)">Antenne</div><div class="stb" onclick="sSL(4)">Province</div></div><div id="sC"></div>';
             setTimeout(function () { sSL(0); }, 40);
         }
         window.sSL = function (lv) {
             document.querySelectorAll('#sTabs .stb').forEach(function (t, i) { t.classList.toggle('act', i === lv); });
             var sc = document.getElementById('sC'); sc.innerHTML = '';
             var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT, lastM = mos[mos.length - 1];
-            var lvC = [{ k: function (r) { return r.org5; }, l: 'FOSA' }, { k: function (r) { return r.org4; }, l: 'AS' }, { k: function (r) { return r.org3; }, l: 'ZS' }, { k: function (r) { return r.antenne; }, l: 'Antenne' }][lv];
+            var lvC = [
+                { k: function (r) { return r.org5; }, l: 'FOSA' },
+                { k: function (r) { return r.org4; }, l: 'AS' },
+                { k: function (r) { return r.org3; }, l: 'ZS' },
+                { k: function (r) { return r.antenne; }, l: 'Antenne' },
+                { k: function (r) { return r.org2; }, l: 'Province' }
+            ][lv];
             var og = grp(D, lvC.k), units = Object.keys(og).filter(Boolean).sort();
+            var isFOSA = lv === 0;
+
             var rows = units.map(function (u) {
                 var rc = og[u], rep = rc.filter(isRep), nT = rc.length, nR = rep.length;
                 var tR = pct(nR, nT);
                 var aE = rep.length ? rep.reduce(function (s, r) { return s + exh(r); }, 0) / rep.length : 0;
-                var cohOk = rep.filter(chkCoh).length, bCoh = rep.length ? (cohOk / rep.length >= .5) : false;
+                var cohOk = rep.filter(chkCoh).length, bCohAge = rep.length ? (cohOk / rep.length >= .5) : false;
+                var bTriang = chkTriang(rep);
                 var tV = 0, aV = 0;
                 if (lastM) { rep.filter(function (r) { return r.period === lastM; }).forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; tV++; var avg = mAvg(r.org5, ag, lastM, AD, N); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) aV++; }); }); }
                 var pA = tV ? (aV / tV * 100) : 0;
                 var d1 = sf(rc, 'DTC1'), d3 = sf(rc, 'DTC3'), dr = d1 ? ((d1 - d3) / d1 * 100) : 0;
-                var scR = sB(tR, C.BR), scE = sB(aE, C.BR), scC = bCoh ? 20 : 0, scA = sBA(pA), scD = dr >= 0 ? 20 : 0;
-                var tot = scR + scE + scC + scA + scD;
-                var interp = tot >= 80 ? 'Excellent' : (tot >= 50 ? 'Bon' : 'Mauvais');
-                var notes = [];
-                if (tot < 50) { if (scR < 12) notes.push('Rapp'); if (scE < 12) notes.push('Exh'); if (!bCoh) notes.push('Coh'); if (scA < 12) notes.push('Atyp'); if (scD === 0) notes.push('Drop'); }
-                return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCoh: bCoh, pA: pA, dr: dr, scR: scR, scE: scE, scC: scC, scA: scA, scD: scD, tot: tot, interp: interp, notes: notes.join('; ') };
+                var scR = sB(tR, C.BR), scE = sB(aE, C.BR), scA = sBA(pA), scD = dr >= 0 ? 20 : 0;
+
+                var tot, pct100, interp, notes = [];
+                if (isFOSA) {
+                    /* FOSA : 6 critères × 20 = 120 pts → %score pour interprétation */
+                    var scCage = bCohAge ? 20 : 0;
+                    var scDose = bTriang ? 20 : 0;
+                    tot = scR + scE + scCage + scA + scD + scDose;
+                    pct100 = Math.round(tot / 120 * 100);
+                    interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
+                    if (pct100 < 50) { if (scR < 12) notes.push('Rapp'); if (scE < 12) notes.push('Exh'); if (!bCohAge) notes.push('Coh âge'); if (!bTriang) notes.push('Coh doses'); if (scA < 12) notes.push('Atyp'); if (scD === 0) notes.push('Drop'); }
+                    return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCohAge: bCohAge, bTriang: bTriang, pA: pA, dr: dr, scR: scR, scE: scE, scCage: scCage, scDose: scDose, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
+                } else {
+                    /* AS / ZS / Antenne / Province : 5 critères × 20 = 100 pts */
+                    var scCcomb = (bCohAge && bTriang) ? 20 : 0;
+                    tot = scR + scE + scCcomb + scA + scD;
+                    pct100 = tot; /* déjà sur 100 */
+                    interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
+                    if (pct100 < 50) { if (scR < 12) notes.push('Rapp'); if (scE < 12) notes.push('Exh'); if (!bCohAge || !bTriang) notes.push('Coh'); if (scA < 12) notes.push('Atyp'); if (scD === 0) notes.push('Drop'); }
+                    return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCohAge: bCohAge, bTriang: bTriang, pA: pA, dr: dr, scR: scR, scE: scE, scCcomb: scCcomb, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
+                }
             });
-            rows.sort(function (a, b) { return b.tot - a.tot; });
+            rows.sort(function (a, b) { return b.pct100 - a.pct100; });
+
             var exc = rows.filter(function (r) { return r.interp === 'Excellent'; }).length;
             var bon = rows.filter(function (r) { return r.interp === 'Bon'; }).length;
             var mau = rows.filter(function (r) { return r.interp === 'Mauvais'; }).length;
-            var avg2 = rows.length ? rows.reduce(function (s, r) { return s + r.tot; }, 0) / rows.length : 0;
+            var avgP = rows.length ? rows.reduce(function (s, r) { return s + r.pct100; }, 0) / rows.length : 0;
 
-            sc.innerHTML = '<div class="kr" style="margin-bottom:16px"><div class="kc gn"><div class="kv">' + exc + '</div><div class="kl">Excellent ≥80</div></div><div class="kc or"><div class="kv">' + bon + '</div><div class="kl">Bon 50-79</div></div><div class="kc rd"><div class="kv">' + mau + '</div><div class="kl">Mauvais <50</div></div><div class="kc bl"><div class="kv">' + avg2.toFixed(0) + '</div><div class="kl">Moy /100</div></div></div>';
+            sc.innerHTML = '<div class="kr" style="margin-bottom:16px">' +
+                '<div class="kc gn"><div class="kv">' + exc + '</div><div class="kl">Excellent ≥80%</div></div>' +
+                '<div class="kc or"><div class="kv">' + bon + '</div><div class="kl">Bon 50–79%</div></div>' +
+                '<div class="kc rd"><div class="kv">' + mau + '</div><div class="kl">Mauvais <50%</div></div>' +
+                '<div class="kc bl"><div class="kv">' + avgP.toFixed(0) + '%</div><div class="kl">Moy %score</div></div></div>';
 
-            sc.innerHTML += '<div class="cb"><h4>📊 Distribution</h4><canvas id="sDist" height="45"></canvas></div>';
+            /* Distribution histogram */
+            sc.innerHTML += '<div class="cb"><h4>📊 Distribution des scores</h4><canvas id="sDist" height="45"></canvas></div>';
             setTimeout(function () {
                 var x = document.getElementById('sDist'); if (!x) return;
-                var bins = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]], bL = bins.map(function (b) { return b[0] + '-' + (b[1] === 101 ? 100 : b[1]); }), bC = bins.map(function (b) { return rows.filter(function (r) { return r.tot >= b[0] && r.tot < b[1]; }).length; });
+                var bins = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]];
+                var bL = bins.map(function (b) { return b[0] + '-' + (b[1] === 101 ? 100 : b[1]) + '%'; });
+                var bC = bins.map(function (b) { return rows.filter(function (r) { return r.pct100 >= b[0] && r.pct100 < b[1]; }).length; });
                 S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#e74c3c', '#ff7043', '#f39c12', '#66bb6a', '#27ae60'], borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
             }, 60);
 
-            var h = '<div class="tw"><table class="dt"><thead><tr><th>' + lvC.l + '</th><th>Att</th><th>Prod</th><th>Rapp%</th><th>Sc</th><th>Exh%</th><th>Sc</th><th>Coh</th><th>Sc</th><th>Atyp%</th><th>Sc</th><th>Drop%</th><th>Sc</th><th>SCORE</th><th>Int</th><th>Notes</th></tr></thead><tbody>';
-            rows.forEach(function (r) {
-                var scCol = r.tot >= 80 ? '#27ae60' : (r.tot >= 50 ? '#f39c12' : '#e74c3c');
-                var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
-                h += '<tr><td><b>' + tr(r.u, 24) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td><td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td><td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td><td class="' + (r.bCoh ? 'cg' : 'crd') + '">' + (r.bCoh ? 'O' : 'N') + '</td><td style="font-weight:700">' + r.scC + '</td><td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td><td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td><td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:15px">' + r.tot + '</td><td class="' + intC + '" style="font-weight:700">' + r.interp + '</td><td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
-            });
+            /* Classification par score qualité — barres triées décroissant */
+            sc.innerHTML += '<div class="cb"><h4>🏅 Classification par score qualité des données — ' + lvC.l + '</h4><div style="overflow-x:auto"><canvas id="sClass" height="' + Math.max(60, Math.min(rows.length * 18, 400)) + '"></canvas></div></div>';
+            setTimeout(function () {
+                var x2 = document.getElementById('sClass'); if (!x2) return;
+                var labels = rows.map(function (r) { return tr(r.u, 26); });
+                var vals = rows.map(function (r) { return r.pct100; });
+                var cols = rows.map(function (r) { return r.interp === 'Excellent' ? '#27ae60' : (r.interp === 'Bon' ? '#f39c12' : '#e74c3c'); });
+                S.charts.sClass = new Chart(x2, {
+                    type: 'bar',
+                    data: { labels: labels, datasets: [{ label: '% Score', data: vals, backgroundColor: cols, borderRadius: 3 }] },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { var r2 = rows[ctx.dataIndex]; return ctx.dataset.label + ': ' + ctx.raw + '% (' + r2.interp + ')'; } } } },
+                        scales: { x: { min: 0, max: 100, title: { display: true, text: '%Score' } }, y: { ticks: { font: { size: 9 } } } }
+                    }
+                });
+            }, 120);
+
+            /* Tableau score */
+            var h;
+            if (isFOSA) {
+                h = '<div class="tw"><table class="dt"><thead><tr>' +
+                    '<th>' + lvC.l + '</th><th>Att</th><th>Prod</th>' +
+                    '<th>Rapp%</th><th>Sc</th><th>Exh%</th><th>Sc</th>' +
+                    '<th>Coh vaccins<br>même âge</th><th>Sc</th>' +
+                    '<th>Coh vaccinés<br>doses dispo</th><th>Sc</th>' +
+                    '<th>Atyp%</th><th>Sc</th><th>Drop%</th><th>Sc</th>' +
+                    '<th>Score<br>/120</th><th>%Score</th><th>Int</th><th>Notes</th></tr></thead><tbody>';
+                rows.forEach(function (r) {
+                    var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
+                    var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
+                    h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
+                        '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
+                        '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
+                        '<td class="' + (r.bCohAge ? 'cg' : 'crd') + '">' + (r.bCohAge ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scCage + '</td>' +
+                        '<td class="' + (r.bTriang ? 'cg' : 'crd') + '">' + (r.bTriang ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scDose + '</td>' +
+                        '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
+                        '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
+                        '<td style="font-weight:800;text-align:center">' + r.tot + '/120</td>' +
+                        '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:14px">' + r.pct100 + '%</td>' +
+                        '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
+                        '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
+                });
+            } else {
+                h = '<div class="tw"><table class="dt"><thead><tr>' +
+                    '<th>' + lvC.l + '</th><th>Att</th><th>Prod</th>' +
+                    '<th>Rapp%</th><th>Sc</th><th>Exh%</th><th>Sc</th>' +
+                    '<th>Cohérence<br>(âge + doses)</th><th>Sc</th>' +
+                    '<th>Atyp%</th><th>Sc</th><th>Drop%</th><th>Sc</th>' +
+                    '<th>SCORE /100</th><th>Int</th><th>Notes</th></tr></thead><tbody>';
+                rows.forEach(function (r) {
+                    var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
+                    var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
+                    var cohLbl = r.bCohAge && r.bTriang ? 'Oui' : (!r.bCohAge && !r.bTriang ? 'Non (âge+doses)' : (!r.bCohAge ? 'Non (âge)' : 'Non (doses)'));
+                    h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
+                        '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
+                        '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
+                        '<td class="' + ((r.bCohAge && r.bTriang) ? 'cg' : 'crd') + '" style="font-size:10px">' + cohLbl + '</td><td style="font-weight:700">' + r.scCcomb + '</td>' +
+                        '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
+                        '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
+                        '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:15px">' + r.pct100 + '</td>' +
+                        '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
+                        '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
+                });
+            }
             sc.innerHTML += h + '</tbody></table></div>';
         };
 
