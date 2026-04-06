@@ -1800,9 +1800,18 @@
                     var fAgs = TRIANG_DEFS.filter(function (ag, ai) { return selAG.indexOf(ai) >= 0; });
                     if (!fAgs.length) fAgs = TRIANG_DEFS;
                     var ouG = grp(fLD, function (r) { return r[ol.k]; });
-                    var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol.l + '</th><th>Antigène</th><th style="text-align:right">Dose disponible</th><th style="text-align:right">Vaccinés</th><th style="text-align:right">Écart</th><th>Prop. écarts négatifs</th><th>Cohérence<br><small>vaccinés-doses</small></th></tr></thead><tbody>';
+                    /* En-tête sur 2 lignes : 1 colonne org unit | colonnes groupées par antigène | 2 colonnes résumé */
+                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead>';
+                    h += '<tr><th rowspan="2" style="min-width:120px">' + ol.l + '</th>';
+                    fAgs.forEach(function (ag) { h += '<th colspan="3" style="text-align:center;border-bottom:1px solid #bbb">' + ag.lbl + '</th>'; });
+                    h += '<th rowspan="2" style="white-space:nowrap">Proportion<br>écarts négatifs</th><th rowspan="2" style="white-space:nowrap">Cohérence<br>vaccinés-doses</th></tr>';
+                    h += '<tr>';
+                    fAgs.forEach(function () { h += '<th style="text-align:right;white-space:nowrap;font-size:10px">Dose disponible</th><th style="text-align:right;white-space:nowrap;font-size:10px">Vaccinés</th><th style="text-align:right;white-space:nowrap;font-size:10px">Écart</th>'; });
+                    h += '</tr></thead><tbody>';
+                    /* Une seule ligne par unité d'organisation */
                     Object.keys(ouG).filter(Boolean).sort().forEach(function (ouName) {
                         var recs = ouG[ouName], neg = 0;
+                        h += '<tr><td style="font-size:10px;font-weight:700">' + tr(ouName, 22) + '</td>';
                         fAgs.forEach(function (ag) {
                             var st = recs.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0);
                             var rv = recs.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0);
@@ -1810,17 +1819,14 @@
                             var vac = ag.vacs.reduce(function (s, v) { return s + recs.reduce(function (s2, r) { return s2 + (Number(r[v]) || 0); }, 0); }, 0);
                             var ec = dd - vac;
                             if (ec < 0) neg++;
-                            h += '<tr><td style="font-size:10px">' + tr(ouName, 22) + '</td><td style="font-size:10px">' + ag.lbl + '</td>';
                             h += '<td style="text-align:right">' + dd.toLocaleString() + '</td>';
                             h += '<td style="text-align:right">' + vac.toLocaleString() + '</td>';
                             h += '<td style="text-align:right;font-weight:700;color:' + (ec < 0 ? '#e74c3c' : '#27ae60') + '">' + (ec >= 0 ? '+' : '') + ec.toLocaleString() + '</td>';
-                            h += '<td></td><td></td></tr>';
                         });
                         var propNeg = fAgs.length > 0 ? (neg / fAgs.length * 100) : 0;
                         var cohOui = propNeg <= 30;
-                        h += '<tr style="background:#eef2ff"><td colspan="5" style="font-weight:700;font-size:10px">' + tr(ouName, 22) + ' — Résumé</td>';
-                        h += '<td style="font-weight:700;color:' + (propNeg > 30 ? '#e74c3c' : '#27ae60') + '">' + propNeg.toFixed(0) + '%</td>';
-                        h += '<td class="' + (cohOui ? 'cg' : 'crd') + '" style="font-weight:800">' + (cohOui ? 'Oui ✓' : 'Non ✗') + '</td></tr>';
+                        h += '<td style="text-align:center;font-weight:700;color:' + (propNeg > 30 ? '#e74c3c' : '#27ae60') + '">' + propNeg.toFixed(0) + '%</td>';
+                        h += '<td class="' + (cohOui ? 'cg' : 'crd') + '" style="font-weight:800;text-align:center">' + (cohOui ? 'Oui ✓' : 'Non ✗') + '</td></tr>';
                     });
                     h += '</tbody></table></div>';
                     var w = document.getElementById('triTblWrap'); if (w) w.innerHTML = h;
@@ -2320,6 +2326,8 @@
                 var aE = rep.length ? rep.reduce(function (s, r) { return s + exh(r); }, 0) / rep.length : 0;
                 var cohOk = rep.filter(chkCoh).length, bCohAge = rep.length ? (cohOk / rep.length >= .5) : false;
                 var bTriang = chkTriang(rep);
+                var cohBonne = rep.filter(function (r) { return chkCoh(r) && chkTriang([r]); }).length;
+                var pctCohBonne = rep.length ? (cohBonne / rep.length * 100) : 0;
                 var tV = 0, aV = 0;
                 if (lastM) { rep.filter(function (r) { return r.period === lastM; }).forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; tV++; var avg = mAvg(r.org5, ag, lastM, AD, N); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) aV++; }); }); }
                 var pA = tV ? (aV / tV * 100) : 0;
@@ -2338,12 +2346,13 @@
                     return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCohAge: bCohAge, bTriang: bTriang, pA: pA, dr: dr, scR: scR, scE: scE, scCage: scCage, scDose: scDose, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
                 } else {
                     /* AS / ZS / Antenne / Province : 5 critères × 20 = 100 pts */
-                    var scCcomb = (bCohAge && bTriang) ? 20 : 0;
+                    /* Cohérence = % ESS avec bonne cohérence (vaccins même âge ET doses dispo) → barème */
+                    var scCcomb = sB(pctCohBonne, C.BR);
                     tot = scR + scE + scCcomb + scA + scD;
                     pct100 = tot; /* déjà sur 100 */
                     interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
-                    if (pct100 < 50) { if (scR < 12) notes.push('Rapp'); if (scE < 12) notes.push('Exh'); if (!bCohAge || !bTriang) notes.push('Coh'); if (scA < 12) notes.push('Atyp'); if (scD === 0) notes.push('Drop'); }
-                    return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCohAge: bCohAge, bTriang: bTriang, pA: pA, dr: dr, scR: scR, scE: scE, scCcomb: scCcomb, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
+                    if (pct100 < 50) { if (scR < 12) notes.push('Rapportage'); if (scE < 12) notes.push('Exhaustivité'); if (scCcomb < 12) notes.push('Cohérence'); if (scA < 12) notes.push('Valeurs atypiques'); if (scD === 0) notes.push('Abandon'); }
+                    return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, pctCohBonne: pctCohBonne, pA: pA, dr: dr, scR: scR, scE: scE, scCcomb: scCcomb, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
                 }
             });
             rows.sort(function (a, b) { return b.pct100 - a.pct100; });
@@ -2390,13 +2399,18 @@
             /* Tableau score */
             var h;
             if (isFOSA) {
-                h = '<div class="tw"><table class="dt"><thead><tr>' +
-                    '<th>' + lvC.l + '</th><th>Att</th><th>Prod</th>' +
-                    '<th>Rapp%</th><th>Sc</th><th>Exh%</th><th>Sc</th>' +
-                    '<th>Coh vaccins<br>même âge</th><th>Sc</th>' +
-                    '<th>Coh vaccinés<br>doses dispo</th><th>Sc</th>' +
-                    '<th>Atyp%</th><th>Sc</th><th>Drop%</th><th>Sc</th>' +
-                    '<th>Score<br>/120</th><th>%Score</th><th>Int</th><th>Notes</th></tr></thead><tbody>';
+                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+                    '<th>' + lvC.l + '</th>' +
+                    '<th>Nombre total ESS attendus</th>' +
+                    '<th>Nombre ESS ayant rapporté</th>' +
+                    '<th>Taux de rapportage (%)</th><th>Score Rapportage (/20)</th>' +
+                    '<th>Exhaustivité moyenne (%)</th><th>Score Exhaustivité (/20)</th>' +
+                    '<th>Cohérence vaccins de même âge</th><th>Score Cohérence vaccins (/20)</th>' +
+                    '<th>Cohérence vaccinés-doses disponibles</th><th>Score Cohérence doses (/20)</th>' +
+                    '<th>% Moyen valeurs atypiques</th><th>Score Valeurs Atypiques (/20)</th>' +
+                    '<th>Taux d\'abandon moyen (%)</th><th>Score Taux d\'Abandon (/20)</th>' +
+                    '<th>Score Total (/120)</th><th>% Score Total</th><th>Interprétation</th><th>Points à améliorer</th>' +
+                    '</tr></thead><tbody>';
                 rows.forEach(function (r) {
                     var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                     var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
@@ -2413,20 +2427,24 @@
                         '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
                 });
             } else {
-                h = '<div class="tw"><table class="dt"><thead><tr>' +
-                    '<th>' + lvC.l + '</th><th>Att</th><th>Prod</th>' +
-                    '<th>Rapp%</th><th>Sc</th><th>Exh%</th><th>Sc</th>' +
-                    '<th>Cohérence<br>(âge + doses)</th><th>Sc</th>' +
-                    '<th>Atyp%</th><th>Sc</th><th>Drop%</th><th>Sc</th>' +
-                    '<th>SCORE /100</th><th>Int</th><th>Notes</th></tr></thead><tbody>';
+                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+                    '<th>' + lvC.l + '</th>' +
+                    '<th>Nombre total ESS</th>' +
+                    '<th>Nombre ESS ayant rapporté</th>' +
+                    '<th>Taux de rapportage (%)</th><th>Score Rapportage (/20)</th>' +
+                    '<th>Exhaustivité moyenne (%)</th><th>Score Exhaustivité (/20)</th>' +
+                    '<th>% ESS bonne cohérence (vaccins + doses)</th><th>Score Cohérence (/20)</th>' +
+                    '<th>% Moyen valeurs atypiques</th><th>Score Valeurs Atypiques (/20)</th>' +
+                    '<th>Taux d\'abandon moyen (%)</th><th>Score Taux d\'Abandon (/20)</th>' +
+                    '<th>Score Composite (/100)</th><th>Interprétation</th><th>Points à améliorer</th>' +
+                    '</tr></thead><tbody>';
                 rows.forEach(function (r) {
                     var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                     var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
-                    var cohLbl = r.bCohAge && r.bTriang ? 'Oui' : (!r.bCohAge && !r.bTriang ? 'Non (âge+doses)' : (!r.bCohAge ? 'Non (âge)' : 'Non (doses)'));
                     h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
                         '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
                         '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
-                        '<td class="' + ((r.bCohAge && r.bTriang) ? 'cg' : 'crd') + '" style="font-size:10px">' + cohLbl + '</td><td style="font-weight:700">' + r.scCcomb + '</td>' +
+                        '<td class="' + (r.pctCohBonne >= 50 ? 'cg' : 'crd') + '">' + r.pctCohBonne.toFixed(1) + '%</td><td style="font-weight:700">' + r.scCcomb + '</td>' +
                         '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
                         '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
                         '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:15px">' + r.pct100 + '</td>' +
