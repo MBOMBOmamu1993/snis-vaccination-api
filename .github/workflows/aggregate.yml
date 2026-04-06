@@ -1,4 +1,4 @@
-name: Aggregate data for dashboard
+name: Aggregate ALL data for dashboard
 
 on:
   workflow_run:
@@ -12,11 +12,19 @@ on:
 permissions:
   contents: write
 
+# 🔒 Empêche les lancements en double si plusieurs synchronisations finissent en même temps
+concurrency:
+  group: dashboard-aggregation
+  cancel-in-progress: false
+
 jobs:
-  aggregate:
+  aggregate-all:
+    # Ne se lance que si la synchronisation a réussi, ou si c'est un lancement manuel
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    # Sécurité : Coupe le job s'il tourne dans le vide plus de 20 minutes (au lieu de 47 min)
-    timeout-minutes: 20
+    
+    # J'ai augmenté à 40 minutes car il y a maintenant 3 scripts à faire tourner l'un après l'autre
+    timeout-minutes: 40
 
     steps:
       - uses: actions/checkout@v4
@@ -28,19 +36,31 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Generate aggregated dashboard data
+      # --- 1. Lancement du script FOSA ---
+      - name: Generate aggregated dashboard data (FOSA)
         run: python scripts/aggregate_dashboard.py
 
-      - name: Commit aggregated data
+      # --- 2. Lancement du script AS ---
+      - name: Generate AS aggregated dashboard data
+        run: python scripts/aggregate_dashboard_as.py
+
+      # --- 3. Lancement du script ZS ---
+      - name: Generate ZS aggregated dashboard data
+        run: python scripts/aggregate_dashboard_zs.py
+
+      # --- 4. Sauvegarde Globale ---
+      - name: Commit all aggregated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A docs/data/dashboard/ docs/.nojekyll
           
-          # Protection contre les erreurs si aucun fichier n'a été modifié
+          # On ajoute tous les dossiers (FOSA, AS, ZS) dans un seul commit
+          git add -A docs/data/dashboard/ docs/data_as/dashboard/ docs/data_zs/dashboard/ docs/.nojekyll
+          
+          # On vérifie s'il y a des changements avant de pousser
           if ! git diff --staged --quiet; then
-            git commit -m "auto: refresh dashboard aggregates"
+            git commit -m "auto: refresh ALL dashboard aggregates (FOSA, AS, ZS)"
             git push
           else
-            echo "Aucun changement détecté, pas de nouveau commit."
+            echo "Aucun changement détecté dans les données agrégées (FOSA, AS, ZS)."
           fi
