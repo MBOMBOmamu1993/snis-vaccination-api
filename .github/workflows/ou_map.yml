@@ -27,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests urllib3
 
-      - name: Build OU maps (FOSA + AS)
+      - name: Build OU maps (FOSA + AS + ZS)
         env:
           DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
           DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
@@ -46,11 +46,14 @@ jobs:
             docs/data/ou_map.meta.json \
             docs/data_as/ou_map_as.json \
             docs/data_as/ou_map_as.json.gz \
-            docs/data_as/ou_map_as.meta.json
+            docs/data_as/ou_map_as.meta.json \
+            docs/data_zs/ou_map_zs.json \
+            docs/data_zs/ou_map_zs.json.gz \
+            docs/data_zs/ou_map_zs.meta.json
 
           git diff --cached --quiet && echo "No changes" && exit 0
 
-          git commit -m "Update OU maps (FOSA + AS)"
+          git commit -m "Update OU maps (FOSA + AS + ZS)"
 
           for i in 1 2 3; do
             git pull --rebase origin main || true

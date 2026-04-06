@@ -136,6 +136,24 @@ def build_ou_map_fosa(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def build_ou_map_zs(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
+    out: Dict[str, Dict[str, str]] = {}
+
+    for ou_id, ou in all_units.items():
+        if ou.get("level") != 3:
+            continue
+
+        path = str(ou.get("path") or "").strip()
+        ids = [p for p in path.split("/") if p]
+
+        out[ou_id] = {
+            "Org2": _name_for(ids, 2, all_units),
+            "Org3": str(ou.get("name") or "").strip(),
+        }
+
+    return out
+
+
 def build_ou_map_as(all_units: Dict[str, dict]) -> Dict[str, Dict[str, str]]:
     out: Dict[str, Dict[str, str]] = {}
 
@@ -209,6 +227,7 @@ def main() -> int:
 
     fosa_dir = Path("docs/data")
     as_dir = Path("docs/data_as")
+    zs_dir = Path("docs/data_zs")
 
     fosa_json = fosa_dir / "ou_map.json"
     fosa_gz = fosa_dir / "ou_map.json.gz"
@@ -216,16 +235,20 @@ def main() -> int:
     as_json = as_dir / "ou_map_as.json"
     as_gz = as_dir / "ou_map_as.json.gz"
 
+    zs_json = zs_dir / "ou_map_zs.json"
+    zs_gz = zs_dir / "ou_map_zs.json.gz"
+
     if not (base_url and username and password):
         print("Missing secrets: DHIS2_BASE_URL, DHIS2_USERNAME, DHIS2_PASSWORD", file=sys.stderr)
 
         existing_fosa = load_existing_json_pair(fosa_json, fosa_gz)
         existing_as = load_existing_json_pair(as_json, as_gz)
+        existing_zs = load_existing_json_pair(zs_json, zs_gz)
 
-        if existing_fosa or existing_as:
+        if existing_fosa or existing_as or existing_zs:
             print(
                 "FALLBACK: using existing cached OU maps "
-                f"(fosa={len(existing_fosa or {})}, as={len(existing_as or {})})",
+                f"(fosa={len(existing_fosa or {})}, as={len(existing_as or {})}, zs={len(existing_zs or {})})",
                 flush=True,
             )
             return 0
@@ -250,11 +273,14 @@ def main() -> int:
 
         fosa_map = build_ou_map_fosa(all_units)
         as_map = build_ou_map_as(all_units)
+        zs_map = build_ou_map_zs(all_units)
 
         if not fosa_map:
             raise RuntimeError("build_ou_map_fosa returned empty mapping")
         if not as_map:
             raise RuntimeError("build_ou_map_as returned empty mapping")
+        if not zs_map:
+            raise RuntimeError("build_ou_map_zs returned empty mapping")
 
         save_map_with_meta(
             out_dir=fosa_dir,
@@ -274,9 +300,17 @@ def main() -> int:
             kind="as_org4",
         )
 
+        save_map_with_meta(
+            out_dir=zs_dir,
+            json_name="ou_map_zs.json",
+            gz_name="ou_map_zs.json.gz",
+            meta_name="ou_map_zs.meta.json",
+            payload=zs_map,
+            kind="zs_org3",
+        )
+
         print(
-            f"OK: FOSA map generated for {len(fosa_map)} OU level 5 | "
-            f"AS map generated for {len(as_map)} OU level 4",
+            f"OK: FOSA map={len(fosa_map)} (org5) | AS map={len(as_map)} (org4) | ZS map={len(zs_map)} (org3)",
             flush=True,
         )
         return 0
@@ -286,18 +320,19 @@ def main() -> int:
 
         existing_fosa = load_existing_json_pair(fosa_json, fosa_gz)
         existing_as = load_existing_json_pair(as_json, as_gz)
+        existing_zs = load_existing_json_pair(zs_json, zs_gz)
 
-        if existing_fosa or existing_as:
+        if existing_fosa or existing_as or existing_zs:
             print(
                 "FALLBACK: using existing cached OU maps "
-                f"(fosa={len(existing_fosa or {})}, as={len(existing_as or {})}) "
+                f"(fosa={len(existing_fosa or {})}, as={len(existing_as or {})}, zs={len(existing_zs or {})}) "
                 "and continuing workflow.",
                 flush=True,
             )
             return 0
 
         print(
-            "ERROR: no cached docs/data/ou_map.json(.gz) or docs/data_as/ou_map_as.json(.gz) available.",
+            "ERROR: no cached OU maps available for FOSA, AS or ZS.",
             file=sys.stderr,
         )
         return 1

@@ -1,8 +1,7 @@
-name: DHIS2 -> GitHub -> Zoho (batch)
+name: "[OBSOLETE] DHIS2 -> GitHub -> Zoho FOSA (batch)"
+# REMPLACÉ par sync_dhis2.yml (sans Zoho) — déclenche manuellement seulement si besoin
 
 on:
-  schedule:
-    - cron: "2 23 * * *"   # tous les jours à 00:02 (UTC+1)
   workflow_dispatch:
     inputs:
       purge_all:

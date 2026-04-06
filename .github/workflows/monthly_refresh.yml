@@ -1,9 +1,7 @@
-name: Refresh DHIS2 monthly data
+name: "[OBSOLETE] Refresh DHIS2 monthly data"
+# REMPLACÉ par sync_dhis2.yml — déclenche manuellement seulement si besoin
 
 on:
-  schedule:
-    # Tous les jours à 02:30 UTC (change si tu veux)
-    - cron: "30 2 * * *"
   workflow_dispatch:
 
 permissions:

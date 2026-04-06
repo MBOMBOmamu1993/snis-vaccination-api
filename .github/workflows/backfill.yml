@@ -1,0 +1,218 @@
+name: Backfill DHIS2 (FOSA / AS / ZS)
+
+# ─────────────────────────────────────────────────────────────
+# MANUEL : choisir le niveau et la plage de dates
+# AUTO   : tourne les 3 niveaux séquentiellement chaque semaine
+#          (dimanche 03:00 UTC) pour maintenir les données à jour
+# ─────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      level:
+        description: "Niveau à backfiller"
+        required: true
+        default: "FOSA"
+        type: choice
+        options:
+          - FOSA
+          - AS
+          - ZS
+      start:
+        description: "Début YYYYMM (ex: 202501)"
+        required: true
+        default: "202501"
+      end:
+        description: "Fin YYYYMM (laisser vide = mois courant)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+# ─────────────────────────────────────────────────────────────
+# JOB FOSA
+# ─────────────────────────────────────────────────────────────
+jobs:
+  backfill-fosa:
+    name: "Backfill FOSA"
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    if: github.event_name == 'workflow_dispatch' && inputs.level == 'FOSA'
+
+    concurrency:
+      group: dhis2-backfill-fosa
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests urllib3
+
+      - name: Build OU maps (FOSA + AS + ZS)
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: python scripts/build_ou_map.py
+
+      - name: Backfill FOSA
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          END="${{ inputs.end }}"
+          python scripts/fetch_dhis2_vaccination.py \
+            --backfill \
+            --start "${{ inputs.start }}" \
+            ${END:+--end "$END"} \
+            --retry_failed --retry_limit 12 \
+            --out docs/data
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data docs/data/ou_map.json docs/data/ou_map.json.gz docs/data/ou_map.meta.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Backfill FOSA ${{ inputs.start }}-${{ inputs.end || 'current' }}"
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push attempt $i failed, retrying..."
+            sleep 5
+          done
+
+# ─────────────────────────────────────────────────────────────
+# JOB AS
+# ─────────────────────────────────────────────────────────────
+  backfill-as:
+    name: "Backfill AS"
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    if: github.event_name == 'workflow_dispatch' && inputs.level == 'AS'
+
+    concurrency:
+      group: dhis2-backfill-as
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests urllib3
+
+      - name: Build OU maps (FOSA + AS + ZS)
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: python scripts/build_ou_map.py
+
+      - name: Backfill AS
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          END="${{ inputs.end }}"
+          python scripts/fetch_dhis2_as.py \
+            --backfill \
+            --start "${{ inputs.start }}" \
+            ${END:+--end "$END"} \
+            --retry_failed --retry_limit 12 \
+            --out docs/data_as
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data_as docs/data_as/ou_map_as.json docs/data_as/ou_map_as.json.gz docs/data_as/ou_map_as.meta.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Backfill AS ${{ inputs.start }}-${{ inputs.end || 'current' }}"
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push attempt $i failed, retrying..."
+            sleep 5
+          done
+
+# ─────────────────────────────────────────────────────────────
+# JOB ZS
+# ─────────────────────────────────────────────────────────────
+  backfill-zs:
+    name: "Backfill ZS"
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    if: github.event_name == 'workflow_dispatch' && inputs.level == 'ZS'
+
+    concurrency:
+      group: dhis2-backfill-zs
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests urllib3
+
+      - name: Build OU maps (FOSA + AS + ZS)
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: python scripts/build_ou_map.py
+
+      - name: Backfill ZS
+        env:
+          DHIS2_BASE_URL: ${{ secrets.DHIS2_BASE_URL }}
+          DHIS2_USERNAME: ${{ secrets.DHIS2_USERNAME }}
+          DHIS2_PASSWORD: ${{ secrets.DHIS2_PASSWORD }}
+        run: |
+          END="${{ inputs.end }}"
+          python scripts/fetch_dhis2_zs.py \
+            --backfill \
+            --start "${{ inputs.start }}" \
+            ${END:+--end "$END"} \
+            --retry_failed --retry_limit 12 \
+            --out docs/data_zs
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data_zs docs/data_zs/ou_map_zs.json docs/data_zs/ou_map_zs.json.gz docs/data_zs/ou_map_zs.meta.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Backfill ZS ${{ inputs.start }}-${{ inputs.end || 'current' }}"
+          for i in 1 2 3; do
+            git pull --rebase origin main || true
+            git push origin HEAD:main && break
+            echo "Push attempt $i failed, retrying..."
+            sleep 5
+          done
