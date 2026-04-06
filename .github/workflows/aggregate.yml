@@ -2,7 +2,10 @@ name: Aggregate data for dashboard
 
 on:
   workflow_run:
-    workflows: ["*"]
+    workflows: 
+      - "Backfill DHIS2 (FOSA / AS / ZS)"
+      - "Sync DHIS2 -> GitHub (FOSA / AS / ZS)"
+      - "Update DHIS2 vaccination data"
     types: [completed]
   workflow_dispatch:
 
@@ -12,6 +15,9 @@ permissions:
 jobs:
   aggregate:
     runs-on: ubuntu-latest
+    # Sécurité : Coupe le job s'il tourne dans le vide plus de 20 minutes (au lieu de 47 min)
+    timeout-minutes: 20
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,5 +36,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A docs/data/dashboard/ docs/.nojekyll
-          git diff --staged --quiet || git commit -m "auto: refresh dashboard aggregates"
-          git push
+          
+          # Protection contre les erreurs si aucun fichier n'a été modifié
+          if ! git diff --staged --quiet; then
+            git commit -m "auto: refresh dashboard aggregates"
+            git push
+          else
+            echo "Aucun changement détecté, pas de nouveau commit."
+          fi
