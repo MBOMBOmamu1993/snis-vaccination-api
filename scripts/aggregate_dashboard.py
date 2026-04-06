@@ -238,9 +238,10 @@ DERIVED_SUM_SPECS: dict[str, list[str]] = {
     "VAR2_all": ["VAR2_0_11","VAR2_12_59"],
     "VAA_all": ["VAA_0_11","VAA_12_59"],
 }
-
 ALL_AGG_KEYS = list(SUM_SPECS.keys()) + list(DERIVED_SUM_SPECS.keys())
 
+# Ligne ajoutée pour la gestion de la mémoire :
+KEEP_KEYS = {"_Province", "_ZS", "_Antenne", "_AS", "_FOSA", "_YM", "Compl_tude", "Promptitude"}.union(ALL_AGG_KEYS)
 
 def nv(row: dict, field: str) -> float:
     v = row.get(field)
@@ -309,44 +310,56 @@ for month in months_list:
         fpath = MONTHLY / month / fname
         gz_path = MONTHLY / month / part.get("file", "")
 
-        lines: list[str] = []
+                # On ouvre le fichier de manière optimisée (Streaming)
+        f_obj = None
         if fpath.exists() and not fname.endswith(".gz"):
-            with open(fpath, encoding="utf-8") as f:
-                lines = f.readlines()
+            f_obj = open(fpath, encoding="utf-8")
         elif gz_path.exists() and str(gz_path).endswith(".gz"):
-            with gzip.open(gz_path, "rt", encoding="utf-8") as f:
-                lines = f.readlines()
+            f_obj = gzip.open(gz_path, "rt", encoding="utf-8")
         elif fpath.exists():
             try:
-                with gzip.open(fpath, "rt", encoding="utf-8") as f:
-                    lines = f.readlines()
+                # Test si c'est un gzip caché
+                with gzip.open(fpath, "rt", encoding="utf-8") as temp_f:
+                    temp_f.read(1)
+                f_obj = gzip.open(fpath, "rt", encoding="utf-8")
             except Exception:
-                with open(fpath, encoding="utf-8") as f:
-                    lines = f.readlines()
+                f_obj = open(fpath, encoding="utf-8")
 
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                row = json.loads(line)
-                ou = row.get("OrgUnit", "")
-                meta = OU_MAP.get(ou, {})
-                row["_Province"] = meta.get("Org2", "")
-                row["_ZS"] = meta.get("Org3", "")
-                row["_AS"] = meta.get("Org4", "")
-                row["_FOSA"] = meta.get("Org5", "")
-                row["_Antenne"] = resolve_antenne(row["_Province"], row["_ZS"])
-                row["_YM"] = period_to_ym(row.get("Period", ""))
-                # Sommations primaires
-                for sf, sources in SUM_SPECS.items():
-                    row[sf] = sum(nv(row, s) for s in sources)
-                # Sommations dérivées
-                for sf, sources in DERIVED_SUM_SPECS.items():
-                    row[sf] = sum(nv(row, s) for s in sources)
-                all_records.append(row)
-            except Exception:
-                pass
+        if not f_obj:
+            continue
+
+        # Lecture ligne par ligne pour ne pas saturer la RAM (OOM)
+        with f_obj as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    ou = row.get("OrgUnit", "")
+                    meta = OU_MAP.get(ou, {})
+                    
+                    row["_Province"] = meta.get("Org2", "")
+                    row["_ZS"] = meta.get("Org3", "")
+                    row["_AS"] = meta.get("Org4", "")
+                    row["_FOSA"] = meta.get("Org5", "")
+                    row["_Antenne"] = resolve_antenne(row["_Province"], row["_ZS"])
+                    row["_YM"] = period_to_ym(row.get("Period", ""))
+                    
+                    # Sommations primaires
+                    for sf, sources in SUM_SPECS.items():
+                        row[sf] = sum(nv(row, s) for s in sources)
+                        
+                    # Sommations dérivées
+                    for sf, sources in DERIVED_SUM_SPECS.items():
+                        row[sf] = sum(nv(row, s) for s in sources)
+                    
+                    # MAGIE : On supprime toutes les colonnes inutiles pour libérer la mémoire
+                    minimized_row = {k: row[k] for k in KEEP_KEYS if k in row}
+                    all_records.append(minimized_row)
+                    
+                except Exception:
+                    pass
 
     print(f"  {month}: {len(all_records)} total records")
 
