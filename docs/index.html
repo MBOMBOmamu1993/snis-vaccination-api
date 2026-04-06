@@ -2398,19 +2398,20 @@
 
             /* Tableau score */
             var h;
+            var TH = ' style="white-space:normal;max-width:72px;text-align:center;vertical-align:middle;line-height:1.3"';
             if (isFOSA) {
-                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-                    '<th>' + lvC.l + '</th>' +
-                    '<th>Nombre total ESS attendus</th>' +
-                    '<th>Nombre ESS ayant rapporté</th>' +
-                    '<th>Taux de rapportage (%)</th><th>Score Rapportage (/20)</th>' +
-                    '<th>Exhaustivité moyenne (%)</th><th>Score Exhaustivité (/20)</th>' +
-                    '<th>Cohérence vaccins de même âge</th><th>Score Cohérence vaccins (/20)</th>' +
-                    '<th>Cohérence vaccinés-doses disponibles</th><th>Score Cohérence doses (/20)</th>' +
-                    '<th>% Moyen valeurs atypiques</th><th>Score Valeurs Atypiques (/20)</th>' +
-                    '<th>Taux d\'abandon moyen (%)</th><th>Score Taux d\'Abandon (/20)</th>' +
-                    '<th>Score Total (/120)</th><th>% Score Total</th><th>Interprétation</th><th>Points à améliorer</th>' +
-                    '</tr></thead><tbody>';
+                    h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+    '<th>' + lvC.l + '</th>' +
+    '<th>Nombre total<br>ESS attendus</th>' +
+    '<th>Nombre ESS<br>ayant rapporté</th>' +
+    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
+    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
+    '<th>Cohérence vaccins<br>de même âge</th><th>Score Cohérence<br>vaccins (/20)</th>' +
+    '<th>Cohérence vaccinés<br>doses disponibles</th><th>Score Cohérence<br>doses (/20)</th>' +
+    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
+    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
+    '<th>Score Total<br>(/120)</th><th>% Score<br>Total</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
+    '</tr></thead><tbody>';
                 rows.forEach(function (r) {
                     var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                     var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
@@ -2426,18 +2427,18 @@
                         '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
                         '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
                 });
-            } else {
-                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-                    '<th>' + lvC.l + '</th>' +
-                    '<th>Nombre total ESS</th>' +
-                    '<th>Nombre ESS ayant rapporté</th>' +
-                    '<th>Taux de rapportage (%)</th><th>Score Rapportage (/20)</th>' +
-                    '<th>Exhaustivité moyenne (%)</th><th>Score Exhaustivité (/20)</th>' +
-                    '<th>% ESS bonne cohérence (vaccins + doses)</th><th>Score Cohérence (/20)</th>' +
-                    '<th>% Moyen valeurs atypiques</th><th>Score Valeurs Atypiques (/20)</th>' +
-                    '<th>Taux d\'abandon moyen (%)</th><th>Score Taux d\'Abandon (/20)</th>' +
-                    '<th>Score Composite (/100)</th><th>Interprétation</th><th>Points à améliorer</th>' +
-                    '</tr></thead><tbody>';
+              } else {
+    h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+    '<th>' + lvC.l + '</th>' +
+    '<th>Nombre<br>total ESS</th>' +
+    '<th>Nombre ESS<br>ayant rapporté</th>' +
+    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
+    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
+    '<th>% ESS bonne cohérence<br>(vaccins + doses)</th><th>Score<br>Cohérence (/20)</th>' +
+    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
+    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
+    '<th>Score Composite<br>(/100)</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
+    '</tr></thead><tbody>';
                 rows.forEach(function (r) {
                     var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                     var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
