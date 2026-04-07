@@ -1408,13 +1408,24 @@
                     Object.keys(og).filter(Boolean).forEach(function (org) {
                         var cv = sf(og[org], ag);
 
-                        var prev = AD.filter(function (r) {
-                            return r[orgK] === org && r.period <
-                                lastM;
-                        }).sort(function (a, b) { return b.period < a.period ? -1 : 1; }).slice(0, N);
-                        if (!prev.length) return;
-                        var avg = prev.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) /
-                            prev.length;
+                                    // Règle du 20ème jour pour définir la période limite
+                        var nowD = new Date(), tDay = nowD.getDate(), tYr = nowD.getFullYear(), tMo = nowD.getMonth() + 1;
+                        if (tDay < 20) { tMo -= 1; }
+                        if (tMo <= 0) { tMo += 12; tYr -= 1; }
+                        var limitPer = '' + tYr + (tMo < 10 ? '0' : '') + tMo;
+
+                        // Récupérer les 11 mois précédents
+                        var allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < limitPer; });
+                        var targetMos = allMos.slice(Math.max(0, allMos.length - N)); // N vaut 11
+
+                        // CORRECTION DU BUG : Agréger le total par mois avant de faire la moyenne
+                        var monthlyTotals = targetMos.map(function (m) {
+                            return AD.filter(function (r) { return r[orgK] === org && r.period === m; })
+                                .reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                        });
+
+                        if (!monthlyTotals.length) return;
+                        var avg = monthlyTotals.reduce(function (s, v) { return s + v; }, 0) / monthlyTotals.length;
                         if (!avg) return;
                         var v2 = (cv - avg) / avg;
                         xV.push(avg); yV.push(cv); col.push(Math.abs(v2) <= thr ? '#1565c0' :
@@ -1485,13 +1496,24 @@
                 AG_ALL.forEach(function (ag) {
                     var val = sf(recs, ag);
 
-                    /* Moyenne mobile N périodes précédentes */
-                    var prevData = AD.filter(function (r) { return r[ol.k] === orgName && r.period < lastM; });
-                    prevData.sort(function (a, b) { return b.period < a.period ? -1 : 1; });
-                    var sub = prevData.slice(0, N);
+                                        /* Moyenne mobile N périodes précédentes (avec règle du 20ème jour) */
+                    var nowD = new Date(), tDay = nowD.getDate(), tYr = nowD.getFullYear(), tMo = nowD.getMonth() + 1;
+                    if (tDay < 20) { tMo -= 1; }
+                    if (tMo <= 0) { tMo += 12; tYr -= 1; }
+                    var limitPer = '' + tYr + (tMo < 10 ? '0' : '') + tMo;
+
+                    var allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < limitPer; });
+                    var targetMos = allMos.slice(Math.max(0, allMos.length - N));
+
+                    // CORRECTION DU BUG : Agréger le total mensuel de la Zone
+                    var monthlyTotals = targetMos.map(function (m) {
+                        return AD.filter(function (r) { return r[ol.k] === orgName && r.period === m; })
+                            .reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                    });
+
                     var avg = 0;
-                    if (sub.length) {
-                        avg = sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length;
+                    if (monthlyTotals.length) {
+                        avg = monthlyTotals.reduce(function (s, v) { return s + v; }, 0) / monthlyTotals.length;
                     }
 
                     var v2 = 0;
@@ -2031,8 +2053,15 @@
             /* ── Niveau org dynamique + 12 derniers mois ── */
             var _ol4 = getOrgLevel(D);
             var _ok4 = _ol4.k;
-            var _nowP4 = new Date(), _curPer = '' + _nowP4.getFullYear() + ((_nowP4.getMonth() + 1) < 10 ? '0' : '') + (_nowP4.getMonth() + 1);
+                // Règle du 20ème jour 
+            var _nowP4 = new Date(), _d = _nowP4.getDate(), _mo = _nowP4.getMonth() + 1, _yr = _nowP4.getFullYear();
+            if (_d < 20) { _mo -= 1; }
+            if (_mo <= 0) { _mo += 12; _yr -= 1; }
+            var _curPer = '' + _yr + (_mo < 10 ? '0' : '') + _mo;
+
             var _allMosP4 = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < _curPer; });
+
+            // On garde bien les 12 derniers mois
             var _last12 = _allMosP4.slice(Math.max(0, _allMosP4.length - 12));
             var lastM12 = _last12.length > 0 ? _last12[_last12.length - 1] : null;
 
