@@ -187,29 +187,29 @@ SUM_SPECS: dict[str, list[str]] = {
 
     # ── Td ──
     "Td_2_plus": ["Td_2","Td_3","Td_4","Td_5"],
-     "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
+      "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
 
- # ── LOGISTIQUE (Triangulation) ──
- "BCG_re_ues": ["l1bhrYUPsde.WZwmzIuRvwV"],
- "BCG_stock_d_but": ["l1bhrYUPsde.GSCwhT2SCCr"],
- "DTC_re_ues": ["uAWIVDnGPGH.WZwmzIuRvwV"],
- "DTC_stock_d_but": ["uAWIVDnGPGH.GSCwhT2SCCr"],
- "PCV13_re_ues": ["hqqlXMmY95c.WZwmzIuRvwV"],
- "PCV13_stock_d_but": ["hqqlXMmY95c.GSCwhT2SCCr"],
- "VAR_re_ues": ["Hjlw6DpooIo.WZwmzIuRvwV"],
- "VAR_stock_d_but": ["Hjlw6DpooIo.GSCwhT2SCCr"],
- "VAT_re_ues": ["iFMn6ceqdIN.WZwmzIuRvwV"],
- "VAT_stock_d_but": ["iFMn6ceqdIN.GSCwhT2SCCr"],
- "VPO_re_ues": ["BCXcLiQNI8M.WZwmzIuRvwV"],
- "VPO_stock_d_but": ["BCXcLiQNI8M.GSCwhT2SCCr"],
- "VPI_re_ues": ["IisI6JudbS8.WZwmzIuRvwV"],
- "VPI_stock_d_but": ["IisI6JudbS8.GSCwhT2SCCr"],
- "ROTA_re_ues": ["MJrLCya7qzt.WZwmzIuRvwV"],
- "ROTA_stock_d_but": ["MJrLCya7qzt.GSCwhT2SCCr"],
- "VAA_re_ues": ["fQfJhi742vt.WZwmzIuRvwV"],
- "VAA_stock_d_but": ["fQfJhi742vt.GSCwhT2SCCr"],
- "VAP_re_ues": ["BfoCv6bUeBk.WZwmzIuRvwV"],
- "VAP_stock_d_but": ["BfoCv6bUeBk.GSCwhT2SCCr"],
+ # ── LOGISTIQUE (Triangulation) AVEC NOMS RENOMMÉS ──
+ "BCG_re_ues": ["BCG dose-recue mois"],
+ "BCG_stock_d_but": ["BCG dose-stock debut mois"],
+ "DTC_re_ues": ["DTC doses-recue mois"],
+ "DTC_stock_d_but": ["DTC dose-stock debut mois"],
+ "PCV13_re_ues": ["PCV13 dose-recue mois"],
+ "PCV13_stock_d_but": ["PCV13 dose-stock debut mois"],
+ "VAR_re_ues": ["VAR dose-recue mois"],
+ "VAR_stock_d_but": ["VAR dose-stock debut mois"],
+ "Td_re_ues": ["VAT dose-recue mois"],           # VAT correspond à Td
+ "Td_stock_d_but": ["VAT dose-stock debut mois"],  # VAT correspond à Td
+ "VPO_re_ues": ["VPO dose-recue mois"],
+ "VPO_stock_d_but": ["VPO dose-stock debut mois"],
+ "VPI_re_ues": ["VPI dose-recue mois"],
+ "VPI_stock_d_but": ["VPI dose-stock debut mois"],
+ "ROTA_re_ues": ["ROTA dose-recue mois"],
+ "ROTA_stock_d_but": ["ROTA dose-stock debut mois"],
+ "VAA_re_ues": ["VAA dose-recue mois"],
+ "VAA_stock_d_but": ["VAA dose-stock debut mois"],
+ "VAP_re_ues": ["VAP dose-recue mois"],            # VAP remplace HPV
+ "VAP_stock_d_but": ["VAP dose-stock debut mois"],   # VAP remplace HPV
 }
 
 # ==========================================================
