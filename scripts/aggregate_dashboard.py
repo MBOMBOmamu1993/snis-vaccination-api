@@ -187,7 +187,29 @@ SUM_SPECS: dict[str, list[str]] = {
 
     # ── Td ──
     "Td_2_plus": ["Td_2","Td_3","Td_4","Td_5"],
-    "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
+     "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
+
+ # ── LOGISTIQUE (Triangulation) ──
+ "BCG_re_ues": ["l1bhrYUPsde.WZwmzIuRvwV"],
+ "BCG_stock_d_but": ["l1bhrYUPsde.GSCwhT2SCCr"],
+ "DTC_re_ues": ["uAWIVDnGPGH.WZwmzIuRvwV"],
+ "DTC_stock_d_but": ["uAWIVDnGPGH.GSCwhT2SCCr"],
+ "PCV13_re_ues": ["hqqlXMmY95c.WZwmzIuRvwV"],
+ "PCV13_stock_d_but": ["hqqlXMmY95c.GSCwhT2SCCr"],
+ "VAR_re_ues": ["Hjlw6DpooIo.WZwmzIuRvwV"],
+ "VAR_stock_d_but": ["Hjlw6DpooIo.GSCwhT2SCCr"],
+ "VAT_re_ues": ["iFMn6ceqdIN.WZwmzIuRvwV"],
+ "VAT_stock_d_but": ["iFMn6ceqdIN.GSCwhT2SCCr"],
+ "VPO_re_ues": ["BCXcLiQNI8M.WZwmzIuRvwV"],
+ "VPO_stock_d_but": ["BCXcLiQNI8M.GSCwhT2SCCr"],
+ "VPI_re_ues": ["IisI6JudbS8.WZwmzIuRvwV"],
+ "VPI_stock_d_but": ["IisI6JudbS8.GSCwhT2SCCr"],
+ "ROTA_re_ues": ["MJrLCya7qzt.WZwmzIuRvwV"],
+ "ROTA_stock_d_but": ["MJrLCya7qzt.GSCwhT2SCCr"],
+ "VAA_re_ues": ["fQfJhi742vt.WZwmzIuRvwV"],
+ "VAA_stock_d_but": ["fQfJhi742vt.GSCwhT2SCCr"],
+ "VAP_re_ues": ["BfoCv6bUeBk.WZwmzIuRvwV"],
+ "VAP_stock_d_but": ["BfoCv6bUeBk.GSCwhT2SCCr"],
 }
 
 # ==========================================================
