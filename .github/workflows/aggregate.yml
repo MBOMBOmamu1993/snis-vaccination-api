@@ -15,7 +15,7 @@ permissions:
 # 🔒 Empêche les lancements en double si plusieurs synchronisations finissent en même temps
 concurrency:
   group: dashboard-aggregation
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   aggregate-all:
