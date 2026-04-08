@@ -922,10 +922,10 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                            var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
-                    fetch(BASE + '/meta.json?t=' + Date.now()),
-                    fetch(BASE + '/by_province.json?t=' + Date.now()),
-                    fetch(BASE + '/by_zs.json?t=' + Date.now()),
+                                        var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
+                    fetch(BASE + '/meta.json'),
+                    fetch(BASE + '/by_province.json'),
+                    fetch(BASE + '/by_zs.json'),
                     fetch(BASE + '/heatmap/manifest.json').catch(function () { return { ok: true, json: function () { return Promise.resolve({}); } } }),
                     fetch(BASE + '/by_fosa/manifest.json').catch(function () { return { ok: true, json: function () { return Promise.resolve({}); } } }),
                     fetch(BASE + '/by_as/manifest.json').catch(function () { return { ok: true, json: function () { return Promise.resolve({}); } } })
@@ -1108,10 +1108,36 @@
                 buildMultiFilter(c, info, avail, selArr, info.dim);
             });
 
-            /* 6) PÉRIODE - multichoix */
+                /* 6) PÉRIODE - multichoix */
             if (tab.fl.indexOf('period') >= 0) {
                 buildMultiFilter(c, { l: 'Période', k: 'period' }, S.vals.period, S.filters.period, 'period');
             }
+
+            /* 7) BOUTON RESET GLOBAL (Icône) */
+            var rstGlob = document.createElement('div');
+            rstGlob.innerHTML = '↺';
+            rstGlob.title = 'Réinitialiser tous les filtres par défaut';
+            // Style pour l'aligner à droite (margin-left:auto), le centrer verticalement et le rendre interactif
+            rstGlob.style.cssText = 'font-size:26px; color:#e74c3c; cursor:pointer; font-weight:900; margin-left:auto; align-self:center; padding:0 15px; transition:transform 0.2s;';
+
+            // Animation au survol
+            rstGlob.onmouseover = function () { this.style.transform = 'rotate(-90deg)'; };
+            rstGlob.onmouseout = function () { this.style.transform = 'rotate(0deg)'; };
+
+            // Action de réinitialisation
+            rstGlob.onclick = function () {
+                S.filters.province = S.vals.province[0] || '';
+                S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
+                S.filters.period = getDefaultPeriod(S.vals.period);
+
+                sp(50, 'Réinitialisation...', ' ⏳');
+                loadProvinceData(S.filters.province).then(function () {
+                    computeCascade(true); rFlt(); apFlt(); render();
+                    sp(100, '', ' ⚡ Prêt');
+                });
+            };
+            c.appendChild(rstGlob);
+
         }
 
         function buildMultiFilter(container, info, options, selected, dimKey) {
