@@ -5,9 +5,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Dashboard PEV de routine – RDC</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
-    <style>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+        <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+        <!-- Bibliothèques pour les exports PDF et PowerPoint -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
+        <style>
         * {
             margin: 0;
             padding: 0;
@@ -1828,9 +1831,17 @@
                 window._rstP3AG = function () { document.querySelectorAll('#p3DdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltP3(); };
                 setTimeout(function () { _fltP3(); }, 100);
 
-                /* ── Tableau Triangulation ── */
+                    /* ── Tableau Triangulation ── */
                 var triBox = E('div', 'cb');
-                var trFH = '<h4>🔺 Triangulation données de vaccination et doses de vaccins disponibles au cours du mois</h4>';
+
+                var trFH = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">';
+                trFH += '<h4 style="margin:0;border:none;padding:0;"> Triangulation données de vaccination et doses de vaccins disponibles au cours du mois</h4>';
+                trFH += '<div style="display:flex;gap:8px;">';
+                trFH += '<button onclick="_expTri(\'xls\')" style="background:#217346;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📥 Excel</button>';
+                trFH += '<button onclick="_expTri(\'pdf\')" style="background:#e74c3c;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 PDF</button>';
+                trFH += '<button onclick="_expTri(\'pptx\')" style="background:#d35400;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📊 PowerPoint</button>';
+                trFH += '</div></div>';
+
                 trFH += '<div style="display:flex;gap:10px;margin:8px 0 10px;flex-wrap:wrap;align-items:flex-start">';
                 trFH += '<div class="fg" style="min-width:180px"><label style="text-transform:uppercase;font-size:9px">' + ol3.l + ' <button class="frst" onclick="_rstTriOU()" title="Réinitialiser">↺</button></label>';
                 trFH += '<button class="fbtn" id="triBtnOU" onclick="_togADD(\'triDdOU\')"><span>Tout (' + ouList3.length + ')</span><span class="cn">' + ouList3.length + '</span><span>▼</span></button>';
@@ -1854,9 +1865,11 @@
                     var fLD = ld2.filter(function (r) { return selOU.indexOf(r[ol.k]) >= 0; });
                     var fAgs = TRIANG_DEFS.filter(function (ag, ai) { return selAG.indexOf(ai) >= 0; });
                     if (!fAgs.length) fAgs = TRIANG_DEFS;
-                    var ouG = grp(fLD, function (r) { return r[ol.k]; });
+                            var ouG = grp(fLD, function (r) { return r[ol.k]; });
                     /* En-tête sur 2 lignes : 1 colonne org unit | colonnes groupées par antigène | 2 colonnes résumé */
-                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead>';
+
+                    // Ajout de l'ID id="triTbl" sur la table pour l'exportation
+                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="triTbl"><thead>';
                     h += '<tr><th rowspan="2" style="min-width:120px">' + ol.l + '</th>';
                     fAgs.forEach(function (ag) { h += '<th colspan="3" style="text-align:center;border-bottom:1px solid #bbb">' + ag.lbl + '</th>'; });
                     h += '<th rowspan="2" style="white-space:nowrap">Proportion<br>écarts négatifs</th><th rowspan="2" style="white-space:nowrap">Cohérence<br>vaccinés-doses</th></tr>';
@@ -1888,8 +1901,53 @@
                     _updABtn('triDdOU', 'triBtnOU'); _updABtn('triDdAG', 'triBtnAG');
                 };
                 window._rstTriOU = function () { document.querySelectorAll('#triDdOU .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
-                window._rstTriAG = function () { document.querySelectorAll('#triDdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
+                        window._rstTriAG = function () { document.querySelectorAll('#triDdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
+
                 setTimeout(function () { _fltTri(); }, 200);
+
+                // --- LOGIQUE D'EXPORTATION ---
+                window._expTri = function (type) {
+                    var tbl = document.getElementById('triTbl');
+                    if (!tbl) { alert('Aucune donnée à exporter.'); return; }
+                    var filename = 'Triangulation_' + S.filters.period[0];
+
+                    if (type === 'xls') {
+                        // Export natif en Excel (conservation des couleurs et fusions de cellules)
+                        var uri = 'data:application/vnd.ms-excel;base64,';
+                        var tmpl = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><table border="1">{table}</table></body></html>';
+                        var base64 = function (s) { return window.btoa(unescape(encodeURIComponent(s))) };
+                        var format = function (s, c) { return s.replace(/{(\w+)}/g, function (m, p) { return c[p]; }) };
+                        var ctx = { worksheet: 'Triangulation', table: tbl.innerHTML };
+                        var link = document.createElement('a');
+                        link.download = filename + '.xls';
+                        link.href = uri + base64(format(tmpl, ctx));
+                        link.click();
+                    }
+                    else if (type === 'pdf') {
+                        // Export PDF via html2pdf (prend une "photo" parfaite du tableau)
+                        if (typeof html2pdf === 'undefined') { alert('Chargement PDF en cours... Veuillez réessayer.'); return; }
+                        var wrap = document.getElementById('triTblWrap');
+                        var opt = {
+                            margin: 0.3,
+                            filename: filename + '.pdf',
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2, useCORS: true },
+                            jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' } // A3 car le tableau est très large
+                        };
+                        html2pdf().set(opt).from(wrap).save();
+                    }
+                    else if (type === 'pptx') {
+                        // Export PPTX via PptxGenJS
+                        if (typeof PptxGenJS === 'undefined') { alert('Chargement PPTX en cours... Veuillez réessayer.'); return; }
+                        var pptx = new PptxGenJS();
+                        pptx.layout = 'LAYOUT_WIDE';
+                        var slide = pptx.addSlide();
+                        slide.addText('Triangulation des données - ' + S.filters.period[0], { x: 0.5, y: 0.3, fontSize: 16, color: '0b3a6f', bold: true });
+                        // autoPage: true permet de découper le tableau sur plusieurs slides s'il y a trop de Zones de Santé
+                        slide.addTableToSlides('triTbl', { x: 0.5, y: 0.8, w: '90%', autoPage: true, color: '333333', border: { pt: 1, color: 'cccccc' } });
+                        pptx.writeFile({ fileName: filename + '.pptx' });
+                    }
+                };
             }
 
             /* Dropout DTC1-DTC3 */
