@@ -858,13 +858,18 @@
         function missAg(r) { return obAg(r).filter(function (a) { return !(Number(r[a + '_f']) || 0); }); }
         function mAvg(fosa, ag, per, data, N) { var d = data.filter(function (r) { return r.org5 === fosa && r.period < per && (Number(r[ag]) || 0) > 0; }); d.sort(function (a, b) { return b.period < a.period ? -1 : 1; }); var sub = d.slice(0, N); if (!sub.length) return null; return sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length; }
         function chkCoh(r) { var tot = 0, bad = 0; SAME_AGE.forEach(function (g) { for (var i = 0; i < g.v.length - 1; i++) { tot++; var a = Number(r[g.v[i]]) || 0, b = Number(r[g.v[i + 1]]) || 0; var den = b || a || 1; if (Math.abs((a - b) / den) > C.CD) bad++; } }); return tot === 0 || (bad / tot) <= 0.30; }
-        var TRIANG_DEFS = [
-            { lbl: 'BCG 0-11 mois', vacs: ['BCG'], stock: 'BCG_stock_d_but', recv: 'BCG_re_ues' },
-            { lbl: 'DTC 0-11 mois', vacs: ['DTC1', 'DTC2', 'DTC3'], stock: 'DTC_stock_d_but', recv: 'DTC_re_ues' },
-            { lbl: 'PCV13 0-11 mois', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'], stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues' },
-            { lbl: 'VAR 0-11 mois', vacs: ['VAR1', 'VAR2'], stock: 'VAR_stock_d_but', recv: 'VAR_re_ues' },
-            { lbl: 'Td (toutes doses)', vacs: ['TD'], stock: 'Td_stock_d_but', recv: 'Td_re_ues' }
-        ];
+            var TRIANG_DEFS = [
+                    { lbl: 'BCG', vacs: ['BCG'], stock: 'BCG_stock_d_but', recv: 'BCG_re_ues' },
+                    { lbl: 'VPO', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'], stock: 'VPO_stock_d_but', recv: 'VPO_re_ues' },
+                    { lbl: 'DTC/Penta', vacs: ['DTC1', 'DTC2', 'DTC3'], stock: 'DTC_stock_d_but', recv: 'DTC_re_ues' },
+                    { lbl: 'PCV13', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'], stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues' },
+                    { lbl: 'ROTA', vacs: ['ROTA1', 'ROTA2', 'ROTA3'], stock: 'ROTA_stock_d_but', recv: 'ROTA_re_ues' },
+                    { lbl: 'VPI', vacs: ['VPI1', 'VPI2'], stock: 'VPI_stock_d_but', recv: 'VPI_re_ues' },
+                    { lbl: 'VAR', vacs: ['VAR1', 'VAR2'], stock: 'VAR_stock_d_but', recv: 'VAR_re_ues' },
+                    { lbl: 'VAA', vacs: ['VAA'], stock: 'VAA_stock_d_but', recv: 'VAA_re_ues' },
+                    { lbl: 'Td (VAT)', vacs: ['TD'], stock: 'VAT_stock_d_but', recv: 'VAT_re_ues' },
+                    { lbl: 'HPV', vacs: ['VAP'], stock: 'VAP_stock_d_but', recv: 'VAP_re_ues' }
+                ];
         function chkTriang(rc) { var neg = 0; TRIANG_DEFS.forEach(function (ag) { var st = rc.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0); var rv = rc.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0); var vac = ag.vacs.reduce(function (s, v) { return s + rc.reduce(function (s2, r) { return s2 + (Number(r[v]) || 0); }, 0); }, 0); if ((st + rv - vac) < 0) neg++; }); return TRIANG_DEFS.length === 0 || (neg / TRIANG_DEFS.length) <= 0.30; }
         function ccl(v) { return v >= 80 ? 'cg' : v >= 50 ? 'cy' : 'crd'; }
         function sB(val, bar) { for (var i = 0; i < bar.length; i++) { if (val >= bar[i][0]) return bar[i][1]; } return 0; }
@@ -905,9 +910,11 @@
                 var val = src ? (Number(r[src]) || 0) : 0;
                 rec[ag] = val; rec[ag + '_f'] = val;
             });
-            ['BCG_stock_d_but','BCG_re_ues','DTC_stock_d_but','DTC_re_ues',
-             'PCV13_stock_d_but','PCV13_re_ues','VAR_stock_d_but','VAR_re_ues',
-             'Td_stock_d_but','Td_re_ues'].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
+                    ['BCG_stock_d_but', 'BCG_re_ues', 'DTC_stock_d_but', 'DTC_re_ues',
+                'PCV13_stock_d_but', 'PCV13_re_ues', 'VAR_stock_d_but', 'VAR_re_ues',
+                'VAT_stock_d_but', 'VAT_re_ues', 'VPO_stock_d_but', 'VPO_re_ues',
+                'VPI_stock_d_but', 'VPI_re_ues', 'ROTA_stock_d_but', 'ROTA_re_ues',
+                'VAA_stock_d_but', 'VAA_re_ues', 'VAP_stock_d_but', 'VAP_re_ues'].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
             return rec;
         }
 
