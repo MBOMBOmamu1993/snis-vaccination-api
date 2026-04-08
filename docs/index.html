@@ -1019,11 +1019,8 @@
         }
 
         /* ═══ CASCADING FILTERS ═══ */
-        /* downFrom : niveau qui vient de changer ('antenne'|'zs'|'as') → ses enfants sont auto-remplis si vides */
-        function computeCascade(autoFill, downFrom) {
+        function computeCascade(autoFill) {
             var src = S.data;
-            var _order = ['antenne', 'zs', 'as', 'fosa'];
-            var _from = downFrom ? _order.indexOf(downFrom) : -1;
 
             var avAnt = uv(src, function (r) { return r.antenne; });
             S.cascaded.antenne = avAnt;
@@ -1034,19 +1031,19 @@
             var avZS = uv(srcAnt, function (r) { return r.org3; });
             S.cascaded.zs = avZS;
             S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
-            if ((autoFill || _from === 0) && !S.filters.zs.length) S.filters.zs = avZS.slice();
+            if (autoFill && !S.filters.zs.length) S.filters.zs = avZS.slice();
 
             var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
             var avAS = uv(srcZS, function (r) { return r.org4; });
             S.cascaded.as = avAS;
             S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
-            if ((autoFill || _from <= 1) && _from >= 0 && !S.filters.as.length) S.filters.as = avAS.slice();
+            if (autoFill && !S.filters.as.length) S.filters.as = avAS.slice();
 
             var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
             var avFOSA = uv(srcAS, function (r) { return r.org5; });
             S.cascaded.fosa = avFOSA;
             S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
-            if ((autoFill || _from <= 2) && _from >= 0 && !S.filters.fosa.length) S.filters.fosa = avFOSA.slice();
+            if (autoFill && !S.filters.fosa.length) S.filters.fosa = avFOSA.slice();
         }
         /* ═══ APPLY FILTER ═══ */
         function apFlt() {
@@ -1156,7 +1153,7 @@
                 e.stopPropagation();
                 if (dimKey === 'period') { S.filters.period = getDefaultPeriod(S.vals.period); }
                 else { S.filters[dimKey] = (S.cascaded[dimKey] || options).slice(); }
-                if (dimKey !== 'period') computeCascade(false, dimKey);
+                if (dimKey !== 'period') computeCascade(false);
                 rFlt();                    // 🔄 refresh cascaded lists + button labels
                 apFlt(); render();
             };
@@ -1191,7 +1188,7 @@
                 if (aC.checked) { S.filters[dimKey] = options.slice(); }
                 else { S.filters[dimKey] = []; }
 
-                if (dimKey !== ‘period’) computeCascade(false, dimKey);
+                if (dimKey !== 'period') computeCascade(false);
                 apFlt();                    // 1) met à jour les données
                 rFlt(); render();           // 2) reconstruit l’UI
 
@@ -1225,7 +1222,7 @@
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
 
-                    if (dimKey !== 'period') computeCascade(false, dimKey);
+                    if (dimKey !== 'period') computeCascade(false);
                     apFlt();
                     rFlt(); render();
 
