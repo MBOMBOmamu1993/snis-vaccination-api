@@ -922,10 +922,10 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
+                            var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
                     fetch(BASE + '/meta.json?t=' + Date.now()),
-                    fetch(BASE + '/by_province.json'),
-                    fetch(BASE + '/by_zs.json'),
+                    fetch(BASE + '/by_province.json?t=' + Date.now()),
+                    fetch(BASE + '/by_zs.json?t=' + Date.now()),
                     fetch(BASE + '/heatmap/manifest.json').catch(function () { return { ok: true, json: function () { return Promise.resolve({}); } } }),
                     fetch(BASE + '/by_fosa/manifest.json').catch(function () { return { ok: true, json: function () { return Promise.resolve({}); } } }),
                     fetch(BASE + '/by_as/manifest.json').catch(function () { return { ok: true, json: function () { return Promise.resolve({}); } } })
