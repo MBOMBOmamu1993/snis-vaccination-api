@@ -1045,6 +1045,15 @@
             S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
             if (autoFill && !S.filters.fosa.length) S.filters.fosa = avFOSA.slice();
         }
+        /* Reset + auto-remplit tous les filtres enfants d'un niveau donné */
+        function autoFillDown(fromKey) {
+            var order = ['antenne', 'zs', 'as', 'fosa'];
+            var idx = order.indexOf(fromKey);
+            if (idx < 0) return;
+            for (var i = idx + 1; i < order.length; i++) { S.filters[order[i]] = []; }
+            computeCascade(false);
+            for (var i = idx + 1; i < order.length; i++) { S.filters[order[i]] = (S.cascaded[order[i]] || []).slice(); }
+        }
         /* ═══ APPLY FILTER ═══ */
         function apFlt() {
             var f = S.filters;
@@ -1152,8 +1161,7 @@
             rst.onclick = function (e) {
                 e.stopPropagation();
                 if (dimKey === 'period') { S.filters.period = getDefaultPeriod(S.vals.period); }
-                else { S.filters[dimKey] = (S.cascaded[dimKey] || options).slice(); }
-                if (dimKey !== 'period') computeCascade(false);
+                else { S.filters[dimKey] = (S.cascaded[dimKey] || options).slice(); autoFillDown(dimKey); }
                 rFlt();                    // 🔄 refresh cascaded lists + button labels
                 apFlt(); render();
             };
@@ -1188,7 +1196,7 @@
                 if (aC.checked) { S.filters[dimKey] = options.slice(); }
                 else { S.filters[dimKey] = []; }
 
-                if (dimKey !== 'period') computeCascade(false);
+                if (dimKey !== ‘period’) autoFillDown(dimKey);
                 apFlt();                    // 1) met à jour les données
                 rFlt(); render();           // 2) reconstruit l’UI
 
@@ -1222,7 +1230,7 @@
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
 
-                    if (dimKey !== 'period') computeCascade(false);
+                    if (dimKey !== 'period') autoFillDown(dimKey);
                     apFlt();
                     rFlt(); render();
 
