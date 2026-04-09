@@ -1860,7 +1860,7 @@
                 trFH += '<div class="fd" id="triDdAG"><div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'triDdAG\')"><span style="font-weight:700">Tout</span></div>';
                 TRIANG_DEFS.forEach(function (ag, ai) { trFH += '<div class="fi"><input type="checkbox" checked value="' + ai + '" onchange="_fltTri()"><span>' + ag.lbl + '</span></div>'; });
                 trFH += '</div></div></div>';
-                trFH += '<p style="font-size:10px;color:#555;margin:0 0 8px"><em>Dose disponible = Stock début + Reçues au cours du mois. Écart négatif (rouge) = doses insuffisantes. Cohérence : Oui si ≤30% d\'antigènes ont un écart négatif.</em></p>';
+                trFH += '<p style="font-size:10px;color:#555;margin:0 0 8px"><em>Dose disponible = Stock début + Reçues au cours du mois. Écart négatif (rouge) = doses insuffisantes. Cohérence : Oui si aucun antigène n\'a un écart négatif (0%), Non sinon.</em></p>';
                 trFH += '<div id="triTblWrap"></div>';
                 triBox.innerHTML = trFH; c.appendChild(triBox);
 
@@ -1898,8 +1898,8 @@
                             h += '<td style="text-align:right;font-weight:700;color:' + (ec < 0 ? '#e74c3c' : '#27ae60') + '">' + (ec >= 0 ? '+' : '') + ec.toLocaleString() + '</td>';
                         });
                         var propNeg = fAgs.length > 0 ? (neg / fAgs.length * 100) : 0;
-                        var cohOui = propNeg <= 30;
-                        h += '<td style="text-align:center;font-weight:700;color:' + (propNeg > 30 ? '#e74c3c' : '#27ae60') + '">' + propNeg.toFixed(0) + '%</td>';
+                        var cohOui = propNeg === 0;
+                        h += '<td style="text-align:center;font-weight:700;color:' + (propNeg > 0 ? '#e74c3c' : '#27ae60') + '">' + propNeg.toFixed(0) + '%</td>';
                         h += '<td class="' + (cohOui ? 'cg' : 'crd') + '" style="font-weight:800;text-align:center">' + (cohOui ? 'Oui ✓' : 'Non ✗') + '</td></tr>';
                     });
                     h += '</tbody></table></div>';
