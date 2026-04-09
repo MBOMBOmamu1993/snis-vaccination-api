@@ -1956,30 +1956,74 @@
                     }
                     else if (type === 'pptx') {
                         if (typeof PptxGenJS === 'undefined') { alert('Chargement PPTX en cours... Veuillez réessayer.'); return; }
-                        if (typeof html2canvas === 'undefined') { alert('Chargement en cours... Veuillez réessayer.'); return; }
-                        var wrap2 = document.getElementById('triTblWrap');
-                        var scrollDiv2 = wrap2.querySelector('.tw');
-                        var oldOF2 = ''; var oldW2 = '';
-                        if (scrollDiv2) {
-                            oldOF2 = scrollDiv2.style.overflowX; oldW2 = scrollDiv2.style.maxWidth;
-                            scrollDiv2.style.overflowX = 'visible'; scrollDiv2.style.maxWidth = 'none';
-                        }
-                        html2canvas(wrap2, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 }).then(function (canvas) {
-                            if (scrollDiv2) { scrollDiv2.style.overflowX = oldOF2; scrollDiv2.style.maxWidth = oldW2; }
-                            var imgData = canvas.toDataURL('image/png');
-                            var pptx = new PptxGenJS();
-                            pptx.defineLayout({ name: 'CUSTOM', width: 13.33, height: 7.5 });
-                            pptx.layout = 'CUSTOM';
-                            var slide = pptx.addSlide();
-                            slide.addText('Triangulation des données - ' + S.filters.period[0], {
-                                x: 0.3, y: 0.1, fontSize: 14, color: '0b3a6f', bold: true
+                        var pptx = new PptxGenJS();
+                        pptx.defineLayout({ name: 'CUSTOM', width: 20, height: 11.25 });
+                        pptx.layout = 'CUSTOM';
+
+                        // Parser le tableau HTML en rows PptxGenJS
+                        var tblEl2 = document.getElementById('triTbl');
+                        var allRows = [];
+                        var sections = [tblEl2.querySelector('thead'), tblEl2.querySelector('tbody')];
+                        sections.forEach(function (sec) {
+                            if (!sec) return;
+                            var trs = sec.querySelectorAll('tr');
+                            trs.forEach(function (tr) {
+                                var row = [];
+                                var cells = tr.querySelectorAll('th, td');
+                                cells.forEach(function (cell) {
+                                    var opts = {
+                                        fontSize: 7,
+                                        border: { pt: 0.5, color: 'CCCCCC' },
+                                        valign: 'middle',
+                                        align: 'center'
+                                    };
+                                    if (cell.tagName === 'TH') {
+                                        opts.bold = true;
+                                        opts.fill = { color: '0b3a6f' };
+                                        opts.color = 'FFFFFF';
+                                        opts.fontSize = 6;
+                                    } else {
+                                        opts.fill = { color: 'FFFFFF' };
+                                        opts.color = '333333';
+                                        var cs = window.getComputedStyle(cell);
+                                        if (cs.color.indexOf('255, 0') >= 0 || cs.color.indexOf('231, 76') >= 0) opts.color = 'e74c3c';
+                                        else if (cs.color.indexOf('0, 128') >= 0 || cs.color.indexOf('39, 174') >= 0 || cs.color.indexOf('46, 125') >= 0) opts.color = '27ae60';
+                                    }
+                                    var cellDef = { text: cell.innerText.trim(), options: opts };
+                                    if (cell.colSpan > 1) cellDef.options.colspan = cell.colSpan;
+                                    if (cell.rowSpan > 1) cellDef.options.rowspan = cell.rowSpan;
+                                    row.push(cellDef);
+                                });
+                                allRows.push(row);
                             });
-                            var imgW = 12.7;
-                            var imgH = imgW * (canvas.height / canvas.width);
-                            if (imgH > 6.8) { imgH = 6.8; imgW = imgH * (canvas.width / canvas.height); }
-                            slide.addImage({ data: imgData, x: 0.3, y: 0.5, w: imgW, h: imgH });
-                            pptx.writeFile({ fileName: filename + '.pptx' });
                         });
+
+                        // Titre
+                        var slide0 = pptx.addSlide();
+                        slide0.addText('Triangulation des données - ' + S.filters.period[0], {
+                            x: 0.5, y: 0.2, fontSize: 18, color: '0b3a6f', bold: true, w: 19
+                        });
+
+                        // Découper en pages de 20 lignes (header + data)
+                        var headerRows = [];
+                        var dataRows = [];
+                        allRows.forEach(function (r, i) {
+                            if (i < 2) headerRows.push(r);
+                            else dataRows.push(r);
+                        });
+
+                        var rowsPerPage = 18;
+                        for (var p = 0; p < dataRows.length; p += rowsPerPage) {
+                            var sl = (p === 0) ? slide0 : pptx.addSlide();
+                            var chunk = headerRows.concat(dataRows.slice(p, p + rowsPerPage));
+                            sl.addTable(chunk, {
+                                x: 0.2, y: 0.6, w: 19.5,
+                                rowH: 0.35,
+                                autoPage: false
+                            });
+                        }
+
+                        pptx.writeFile({ fileName: filename + '.pptx' });
                     }
                 };
             }
