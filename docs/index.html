@@ -1359,9 +1359,12 @@
         }
 
         /* ═══ P1: COMPLÉTUDE & PROMPTITUDE ═══ */
-        function rP1(c) {
-            var D = S.flt, rep = D.filter(isRep), nT = D.length, nNR = nT - rep.length;
-            var pR = pct(rep.length, nT);
+
+            function rP1(c) {
+
+                var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }).sort(), rep = D.filter(isRep), nT = D.length, nNR = nT - rep.length;
+
+                var pR = pct(rep.length, nT);
             var aE = rep.length ? rep.reduce(function (s, r) { return s + exh(r); }, 0) / rep.length : 0;
             var nF = uv(D, function (r) { return r.org5; }).length;
             c.appendChild(E('div', 'kr',
