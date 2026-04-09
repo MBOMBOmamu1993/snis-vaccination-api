@@ -1020,31 +1020,31 @@
 
         /* ═══ CASCADING FILTERS ═══ */
         function computeCascade(autoFill) {
-            var src = S.data;
+                var src = S.data;
 
-            var avAnt = uv(src, function (r) { return r.antenne; });
-            S.cascaded.antenne = avAnt;
-            S.filters.antenne = S.filters.antenne.filter(function (a) { return avAnt.indexOf(a) >= 0; });
-            if (autoFill && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
+                var avAnt = uv(src, function (r) { return r.antenne; });
+                S.cascaded.antenne = avAnt;
+                S.filters.antenne = S.filters.antenne.filter(function (a) { return avAnt.indexOf(a) >= 0; });
+                if (!S.filters.antenne.length) S.filters.antenne = avAnt.slice();
 
-            var srcAnt = S.filters.antenne.length ? src.filter(function (r) { return S.filters.antenne.indexOf(r.antenne) >= 0; }) : src;
-            var avZS = uv(srcAnt, function (r) { return r.org3; });
-            S.cascaded.zs = avZS;
-            S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
-            if (autoFill && !S.filters.zs.length) S.filters.zs = avZS.slice();
+                var srcAnt = S.filters.antenne.length ? src.filter(function (r) { return S.filters.antenne.indexOf(r.antenne) >= 0; }) : src;
+                var avZS = uv(srcAnt, function (r) { return r.org3; });
+                S.cascaded.zs = avZS;
+                S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
+                if (!S.filters.zs.length) S.filters.zs = avZS.slice();
 
-            var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
-            var avAS = uv(srcZS, function (r) { return r.org4; });
-            S.cascaded.as = avAS;
-            S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
-            if (autoFill && !S.filters.as.length) S.filters.as = avAS.slice();
+                var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
+                var avAS = uv(srcZS, function (r) { return r.org4; });
+                S.cascaded.as = avAS;
+                S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
+                if (!S.filters.as.length) S.filters.as = avAS.slice();
 
-            var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
-            var avFOSA = uv(srcAS, function (r) { return r.org5; });
-            S.cascaded.fosa = avFOSA;
-            S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
-            if (autoFill && !S.filters.fosa.length) S.filters.fosa = avFOSA.slice();
-        }
+                var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
+                var avFOSA = uv(srcAS, function (r) { return r.org5; });
+                S.cascaded.fosa = avFOSA;
+                S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
+                if (!S.filters.fosa.length) S.filters.fosa = avFOSA.slice();
+            }
         /* ═══ APPLY FILTER ═══ */
         function apFlt() {
             var f = S.filters;
@@ -1924,27 +1924,36 @@
                         link.click();
                     }
                     else if (type === 'pdf') {
-                        // Export PDF via html2pdf (prend une "photo" parfaite du tableau)
                         if (typeof html2pdf === 'undefined') { alert('Chargement PDF en cours... Veuillez réessayer.'); return; }
                         var wrap = document.getElementById('triTblWrap');
+                        // Retirer temporairement overflow pour que html2canvas capture tout
+                        var scrollDiv = wrap.querySelector('.tw');
+                        var oldOverflow = '';
+                        if (scrollDiv) { oldOverflow = scrollDiv.style.overflowX; scrollDiv.style.overflowX = 'visible'; }
                         var opt = {
                             margin: 0.3,
                             filename: filename + '.pdf',
                             image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2, useCORS: true },
-                            jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' } // A3 car le tableau est très large
+                            html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+                            jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
                         };
-                        html2pdf().set(opt).from(wrap).save();
+                        html2pdf().set(opt).from(wrap).save().then(function () {
+                            if (scrollDiv) scrollDiv.style.overflowX = oldOverflow;
+                        });
                     }
                     else if (type === 'pptx') {
-                        // Export PPTX via PptxGenJS
                         if (typeof PptxGenJS === 'undefined') { alert('Chargement PPTX en cours... Veuillez réessayer.'); return; }
                         var pptx = new PptxGenJS();
                         pptx.layout = 'LAYOUT_WIDE';
-                        var slide = pptx.addSlide();
-                        slide.addText('Triangulation des données - ' + S.filters.period[0], { x: 0.5, y: 0.3, fontSize: 16, color: '0b3a6f', bold: true });
-                        // autoPage: true permet de découper le tableau sur plusieurs slides s'il y a trop de Zones de Santé
-                        slide.addTableToSlides('triTbl', { x: 0.5, y: 0.8, w: '90%', autoPage: true, color: '333333', border: { pt: 1, color: 'cccccc' } });
+                        pptx.tableToSlides('triTbl', {
+                            x: 0.3, y: 0.5, w: 12.5,
+                            autoPage: true,
+                            autoPageRepeatHeader: true,
+                            color: '333333',
+                            border: { pt: 1, color: 'cccccc' },
+                            colW: [],
+                            masterTitle: 'Triangulation des données - ' + S.filters.period[0]
+                        });
                         pptx.writeFile({ fileName: filename + '.pptx' });
                     }
                 };
