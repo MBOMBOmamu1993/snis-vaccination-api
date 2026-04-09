@@ -898,12 +898,7 @@
             if (months.indexOf(ym) >= 0) return [ym];
             return [months[months.length - 1]];
         }
-    function _getChartCutoff() {
-        var now = new Date(), day = now.getDate(), yr = now.getFullYear(), mo = now.getMonth() + 1;
-        if (day < 20) { mo -= 2; } else { mo -= 1; }
-        if (mo <= 0) { mo += 12; yr -= 1; }
-        return '' + yr + (mo < 10 ? '0' : '') + mo;
-    }
+
         /* ═══ TRANSFORM RECORD ═══ */
         function transformRecord(r) {
             var rec = {
@@ -1100,8 +1095,8 @@
                     S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                     sp(50, 'Chargement province...', '⏳ Changement...');
                     loadProvinceData(sel.value).then(function () {
-                        computeCascade(null); rFlt(); apFlt();
-                        requestAnimationFrame(function () { render(); sp(100, '', '⚡ Prêt'); });
+                        computeCascade(null); rFlt(); apFlt(); render();
+                        sp(100, '', '⚡ Prêt');
                     });
                 };
                 fg.appendChild(sel); c.appendChild(fg);
@@ -1382,25 +1377,14 @@
                 }, 60 + idx * 30);
             });
 
-            var _allMosRap = uv(AD, function (r) { return r.period; }).sort();
-            var _cutRap = _getChartCutoff();
-            _allMosRap = _allMosRap.filter(function (m) { return m >= '202501' && m <= _cutRap; });
-            var _selPer = S.filters.period;
-            var mosRap;
-            if (_selPer.length === 1) {
-                mosRap = _allMosRap.filter(function (m) { return m <= _selPer[0]; });
-            } else if (_selPer.length > 1 && _selPer.length < S.vals.period.length) {
-                mosRap = _selPer.slice().sort();
-            } else {
-                mosRap = _allMosRap;
-            }
-            var bMRap = grp(AD, function (r) { return r.period; });
-            var pM = mosRap.map(function (m) { var d = (bMRap[m] || []); var r2 = d.filter(isRep).length; return d.length ? (r2 / d.length * 100) : 0; });
+            var bM = grp(D, function (r) { return r.period; }), mos = Object.keys(bM).filter(Boolean).sort();
+            var pM = mos.map(function (m) { var d = bM[m], r2 = d.filter(isRep).length; return d.length ? (r2 / d.length * 100) : 0; });
             var lb2 = E('div', 'cb'); lb2.innerHTML = '<h4>📈 % rapportage par mois</h4><canvas id="pMC" height="50"></canvas>'; c.appendChild(lb2);
             setTimeout(function () {
                 var x = document.getElementById('pMC'); if (!x) return;
-                S.charts.pMC = new Chart(x, { type: 'line', data: { labels: mosRap.map(mL), datasets: [{ label: '%', data: pM, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
+                S.charts.pMC = new Chart(x, { type: 'line', data: { labels: mos.map(mL), datasets: [{ label: '%', data: pM, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 300);
+
             /* Heatmap */
             var hb = E('div', 'cb'); hb.innerHTML = '<h4>🗓️ Soumissions FOSA × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#27ae60"></div> Oui</div><div class="lgi"><div class="lgd" style="background:#e74c3c"></div> Non</div></div><div id="HM" style="width:100%;min-height:300px"></div>'; c.appendChild(hb);
             setTimeout(function () {
@@ -2332,27 +2316,15 @@
                 setTimeout(function () { _renderP4Chart(); }, 120);
             })();
             /* Tendance mensuelle */
-            var _allMosAt = uv(AD, function (r) { return r.period; }).sort();
-            var _cutAt = _getChartCutoff();
-            _allMosAt = _allMosAt.filter(function (m) { return m >= '202501' && m <= _cutAt; });
-            var _selPerAt = S.filters.period;
-            var mosAt;
-            if (_selPerAt.length === 1) {
-                mosAt = _allMosAt.filter(function (m) { return m <= _selPerAt[0]; });
-            } else if (_selPerAt.length > 1 && _selPerAt.length < S.vals.period.length) {
-                mosAt = _selPerAt.slice().sort();
-            } else {
-                mosAt = _allMosAt;
-            }
             var b2 = E('div', 'cb'); b2.innerHTML = '<h4>📈 Tendance atypiques</h4><canvas id="atT" height="50"></canvas>'; c.appendChild(b2);
             setTimeout(function () {
                 var x = document.getElementById('atT'); if (!x) return;
-                var td = mosAt.map(function (m) {
-                    var mD = AD.filter(function (r) { return r.period === m && isRep(r); }); var t = 0, a = 0;
+                var td = mos.map(function (m) {
+                    var mD = D.filter(function (r) { return r.period === m && isRep(r); }); var t = 0, a = 0;
                     mD.forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; t++; var avg = mAvg(r.org5, ag, m, AD, N); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) a++; }); });
                     return { t: t, a: a, p: t ? (a / t * 100) : 0 };
                 });
-                S.charts.atT = new Chart(x, { type: 'line', data: { labels: mosAt.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
+                S.charts.atT = new Chart(x, { type: 'line', data: { labels: mos.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
             }, 160);
 
             /* ═══ Org unit encodant des données non prévues ═══ */
