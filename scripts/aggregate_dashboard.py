@@ -264,7 +264,11 @@ ALL_AGG_KEYS = list(SUM_SPECS.keys()) + list(DERIVED_SUM_SPECS.keys())
 
 # Ligne ajoutée pour la gestion de la mémoire :
 KEEP_KEYS = {"_Province", "_ZS", "_Antenne", "_AS", "_FOSA", "_YM", "Compl_tude", "Promptitude"}.union(ALL_AGG_KEYS)
-
+# Pré-calculer les sources existantes pour éviter des lookups inutiles
+SUM_SOURCES_FLAT = set()
+for sources in SUM_SPECS.values():
+    SUM_SOURCES_FLAT.update(sources)
+KEEP_KEYS_LIST = list(KEEP_KEYS)  # pré-calculer une fois
 def nv(row: dict, field: str) -> float:
     v = row.get(field)
     if v is None or v == "":
@@ -377,7 +381,7 @@ for month in months_list:
                         row[sf] = sum(nv(row, s) for s in sources)
                     
                     # MAGIE : On supprime toutes les colonnes inutiles pour libérer la mémoire
-                    minimized_row = {k: row[k] for k in KEEP_KEYS if k in row}
+                    minimized_row = {k: row[k] for k in KEEP_KEYS_LIST if k in row}
                     all_records.append(minimized_row)
                     
                 except Exception:
