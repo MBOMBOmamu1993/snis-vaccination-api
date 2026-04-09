@@ -1932,35 +1932,54 @@
                     else if (type === 'pdf') {
                         if (typeof html2pdf === 'undefined') { alert('Chargement PDF en cours... Veuillez réessayer.'); return; }
                         var wrap = document.getElementById('triTblWrap');
-                        // Retirer temporairement overflow pour que html2canvas capture tout
                         var scrollDiv = wrap.querySelector('.tw');
-                        var oldOverflow = '';
-                        if (scrollDiv) { oldOverflow = scrollDiv.style.overflowX; scrollDiv.style.overflowX = 'visible'; }
+                        var oldOF = ''; var oldW = '';
+                        if (scrollDiv) {
+                            oldOF = scrollDiv.style.overflowX; oldW = scrollDiv.style.maxWidth;
+                            scrollDiv.style.overflowX = 'visible'; scrollDiv.style.maxWidth = 'none';
+                        }
+                        var tblEl = document.getElementById('triTbl');
+                        var tblW = tblEl ? tblEl.scrollWidth : 1200;
+                        var pxPerInch = 96;
+                        var pageW = Math.max(16.54, (tblW / pxPerInch) + 1);
+                        var pageH = pageW * 0.707;
                         var opt = {
-                            margin: 0.3,
+                            margin: 0.2,
                             filename: filename + '.pdf',
-                            image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
-                            jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+                            image: { type: 'jpeg', quality: 0.95 },
+                            html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, width: tblW + 40 },
+                            jsPDF: { unit: 'in', format: [pageW, pageH], orientation: 'landscape' }
                         };
                         html2pdf().set(opt).from(wrap).save().then(function () {
-                            if (scrollDiv) scrollDiv.style.overflowX = oldOverflow;
+                            if (scrollDiv) { scrollDiv.style.overflowX = oldOF; scrollDiv.style.maxWidth = oldW; }
                         });
                     }
                     else if (type === 'pptx') {
                         if (typeof PptxGenJS === 'undefined') { alert('Chargement PPTX en cours... Veuillez réessayer.'); return; }
-                        var pptx = new PptxGenJS();
-                        pptx.layout = 'LAYOUT_WIDE';
-                        pptx.tableToSlides('triTbl', {
-                            x: 0.3, y: 0.5, w: 12.5,
-                            autoPage: true,
-                            autoPageRepeatHeader: true,
-                            color: '333333',
-                            border: { pt: 1, color: 'cccccc' },
-                            colW: [],
-                            masterTitle: 'Triangulation des données - ' + S.filters.period[0]
+                        if (typeof html2canvas === 'undefined') { alert('Chargement en cours... Veuillez réessayer.'); return; }
+                        var wrap2 = document.getElementById('triTblWrap');
+                        var scrollDiv2 = wrap2.querySelector('.tw');
+                        var oldOF2 = ''; var oldW2 = '';
+                        if (scrollDiv2) {
+                            oldOF2 = scrollDiv2.style.overflowX; oldW2 = scrollDiv2.style.maxWidth;
+                            scrollDiv2.style.overflowX = 'visible'; scrollDiv2.style.maxWidth = 'none';
+                        }
+                        html2canvas(wrap2, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 }).then(function (canvas) {
+                            if (scrollDiv2) { scrollDiv2.style.overflowX = oldOF2; scrollDiv2.style.maxWidth = oldW2; }
+                            var imgData = canvas.toDataURL('image/png');
+                            var pptx = new PptxGenJS();
+                            pptx.defineLayout({ name: 'CUSTOM', width: 13.33, height: 7.5 });
+                            pptx.layout = 'CUSTOM';
+                            var slide = pptx.addSlide();
+                            slide.addText('Triangulation des données - ' + S.filters.period[0], {
+                                x: 0.3, y: 0.1, fontSize: 14, color: '0b3a6f', bold: true
+                            });
+                            var imgW = 12.7;
+                            var imgH = imgW * (canvas.height / canvas.width);
+                            if (imgH > 6.8) { imgH = 6.8; imgW = imgH * (canvas.width / canvas.height); }
+                            slide.addImage({ data: imgData, x: 0.3, y: 0.5, w: imgW, h: imgH });
+                            pptx.writeFile({ fileName: filename + '.pptx' });
                         });
-                        pptx.writeFile({ fileName: filename + '.pptx' });
                     }
                 };
             }
