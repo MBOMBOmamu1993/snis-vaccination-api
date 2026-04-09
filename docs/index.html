@@ -978,7 +978,7 @@
                 await loadProvinceData(S.filters.province);
 
                 sp(85, 'Calcul filtres...');
-                computeCascade(true);
+                computeCascade(null);
                 S.loaded = true;
 
                 sp(90, 'Rendu...');
@@ -1019,31 +1019,37 @@
         }
 
         /* ═══ CASCADING FILTERS ═══ */
-        function computeCascade(autoFill) {
+        function computeCascade(changedDim) {
                 var src = S.data;
+                var order = ['antenne', 'zs', 'as', 'fosa'];
+                var chIdx = changedDim ? order.indexOf(changedDim) : -1;
+                // chIdx = -1 → province changée ou init → tout auto-remplir
+                // chIdx = 0 → antenne changée → garder antenne, reset zs/as/fosa
+                // chIdx = 1 → zs changée → garder antenne+zs, reset as/fosa
+                // etc.
 
                 var avAnt = uv(src, function (r) { return r.antenne; });
                 S.cascaded.antenne = avAnt;
                 S.filters.antenne = S.filters.antenne.filter(function (a) { return avAnt.indexOf(a) >= 0; });
-                if (!S.filters.antenne.length) S.filters.antenne = avAnt.slice();
+                if (chIdx < 0 && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
 
                 var srcAnt = S.filters.antenne.length ? src.filter(function (r) { return S.filters.antenne.indexOf(r.antenne) >= 0; }) : src;
                 var avZS = uv(srcAnt, function (r) { return r.org3; });
                 S.cascaded.zs = avZS;
                 S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
-                if (!S.filters.zs.length) S.filters.zs = avZS.slice();
+                if (chIdx < 1) S.filters.zs = avZS.slice();
 
                 var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
                 var avAS = uv(srcZS, function (r) { return r.org4; });
                 S.cascaded.as = avAS;
                 S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
-                if (!S.filters.as.length) S.filters.as = avAS.slice();
+                if (chIdx < 2) S.filters.as = avAS.slice();
 
                 var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
                 var avFOSA = uv(srcAS, function (r) { return r.org5; });
                 S.cascaded.fosa = avFOSA;
                 S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
-                if (!S.filters.fosa.length) S.filters.fosa = avFOSA.slice();
+                if (chIdx < 3) S.filters.fosa = avFOSA.slice();
             }
         /* ═══ APPLY FILTER ═══ */
         function apFlt() {
@@ -1074,7 +1080,7 @@
                     S.filters.province = S.vals.province[0] || '';
                     S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                     sp(50, 'Chargement...', '⏳');
-                    loadProvinceData(S.filters.province).then(function () { computeCascade(true); rFlt(); apFlt(); render(); sp(100, '', '⚡ Prêt'); });
+                    loadProvinceData(S.filters.province).then(function () { computeCascade(null); rFlt(); apFlt(); render(); sp(100, '', '⚡ Prêt'); });
                 };
                 plbl.appendChild(prst);
                 fg.appendChild(plbl);
@@ -1089,7 +1095,7 @@
                     S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                     sp(50, 'Chargement province...', '⏳ Changement...');
                     loadProvinceData(sel.value).then(function () {
-                        computeCascade(true); rFlt(); apFlt(); render();
+                        computeCascade(null); rFlt(); apFlt(); render();
                         sp(100, '', '⚡ Prêt');
                     });
                 };
@@ -1135,7 +1141,7 @@
 
                 sp(50, 'Réinitialisation...', ' ⏳');
                 loadProvinceData(S.filters.province).then(function () {
-                    computeCascade(true); rFlt(); apFlt(); render();
+                    computeCascade(null); rFlt(); apFlt(); render();
                     sp(100, '', ' ⚡ Prêt');
                 });
             };
@@ -1153,7 +1159,7 @@
                 e.stopPropagation();
                 if (dimKey === 'period') { S.filters.period = getDefaultPeriod(S.vals.period); }
                 else { S.filters[dimKey] = (S.cascaded[dimKey] || options).slice(); }
-                if (dimKey !== 'period') computeCascade(false);
+                if (dimKey !== 'period') computeCascade(dimKey);
                 rFlt();                    // 🔄 refresh cascaded lists + button labels
                 apFlt(); render();
             };
@@ -1188,7 +1194,7 @@
                 if (aC.checked) { S.filters[dimKey] = options.slice(); }
                 else { S.filters[dimKey] = []; }
 
-                if (dimKey !== 'period') computeCascade(false);
+                if (dimKey !== 'period') computeCascade(dimKey);
                 apFlt();                    // 1) met à jour les données
                 rFlt(); render();           // 2) reconstruit l’UI
 
@@ -1222,7 +1228,7 @@
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
 
-                    if (dimKey !== 'period') computeCascade(false);
+                    if (dimKey !== 'period') computeCascade(dimKey);
                     apFlt();
                     rFlt(); render();
 
