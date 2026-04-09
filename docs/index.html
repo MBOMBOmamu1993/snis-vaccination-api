@@ -5,12 +5,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Dashboard PEV de routine – RDC</title>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
-        <!-- Bibliothèques pour les exports PDF et PowerPoint -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
-        <style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+    <!-- Bibliothèques pour les exports PDF et PowerPoint -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -861,18 +861,18 @@
         function missAg(r) { return obAg(r).filter(function (a) { return !(Number(r[a + '_f']) || 0); }); }
         function mAvg(fosa, ag, per, data, N) { var d = data.filter(function (r) { return r.org5 === fosa && r.period < per && (Number(r[ag]) || 0) > 0; }); d.sort(function (a, b) { return b.period < a.period ? -1 : 1; }); var sub = d.slice(0, N); if (!sub.length) return null; return sub.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0) / sub.length; }
         function chkCoh(r) { var tot = 0, bad = 0; SAME_AGE.forEach(function (g) { for (var i = 0; i < g.v.length - 1; i++) { tot++; var a = Number(r[g.v[i]]) || 0, b = Number(r[g.v[i + 1]]) || 0; var den = b || a || 1; if (Math.abs((a - b) / den) > C.CD) bad++; } }); return tot === 0 || (bad / tot) <= 0.30; }
-                var TRIANG_DEFS = [
-                        { lbl: 'BCG', vacs: ['BCG'], stock: 'BCG_stock_d_but', recv: 'BCG_re_ues' },
-                        { lbl: 'VPO', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'], stock: 'VPO_stock_d_but', recv: 'VPO_re_ues' },
-                        { lbl: 'DTC/Penta', vacs: ['DTC1', 'DTC2', 'DTC3'], stock: 'DTC_stock_d_but', recv: 'DTC_re_ues' },
-                        { lbl: 'PCV13', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'], stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues' },
-                        { lbl: 'ROTA', vacs: ['ROTA1', 'ROTA2', 'ROTA3'], stock: 'ROTA_stock_d_but', recv: 'ROTA_re_ues' },
-                        { lbl: 'VPI', vacs: ['VPI1', 'VPI2'], stock: 'VPI_stock_d_but', recv: 'VPI_re_ues' },
-                        { lbl: 'VAR', vacs: ['VAR1', 'VAR2'], stock: 'VAR_stock_d_but', recv: 'VAR_re_ues' },
-                        { lbl: 'VAA', vacs: ['VAA'], stock: 'VAA_stock_d_but', recv: 'VAA_re_ues' },
-                        { lbl: 'Td (VAT)', vacs: ['TD'], stock: 'Td_stock_d_but', recv: 'Td_re_ues' },
-                        { lbl: 'VAP', vacs: ['VAP1', 'VAP2', 'VAP3', 'VAP4'], stock: 'VAP_stock_d_but', recv: 'VAP_re_ues' }
-                    ];
+        var TRIANG_DEFS = [
+            { lbl: 'BCG', vacs: ['BCG'], stock: 'BCG_stock_d_but', recv: 'BCG_re_ues' },
+            { lbl: 'VPO', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'], stock: 'VPO_stock_d_but', recv: 'VPO_re_ues' },
+            { lbl: 'DTC/Penta', vacs: ['DTC1', 'DTC2', 'DTC3'], stock: 'DTC_stock_d_but', recv: 'DTC_re_ues' },
+            { lbl: 'PCV13', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'], stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues' },
+            { lbl: 'ROTA', vacs: ['ROTA1', 'ROTA2', 'ROTA3'], stock: 'ROTA_stock_d_but', recv: 'ROTA_re_ues' },
+            { lbl: 'VPI', vacs: ['VPI1', 'VPI2'], stock: 'VPI_stock_d_but', recv: 'VPI_re_ues' },
+            { lbl: 'VAR', vacs: ['VAR1', 'VAR2'], stock: 'VAR_stock_d_but', recv: 'VAR_re_ues' },
+            { lbl: 'VAA', vacs: ['VAA'], stock: 'VAA_stock_d_but', recv: 'VAA_re_ues' },
+            { lbl: 'Td (VAT)', vacs: ['TD'], stock: 'Td_stock_d_but', recv: 'Td_re_ues' },
+            { lbl: 'VAP', vacs: ['VAP1', 'VAP2', 'VAP3', 'VAP4'], stock: 'VAP_stock_d_but', recv: 'VAP_re_ues' }
+        ];
         function chkTriang(rc) { var neg = 0; TRIANG_DEFS.forEach(function (ag) { var st = rc.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0); var rv = rc.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0); var vac = ag.vacs.reduce(function (s, v) { return s + rc.reduce(function (s2, r) { return s2 + (Number(r[v]) || 0); }, 0); }, 0); if ((st + rv - vac) < 0) neg++; }); return TRIANG_DEFS.length === 0 || (neg / TRIANG_DEFS.length) <= 0.30; }
         function ccl(v) { return v >= 80 ? 'cg' : v >= 50 ? 'cy' : 'crd'; }
         function sB(val, bar) { for (var i = 0; i < bar.length; i++) { if (val >= bar[i][0]) return bar[i][1]; } return 0; }
@@ -898,7 +898,12 @@
             if (months.indexOf(ym) >= 0) return [ym];
             return [months[months.length - 1]];
         }
-
+        function _getChartCutoff() {
+                var now = new Date(), day = now.getDate(), yr = now.getFullYear(), mo = now.getMonth() + 1;
+                if (day < 20) { mo -= 2; } else { mo -= 1; }
+                if (mo <= 0) { mo += 12; yr -= 1; }
+                return '' + yr + (mo < 10 ? '0' : '') + mo;
+            }
         /* ═══ TRANSFORM RECORD ═══ */
         function transformRecord(r) {
             var rec = {
@@ -913,7 +918,7 @@
                 var val = src ? (Number(r[src]) || 0) : 0;
                 rec[ag] = val; rec[ag + '_f'] = val;
             });
-                            ['BCG_stock_d_but', 'BCG_re_ues', 'DTC_stock_d_but', 'DTC_re_ues',
+            ['BCG_stock_d_but', 'BCG_re_ues', 'DTC_stock_d_but', 'DTC_re_ues',
                 'PCV13_stock_d_but', 'PCV13_re_ues', 'VAR_stock_d_but', 'VAR_re_ues',
                 'Td_stock_d_but', 'Td_re_ues', 'VPO_stock_d_but', 'VPO_re_ues',
                 'VPI_stock_d_but', 'VPI_re_ues', 'ROTA_stock_d_but', 'ROTA_re_ues',
@@ -925,7 +930,7 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                                        var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
+                var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
                     fetch(BASE + '/meta.json'),
                     fetch(BASE + '/by_province.json'),
                     fetch(BASE + '/by_zs.json'),
@@ -1020,37 +1025,37 @@
 
         /* ═══ CASCADING FILTERS ═══ */
         function computeCascade(changedDim) {
-                var src = S.data;
-                var order = ['antenne', 'zs', 'as', 'fosa'];
-                var chIdx = changedDim ? order.indexOf(changedDim) : -1;
-                // chIdx = -1 → province changée ou init → tout auto-remplir
-                // chIdx = 0 → antenne changée → garder antenne, reset zs/as/fosa
-                // chIdx = 1 → zs changée → garder antenne+zs, reset as/fosa
-                // etc.
+            var src = S.data;
+            var order = ['antenne', 'zs', 'as', 'fosa'];
+            var chIdx = changedDim ? order.indexOf(changedDim) : -1;
+            // chIdx = -1 → province changée ou init → tout auto-remplir
+            // chIdx = 0 → antenne changée → garder antenne, reset zs/as/fosa
+            // chIdx = 1 → zs changée → garder antenne+zs, reset as/fosa
+            // etc.
 
-                var avAnt = uv(src, function (r) { return r.antenne; });
-                S.cascaded.antenne = avAnt;
-                S.filters.antenne = S.filters.antenne.filter(function (a) { return avAnt.indexOf(a) >= 0; });
-                if (chIdx < 0 && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
+            var avAnt = uv(src, function (r) { return r.antenne; });
+            S.cascaded.antenne = avAnt;
+            S.filters.antenne = S.filters.antenne.filter(function (a) { return avAnt.indexOf(a) >= 0; });
+            if (chIdx < 0 && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
 
-                var srcAnt = S.filters.antenne.length ? src.filter(function (r) { return S.filters.antenne.indexOf(r.antenne) >= 0; }) : src;
-                var avZS = uv(srcAnt, function (r) { return r.org3; });
-                S.cascaded.zs = avZS;
-                S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
-                if (chIdx < 1) S.filters.zs = avZS.slice();
+            var srcAnt = S.filters.antenne.length ? src.filter(function (r) { return S.filters.antenne.indexOf(r.antenne) >= 0; }) : src;
+            var avZS = uv(srcAnt, function (r) { return r.org3; });
+            S.cascaded.zs = avZS;
+            S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
+            if (chIdx < 1) S.filters.zs = avZS.slice();
 
-                var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
-                var avAS = uv(srcZS, function (r) { return r.org4; });
-                S.cascaded.as = avAS;
-                S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
-                if (chIdx < 2) S.filters.as = avAS.slice();
+            var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
+            var avAS = uv(srcZS, function (r) { return r.org4; });
+            S.cascaded.as = avAS;
+            S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
+            if (chIdx < 2) S.filters.as = avAS.slice();
 
-                var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
-                var avFOSA = uv(srcAS, function (r) { return r.org5; });
-                S.cascaded.fosa = avFOSA;
-                S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
-                if (chIdx < 3) S.filters.fosa = avFOSA.slice();
-            }
+            var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
+            var avFOSA = uv(srcAS, function (r) { return r.org5; });
+            S.cascaded.fosa = avFOSA;
+            S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
+            if (chIdx < 3) S.filters.fosa = avFOSA.slice();
+        }
         /* ═══ APPLY FILTER ═══ */
         function apFlt() {
             var f = S.filters;
@@ -1117,7 +1122,7 @@
                 buildMultiFilter(c, info, avail, selArr, info.dim);
             });
 
-                /* 6) PÉRIODE - multichoix */
+            /* 6) PÉRIODE - multichoix */
             if (tab.fl.indexOf('period') >= 0) {
                 buildMultiFilter(c, { l: 'Période', k: 'period' }, S.vals.period, S.filters.period, 'period');
             }
@@ -1377,12 +1382,24 @@
                 }, 60 + idx * 30);
             });
 
-            var bM = grp(D, function (r) { return r.period; }), mos = Object.keys(bM).filter(Boolean).sort();
-            var pM = mos.map(function (m) { var d = bM[m], r2 = d.filter(isRep).length; return d.length ? (r2 / d.length * 100) : 0; });
+            var _allMosRap = uv(AD, function (r) { return r.period; }).sort();
+            var _cutRap = _getChartCutoff();
+            _allMosRap = _allMosRap.filter(function (m) { return m >= '202501' && m <= _cutRap; });
+            var _selPer = S.filters.period;
+            var mosRap;
+            if (_selPer.length === 1) {
+                mosRap = _allMosRap.filter(function (m) { return m <= _selPer[0]; });
+            } else if (_selPer.length > 1 && _selPer.length < S.vals.period.length) {
+                mosRap = _selPer.slice().sort();
+            } else {
+                mosRap = _allMosRap;
+            }
+            var bMRap = grp(AD, function (r) { return r.period; });
+            var pM = mosRap.map(function (m) { var d = (bMRap[m] || []); var r2 = d.filter(isRep).length; return d.length ? (r2 / d.length * 100) : 0; });
             var lb2 = E('div', 'cb'); lb2.innerHTML = '<h4>📈 % rapportage par mois</h4><canvas id="pMC" height="50"></canvas>'; c.appendChild(lb2);
             setTimeout(function () {
                 var x = document.getElementById('pMC'); if (!x) return;
-                S.charts.pMC = new Chart(x, { type: 'line', data: { labels: mos.map(mL), datasets: [{ label: '%', data: pM, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
+                S.charts.pMC = new Chart(x, { type: 'line', data: { labels: mosRap.map(mL), datasets: [{ label: '%', data: pM, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 300);
 
             /* Heatmap */
@@ -1450,7 +1467,7 @@
                     Object.keys(og).filter(Boolean).forEach(function (org) {
                         var cv = sf(og[org], ag);
 
-                                    // Règle du 20ème jour pour définir la période limite
+                        // Règle du 20ème jour pour définir la période limite
                         var nowD = new Date(), tDay = nowD.getDate(), tYr = nowD.getFullYear(), tMo = nowD.getMonth() + 1;
                         if (tDay < 20) { tMo -= 1; }
                         if (tMo <= 0) { tMo += 12; tYr -= 1; }
@@ -1538,7 +1555,7 @@
                 AG_ALL.forEach(function (ag) {
                     var val = sf(recs, ag);
 
-                                        /* Moyenne mobile N périodes précédentes (avec règle du 20ème jour) */
+                    /* Moyenne mobile N périodes précédentes (avec règle du 20ème jour) */
                     var nowD = new Date(), tDay = nowD.getDate(), tYr = nowD.getFullYear(), tMo = nowD.getMonth() + 1;
                     if (tDay < 20) { tMo -= 1; }
                     if (tMo <= 0) { tMo += 12; tYr -= 1; }
@@ -1837,7 +1854,7 @@
                 window._rstP3AG = function () { document.querySelectorAll('#p3DdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltP3(); };
                 setTimeout(function () { _fltP3(); }, 100);
 
-                    /* ── Tableau Triangulation ── */
+                /* ── Tableau Triangulation ── */
                 var triBox = E('div', 'cb');
 
                 var trFH = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">';
@@ -1871,7 +1888,7 @@
                     var fLD = ld2.filter(function (r) { return selOU.indexOf(r[ol.k]) >= 0; });
                     var fAgs = TRIANG_DEFS.filter(function (ag, ai) { return selAG.indexOf(ai) >= 0; });
                     if (!fAgs.length) fAgs = TRIANG_DEFS;
-                            var ouG = grp(fLD, function (r) { return r[ol.k]; });
+                    var ouG = grp(fLD, function (r) { return r[ol.k]; });
                     /* En-tête sur 2 lignes : 1 colonne org unit | colonnes groupées par antigène | 2 colonnes résumé */
 
                     // Ajout de l'ID id="triTbl" sur la table pour l'exportation
@@ -1907,7 +1924,7 @@
                     _updABtn('triDdOU', 'triBtnOU'); _updABtn('triDdAG', 'triBtnAG');
                 };
                 window._rstTriOU = function () { document.querySelectorAll('#triDdOU .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
-                        window._rstTriAG = function () { document.querySelectorAll('#triDdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
+                window._rstTriAG = function () { document.querySelectorAll('#triDdAG .fi input').forEach(function (cb) { cb.checked = true; }); _fltTri(); };
 
                 setTimeout(function () { _fltTri(); }, 200);
 
@@ -2222,7 +2239,7 @@
             /* ── Niveau org dynamique + 12 derniers mois ── */
             var _ol4 = getOrgLevel(D);
             var _ok4 = _ol4.k;
-                // Règle du 20ème jour 
+            // Règle du 20ème jour 
             var _nowP4 = new Date(), _d = _nowP4.getDate(), _mo = _nowP4.getMonth() + 1, _yr = _nowP4.getFullYear();
             if (_d < 20) { _mo -= 1; }
             if (_mo <= 0) { _mo += 12; _yr -= 1; }
@@ -2316,15 +2333,27 @@
                 setTimeout(function () { _renderP4Chart(); }, 120);
             })();
             /* Tendance mensuelle */
+            var _allMosAt = uv(AD, function (r) { return r.period; }).sort();
+            var _cutAt = _getChartCutoff();
+            _allMosAt = _allMosAt.filter(function (m) { return m >= '202501' && m <= _cutAt; });
+            var _selPerAt = S.filters.period;
+            var mosAt;
+            if (_selPerAt.length === 1) {
+                mosAt = _allMosAt.filter(function (m) { return m <= _selPerAt[0]; });
+            } else if (_selPerAt.length > 1 && _selPerAt.length < S.vals.period.length) {
+                mosAt = _selPerAt.slice().sort();
+            } else {
+                mosAt = _allMosAt;
+            }
             var b2 = E('div', 'cb'); b2.innerHTML = '<h4>📈 Tendance atypiques</h4><canvas id="atT" height="50"></canvas>'; c.appendChild(b2);
             setTimeout(function () {
                 var x = document.getElementById('atT'); if (!x) return;
-                var td = mos.map(function (m) {
-                    var mD = D.filter(function (r) { return r.period === m && isRep(r); }); var t = 0, a = 0;
+                var td = mosAt.map(function (m) {
+                    var mD = AD.filter(function (r) { return r.period === m && isRep(r); }); var t = 0, a = 0;
                     mD.forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; t++; var avg = mAvg(r.org5, ag, m, AD, N); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) a++; }); });
                     return { t: t, a: a, p: t ? (a / t * 100) : 0 };
                 });
-                S.charts.atT = new Chart(x, { type: 'line', data: { labels: mos.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
+                S.charts.atT = new Chart(x, { type: 'line', data: { labels: mosAt.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
             }, 160);
 
             /* ═══ Org unit encodant des données non prévues ═══ */
@@ -2598,18 +2627,18 @@
             var h;
             var TH = ' style="white-space:normal;max-width:72px;text-align:center;vertical-align:middle;line-height:1.3"';
             if (isFOSA) {
-                    h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-    '<th>' + lvC.l + '</th>' +
-    '<th>Nombre total<br>ESS attendus</th>' +
-    '<th>Nombre ESS<br>ayant rapporté</th>' +
-    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
-    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
-    '<th>Cohérence vaccins<br>de même âge</th><th>Score Cohérence<br>vaccins (/20)</th>' +
-    '<th>Cohérence vaccinés<br>doses disponibles</th><th>Score Cohérence<br>doses (/20)</th>' +
-    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
-    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
-    '<th>Score Total<br>(/120)</th><th>% Score<br>Total</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
-    '</tr></thead><tbody>';
+                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+                    '<th>' + lvC.l + '</th>' +
+                    '<th>Nombre total<br>ESS attendus</th>' +
+                    '<th>Nombre ESS<br>ayant rapporté</th>' +
+                    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
+                    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
+                    '<th>Cohérence vaccins<br>de même âge</th><th>Score Cohérence<br>vaccins (/20)</th>' +
+                    '<th>Cohérence vaccinés<br>doses disponibles</th><th>Score Cohérence<br>doses (/20)</th>' +
+                    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
+                    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
+                    '<th>Score Total<br>(/120)</th><th>% Score<br>Total</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
+                    '</tr></thead><tbody>';
                 rows.forEach(function (r) {
                     var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                     var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
@@ -2625,18 +2654,18 @@
                         '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
                         '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
                 });
-              } else {
-    h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-    '<th>' + lvC.l + '</th>' +
-    '<th>Nombre<br>total ESS</th>' +
-    '<th>Nombre ESS<br>ayant rapporté</th>' +
-    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
-    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
-    '<th>% ESS bonne cohérence<br>(vaccins + doses)</th><th>Score<br>Cohérence (/20)</th>' +
-    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
-    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
-    '<th>Score Composite<br>(/100)</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
-    '</tr></thead><tbody>';
+            } else {
+                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+                    '<th>' + lvC.l + '</th>' +
+                    '<th>Nombre<br>total ESS</th>' +
+                    '<th>Nombre ESS<br>ayant rapporté</th>' +
+                    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
+                    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
+                    '<th>% ESS bonne cohérence<br>(vaccins + doses)</th><th>Score<br>Cohérence (/20)</th>' +
+                    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
+                    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
+                    '<th>Score Composite<br>(/100)</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
+                    '</tr></thead><tbody>';
                 rows.forEach(function (r) {
                     var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                     var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
