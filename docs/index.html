@@ -909,9 +909,15 @@
             var rec = {
                 org2: r._Province || '', org3: r._ZS || '', org4: r._AS || '', org5: r._FOSA || '',
                 antenne: r._Antenne || '', period: r._YM || '',
-                                completude: Number(r.comp) || 0, promptitude: Number(r.prompt) || 0,
-                isVAP: C.VAP_PROV.some(function (p) { return r._Province && p.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e') === r._Province.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e'); }),
+                                                completude: Number(r.comp) || 0, promptitude: Number(r.prompt) || 0,
+                isVAP: C.VAP_PROV.some(function (p) {
+                    if (!r._Province) return false;
+                    var pNorm = p.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
+                    var rNorm = r._Province.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
+                    return rNorm.indexOf(pNorm) !== -1;
+                }),
                 _n: Number(r.n) || 0, _rap: Number(r.rap) || 0
+
 
             };
             AG_ALL.forEach(function (ag) {
@@ -2360,12 +2366,18 @@
                 S.charts.atT = new Chart(x, { type: 'line', data: { labels: mosAt.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
             }, 160);
 
-                        /* ═══ Org unit encodant des données non prévues ═══ */
+                                    /* ═══ Org unit encodant des données non prévues ═══ */
             var _encOL = getOrgLevel(D);
             var _encAGs = ['VAR2', 'HPV'];
-            var _isVAPProv = C.VAP_PROV.some(function (p) { return S.filters.province && p.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e') === S.filters.province.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e'); });
+            var _isVAPProv = C.VAP_PROV.some(function (p) {
+                if (!S.filters.province) return false;
+                var pNorm = p.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
+                var sNorm = S.filters.province.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
+                return sNorm.indexOf(pNorm) !== -1;
+            });
             if (!_isVAPProv) _encAGs = _encAGs.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']);
             var _encLbls = { VAR2: 'VAR2 0-11 mois', HPV: 'HPV', VAP1: 'VAP1', VAP2: 'VAP2', VAP3: 'VAP3', VAP4: 'VAP4' };
+
 
             var _encColors = { VAR2: '#7b1fa2', HPV: '#1565c0', VAP1: '#e65100', VAP2: '#00838f', VAP3: '#2e7d32', VAP4: '#c62828' };
             var _encOUs = uv(D, function (r) { return r[_encOL.k]; });
