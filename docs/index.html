@@ -1107,8 +1107,8 @@
                     S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                     sp(50, 'Chargement province...', '⏳ Changement...');
                     loadProvinceData(sel.value).then(function () {
-                        computeCascade(null); rFlt(); apFlt();
-                        requestAnimationFrame(function () { render(); sp(100, '', '⚡ Prêt'); });
+                        computeCascade(null); rFlt(); apFlt(); render();
+                        sp(100, '', '⚡ Prêt');
                     });
                 };
                 fg.appendChild(sel); c.appendChild(fg);
