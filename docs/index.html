@@ -2305,41 +2305,26 @@
             var lastM12 = _last12.length > 0 ? _last12[_last12.length - 1] : null;
 
             /* ══════════════════════════════════════════════════════════════════
-             * LAZY LOADING : l'analyse des valeurs atypiques (index _gAD4,
-             * _buildP4Rows, tableau détaillé, tendance mensuelle) est trop lourde
-             * pour être exécutée automatiquement au chargement de l'onglet,
-             * en particulier sur les provinces à fort volume (ex : Kinshasa).
-             * => on n'exécute ces calculs que sur clic explicite de l'utilisateur.
+             * Rendu de l'onglet Valeurs atypiques.
+             * Le calcul de la tendance mensuelle est désormais rapide grâce au
+             * pré-index _avgIdx (voir plus bas), donc on rend automatiquement
+             * sans bouton de lancement. Placeholder immédiat pour feedback UI.
              * ══════════════════════════════════════════════════════════════════ */
             var _p4HeavyWrap = document.createElement('div');
             _p4HeavyWrap.id = 'p4HeavyWrap';
             c.appendChild(_p4HeavyWrap);
 
-            var _p4Launch = E('div', 'cb');
-            _p4Launch.id = 'p4LaunchCard';
-            _p4Launch.innerHTML =
-                '<h4>\u26a0 Analyse des valeurs atypiques</h4>'
-                + '<div style="padding:22px;text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px">'
-                + '<p style="margin:0 0 14px;color:#475569;font-size:13px;line-height:1.55">'
-                + 'Le calcul des valeurs atypiques (FOSA \u00d7 12 mois \u00d7 antig\u00e8nes) est lourd et peut ralentir le navigateur,'
-                + ' surtout sur les provinces \u00e0 fort volume. Cliquez pour lancer l\'analyse.'
-                + '</p>'
-                + '<button id="p4LaunchBtn" style="padding:11px 26px;background:linear-gradient(135deg,#0b3a6f,#1565c0);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">\u25b6 Lancer l\'analyse des valeurs atypiques</button>'
-                + '</div>';
-            _p4HeavyWrap.appendChild(_p4Launch);
+            var _p4Load = E('div', 'cb');
+            _p4Load.id = 'p4LoadingCard';
+            _p4Load.innerHTML = '<h4>\u26a0 Analyse des valeurs atypiques</h4>'
+                + '<div style="padding:22px;text-align:center;color:#64748b;font-size:13px">\u23f3 Calcul en cours\u2026</div>';
+            _p4HeavyWrap.appendChild(_p4Load);
 
             function _runP4Heavy() {
-                var btn = document.getElementById('p4LaunchBtn');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '\u23f3 Calcul en cours\u2026';
-                    btn.style.opacity = '.6';
-                    btn.style.cursor = 'not-allowed';
-                }
-                /* Yield au navigateur pour que le bouton reflète l'état "en cours"
-                 * avant que le thread ne se bloque sur les calculs. */
+                /* Yield au navigateur pour que le placeholder s'affiche
+                 * avant que le thread n'exécute le calcul. */
                 setTimeout(function () {
-                    /* Index groupé par orgK + period (build différé) */
+                    /* Index groupé par orgK + period */
                     var _gAD4 = {};
                     AD.forEach(function (r) {
                         var ou = r[_ok4] || ''; if (!ou) return;
@@ -2348,8 +2333,8 @@
                         _gAD4[k].push(r);
                     });
 
-                    /* Retirer la carte "Lancer l'analyse" */
-                    if (_p4Launch && _p4Launch.parentNode) _p4Launch.parentNode.removeChild(_p4Launch);
+                    /* Retirer le placeholder "Calcul en cours" */
+                    if (_p4Load && _p4Load.parentNode) _p4Load.parentNode.removeChild(_p4Load);
 
                     /* ── Carte : Atypiques et Normales par antigène ── */
                     var b1 = E('div', 'cb');
@@ -2514,11 +2499,8 @@
                 }, 30);
             }
 
-            /* Attacher le handler après que le bouton soit dans le DOM */
-            setTimeout(function () {
-                var btn = document.getElementById('p4LaunchBtn');
-                if (btn) btn.onclick = _runP4Heavy;
-            }, 0);
+            /* Lancement automatique (rapide grâce au pré-index _avgIdx) */
+            _runP4Heavy();
 
                         /* ═══ Org unit encodant des données non prévues ═══ */
             var _encOL = getOrgLevel(D);
@@ -2715,7 +2697,13 @@
         }
         window.sSL = function (lv) {
             document.querySelectorAll('#sTabs .stb').forEach(function (t, i) { t.classList.toggle('act', i === lv); });
-            var sc = document.getElementById('sC'); sc.innerHTML = '';
+            var sc = document.getElementById('sC');
+            /* Placeholder immédiat : évite l'impression de plantage pendant
+             * que le thread JS calcule les scores (pré-index + stats). */
+            sc.innerHTML = '<div class="cb" style="padding:24px;text-align:center;color:#64748b;font-size:13px">\u23f3 Calcul du score qualit\u00e9 en cours\u2026</div>';
+            /* Yield au navigateur pour peindre le placeholder avant le calcul */
+            setTimeout(function () {
+            sc.innerHTML = '';
             var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT, lastM = mos[mos.length - 1];
             var lvC = [
                 { k: function (r) { return r.org5; }, l: 'FOSA' },
@@ -2727,6 +2715,40 @@
             var og = grp(D, lvC.k), units = Object.keys(og).filter(Boolean).sort();
             var isFOSA = lv === 0;
 
+            /* ══════════════════════════════════════════════════════════
+             * OPTIMISATION CRITIQUE : même pattern que l'onglet Valeurs
+             * atypiques. mAvg() refait un AD.filter() complet à chaque
+             * appel, et il est appelé (units × records × antigènes) fois
+             * → figeait la page (1664 FOSAs × Kinshasa).
+             * Fix : pré-index AD en un seul passage par (fosa, antigène).
+             * ══════════════════════════════════════════════════════════ */
+            var _avgIdx5 = {};
+            for (var _i5 = 0, _al5 = AD.length; _i5 < _al5; _i5++) {
+                var _r5 = AD[_i5];
+                var _f5 = _r5.org5; if (!_f5) continue;
+                var _p5 = _r5.period;
+                for (var _j5 = 0, _gl5 = AG.length; _j5 < _gl5; _j5++) {
+                    var _ag5 = AG[_j5];
+                    var _v5 = Number(_r5[_ag5]) || 0;
+                    if (_v5 <= 0) continue;
+                    var _k5 = _f5 + '|' + _ag5;
+                    (_avgIdx5[_k5] || (_avgIdx5[_k5] = [])).push({ p: _p5, v: _v5 });
+                }
+            }
+            var _avgKeys5 = Object.keys(_avgIdx5);
+            for (var _ki5 = 0; _ki5 < _avgKeys5.length; _ki5++) {
+                _avgIdx5[_avgKeys5[_ki5]].sort(function (a, b) { return b.p < a.p ? -1 : 1; });
+            }
+            function _mAvgFast5(fosa, ag, per) {
+                var arr = _avgIdx5[fosa + '|' + ag];
+                if (!arr) return null;
+                var sum = 0, cnt = 0, L = arr.length;
+                for (var i = 0; i < L && cnt < N; i++) {
+                    if (arr[i].p < per) { sum += arr[i].v; cnt++; }
+                }
+                return cnt ? sum / cnt : null;
+            }
+
             var rows = units.map(function (u) {
                 var rc = og[u], rep = rc.filter(isRep), nT = rc.length, nR = rep.length;
                 var tR = pct(nR, nT);
@@ -2736,7 +2758,7 @@
                 var cohBonne = rep.filter(function (r) { return chkCoh(r) && chkTriang([r]); }).length;
                 var pctCohBonne = rep.length ? (cohBonne / rep.length * 100) : 0;
                 var tV = 0, aV = 0;
-                if (lastM) { rep.filter(function (r) { return r.period === lastM; }).forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; tV++; var avg = mAvg(r.org5, ag, lastM, AD, N); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) aV++; }); }); }
+                if (lastM) { rep.filter(function (r) { return r.period === lastM; }).forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; tV++; var avg = _mAvgFast5(r.org5, ag, lastM); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) aV++; }); }); }
                 var pA = tV ? (aV / tV * 100) : 0;
                 var d1 = sf(rc, 'DTC1'), d3 = sf(rc, 'DTC3'), dr = d1 ? ((d1 - d3) / d1 * 100) : 0;
                 var scR = sB(tR, C.BR), scE = sB(aE, C.BR), scA = sBA(pA), scD = dr >= 0 ? 20 : 0;
@@ -2861,6 +2883,7 @@
                 });
             }
             sc.innerHTML += h + '</tbody></table></div>';
+            }, 30);
         };
 
         /* ═══ START ═══ */
