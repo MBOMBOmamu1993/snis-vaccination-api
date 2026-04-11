@@ -1581,21 +1581,33 @@
                     var allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < limitPer; });
                     var targetMos = allMos.slice(Math.max(0, allMos.length - N));
 
-                    // CORRECTION DU BUG : Agréger le total mensuel de la Zone
+                   // CORRECTION DU BUG : Agréger le total mensuel de la Zone
+                    var _isVAPag = ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0;
                     var monthlyTotals = targetMos.map(function (m) {
                         return AD.filter(function (r) { return r[ol.k] === orgName && r.period === m; })
                             .reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
                     });
+
+                    // Pour VAP : ne garder que les mois non-zéro et exiger 11+ mois
+                    if (_isVAPag) {
+                        monthlyTotals = monthlyTotals.filter(function (v) { return v > 0; });
+                    }
 
                     var avg = 0;
                     if (monthlyTotals.length) {
                         avg = monthlyTotals.reduce(function (s, v) { return s + v; }, 0) / monthlyTotals.length;
                     }
 
+                    // VAP avec < 11 mois de données non-zéro → pas d'alerte
+                    if (_isVAPag && monthlyTotals.length < 11) {
+                        avg = 0;
+                    }
+
                     var v2 = 0;
+                    var _vapInsuffisant = _isVAPag && monthlyTotals.length < 11;
                     if (avg > 0) {
                         v2 = (val - avg) / avg;
-                    } else if (val > 0) {
+                    } else if (val > 0 && !_vapInsuffisant) {
                         v2 = 1; /* 100% si valeur sans historique */
                     }
 
@@ -1604,9 +1616,9 @@
                         ag: ag,
                         vac: AG_LBL[ag],
                         val: val,
-                        avg: avg.toFixed(0),
-                        var2: (v2 * 100).toFixed(1),
-                        acc: Math.abs(v2) > thr ? 'Non acceptable' : 'Acceptable'
+                        avg: _vapInsuffisant ? 'N/A' : avg.toFixed(0),
+                        var2: _vapInsuffisant ? '0.0' : (v2 * 100).toFixed(1),
+                        acc: _vapInsuffisant ? 'Données insuffisantes' : (Math.abs(v2) > thr ? 'Non acceptable' : 'Acceptable')
                     });
                 });
             });
@@ -2474,10 +2486,14 @@
                             (_adByPer[_rp.period] || (_adByPer[_rp.period] = [])).push(_rp);
                         }
 
+                        var _vapAgs = { VAP1: 1, VAP2: 1, VAP3: 1, VAP4: 1 };
+
                         /* mAvg rapide : lookup O(N) au lieu de O(AD) */
                         function _mAvgFast(fosa, ag, per) {
                             var arr = _avgIdx[fosa + '|' + ag];
                             if (!arr) return null;
+                            // VAP : exiger 11+ mois de données non-zéro
+                            if (_vapAgs[ag] && arr.length < 11) return null;
                             var sum = 0, cnt = 0, L = arr.length;
                             for (var i = 0; i < L && cnt < N; i++) {
                                 if (arr[i].p < per) { sum += arr[i].v; cnt++; }
@@ -2485,13 +2501,15 @@
                             return cnt ? sum / cnt : null;
                         }
 
+                        var _allAGs = S.filters.province && C.VAP_PROV.indexOf(S.filters.province) >= 0 ? AG.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']) : AG;
+
                         var td = mosAt.map(function (m) {
                             var mD = _adByPer[m] || []; var t = 0, a = 0;
                             for (var ri = 0, rl = mD.length; ri < rl; ri++) {
                                 var r = mD[ri];
                                 var fo = r.org5;
-                                for (var ai = 0, al = AG.length; ai < al; ai++) {
-                                    var ag = AG[ai];
+                                for (var ai = 0, al = _allAGs.length; ai < al; ai++) {
+                                    var ag = _allAGs[ai];
                                     var val = Number(r[ag]) || 0;
                                     if (!val) continue;
                                     t++;
@@ -2746,9 +2764,11 @@
                 for (var _ki5 = 0; _ki5 < _avgKeys5.length; _ki5++) {
                     _avgIdx5[_avgKeys5[_ki5]].sort(function (a, b) { return b.p < a.p ? -1 : 1; });
                 }
+                var _vapAgs5 = { VAP1: 1, VAP2: 1, VAP3: 1, VAP4: 1 };
                 function _mAvgFast5(fosa, ag, per) {
                     var arr = _avgIdx5[fosa + '|' + ag];
                     if (!arr) return null;
+                    if (_vapAgs5[ag] && arr.length < 11) return null;
                     var sum = 0, cnt = 0, L = arr.length;
                     for (var i = 0; i < L && cnt < N; i++) {
                         if (arr[i].p < per) { sum += arr[i].v; cnt++; }
