@@ -1403,7 +1403,15 @@
             } else {
                 mosRap = _allMosRap;
             }
-            var bMRap = grp(AD, function (r) { return r.period; });
+            var _fltNoP = S.data.filter(function (r) {
+                var f = S.filters;
+                if (f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
+                if (f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                if (f.as.length && f.as.indexOf(r.org4) < 0) return false;
+                if (f.fosa.length && f.fosa.indexOf(r.org5) < 0) return false;
+                return true;
+            });
+            var bMRap = grp(_fltNoP, function (r) { return r.period; });
             var pM = mosRap.map(function (m) { var d = (bMRap[m] || []); var r2 = d.filter(isRep).length; return d.length ? (r2 / d.length * 100) : 0; });
             var lb2 = E('div', 'cb'); lb2.innerHTML = '<h4>📈 % rapportage par mois</h4><canvas id="pMC" height="50"></canvas>'; c.appendChild(lb2);
             setTimeout(function () {
@@ -1416,9 +1424,9 @@
             setTimeout(function () {
                 var fosas = uv(D, function (r) { return r.org5; }).slice(0, 60);
                 if (!fosas.length || !mos.length) { document.getElementById('HM').innerHTML = '<em style="color:#888">Aucune donnée.</em>'; return; }
-                var z = fosas.map(function (f) { return mos.map(function (m) { var rec = D.find(function (r) { return r.org5 === f && r.period === m; }); if (!rec) return -1; return isRep(rec) ? 1 : 0; }); });
+                var z = fosas.map(function (f) { return mos.map(function (m) { var rec = D.find(function (r) { return r.org5 === f && r.period === m; }); if (!rec) return null; return isRep(rec) ? 1 : 0; }); });
                 var el2 = document.getElementById('HM'); el2.style.height = Math.max(300, fosas.length * 15) + 'px';
-                Plotly.newPlot(el2, [{ z: z, x: mos.map(mL), y: fosas.map(function (f) { return tr(f, 32); }), type: 'heatmap', colorscale: [[0, '#e74c3c'], [.5, '#bdc3c8'], [1, '#27ae60']], showscale: false }], { margin: { l: 200, r: 25, t: 8, b: 55 }, yaxis: { autorange: 'reversed', dtick: 1, tickfont: { size: 7 } }, plot_bgcolor: '#fafbfc' }, { responsive: true });
+                Plotly.newPlot(el2, [{ z: z, x: mos.map(mL), y: fosas.map(function (f) { return tr(f, 32); }), type: 'heatmap', colorscale: [[0, '#e74c3c'], [1, '#27ae60']], zmin: 0, zmax: 1, showscale: false, connectgaps: false }], { margin: { l: 200, r: 25, t: 8, b: 55 }, yaxis: { autorange: 'reversed', dtick: 1, tickfont: { size: 7 } }, plot_bgcolor: '#fafbfc' }, { responsive: true });
             }, 500);
         }
 
