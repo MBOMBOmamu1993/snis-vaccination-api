@@ -750,7 +750,7 @@
 <body>
     <div class="hdr">
         <div class="logo">
-            <img src="https://raw.githubusercontent.com/MBOMBOmamu1993/pev-assets/main/logo_pev.jpg" alt="Logo PEV">
+            <img src="https://raw.githubusercontent.com/MBOMBOmamu1993/pev-assets/main/PEV_RD_Congo_TRANSPARENT.png" alt="Logo PEV">
         </div>
         <h1>Dashboard PEV de routine – RDC</h1>
         <div class="ibtn" title="Info"><i>i</i></div>
@@ -2184,80 +2184,80 @@
             return false;
         }
 
-                function _buildP4Rows() {
-                        var ca = _p4Cache; if (!ca.gIdx || !ca.ous || !ca._last12) return [];
-                        var gIdx = ca.gIdx, ous = ca.ous, _last12 = ca._last12, rows = [];
+        function _buildP4Rows() {
+            var ca = _p4Cache; if (!ca.gIdx || !ca.ous || !ca._last12) return [];
+            var gIdx = ca.gIdx, ous = ca.ous, _last12 = ca._last12, rows = [];
 
-                        ous.forEach(function (ou) {
-                            // 1. Pré-calculer les données par FOSA
-                            var fosaData = {};
-                            var ouMonthlyTotals = {}; // Totaux pour l'OU pour chaque antigène et chaque mois
+            ous.forEach(function (ou) {
+                // 1. Pré-calculer les données par FOSA
+                var fosaData = {};
+                var ouMonthlyTotals = {}; // Totaux pour l'OU pour chaque antigène et chaque mois
 
-                            _last12.forEach(function (m) {
-                                var recs = gIdx[ou + '\t' + m] || [];
-                                recs.forEach(function (r) {
-                                    var fosaName = r.org5 || ou;
-                                    if (!fosaData[fosaName]) {
-                                        fosaData[fosaName] = { monthly: {} };
-                                    }
-                                    AG.forEach(function (ag) {
-                                        var val = Number(r[ag]) || 0;
-                                        if (val > 0) {
-                                            if (!fosaData[fosaName].monthly[ag]) fosaData[fosaName].monthly[ag] = {};
-                                            fosaData[fosaName].monthly[ag][m] = val;
-                                            // Agréger au niveau de l'OU
-                                            if (!ouMonthlyTotals[ag]) ouMonthlyTotals[ag] = {};
-                                            if (!ouMonthlyTotals[ag][m]) ouMonthlyTotals[ag][m] = 0;
-                                            ouMonthlyTotals[ag][m] += val;
-                                        }
-                                    });
-                                });
-                            });
-
-                            // 2. Calculer les statistiques par FOSA
-                            Object.keys(fosaData).forEach(function (fosaName) {
-                                var fosa = fosaData[fosaName];
-                                fosa.stats = {};
-                                AG.forEach(function (ag) {
-                                    var fV = _last12.map(function (m) { return (fosa.monthly[ag] && fosa.monthly[ag][m]) || 0; });
-                                    var fMu = fV.reduce(function (s, v) { return s + v; }, 0) / fV.length;
-                                    var fSq = fV.reduce(function (s, v) { return s + (v - fMu) * (v - fMu); }, 0);
-                                    var fSd = fV.length > 1 ? Math.sqrt(fSq / (fV.length - 1)) : 0;
-                                    fosa.stats[ag] = { mu: fMu, sd: fSd, vals: fV };
-                                });
-                            });
-
-                            // 3. Boucler sur les antigènes pour agréger et créer les lignes finales
-                            AG.forEach(function (ag) {
-                                var vals = _last12.map(function (m) { return (ouMonthlyTotals[ag] && ouMonthlyTotals[ag][m]) || 0; });
-                                var n = vals.length, mu = n > 0 ? vals.reduce(function (s, v) { return s + v; }, 0) / n : 0;
-                                var sq = vals.reduce(function (s, v) { return s + (v - mu) * (v - mu); }, 0);
-                                var sd = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
-                                var ia = vals.map(function (v) { if (v === 0) return 'm'; if (_isAtypP4(v, mu, sd)) return 'a'; return false; });
-
-                                var acFosa = 0, missFosa = 0, normFosa = 0;
-                                Object.keys(fosaData).forEach(function (fosaName) {
-                                    var fosaStats = fosaData[fosaName].stats[ag];
-                                    if (fosaStats) {
-                                        fosaStats.vals.forEach(function (v, mi) {
-                                            if (v === 0 && vals[mi] === 0) { missFosa++; }
-                                            else if (v === 0 && vals[mi] > 0) { acFosa++; }
-                                            else if (v > 0) {
-                                                if (_isAtypP4(v, fosaStats.mu, fosaStats.sd)) { acFosa++; }
-                                                else { normFosa++; }
-                                            }
-                                        });
-                                    }
-                                });
-
-                                var mz = 0; vals.forEach(function (v) { if (sd > 0 && v > 0) { var z = Math.abs((v - mu) / sd); if (z > mz) mz = z; } });
-                                var maxPV = 0; vals.forEach(function (v) { if (v > 0 && mu > 0) { var pv = Math.abs((v - mu) / mu) * 100; if (pv > maxPV) maxPV = pv; } });
-
-                                rows.push({ ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia, tot: acFosa, miss: missFosa, ac: acFosa, norm: normFosa, mz: mz, cv: mu > 0 ? (sd / mu * 100) : 0, mu: mu, sd: sd, pctVar: maxPV });
-                            });
+                _last12.forEach(function (m) {
+                    var recs = gIdx[ou + '\t' + m] || [];
+                    recs.forEach(function (r) {
+                        var fosaName = r.org5 || ou;
+                        if (!fosaData[fosaName]) {
+                            fosaData[fosaName] = { monthly: {} };
+                        }
+                        AG.forEach(function (ag) {
+                            var val = Number(r[ag]) || 0;
+                            if (val > 0) {
+                                if (!fosaData[fosaName].monthly[ag]) fosaData[fosaName].monthly[ag] = {};
+                                fosaData[fosaName].monthly[ag][m] = val;
+                                // Agréger au niveau de l'OU
+                                if (!ouMonthlyTotals[ag]) ouMonthlyTotals[ag] = {};
+                                if (!ouMonthlyTotals[ag][m]) ouMonthlyTotals[ag][m] = 0;
+                                ouMonthlyTotals[ag][m] += val;
+                            }
                         });
-                        return rows;
-                    }
+                    });
+                });
+
+                // 2. Calculer les statistiques par FOSA
+                Object.keys(fosaData).forEach(function (fosaName) {
+                    var fosa = fosaData[fosaName];
+                    fosa.stats = {};
+                    AG.forEach(function (ag) {
+                        var fV = _last12.map(function (m) { return (fosa.monthly[ag] && fosa.monthly[ag][m]) || 0; });
+                        var fMu = fV.reduce(function (s, v) { return s + v; }, 0) / fV.length;
+                        var fSq = fV.reduce(function (s, v) { return s + (v - fMu) * (v - fMu); }, 0);
+                        var fSd = fV.length > 1 ? Math.sqrt(fSq / (fV.length - 1)) : 0;
+                        fosa.stats[ag] = { mu: fMu, sd: fSd, vals: fV };
+                    });
+                });
+
+                // 3. Boucler sur les antigènes pour agréger et créer les lignes finales
+                AG.forEach(function (ag) {
+                    var vals = _last12.map(function (m) { return (ouMonthlyTotals[ag] && ouMonthlyTotals[ag][m]) || 0; });
+                    var n = vals.length, mu = n > 0 ? vals.reduce(function (s, v) { return s + v; }, 0) / n : 0;
+                    var sq = vals.reduce(function (s, v) { return s + (v - mu) * (v - mu); }, 0);
+                    var sd = n > 1 ? Math.sqrt(sq / (n - 1)) : 0;
+                    var ia = vals.map(function (v) { if (v === 0) return 'm'; if (_isAtypP4(v, mu, sd)) return 'a'; return false; });
+
+                    var acFosa = 0, missFosa = 0, normFosa = 0;
+                    Object.keys(fosaData).forEach(function (fosaName) {
+                        var fosaStats = fosaData[fosaName].stats[ag];
+                        if (fosaStats) {
+                            fosaStats.vals.forEach(function (v, mi) {
+                                if (v === 0 && vals[mi] === 0) { missFosa++; }
+                                else if (v === 0 && vals[mi] > 0) { acFosa++; }
+                                else if (v > 0) {
+                                    if (_isAtypP4(v, fosaStats.mu, fosaStats.sd)) { acFosa++; }
+                                    else { normFosa++; }
+                                }
+                            });
+                        }
+                    });
+
+                    var mz = 0; vals.forEach(function (v) { if (sd > 0 && v > 0) { var z = Math.abs((v - mu) / sd); if (z > mz) mz = z; } });
+                    var maxPV = 0; vals.forEach(function (v) { if (v > 0 && mu > 0) { var pv = Math.abs((v - mu) / mu) * 100; if (pv > maxPV) maxPV = pv; } });
+
+                    rows.push({ ou: ou, ag: ag, lbl: AG_LBL[ag], vals: vals, ia: ia, tot: acFosa, miss: missFosa, ac: acFosa, norm: normFosa, mz: mz, cv: mu > 0 ? (sd / mu * 100) : 0, mu: mu, sd: sd, pctVar: maxPV });
+                });
+            });
+            return rows;
+        }
 
 
         function _renderP4Chart() {
@@ -2501,7 +2501,7 @@
             /* Lancement automatique (rapide grâce au pré-index _avgIdx) */
             _runP4Heavy();
 
-                        /* ═══ Org unit encodant des données non prévues ═══ */
+            /* ═══ Org unit encodant des données non prévues ═══ */
             var _encOL = getOrgLevel(D);
             var _encAGs = ['VAR2', 'HPV'];
             // Optimisation: stocker le résultat de la vérification VAP
@@ -2702,186 +2702,186 @@
             sc.innerHTML = '<div class="cb" style="padding:24px;text-align:center;color:#64748b;font-size:13px">\u23f3 Calcul du score qualit\u00e9 en cours\u2026</div>';
             /* Yield au navigateur pour peindre le placeholder avant le calcul */
             setTimeout(function () {
-            sc.innerHTML = '';
-            var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT, lastM = mos[mos.length - 1];
-            var lvC = [
-                { k: function (r) { return r.org5; }, l: 'FOSA' },
-                { k: function (r) { return r.org4; }, l: 'AS' },
-                { k: function (r) { return r.org3; }, l: 'ZS' },
-                { k: function (r) { return r.antenne; }, l: 'Antenne' },
-                { k: function (r) { return r.org2; }, l: 'Province' }
-            ][lv];
-            var og = grp(D, lvC.k), units = Object.keys(og).filter(Boolean).sort();
-            var isFOSA = lv === 0;
+                sc.innerHTML = '';
+                var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT, lastM = mos[mos.length - 1];
+                var lvC = [
+                    { k: function (r) { return r.org5; }, l: 'FOSA' },
+                    { k: function (r) { return r.org4; }, l: 'AS' },
+                    { k: function (r) { return r.org3; }, l: 'ZS' },
+                    { k: function (r) { return r.antenne; }, l: 'Antenne' },
+                    { k: function (r) { return r.org2; }, l: 'Province' }
+                ][lv];
+                var og = grp(D, lvC.k), units = Object.keys(og).filter(Boolean).sort();
+                var isFOSA = lv === 0;
 
-            /* ══════════════════════════════════════════════════════════
-             * OPTIMISATION CRITIQUE : même pattern que l'onglet Valeurs
-             * atypiques. mAvg() refait un AD.filter() complet à chaque
-             * appel, et il est appelé (units × records × antigènes) fois
-             * → figeait la page (1664 FOSAs × Kinshasa).
-             * Fix : pré-index AD en un seul passage par (fosa, antigène).
-             * ══════════════════════════════════════════════════════════ */
-            var _avgIdx5 = {};
-            for (var _i5 = 0, _al5 = AD.length; _i5 < _al5; _i5++) {
-                var _r5 = AD[_i5];
-                var _f5 = _r5.org5; if (!_f5) continue;
-                var _p5 = _r5.period;
-                for (var _j5 = 0, _gl5 = AG.length; _j5 < _gl5; _j5++) {
-                    var _ag5 = AG[_j5];
-                    var _v5 = Number(_r5[_ag5]) || 0;
-                    if (_v5 <= 0) continue;
-                    var _k5 = _f5 + '|' + _ag5;
-                    (_avgIdx5[_k5] || (_avgIdx5[_k5] = [])).push({ p: _p5, v: _v5 });
+                /* ══════════════════════════════════════════════════════════
+                 * OPTIMISATION CRITIQUE : même pattern que l'onglet Valeurs
+                 * atypiques. mAvg() refait un AD.filter() complet à chaque
+                 * appel, et il est appelé (units × records × antigènes) fois
+                 * → figeait la page (1664 FOSAs × Kinshasa).
+                 * Fix : pré-index AD en un seul passage par (fosa, antigène).
+                 * ══════════════════════════════════════════════════════════ */
+                var _avgIdx5 = {};
+                for (var _i5 = 0, _al5 = AD.length; _i5 < _al5; _i5++) {
+                    var _r5 = AD[_i5];
+                    var _f5 = _r5.org5; if (!_f5) continue;
+                    var _p5 = _r5.period;
+                    for (var _j5 = 0, _gl5 = AG.length; _j5 < _gl5; _j5++) {
+                        var _ag5 = AG[_j5];
+                        var _v5 = Number(_r5[_ag5]) || 0;
+                        if (_v5 <= 0) continue;
+                        var _k5 = _f5 + '|' + _ag5;
+                        (_avgIdx5[_k5] || (_avgIdx5[_k5] = [])).push({ p: _p5, v: _v5 });
+                    }
                 }
-            }
-            var _avgKeys5 = Object.keys(_avgIdx5);
-            for (var _ki5 = 0; _ki5 < _avgKeys5.length; _ki5++) {
-                _avgIdx5[_avgKeys5[_ki5]].sort(function (a, b) { return b.p < a.p ? -1 : 1; });
-            }
-            function _mAvgFast5(fosa, ag, per) {
-                var arr = _avgIdx5[fosa + '|' + ag];
-                if (!arr) return null;
-                var sum = 0, cnt = 0, L = arr.length;
-                for (var i = 0; i < L && cnt < N; i++) {
-                    if (arr[i].p < per) { sum += arr[i].v; cnt++; }
+                var _avgKeys5 = Object.keys(_avgIdx5);
+                for (var _ki5 = 0; _ki5 < _avgKeys5.length; _ki5++) {
+                    _avgIdx5[_avgKeys5[_ki5]].sort(function (a, b) { return b.p < a.p ? -1 : 1; });
                 }
-                return cnt ? sum / cnt : null;
-            }
-
-            var rows = units.map(function (u) {
-                var rc = og[u], rep = rc.filter(isRep), nT = rc.length, nR = rep.length;
-                var tR = pct(nR, nT);
-                var aE = rep.length ? rep.reduce(function (s, r) { return s + exh(r); }, 0) / rep.length : 0;
-                var cohOk = rep.filter(chkCoh).length, bCohAge = rep.length ? (cohOk / rep.length >= .5) : false;
-                var bTriang = chkTriang(rep);
-                var cohBonne = rep.filter(function (r) { return chkCoh(r) && chkTriang([r]); }).length;
-                var pctCohBonne = rep.length ? (cohBonne / rep.length * 100) : 0;
-                var tV = 0, aV = 0;
-                if (lastM) { rep.filter(function (r) { return r.period === lastM; }).forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; tV++; var avg = _mAvgFast5(r.org5, ag, lastM); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) aV++; }); }); }
-                var pA = tV ? (aV / tV * 100) : 0;
-                var d1 = sf(rc, 'DTC1'), d3 = sf(rc, 'DTC3'), dr = d1 ? ((d1 - d3) / d1 * 100) : 0;
-                var scR = sB(tR, C.BR), scE = sB(aE, C.BR), scA = sBA(pA), scD = dr >= 0 ? 20 : 0;
-
-                var tot, pct100, interp, notes = [];
-                if (isFOSA) {
-                    /* FOSA : 6 critères × 20 = 120 pts → %score pour interprétation */
-                    var scCage = bCohAge ? 20 : 0;
-                    var scDose = bTriang ? 20 : 0;
-                    tot = scR + scE + scCage + scA + scD + scDose;
-                    pct100 = Math.round(tot / 120 * 100);
-                    interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
-                    if (pct100 < 50) { if (scR < 12) notes.push('Rapp'); if (scE < 12) notes.push('Exh'); if (!bCohAge) notes.push('Coh âge'); if (!bTriang) notes.push('Coh doses'); if (scA < 12) notes.push('Atyp'); if (scD === 0) notes.push('Drop'); }
-                    return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCohAge: bCohAge, bTriang: bTriang, pA: pA, dr: dr, scR: scR, scE: scE, scCage: scCage, scDose: scDose, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
-                } else {
-                    /* AS / ZS / Antenne / Province : 5 critères × 20 = 100 pts */
-                    /* Cohérence = % ESS avec bonne cohérence (vaccins même âge ET doses dispo) → barème */
-                    var scCcomb = sB(pctCohBonne, C.BR);
-                    tot = scR + scE + scCcomb + scA + scD;
-                    pct100 = tot; /* déjà sur 100 */
-                    interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
-                    if (pct100 < 50) { if (scR < 12) notes.push('Rapportage'); if (scE < 12) notes.push('Exhaustivité'); if (scCcomb < 12) notes.push('Cohérence'); if (scA < 12) notes.push('Valeurs atypiques'); if (scD === 0) notes.push('Abandon'); }
-                    return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, pctCohBonne: pctCohBonne, pA: pA, dr: dr, scR: scR, scE: scE, scCcomb: scCcomb, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
+                function _mAvgFast5(fosa, ag, per) {
+                    var arr = _avgIdx5[fosa + '|' + ag];
+                    if (!arr) return null;
+                    var sum = 0, cnt = 0, L = arr.length;
+                    for (var i = 0; i < L && cnt < N; i++) {
+                        if (arr[i].p < per) { sum += arr[i].v; cnt++; }
+                    }
+                    return cnt ? sum / cnt : null;
                 }
-            });
-            rows.sort(function (a, b) { return b.pct100 - a.pct100; });
 
-            var exc = rows.filter(function (r) { return r.interp === 'Excellent'; }).length;
-            var bon = rows.filter(function (r) { return r.interp === 'Bon'; }).length;
-            var mau = rows.filter(function (r) { return r.interp === 'Mauvais'; }).length;
-            var avgP = rows.length ? rows.reduce(function (s, r) { return s + r.pct100; }, 0) / rows.length : 0;
+                var rows = units.map(function (u) {
+                    var rc = og[u], rep = rc.filter(isRep), nT = rc.length, nR = rep.length;
+                    var tR = pct(nR, nT);
+                    var aE = rep.length ? rep.reduce(function (s, r) { return s + exh(r); }, 0) / rep.length : 0;
+                    var cohOk = rep.filter(chkCoh).length, bCohAge = rep.length ? (cohOk / rep.length >= .5) : false;
+                    var bTriang = chkTriang(rep);
+                    var cohBonne = rep.filter(function (r) { return chkCoh(r) && chkTriang([r]); }).length;
+                    var pctCohBonne = rep.length ? (cohBonne / rep.length * 100) : 0;
+                    var tV = 0, aV = 0;
+                    if (lastM) { rep.filter(function (r) { return r.period === lastM; }).forEach(function (r) { AG.forEach(function (ag) { var val = Number(r[ag]) || 0; if (!val) return; tV++; var avg = _mAvgFast5(r.org5, ag, lastM); if (avg && avg > 0 && Math.abs((val - avg) / avg) > thr) aV++; }); }); }
+                    var pA = tV ? (aV / tV * 100) : 0;
+                    var d1 = sf(rc, 'DTC1'), d3 = sf(rc, 'DTC3'), dr = d1 ? ((d1 - d3) / d1 * 100) : 0;
+                    var scR = sB(tR, C.BR), scE = sB(aE, C.BR), scA = sBA(pA), scD = dr >= 0 ? 20 : 0;
 
-            sc.innerHTML = '<div class="kr" style="margin-bottom:16px">' +
-                '<div class="kc gn"><div class="kv">' + exc + '</div><div class="kl">Excellent ≥80%</div></div>' +
-                '<div class="kc or"><div class="kv">' + bon + '</div><div class="kl">Bon 50–79%</div></div>' +
-                '<div class="kc rd"><div class="kv">' + mau + '</div><div class="kl">Mauvais <50%</div></div>' +
-                '<div class="kc bl"><div class="kv">' + avgP.toFixed(0) + '%</div><div class="kl">Moy %score</div></div></div>';
-
-            /* Distribution histogram */
-            sc.innerHTML += '<div class="cb"><h4>📊 Distribution des scores</h4><canvas id="sDist" height="45"></canvas></div>';
-            setTimeout(function () {
-                var x = document.getElementById('sDist'); if (!x) return;
-                var bins = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]];
-                var bL = bins.map(function (b) { return b[0] + '-' + (b[1] === 101 ? 100 : b[1]) + '%'; });
-                var bC = bins.map(function (b) { return rows.filter(function (r) { return r.pct100 >= b[0] && r.pct100 < b[1]; }).length; });
-                S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#e74c3c', '#ff7043', '#f39c12', '#66bb6a', '#27ae60'], borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
-            }, 60);
-
-            /* Classification par score qualité — barres triées décroissant */
-            sc.innerHTML += '<div class="cb"><h4>🏅 Classification par score qualité des données — ' + lvC.l + '</h4><div style="overflow-x:auto"><canvas id="sClass" height="' + Math.max(60, Math.min(rows.length * 18, 400)) + '"></canvas></div></div>';
-            setTimeout(function () {
-                var x2 = document.getElementById('sClass'); if (!x2) return;
-                var labels = rows.map(function (r) { return tr(r.u, 26); });
-                var vals = rows.map(function (r) { return r.pct100; });
-                var cols = rows.map(function (r) { return r.interp === 'Excellent' ? '#27ae60' : (r.interp === 'Bon' ? '#f39c12' : '#e74c3c'); });
-                S.charts.sClass = new Chart(x2, {
-                    type: 'bar',
-                    data: { labels: labels, datasets: [{ label: '% Score', data: vals, backgroundColor: cols, borderRadius: 3 }] },
-                    options: {
-                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { var r2 = rows[ctx.dataIndex]; return ctx.dataset.label + ': ' + ctx.raw + '% (' + r2.interp + ')'; } } } },
-                        scales: { x: { min: 0, max: 100, title: { display: true, text: '%Score' } }, y: { ticks: { font: { size: 9 } } } }
+                    var tot, pct100, interp, notes = [];
+                    if (isFOSA) {
+                        /* FOSA : 6 critères × 20 = 120 pts → %score pour interprétation */
+                        var scCage = bCohAge ? 20 : 0;
+                        var scDose = bTriang ? 20 : 0;
+                        tot = scR + scE + scCage + scA + scD + scDose;
+                        pct100 = Math.round(tot / 120 * 100);
+                        interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
+                        if (pct100 < 50) { if (scR < 12) notes.push('Rapp'); if (scE < 12) notes.push('Exh'); if (!bCohAge) notes.push('Coh âge'); if (!bTriang) notes.push('Coh doses'); if (scA < 12) notes.push('Atyp'); if (scD === 0) notes.push('Drop'); }
+                        return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, bCohAge: bCohAge, bTriang: bTriang, pA: pA, dr: dr, scR: scR, scE: scE, scCage: scCage, scDose: scDose, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
+                    } else {
+                        /* AS / ZS / Antenne / Province : 5 critères × 20 = 100 pts */
+                        /* Cohérence = % ESS avec bonne cohérence (vaccins même âge ET doses dispo) → barème */
+                        var scCcomb = sB(pctCohBonne, C.BR);
+                        tot = scR + scE + scCcomb + scA + scD;
+                        pct100 = tot; /* déjà sur 100 */
+                        interp = pct100 >= 80 ? 'Excellent' : (pct100 >= 50 ? 'Bon' : 'Mauvais');
+                        if (pct100 < 50) { if (scR < 12) notes.push('Rapportage'); if (scE < 12) notes.push('Exhaustivité'); if (scCcomb < 12) notes.push('Cohérence'); if (scA < 12) notes.push('Valeurs atypiques'); if (scD === 0) notes.push('Abandon'); }
+                        return { u: u, nT: nT, nR: nR, tR: tR, aE: aE, pctCohBonne: pctCohBonne, pA: pA, dr: dr, scR: scR, scE: scE, scCcomb: scCcomb, scA: scA, scD: scD, tot: tot, pct100: pct100, interp: interp, notes: notes.join('; ') };
                     }
                 });
-            }, 120);
+                rows.sort(function (a, b) { return b.pct100 - a.pct100; });
 
-            /* Tableau score */
-            var h;
-            var TH = ' style="white-space:normal;max-width:72px;text-align:center;vertical-align:middle;line-height:1.3"';
-            if (isFOSA) {
-                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-                    '<th>' + lvC.l + '</th>' +
-                    '<th>Nombre total<br>ESS attendus</th>' +
-                    '<th>Nombre ESS<br>ayant rapporté</th>' +
-                    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
-                    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
-                    '<th>Cohérence vaccins<br>de même âge</th><th>Score Cohérence<br>vaccins (/20)</th>' +
-                    '<th>Cohérence vaccinés<br>doses disponibles</th><th>Score Cohérence<br>doses (/20)</th>' +
-                    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
-                    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
-                    '<th>Score Total<br>(/120)</th><th>% Score<br>Total</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
-                    '</tr></thead><tbody>';
-                rows.forEach(function (r) {
-                    var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
-                    var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
-                    h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
-                        '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
-                        '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
-                        '<td class="' + (r.bCohAge ? 'cg' : 'crd') + '">' + (r.bCohAge ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scCage + '</td>' +
-                        '<td class="' + (r.bTriang ? 'cg' : 'crd') + '">' + (r.bTriang ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scDose + '</td>' +
-                        '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
-                        '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
-                        '<td style="font-weight:800;text-align:center">' + r.tot + '/120</td>' +
-                        '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:14px">' + r.pct100 + '%</td>' +
-                        '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
-                        '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
-                });
-            } else {
-                h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-                    '<th>' + lvC.l + '</th>' +
-                    '<th>Nombre<br>total ESS</th>' +
-                    '<th>Nombre ESS<br>ayant rapporté</th>' +
-                    '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
-                    '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
-                    '<th>% ESS bonne cohérence<br>(vaccins + doses)</th><th>Score<br>Cohérence (/20)</th>' +
-                    '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
-                    '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
-                    '<th>Score Composite<br>(/100)</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
-                    '</tr></thead><tbody>';
-                rows.forEach(function (r) {
-                    var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
-                    var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
-                    h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
-                        '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
-                        '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
-                        '<td class="' + (r.pctCohBonne >= 50 ? 'cg' : 'crd') + '">' + r.pctCohBonne.toFixed(1) + '%</td><td style="font-weight:700">' + r.scCcomb + '</td>' +
-                        '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
-                        '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
-                        '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:15px">' + r.pct100 + '</td>' +
-                        '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
-                        '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
-                });
-            }
-            sc.innerHTML += h + '</tbody></table></div>';
+                var exc = rows.filter(function (r) { return r.interp === 'Excellent'; }).length;
+                var bon = rows.filter(function (r) { return r.interp === 'Bon'; }).length;
+                var mau = rows.filter(function (r) { return r.interp === 'Mauvais'; }).length;
+                var avgP = rows.length ? rows.reduce(function (s, r) { return s + r.pct100; }, 0) / rows.length : 0;
+
+                sc.innerHTML = '<div class="kr" style="margin-bottom:16px">' +
+                    '<div class="kc gn"><div class="kv">' + exc + '</div><div class="kl">Excellent ≥80%</div></div>' +
+                    '<div class="kc or"><div class="kv">' + bon + '</div><div class="kl">Bon 50–79%</div></div>' +
+                    '<div class="kc rd"><div class="kv">' + mau + '</div><div class="kl">Mauvais <50%</div></div>' +
+                    '<div class="kc bl"><div class="kv">' + avgP.toFixed(0) + '%</div><div class="kl">Moy %score</div></div></div>';
+
+                /* Distribution histogram */
+                sc.innerHTML += '<div class="cb"><h4>📊 Distribution des scores</h4><canvas id="sDist" height="45"></canvas></div>';
+                setTimeout(function () {
+                    var x = document.getElementById('sDist'); if (!x) return;
+                    var bins = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]];
+                    var bL = bins.map(function (b) { return b[0] + '-' + (b[1] === 101 ? 100 : b[1]) + '%'; });
+                    var bC = bins.map(function (b) { return rows.filter(function (r) { return r.pct100 >= b[0] && r.pct100 < b[1]; }).length; });
+                    S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#e74c3c', '#ff7043', '#f39c12', '#66bb6a', '#27ae60'], borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+                }, 60);
+
+                /* Classification par score qualité — barres triées décroissant */
+                sc.innerHTML += '<div class="cb"><h4>🏅 Classification par score qualité des données — ' + lvC.l + '</h4><div style="overflow-x:auto"><canvas id="sClass" height="' + Math.max(60, Math.min(rows.length * 18, 400)) + '"></canvas></div></div>';
+                setTimeout(function () {
+                    var x2 = document.getElementById('sClass'); if (!x2) return;
+                    var labels = rows.map(function (r) { return tr(r.u, 26); });
+                    var vals = rows.map(function (r) { return r.pct100; });
+                    var cols = rows.map(function (r) { return r.interp === 'Excellent' ? '#27ae60' : (r.interp === 'Bon' ? '#f39c12' : '#e74c3c'); });
+                    S.charts.sClass = new Chart(x2, {
+                        type: 'bar',
+                        data: { labels: labels, datasets: [{ label: '% Score', data: vals, backgroundColor: cols, borderRadius: 3 }] },
+                        options: {
+                            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { var r2 = rows[ctx.dataIndex]; return ctx.dataset.label + ': ' + ctx.raw + '% (' + r2.interp + ')'; } } } },
+                            scales: { x: { min: 0, max: 100, title: { display: true, text: '%Score' } }, y: { ticks: { font: { size: 9 } } } }
+                        }
+                    });
+                }, 120);
+
+                /* Tableau score */
+                var h;
+                var TH = ' style="white-space:normal;max-width:72px;text-align:center;vertical-align:middle;line-height:1.3"';
+                if (isFOSA) {
+                    h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+                        '<th>' + lvC.l + '</th>' +
+                        '<th>Nombre total<br>ESS attendus</th>' +
+                        '<th>Nombre ESS<br>ayant rapporté</th>' +
+                        '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
+                        '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
+                        '<th>Cohérence vaccins<br>de même âge</th><th>Score Cohérence<br>vaccins (/20)</th>' +
+                        '<th>Cohérence vaccinés<br>doses disponibles</th><th>Score Cohérence<br>doses (/20)</th>' +
+                        '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
+                        '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
+                        '<th>Score Total<br>(/120)</th><th>% Score<br>Total</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
+                        '</tr></thead><tbody>';
+                    rows.forEach(function (r) {
+                        var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
+                        var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
+                        h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
+                            '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
+                            '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
+                            '<td class="' + (r.bCohAge ? 'cg' : 'crd') + '">' + (r.bCohAge ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scCage + '</td>' +
+                            '<td class="' + (r.bTriang ? 'cg' : 'crd') + '">' + (r.bTriang ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scDose + '</td>' +
+                            '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
+                            '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
+                            '<td style="font-weight:800;text-align:center">' + r.tot + '/120</td>' +
+                            '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:14px">' + r.pct100 + '%</td>' +
+                            '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
+                            '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
+                    });
+                } else {
+                    h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
+                        '<th>' + lvC.l + '</th>' +
+                        '<th>Nombre<br>total ESS</th>' +
+                        '<th>Nombre ESS<br>ayant rapporté</th>' +
+                        '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
+                        '<th>Exhaustivité<br>moyenne (%)</th><th>Score<br>Exhaustivité (/20)</th>' +
+                        '<th>% ESS bonne cohérence<br>(vaccins + doses)</th><th>Score<br>Cohérence (/20)</th>' +
+                        '<th>% Moyen<br>val. atypiques</th><th>Score Valeurs<br>Atypiques (/20)</th>' +
+                        '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
+                        '<th>Score Composite<br>(/100)</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
+                        '</tr></thead><tbody>';
+                    rows.forEach(function (r) {
+                        var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
+                        var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
+                        h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
+                            '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
+                            '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
+                            '<td class="' + (r.pctCohBonne >= 50 ? 'cg' : 'crd') + '">' + r.pctCohBonne.toFixed(1) + '%</td><td style="font-weight:700">' + r.scCcomb + '</td>' +
+                            '<td>' + r.pA.toFixed(1) + '%</td><td style="font-weight:700">' + r.scA + '</td>' +
+                            '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
+                            '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:15px">' + r.pct100 + '</td>' +
+                            '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
+                            '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
+                    });
+                }
+                sc.innerHTML += h + '</tbody></table></div>';
             }, 30);
         };
 
