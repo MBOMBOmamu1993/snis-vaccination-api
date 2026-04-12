@@ -829,19 +829,34 @@
     ];
 
     var LOGIST_FIELDS = [
-            { lbl: 'BCG', stock: 'BCG_stock_d_but', recv: 'BCG_re_ues', used: 'BCG_utilis_es', jrs: 'BCG_jours_rupture', sdu: 'BCG_stock_fin', vacs: ['BCG'] },
-            { lbl: 'VPO', stock: 'VPO_stock_d_but', recv: 'VPO_re_ues', used: 'VPO_utilis_es', jrs: 'VPO_jours_rupture', sdu: 'VPO_stock_fin', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'] },
-            { lbl: 'DTC/Penta', stock: 'DTC_stock_d_but', recv: 'DTC_re_ues', used: 'DTC_utilis_es', jrs: 'DTC_jours_rupture', sdu: 'DTC_stock_fin', vacs: ['DTC1', 'DTC2', 'DTC3'] },
-            { lbl: 'PCV13', stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues', used: 'PCV13_utilis_es', jrs: 'PCV13_jours_rupture', sdu: 'PCV13_stock_fin', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'] },
-            { lbl: 'ROTA', stock: 'ROTA_stock_d_but', recv: 'ROTA_re_ues', used: 'ROTA_utilis_es', jrs: 'ROTA_jours_rupture', sdu: 'ROTA_stock_fin', vacs: ['ROTA1', 'ROTA2', 'ROTA3'] },
-            { lbl: 'VPI', stock: 'VPI_stock_d_but', recv: 'VPI_re_ues', used: 'VPI_utilis_es', jrs: 'VPI_jours_rupture', sdu: 'VPI_stock_fin', vacs: ['VPI1', 'VPI2'] },
-            { lbl: 'VAR', stock: 'VAR_stock_d_but', recv: 'VAR_re_ues', used: 'VAR_utilis_es', jrs: 'VAR_jours_rupture', sdu: 'VAR_stock_fin', vacs: ['VAR1', 'VAR2'] },
-            { lbl: 'VAA', stock: 'VAA_stock_d_but', recv: 'VAA_re_ues', used: 'VAA_utilis_es', jrs: 'VAA_jours_rupture', sdu: 'VAA_stock_fin', vacs: ['VAA'] },
-            { lbl: 'Td (VAT)', stock: 'Td_stock_d_but', recv: 'Td_re_ues', used: 'Td_utilis_es', jrs: 'Td_jours_rupture', sdu: 'Td_stock_fin', vacs: ['TD'] },
-            { lbl: 'VAP', stock: 'VAP_stock_d_but', recv: 'VAP_re_ues', used: 'VAP_utilis_es', jrs: 'VAP_jours_rupture', sdu: 'VAP_stock_fin', vacs: ['VAP1', 'VAP2', 'VAP3', 'VAP4'] }
+            { lbl: 'Vaccin BCG', pfx: 'BCG', unit: 'Dose 20 d/fl.', vacs: ['BCG'] },
+            { lbl: 'Vaccin VPO', pfx: 'VPO', unit: 'Dose 20 d/fl.', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'] },
+            { lbl: 'Vaccin DTC/Penta', pfx: 'DTC', unit: 'Dose 10 d/fl.', vacs: ['DTC1', 'DTC2', 'DTC3'] },
+            { lbl: 'Vaccin VPI', pfx: 'VPI', unit: 'Dose 5 d/fl.', vacs: ['VPI1', 'VPI2'] },
+            { lbl: 'Vaccin PCV13', pfx: 'PCV13', unit: 'Dose', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'] },
+            { lbl: 'Vaccin ROTA', pfx: 'ROTA', unit: 'Dose', vacs: ['ROTA1', 'ROTA2', 'ROTA3'] },
+            { lbl: 'Vaccin VAR', pfx: 'VAR', unit: 'Dose 10 d/fl.', vacs: ['VAR1', 'VAR2'] },
+            { lbl: 'Vaccin VAA', pfx: 'VAA', unit: 'Dose 10 d/fl.', vacs: ['VAA'] },
+            { lbl: 'Vaccin Td (VAT)', pfx: 'Td', unit: 'Dose 10 d/fl.', vacs: ['TD'] },
+            { lbl: 'Vaccin VAP', pfx: 'VAP', unit: 'Dose', vacs: ['VAP1', 'VAP2', 'VAP3', 'VAP4'] },
+            { lbl: 'Diluant BCG', pfx: 'Diluant_BCG', unit: 'Ampoule' },
+            { lbl: 'Diluant VAR', pfx: 'Diluant_VAR', unit: 'Ampoule' },
+            { lbl: 'Diluant VAA', pfx: 'Diluant_VAA', unit: 'Ampoule' },
+            { lbl: 'Diluant VAP', pfx: 'Diluant_VAP', unit: 'Ampoule' },
+            { lbl: 'SAB 0,05 ml', pfx: 'SAB_005ml', unit: 'Pièce' },
+            { lbl: 'SAB 0,5 ml', pfx: 'SAB_05ml', unit: 'Pièce' },
+            { lbl: 'SAB auto-bloquante', pfx: 'SAB_auto_bloquante', unit: 'Pièce' },
+            { lbl: 'Ser. dilution 2 ml', pfx: 'Ser_dilution_2ml', unit: 'Pièce' },
+            { lbl: 'Ser. dilution 5 ml', pfx: 'Ser_dilution_5ml', unit: 'Pièce' },
+            { lbl: 'Adaptateur Rotavirus', pfx: 'Adaptateurs', unit: 'Pièce' },
+            { lbl: 'Compte-goutte', pfx: 'Compte_goutte', unit: 'Pièce' },
+            { lbl: 'Réceptacles', pfx: 'R_ceptacles', unit: 'Pièce' }
         ];
         var LOGIST_ALL_FIELDS = [];
-        LOGIST_FIELDS.forEach(function (f) { LOGIST_ALL_FIELDS.push(f.stock, f.recv, f.used, f.jrs, f.sdu); });
+        LOGIST_FIELDS.forEach(function (f) {
+            var p = f.pfx;
+            LOGIST_ALL_FIELDS.push(p + '_stock_d_but', p + '_re_ues', p + '_utilis_es', p + '_pertes', p + '_jours_rupture', p + '_stock_fin');
+        });
         var TABS = [
             {
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
@@ -950,25 +965,12 @@
                 var val = src ? (Number(r[src]) || 0) : 0;
                 rec[ag] = val; rec[ag + '_f'] = val;
             });
-            ['BCG_stock_d_but', 'BCG_re_ues', 'DTC_stock_d_but', 'DTC_re_ues',
-                'PCV13_stock_d_but', 'PCV13_re_ues', 'VAR_stock_d_but', 'VAR_re_ues',
-                'Td_stock_d_but', 'Td_re_ues', 'VPO_stock_d_but', 'VPO_re_ues',
-                'VPI_stock_d_but', 'VPI_re_ues', 'ROTA_stock_d_but', 'ROTA_re_ues',
-                'VAA_stock_d_but', 'VAA_re_ues', 'VAP_stock_d_but', 'VAP_re_ues',
-                'seances_fixes_prevues', 'seances_fixes_realisees',
+            ['seances_fixes_prevues', 'seances_fixes_realisees',
                 'seances_avancees_prevues', 'seances_avancees_realisees',
                 'seances_mobiles_prevues', 'seances_mobiles_realisees',
-                'BCG_utilis_es', 'BCG_jours_rupture', 'BCG_stock_fin',
-                'DTC_utilis_es', 'DTC_jours_rupture', 'DTC_stock_fin',
-                'VPO_utilis_es', 'VPO_jours_rupture', 'VPO_stock_fin',
-                'VPI_utilis_es', 'VPI_jours_rupture', 'VPI_stock_fin',
-                'VAR_utilis_es', 'VAR_jours_rupture', 'VAR_stock_fin',
-                'VAA_utilis_es', 'VAA_jours_rupture', 'VAA_stock_fin',
-                'Td_utilis_es', 'Td_jours_rupture', 'Td_stock_fin',
-                'PCV13_utilis_es', 'PCV13_jours_rupture', 'PCV13_stock_fin',
-                'ROTA_utilis_es', 'ROTA_jours_rupture', 'ROTA_stock_fin',
-                'VAP_utilis_es', 'VAP_jours_rupture', 'VAP_stock_fin'
+                'ECV_12_23'
             ].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
+            LOGIST_ALL_FIELDS.forEach(function (f) { rec[f] = Number(r[f]) || 0; });
             return rec;
         }
 
@@ -2985,59 +2987,52 @@
                 '<div class="kc pu" style="flex:1;min-width:130px"><div class="kv">' + nF.toLocaleString() + '</div><div class="kl">Nombre ' + levelLbl + '</div></div>';
             c.appendChild(kd);
 
-            /* ── b) Calendrier vaccinal en boxes ── */
+            /* ── b) Calendrier vaccinal en boxes colorées ── */
             var calBox = E('div', 'cb');
             var dynLevel = f.fosa.length === 1 ? f.fosa[0] : f.as.length === 1 ? f.as[0] : f.zs.length === 1 ? f.zs[0] : f.antenne.length === 1 ? f.antenne[0] : f.province;
             calBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:4px">💉 Nombre des vaccinés selon le calendrier vaccinal de : ' + perLbl + '</h4>' +
                 '<p style="font-size:11px;color:#555;margin:0 0 12px">' + levelLbl + ' : <strong>' + dynLevel + '</strong></p>';
 
-            var calDefs = [
-                { age: 'Naissance', ags: [['BCG'], ['VPO0']] },
-                { age: '6 semaines (1½ mois)', ags: [['DTC1', 'Penta1'], ['VPO1'], ['ROTA1'], ['PCV13_1', 'PCV13-1']] },
-                { age: '10 semaines (2½ mois)', ags: [['DTC2', 'Penta2'], ['VPO2'], ['ROTA2'], ['PCV13_2', 'PCV13-2']] },
-                { age: '14 semaines (3½ mois)', ags: [['DTC3', 'Penta3'], ['VPO3'], ['VPI1'], ['ROTA3'], ['PCV13_3', 'PCV13-3']] },
-                { age: '6 mois', ags: [['VAP1']], vap: true },
-                { age: '7 mois', ags: [['VAP2']], vap: true },
-                { age: '8 mois', ags: [['VAP3']], vap: true },
-                { age: '9 mois', ags: [['VAR1'], ['VPI2'], ['VAA']] },
-                { age: '15 mois', ags: [['VAR2'], ['VAP4']] }
-            ];
+            var calColors = {
+                'Naissance': '#0b3a6f',
+                '6 semaines': '#1565c0',
+                '10 semaines': '#00838f',
+                '14 semaines': '#2e7d32',
+                '6 mois': '#6a1b9a',
+                '7 mois': '#7b1fa2',
+                '8 mois': '#8e24aa',
+                '9 mois': '#e65100',
+                '15 mois': '#c62828'
+            };
 
             var bh = '<div style="display:flex;flex-wrap:wrap;gap:14px">';
-            calDefs.forEach(function (grp) {
-                if (grp.vap && !isVAPprov) return;
+            VACCIN_CALENDAR.forEach(function (grp) {
                 var ags2 = grp.ags.filter(function (a) {
-                    if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a[0]) >= 0) return false;
-                    return true;
+                    return isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a) < 0;
                 });
                 if (!ags2.length) return;
+                var col = calColors[grp.age] || '#0b3a6f';
 
-                bh += '<div style="background:#fff;border:2px solid #0b3a6f;border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
-                bh += '<div style="background:#0b3a6f;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">' + grp.age.toUpperCase() + '</div>';
+                bh += '<div style="background:#fff;border:2px solid ' + col + ';border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
+                bh += '<div style="background:' + col + ';color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">' + grp.age + '</div>';
                 bh += '<div style="padding:8px 12px">';
-                ags2.forEach(function (agArr) {
-                    var agKey = agArr[0];
-                    var agLabel = agArr.length > 1 ? agArr[1] : AG_LBL[agKey] || agKey;
-                    var val = sf(D, agKey);
+                ags2.forEach(function (ag) {
+                    var val = sf(D, ag);
                     bh += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee">';
-                    bh += '<span style="font-weight:600;color:#333">' + agLabel + '</span>';
-                    bh += '<span style="font-weight:700;color:#0b3a6f;font-size:14px">' + val.toLocaleString() + '</span></div>';
+                    bh += '<span style="font-weight:600;color:#333">' + (AG_LBL[ag] || ag) + '</span>';
+                    bh += '<span style="font-weight:700;color:' + col + ';font-size:14px">' + val.toLocaleString() + '</span></div>';
                 });
-                /* Tx_Ab pour 15 mois */
-                if (grp.age === '15 mois') {
-                    /* pas de Tx_Ab ici, on le met à part */
-                }
                 bh += '</div></div>';
             });
 
-            /* Box Tx_Ab + ECV */
-            bh += '<div style="background:#fff;border:2px solid #e65100;border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
-            bh += '<div style="background:#e65100;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">FEMMES ENCEINTES</div>';
+            /* Box Td + ECV */
+            bh += '<div style="background:#fff;border:2px solid #d84315;border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
+            bh += '<div style="background:#d84315;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">Femmes enceintes</div>';
             bh += '<div style="padding:8px 12px">';
             var tdVal = sf(D, 'TD');
-            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:600">Td 2+ (Tx_Ab)</span><span style="font-weight:700;color:#e65100;font-size:14px">' + tdVal.toLocaleString() + '</span></div>';
+            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:600">Td 2+</span><span style="font-weight:700;color:#d84315;font-size:14px">' + tdVal.toLocaleString() + '</span></div>';
             var ecvVal = sf(D, 'ECV_12_23') || 0;
-            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-weight:600">ECV 0-11 mois</span><span style="font-weight:700;color:#e65100;font-size:14px">' + ecvVal.toLocaleString() + '</span></div>';
+            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-weight:600">ECV 12-23 mois</span><span style="font-weight:700;color:#d84315;font-size:14px">' + ecvVal.toLocaleString() + '</span></div>';
             bh += '</div></div>';
             bh += '</div>';
             calBox.innerHTML += bh;
@@ -3199,76 +3194,68 @@
                 S.charts.logEvo = new Chart(x, { type: 'line', data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: ed, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 200);
 
-            /* ── Rapport logistique complet ── */
+            /* ── Rapport logistique — tableau plat ── */
+            var niv = '';
+            if (f.fosa && f.fosa.length === 1) niv = f.fosa[0];
+            else if (f.as && f.as.length === 1) niv = f.as[0];
+            else if (f.zs && f.zs.length === 1) niv = f.zs[0];
+            else if (f.antenne && f.antenne.length === 1) niv = f.antenne[0];
+            else if (f.province) niv = f.province;
+            else niv = 'National';
+            var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
+
             var repBox = E('div', 'cb');
-            repBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:8px">📦 Rapport logistique par vaccin</h4>';
+            repBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:4px">📦 Rapport logistique : <b>' + niv + '</b></h4>'
+                + '<div style="font-size:12px;color:#666;margin-bottom:14px">Période : ' + perLbl + '</div>';
 
-            var fH2 = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap">';
-            fH2 += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + ol.l + ' <button class="frst" onclick="_rstLogOU()" title="Réinitialiser">↺</button></label>';
-            fH2 += '<button class="fbtn" id="logBtnOU" onclick="_togADD(\'logDdOU\')"><span>Tout (' + orgNames.length + ')</span><span class="cn">' + orgNames.length + '</span><span>▼</span></button>';
-            fH2 += '<div class="fd" id="logDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'logDdOU\')">';
-            fH2 += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'logDdOU\')"><span style="font-weight:700">Tout sélectionner</span></div>';
-            orgNames.forEach(function (ou) { fH2 += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderLogTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
-            fH2 += '</div></div></div>';
-            repBox.innerHTML += fH2;
-            repBox.innerHTML += '<div id="logTblWrap"></div>';
+            var h = '<div style="overflow-x:auto"><table class="dt" style="font-size:11px;border-collapse:collapse">';
+            h += '<thead style="position:sticky;top:0;z-index:2"><tr>';
+            h += '<th style="background:#0b3a6f;color:#fff;min-width:40px;text-align:center">N°</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;min-width:160px;position:sticky;left:0;z-index:3">Désignation</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;min-width:100px">Unité</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Stock début</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Reçues</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Utilisées</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Administrées</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Perdues</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Tx perte %</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Jrs rupture</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">SDU</th>';
+            h += '</tr></thead><tbody>';
+
+            LOGIST_FIELDS.forEach(function (item, idx) {
+                var p = item.pfx;
+                var stk = sf(D, p + '_stock_d_but');
+                var rcv = sf(D, p + '_re_ues');
+                var used = sf(D, p + '_utilis_es');
+                var admin = item.vacs ? item.vacs.reduce(function (s, v) { return s + sf(D, v); }, 0) : 0;
+                var perdu = sf(D, p + '_pertes');
+                var denom = (admin || 0) + (perdu || 0);
+                var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
+                var jrs = sf(D, p + '_jours_rupture');
+                var sdu = sf(D, p + '_stock_fin');
+
+                var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                h += '<tr style="background:' + bg + '">';
+                h += '<td style="text-align:center;font-weight:600">' + (idx + 1) + '</td>';
+                h += '<td style="position:sticky;left:0;z-index:1;background:' + bg + ';font-weight:600;white-space:nowrap">' + item.lbl + '</td>';
+                h += '<td style="font-size:10px;color:#666">' + item.unit + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (stk ? stk.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (rcv ? rcv.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (used ? used.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (admin ? admin.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (perdu ? perdu.toLocaleString() : '\u2014') + '</td>';
+                var txCol = txPerte > 5 ? '#e74c3c' : txPerte > 2 ? '#f39c12' : '#27ae60';
+                h += '<td style="text-align:right;font-weight:600;color:' + txCol + '">' + txPerte.toFixed(1) + '%</td>';
+                var jrCol = jrs > 0 ? '#e74c3c' : '#27ae60';
+                h += '<td style="text-align:right;color:' + jrCol + ';font-weight:600">' + (jrs ? jrs.toLocaleString() : '0') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (sdu ? sdu.toLocaleString() : '\u2014') + '</td>';
+                h += '</tr>';
+            });
+
+            h += '</tbody></table></div>';
+            repBox.innerHTML += h;
             c.appendChild(repBox);
-
-            window._rstLogOU = function () {
-                document.querySelectorAll('#logDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
-                _renderLogTbl();
-            };
-
-            window._renderLogTbl = function () {
-                var selOU = [];
-                document.querySelectorAll('#logDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (cb) { if (cb.checked) selOU.push(cb.value); });
-                _updABtn('logDdOU', 'logBtnOU');
-                var fltOrgs = selOU.length < orgNames.length ? orgNames.filter(function (o) { return selOU.indexOf(o) >= 0; }) : orgNames;
-
-                var h = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:10px"><thead>';
-                h += '<tr style="background:#0b3a6f;color:#fff"><th rowspan="2" style="min-width:150px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
-                LOGIST_FIELDS.forEach(function (lf) {
-                    h += '<th colspan="9" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + lf.lbl + '</th>';
-                });
-                h += '</tr><tr style="background:#163d6f;color:#ddd;font-size:8px">';
-                LOGIST_FIELDS.forEach(function () {
-                    h += '<th>Stock début</th><th>Reçues</th><th>Dose dispo</th><th>Administré</th><th>Utilisé</th><th>Perdu</th><th>Tx perte</th><th>SDU</th><th>JRS</th>';
-                });
-                h += '</tr></thead><tbody>';
-
-                fltOrgs.forEach(function (orgName, idx) {
-                    var recs = ogs[orgName] || [];
-                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                    h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:2;font-weight:600;font-size:10px">' + tr(orgName, 28) + '</td>';
-
-                    LOGIST_FIELDS.forEach(function (lf) {
-                        var stk = sf(recs, lf.stock);
-                        var rcv = sf(recs, lf.recv);
-                        var dispo = stk + rcv;
-                        var admin = lf.vacs.reduce(function (s, v) { return s + sf(recs, v); }, 0);
-                        var used = sf(recs, lf.used);
-                        var perdu = used > 0 ? used - admin : 0;
-                        var txPerte = used > 0 ? (perdu / used * 100) : 0;
-                        var sdu = sf(recs, lf.sdu);
-                        var jrs = sf(recs, lf.jrs);
-
-                        h += '<td style="text-align:right">' + stk.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right">' + rcv.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right;font-weight:600">' + dispo.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right">' + admin.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right">' + used.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right;color:' + (perdu > 0 ? '#e74c3c' : '#27ae60') + '">' + perdu.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right;color:' + (txPerte > 10 ? '#e74c3c' : txPerte > 5 ? '#f39c12' : '#27ae60') + '">' + txPerte.toFixed(1) + '%</td>';
-                        h += '<td style="text-align:right">' + sdu.toLocaleString() + '</td>';
-                        h += '<td style="text-align:right;color:' + (jrs > 0 ? '#e74c3c' : '#27ae60') + ';font-weight:' + (jrs > 0 ? '700' : '400') + '">' + jrs + '</td>';
-                    });
-                    h += '</tr>';
-                });
-                h += '</tbody></table></div>';
-                var w = document.getElementById('logTblWrap');
-                if (w) w.innerHTML = h;
-            };
-            setTimeout(function () { _renderLogTbl(); }, 100);
         }
         /* ═══ START ═══ */
         loadAll();
