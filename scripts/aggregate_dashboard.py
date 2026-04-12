@@ -196,200 +196,58 @@ SUM_SPECS: dict[str, list[str]] = {
  "seances_mobiles_prevues": ["S_ances_mobiles_pr_vues"],
  "seances_mobiles_realisees": ["S_ances_mobiles_r_alis_es"],
 
- # ══════════════════════════════════════════════════════════════
- # LOGISTIQUE COMPLÈTE — Tous champs disponibles dans DHIS2
- # Les sources sont les labels DHIS2 tels qu'écrits dans les NDJSON.
- # ══════════════════════════════════════════════════════════════
-
- # ── BCG ──
- "BCG_stock_d_but":      ["BCG dose-stock debut mois"],
- "BCG_re_ues":           ["BCG dose-recue mois"],
- "BCG_utilis_es":        ["BCG dose-utilisee"],
- "BCG_admin":            ["BCG dose-administree"],
- "BCG_pertes":           ["BCG dose-perdue"],
- "BCG_jours_rupture":    ["BCG dose-jour rupture stock"],
- "BCG_SDU":              ["BCG dose-stock disponible utilisable"],
- "BCG_sortie":           ["BCG dose-sortie"],
-
- # ── DTC / Penta ──
- "DTC_stock_d_but":      ["DTC dose-stock debut mois"],
- "DTC_re_ues":           ["DTC doses-recue mois"],
- "DTC_utilis_es":        ["DTC dose-utilisee"],
- "DTC_admin":            ["DTC doses-administree"],
- "DTC_pertes":           ["DTC dose-perdue"],
- "DTC_jours_rupture":    ["DTC doses-jour rupture stock"],
- "DTC_SDU":              ["DTC dose-stock disponible utilisable"],
- "DTC_sortie":           ["DTC dose-sortie"],
-
- # ── VPO ──
- "VPO_stock_d_but":      ["VPO dose-stock debut mois"],
- "VPO_re_ues":           ["VPO dose-recue mois"],
- "VPO_utilis_es":        ["VPO dose-utilisee"],
- "VPO_admin":            ["VPO dose-administree"],
- "VPO_pertes":           ["VPO dose-perdue"],
- "VPO_jours_rupture":    ["VPO dose-jour rupture stock"],
- "VPO_SDU":              ["VPO dose-stock disponible utilisable"],
- "VPO_sortie":           ["VPO dose-sortie"],
-
- # ── VPI ──
- "VPI_stock_d_but":      ["VPI dose-stock debut mois"],
- "VPI_re_ues":           ["VPI dose-recue mois"],
- "VPI_utilis_es":        ["VPI dose-utilisee"],
- "VPI_admin":            ["VPI dose-administree"],
- "VPI_pertes":           ["VPI dose-perdue"],
- "VPI_jours_rupture":    ["VPI dose-jour rupture stock"],
- "VPI_SDU":              ["VPI dose-stock disponible utilisable"],
- "VPI_sortie":           ["VPI dose-sortie"],
-
- # ── VAR ──
- "VAR_stock_d_but":      ["VAR dose-stock debut mois"],
- "VAR_re_ues":           ["VAR dose-recue mois"],
- "VAR_utilis_es":        ["VAR dose-utilisee"],
- "VAR_admin":            ["VAR dose-administree"],
- "VAR_pertes":           ["VAR dose-perdue"],
- "VAR_jours_rupture":    ["VAR dose-jour rupture stock"],
- "VAR_SDU":              ["VAR dose-stock disponible utilisable"],
- "VAR_sortie":           ["VAR dose-sortie"],
-
- # ── VAA ──
- "VAA_stock_d_but":      ["VAA dose-stock debut mois"],
- "VAA_re_ues":           ["VAA dose-recue mois"],
- "VAA_utilis_es":        ["VAA dose-utilisee"],
- "VAA_admin":            ["VAA dose-administree"],
- "VAA_pertes":           ["VAA dose-perdue"],
- "VAA_jours_rupture":    ["VAA dose-jour rupture"],
- "VAA_SDU":              ["VAA dose-stock disponible utilisable"],
- "VAA_sortie":           ["VAA dose-sortie"],
-
- # ── Td / VAT ──
- "Td_stock_d_but":       ["VAT dose-stock debut mois"],
- "Td_re_ues":            ["VAT dose-recue mois"],
- "Td_utilis_es":         ["VAT dose-utilisee"],
- "Td_admin":             ["VAT dose-administree"],
- "Td_pertes":            ["VAT dose-perdue"],
- "Td_jours_rupture":     ["VAT dose-jour rupture"],
- "Td_SDU":               ["VAT dose-stock disponible utilisable"],
- "Td_sortie":            ["VAT dose-sortie"],
-
- # ── PCV13 ──
- "PCV13_stock_d_but":    ["PCV13 dose-stock debut mois"],
- "PCV13_re_ues":         ["PCV13 dose-recue mois"],
- "PCV13_utilis_es":      ["PCV13 dose-utilise"],
- "PCV13_admin":          ["PCV13 dose-administree"],
- "PCV13_pertes":         ["PCV13 dose-perdue"],
- "PCV13_jours_rupture":  ["PCV13 dose-jour rupture"],
-
- # ── ROTA ──
- "ROTA_stock_d_but":     ["ROTA dose-stock debut mois"],
- "ROTA_re_ues":          ["ROTA dose-recue mois"],
- "ROTA_utilis_es":       ["ROTA dose-utilise"],
- "ROTA_admin":           ["ROTA dose-administree"],
- "ROTA_pertes":          ["ROTA dose-perdue"],
- "ROTA_jours_rupture":   ["ROTA dose-jour rupture"],
-
- # ── VAP ──
- "VAP_stock_d_but":      ["VAP dose-stock debut mois"],
- "VAP_re_ues":           ["VAP dose-recue mois"],
- "VAP_utilis_es":        ["VAP dose-utilisee"],
- "VAP_admin":            ["VAP dose-administree"],
- "VAP_pertes":           ["VAP dose-perdue"],
- "VAP_jours_rupture":    ["VAP dose-jour rupture"],
-
- # ── HPV ──
- "HPV_stock_d_but":      ["HPV dose-stock debut mois"],
- "HPV_re_ues":           ["HPV dose-recue mois"],
- "HPV_utilis_es":        ["HPV dose-utilisee"],
- "HPV_admin":            ["HPV dose-administree"],
- "HPV_pertes":           ["HPV dose-perdue"],
- "HPV_jours_rupture":    ["HPV dose-jour rupture"],
-
- # ── Diluant BCG ──
- "Dil_BCG_stock_d_but":  ["Diluant BCG dose-stock debut mois"],
- "Dil_BCG_re_ues":       ["Diluant BCG dose-recue mois"],
- "Dil_BCG_utilis_es":    ["Diluant BCG dose-utilisee"],
- "Dil_BCG_admin":        ["Diluant BCG dose-administree"],
- "Dil_BCG_pertes":       ["Diluant BCG dose-perdue"],
- "Dil_BCG_jours_rupture":["Diluant BCG dose-jour rupture"],
-
- # ── Diluant VAR ──
- "Dil_VAR_stock_d_but":  ["Diluant VAR dose-stock debut mois"],
- "Dil_VAR_re_ues":       ["Diluant VAR dose-recue mois"],
- "Dil_VAR_utilis_es":    ["Diluant VAR dose-utilisee"],
- "Dil_VAR_admin":        ["Diluant VAR dose-administree"],
- "Dil_VAR_pertes":       ["Diluant VAR dose-perdue"],
- "Dil_VAR_jours_rupture":["Diluant VAR dose-jour rupture"],
-
- # ── Diluant VAA ──
- "Dil_VAA_stock_d_but":  ["Diluant VAA dose-stock debut mois"],
- "Dil_VAA_re_ues":       ["Diluant VAA dose-recue mois"],
- "Dil_VAA_utilis_es":    ["Diluant VAA dose-utilisee"],
- "Dil_VAA_admin":        ["Diluant VAA dose-administree"],
- "Dil_VAA_pertes":       ["Diluant VAA dose-perdue"],
- "Dil_VAA_jours_rupture":["Diluant VAA dose-jour rupture"],
-
- # ── SAB 0,05 ml (BCG) ──
- "SAB005_stock_d_but":   ["SAB BCG 005ml dose-stock debut mois"],
- "SAB005_re_ues":        ["SAB BCG 005ml dose-recue mois"],
- "SAB005_utilis_es":     ["SAB BCG 005ml dose-utilisee"],
- "SAB005_admin":         ["SAB BCG 005ml dose-administree"],
- "SAB005_pertes":        ["SAB BCG 005ml dose-perdue"],
- "SAB005_jours_rupture": ["SAB BCG 005ml dose-jour rupture"],
-
- # ── SAB 0,5 ml ──
- "SAB05_stock_d_but":    ["SAB 05ml dose-stock debut mois"],
- "SAB05_re_ues":         ["SAB 05ml dose-recue mois"],
- "SAB05_utilis_es":      ["SAB 05ml dose-utilisee"],
- "SAB05_admin":          ["SAB 05ml dose-administree"],
- "SAB05_pertes":         ["SAB 05ml dose-perdue"],
- "SAB05_jours_rupture":  ["SAB 05ml dose-jour rupture"],
-
- # ── SAB 0,3 ml ──
- "SAB03_stock_d_but":    ["SAB 03ml dose-stock debut mois"],
- "SAB03_re_ues":         ["SAB 03ml dose-recue mois"],
- "SAB03_utilis_es":      ["SAB 03ml dose-utilisee"],
- "SAB03_admin":          ["SAB 03ml dose-administree"],
- "SAB03_pertes":         ["SAB 03ml dose-perdue"],
- "SAB03_jours_rupture":  ["SAB 03ml dose-jour rupture"],
-
- # ── Seringue dilution 2 ml ──
- "Sdil2_stock_d_but":    ["Dilution 2ml dose-stock debut mois"],
- "Sdil2_re_ues":         ["Dilution 2ml dose-recue mois"],
- "Sdil2_utilis_es":      ["Dilution 2ml dose-utilisee"],
- "Sdil2_admin":          ["Dilution 2ml dose-administree"],
- "Sdil2_pertes":         ["Dilution 2ml dose-perdue"],
- "Sdil2_jours_rupture":  ["Dilution 2ml dose-jour rupture"],
-
- # ── Seringue dilution 5 ml ──
- "Sdil5_stock_d_but":    ["Dilution 5ml dose-stock debut mois"],
- "Sdil5_re_ues":         ["Dilution 5ml dose-recue mois"],
- "Sdil5_utilis_es":      ["Dilution 5ml dose-utilisee"],
- "Sdil5_admin":          ["Dilution 5ml dose-administree"],
- "Sdil5_pertes":         ["Dilution 5ml dose-perdue"],
- "Sdil5_jours_rupture":  ["Dilution 5ml dose-jour rupture"],
-
- # ── Adaptateur Rotavirus ──
- "Adapt_stock_d_but":    ["Adaptateur ROTAVIRUS dose-stock debut mois"],
- "Adapt_re_ues":         ["Adaptateur ROTAVIRUS dose-recue mois"],
- "Adapt_utilis_es":      ["Adaptateur ROTAVIRUS dose-utilisee"],
- "Adapt_admin":          ["Adaptateur ROTAVIRUS dose-administree"],
- "Adapt_pertes":         ["Adaptateur ROTAVIRUS dose-perdue"],
- "Adapt_jours_rupture":  ["Adaptateur ROTAVIRUS dose-jour rupture"],
-
- # ── Compte-goutte ──
- "CG_stock_d_but":       ["Compte-goutte dose-stock debut mois"],
- "CG_re_ues":            ["Compte-goutte dose-recue mois"],
- "CG_utilis_es":         ["Compte-goutte dose-utilisee"],
- "CG_admin":             ["Compte-goutte dose-administree"],
- "CG_pertes":            ["Compte-goutte dose-perdue"],
- "CG_jours_rupture":     ["Compte-goutte dose-jour rupture"],
-
- # ── Réceptacles ──
- "Recept_stock_d_but":   ["Receptacle dose-stock debut mois"],
- "Recept_re_ues":        ["Receptacle dose-recue mois"],
- "Recept_utilis_es":     ["Receptacle dose-utilisee"],
- "Recept_admin":         ["Receptacle dose-administree"],
- "Recept_pertes":        ["Receptacle dose-perdue"],
- "Recept_jours_rupture": ["Receptacle dose-jour rupture"],
+ # ── LOGISTIQUE ÉTENDUE ──
+ "BCG_utilis_es": ["BCG_utilis_es"],
+ "BCG_jours_rupture": ["BCG_jours_rupture"],
+ "BCG_stock_fin": ["BCG_stock_fin"],
+ "DTC_utilis_es": ["DTC_utilis_es"],
+ "DTC_jours_rupture": ["DTC_jours_rupture"],
+ "DTC_stock_fin": ["DTC_stock_fin"],
+ "VPO_utilis_es": ["VPO_utilis_es"],
+ "VPO_jours_rupture": ["VPO_jours_rupture"],
+ "VPO_stock_fin": ["VPO_stock_fin"],
+ "VPI_utilis_es": ["VPI_utilis_es"],
+ "VPI_jours_rupture": ["VPI_jours_rupture"],
+ "VPI_stock_fin": ["VPI_stock_fin"],
+ "VAR_utilis_es": ["VAR_utilis_es"],
+ "VAR_jours_rupture": ["VAR_jours_rupture"],
+ "VAR_stock_fin": ["VAR_stock_fin"],
+ "VAA_utilis_es": ["VAA_utilis_es"],
+ "VAA_jours_rupture": ["VAA_jours_rupture"],
+ "VAA_stock_fin": ["VAA_stock_fin"],
+ "Td_utilis_es": ["VAT_utilis_es"],
+ "Td_jours_rupture": ["VAT_jours_rupture"],
+ "Td_stock_fin": ["VAT_stock_fin"],
+ "PCV13_utilis_es": ["PCV13_utilis_es"],
+ "PCV13_jours_rupture": ["PCV13_jours_rupture"],
+ "PCV13_stock_fin": ["PCV13_stock_fin"],
+ "ROTA_utilis_es": ["ROTA_utilis_es"],
+ "ROTA_jours_rupture": ["ROTA_jours_rupture"],
+ "ROTA_stock_fin": ["ROTA_stock_fin"],
+ "VAP_utilis_es": ["VAP_utilis_es"],
+ "VAP_jours_rupture": ["VAP_jours_rupture"],
+ "VAP_stock_fin": ["VAP_stock_fin"],
+ # ── LOGISTIQUE (Triangulation) AVEC NOMS RENOMMÉS ──
+ "BCG_re_ues": ["BCG dose-recue mois"],
+ "BCG_stock_d_but": ["BCG dose-stock debut mois"],
+ "DTC_re_ues": ["DTC doses-recue mois"],
+ "DTC_stock_d_but": ["DTC dose-stock debut mois"],
+ "PCV13_re_ues": ["PCV13 dose-recue mois"],
+ "PCV13_stock_d_but": ["PCV13 dose-stock debut mois"],
+ "VAR_re_ues": ["VAR dose-recue mois"],
+ "VAR_stock_d_but": ["VAR dose-stock debut mois"],
+ "Td_re_ues": ["VAT dose-recue mois"],           # VAT correspond à Td
+ "Td_stock_d_but": ["VAT dose-stock debut mois"],  # VAT correspond à Td
+ "VPO_re_ues": ["VPO dose-recue mois"],
+ "VPO_stock_d_but": ["VPO dose-stock debut mois"],
+ "VPI_re_ues": ["VPI dose-recue mois"],
+ "VPI_stock_d_but": ["VPI dose-stock debut mois"],
+ "ROTA_re_ues": ["ROTA dose-recue mois"],
+ "ROTA_stock_d_but": ["ROTA dose-stock debut mois"],
+ "VAA_re_ues": ["VAA dose-recue mois"],
+ "VAA_stock_d_but": ["VAA dose-stock debut mois"],
+ "VAP_re_ues": ["VAP dose-recue mois"],            # VAP remplace HPV
+ "VAP_stock_d_but": ["VAP dose-stock debut mois"],   # VAP remplace HPV
 }
 
 # ==========================================================
