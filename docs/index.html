@@ -873,6 +873,11 @@
 
         /* ═══ STATE ═══ */
         var BASE = './data/dashboard';
+        // Détecter le niveau via l'URL (ex: index.html?lvl=as) ou par défaut
+        var urlParams = new URLSearchParams(window.location.search);
+        var lvl = urlParams.get('lvl') || ''; // '', 'as', ou 'zs'
+        var BASE = './data' + (lvl ? '_' + lvl : '') + '/dashboard';
+
         var S = {
             tab: 0, pg: 0, data: [], flt: [], charts: {}, filters: { province: '', antenne: [], zs: [], as: [], fosa: [], period: [] },
             vals: { province: [], antenne: [], zs: [], as: [], fosa: [], period: [] },
