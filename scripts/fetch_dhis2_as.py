@@ -455,10 +455,10 @@ RENAME_MAP: Dict[str, str] = {
          # ============================================
     # LOGISTIQUES - RENAME MAP
     # ============================================
-    "uAWIVDnGPGH.dxDQKDcTn6Z": "DTC doses-administree",
-    "uAWIVDnGPGH.XEN3ucCGa07": "DTC doses-jour rupture stock",
-    "uAWIVDnGPGH.J8mw9rFkY4v": "DTC doses-perdue",
-    "uAWIVDnGPGH.WZwmzIuRvwV": "DTC doses-recue mois",
+    "uAWIVDnGPGH.dxDQKDcTn6Z": "DTC dose-administree",
+    "uAWIVDnGPGH.XEN3ucCGa07": "DTC dose-jour rupture stock",
+    "uAWIVDnGPGH.J8mw9rFkY4v": "DTC dose-perdue",
+    "uAWIVDnGPGH.WZwmzIuRvwV": "DTC dose-recue mois",
     "uAWIVDnGPGH.GSCwhT2SCCr": "DTC dose-stock debut mois",
     "uAWIVDnGPGH.pdKyvaYRqCj": "DTC dose-utilisee",
     "uAWIVDnGPGH.kOWsLrtvrhn": "DTC dose-stock disponible utilisable",

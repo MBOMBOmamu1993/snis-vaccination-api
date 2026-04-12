@@ -198,6 +198,59 @@ SUM_SPECS: dict[str, list[str]] = {
     # ── Td ──
     "Td_2_plus": ["Td_2","Td_3","Td_4","Td_5"],
     "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
+
+    # ── SÉANCES DE VACCINATION ──
+    "seances_fixes_prevues": ["S_ances_fixes_pr_vues"],
+    "seances_fixes_realisees": ["S_ances_fixes_r_alis_es"],
+    "seances_avancees_prevues": ["S_ances_avanc_es_pr_vues"],
+    "seances_avancees_realisees": ["S_ances_avanc_es_r_alis_es"],
+    "seances_mobiles_prevues": ["S_ances_mobiles_pr_vues"],
+    "seances_mobiles_realisees": ["S_ances_mobiles_r_alis_es"],
+
+    # ── LOGISTIQUE VACCINS ──
+    "BCG_utilis_es": ["BCG_utilis_es"], "BCG_pertes": ["BCG_pertes"],
+    "BCG_jours_rupture": ["BCG_jours_rupture"], "BCG_stock_fin": ["BCG_stock_fin"],
+    "DTC_utilis_es": ["DTC_utilis_es"], "DTC_pertes": ["DTC_pertes"],
+    "DTC_jours_rupture": ["DTC_jours_rupture"], "DTC_stock_fin": ["DTC_stock_fin"],
+    "VPO_utilis_es": ["VPO_utilis_es"], "VPO_pertes": ["VPO_pertes"],
+    "VPO_jours_rupture": ["VPO_jours_rupture"], "VPO_stock_fin": ["VPO_stock_fin"],
+    "VPI_utilis_es": ["VPI_utilis_es"], "VPI_pertes": ["VPI_pertes"],
+    "VPI_jours_rupture": ["VPI_jours_rupture"], "VPI_stock_fin": ["VPI_stock_fin"],
+    "VAR_utilis_es": ["VAR_utilis_es"], "VAR_pertes": ["VAR_pertes"],
+    "VAR_jours_rupture": ["VAR_jours_rupture"], "VAR_stock_fin": ["VAR_stock_fin"],
+    "VAA_utilis_es": ["VAA_utilis_es"], "VAA_pertes": ["VAA_pertes"],
+    "VAA_jours_rupture": ["VAA_jours_rupture"], "VAA_stock_fin": ["VAA_stock_fin"],
+    "Td_utilis_es": ["VAT_utilis_es"], "Td_pertes": ["VAT_pertes"],
+    "Td_jours_rupture": ["VAT_jours_rupture"], "Td_stock_fin": ["VAT_stock_fin"],
+    "PCV13_utilis_es": ["PCV13_utilis_es"], "PCV13_pertes": ["PCV13_pertes"],
+    "PCV13_jours_rupture": ["PCV13_jours_rupture"], "PCV13_stock_fin": ["PCV13_stock_fin"],
+    "ROTA_utilis_es": ["ROTA_utilis_es"], "ROTA_pertes": ["ROTA_pertes"],
+    "ROTA_jours_rupture": ["ROTA_jours_rupture"], "ROTA_stock_fin": ["ROTA_stock_fin"],
+    "VAP_utilis_es": ["VAP_utilis_es"], "VAP_pertes": ["VAP_pertes"],
+    "VAP_jours_rupture": ["VAP_jours_rupture"], "VAP_stock_fin": ["VAP_stock_fin"],
+    "HPV_utilis_es": ["HPV_utilis_es"], "HPV_pertes": ["HPV_pertes"],
+    "HPV_jours_rupture": ["HPV_jours_rupture"], "HPV_stock_fin": ["HPV_stock_fin"],
+    # ── LOGISTIQUE (Triangulation) ──
+    "BCG_re_ues": ["BCG dose-recue mois"],
+    "BCG_stock_d_but": ["BCG dose-stock debut mois"],
+    "DTC_re_ues": ["DTC dose-recue mois"],
+    "DTC_stock_d_but": ["DTC dose-stock debut mois"],
+    "PCV13_re_ues": ["PCV13 dose-recue mois"],
+    "PCV13_stock_d_but": ["PCV13 dose-stock debut mois"],
+    "VAR_re_ues": ["VAR dose-recue mois"],
+    "VAR_stock_d_but": ["VAR dose-stock debut mois"],
+    "Td_re_ues": ["VAT dose-recue mois"],
+    "Td_stock_d_but": ["VAT dose-stock debut mois"],
+    "VPO_re_ues": ["VPO dose-recue mois"],
+    "VPO_stock_d_but": ["VPO dose-stock debut mois"],
+    "VPI_re_ues": ["VPI dose-recue mois"],
+    "VPI_stock_d_but": ["VPI dose-stock debut mois"],
+    "ROTA_re_ues": ["ROTA dose-recue mois"],
+    "ROTA_stock_d_but": ["ROTA dose-stock debut mois"],
+    "VAA_re_ues": ["VAA dose-recue mois"],
+    "VAA_stock_d_but": ["VAA dose-stock debut mois"],
+    "VAP_re_ues": ["VAP dose-recue mois"],
+    "VAP_stock_d_but": ["VAP dose-stock debut mois"],
 }
 
 
@@ -253,6 +306,8 @@ DERIVED_SUM_SPECS: dict[str, list[str]] = {
 
 ALL_AGG_KEYS = list(SUM_SPECS.keys()) + list(DERIVED_SUM_SPECS.keys())
 
+KEEP_KEYS = {"_Province", "_ZS", "_Antenne", "_YM", "Compl_tude", "Promptitude"}.union(ALL_AGG_KEYS)
+KEEP_KEYS_LIST = list(KEEP_KEYS)
 
 
 
@@ -335,46 +390,41 @@ for month in months_list:
         fpath = MONTHLY / month / fname
         gz_path = MONTHLY / month / part.get("file", "")
 
-
-        lines: list[str] = []
+        f_obj = None
         if fpath.exists() and not fname.endswith(".gz"):
-            with open(fpath, encoding="utf-8") as f:
-                lines = f.readlines()
+            f_obj = open(fpath, encoding="utf-8")
         elif gz_path.exists() and str(gz_path).endswith(".gz"):
-            with gzip.open(gz_path, "rt", encoding="utf-8") as f:
-                lines = f.readlines()
+            f_obj = gzip.open(gz_path, "rt", encoding="utf-8")
         elif fpath.exists():
             try:
-                with gzip.open(fpath, "rt", encoding="utf-8") as f:
-                    lines = f.readlines()
+                with gzip.open(fpath, "rt", encoding="utf-8") as temp_f:
+                    temp_f.read(1)
+                f_obj = gzip.open(fpath, "rt", encoding="utf-8")
             except Exception:
-                with open(fpath, encoding="utf-8") as f:
-                    lines = f.readlines()
+                f_obj = open(fpath, encoding="utf-8")
 
+        if not f_obj:
+            continue
 
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                row = json.loads(line)
-                ou = row.get("OrgUnit", "")
-                meta = OU_MAP.get(ou, {})
-                row["_Province"] = meta.get("Org2", "")
-                row["_ZS"] = meta.get("Org3", "")
-                
-                # ZS level: no Org5/Org4 in this dataset
-                row["_Antenne"] = resolve_antenne(row["_Province"], row["_ZS"])
-                row["_YM"] = period_to_ym(row.get("Period", ""))
-                # Sommations primaires
-                for sf, sources in SUM_SPECS.items():
-                    row[sf] = sum(nv(row, s) for s in sources)
-                # Sommations dérivées
-                for sf, sources in DERIVED_SUM_SPECS.items():
-                    row[sf] = sum(nv(row, s) for s in sources)
-                all_records.append(row)
-            except Exception:
-                pass
+        with f_obj as f:
+            for line in f:
+                line = line.strip()
+                if not line: continue
+                try:
+                    row = json.loads(line)
+                    ou = row.get("OrgUnit", "")
+                    meta = OU_MAP.get(ou, {})
+                    row["_Province"] = meta.get("Org2", "")
+                    row["_ZS"] = meta.get("Org3", "")
+                    row["_Antenne"] = resolve_antenne(row["_Province"], row["_ZS"])
+                    row["_YM"] = period_to_ym(row.get("Period", ""))
+                    for sf, sources in SUM_SPECS.items():
+                        row[sf] = sum(nv(row, s) for s in sources)
+                    for sf, sources in DERIVED_SUM_SPECS.items():
+                        row[sf] = sum(nv(row, s) for s in sources)
+                    minimized_row = {k: row[k] for k in KEEP_KEYS_LIST if k in row}
+                    all_records.append(minimized_row)
+                except Exception: pass
 
 
     print(f"  {month}: {len(all_records)} total records")
@@ -548,11 +598,3 @@ for p in DASH.rglob("*.json"):
     sz = os.path.getsize(p)
     if sz > 90_000_000:
         print(f"  ⚠️  WARNING: {p} is {sz / 1024 / 1024:.0f} MB (near GitHub limit)")
-
-
-
-
-
-
-
-

@@ -230,7 +230,7 @@ SUM_SPECS: dict[str, list[str]] = {
  # ── LOGISTIQUE (Triangulation) AVEC NOMS RENOMMÉS ──
  "BCG_re_ues": ["BCG dose-recue mois"],
  "BCG_stock_d_but": ["BCG dose-stock debut mois"],
- "DTC_re_ues": ["DTC doses-recue mois"],
+ "DTC_re_ues": ["DTC dose-recue mois"],
  "DTC_stock_d_but": ["DTC dose-stock debut mois"],
  "PCV13_re_ues": ["PCV13 dose-recue mois"],
  "PCV13_stock_d_but": ["PCV13 dose-stock debut mois"],
