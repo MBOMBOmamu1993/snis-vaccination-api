@@ -829,19 +829,19 @@
     ];
 
     var LOGIST_FIELDS = [
-        { lbl: 'BCG', stock: 'BCG_stock_d_but', recv: 'BCG_re_ues' },
-        { lbl: 'VPO', stock: 'VPO_stock_d_but', recv: 'VPO_re_ues' },
-        { lbl: 'DTC/Penta', stock: 'DTC_stock_d_but', recv: 'DTC_re_ues' },
-        { lbl: 'PCV13', stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues' },
-        { lbl: 'ROTA', stock: 'ROTA_stock_d_but', recv: 'ROTA_re_ues' },
-        { lbl: 'VPI', stock: 'VPI_stock_d_but', recv: 'VPI_re_ues' },
-        { lbl: 'VAR', stock: 'VAR_stock_d_but', recv: 'VAR_re_ues' },
-        { lbl: 'VAA', stock: 'VAA_stock_d_but', recv: 'VAA_re_ues' },
-        { lbl: 'Td (VAT)', stock: 'Td_stock_d_but', recv: 'Td_re_ues' },
-        { lbl: 'VAP', stock: 'VAP_stock_d_but', recv: 'VAP_re_ues' }
-    ];
-    var LOGIST_ALL_FIELDS = [];
-    LOGIST_FIELDS.forEach(function (f) { LOGIST_ALL_FIELDS.push(f.stock, f.recv); });
+            { lbl: 'BCG', stock: 'BCG_stock_d_but', recv: 'BCG_re_ues', used: 'BCG_utilis_es', jrs: 'BCG_jours_rupture', sdu: 'BCG_stock_fin', vacs: ['BCG'] },
+            { lbl: 'VPO', stock: 'VPO_stock_d_but', recv: 'VPO_re_ues', used: 'VPO_utilis_es', jrs: 'VPO_jours_rupture', sdu: 'VPO_stock_fin', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'] },
+            { lbl: 'DTC/Penta', stock: 'DTC_stock_d_but', recv: 'DTC_re_ues', used: 'DTC_utilis_es', jrs: 'DTC_jours_rupture', sdu: 'DTC_stock_fin', vacs: ['DTC1', 'DTC2', 'DTC3'] },
+            { lbl: 'PCV13', stock: 'PCV13_stock_d_but', recv: 'PCV13_re_ues', used: 'PCV13_utilis_es', jrs: 'PCV13_jours_rupture', sdu: 'PCV13_stock_fin', vacs: ['PCV13_1', 'PCV13_2', 'PCV13_3'] },
+            { lbl: 'ROTA', stock: 'ROTA_stock_d_but', recv: 'ROTA_re_ues', used: 'ROTA_utilis_es', jrs: 'ROTA_jours_rupture', sdu: 'ROTA_stock_fin', vacs: ['ROTA1', 'ROTA2', 'ROTA3'] },
+            { lbl: 'VPI', stock: 'VPI_stock_d_but', recv: 'VPI_re_ues', used: 'VPI_utilis_es', jrs: 'VPI_jours_rupture', sdu: 'VPI_stock_fin', vacs: ['VPI1', 'VPI2'] },
+            { lbl: 'VAR', stock: 'VAR_stock_d_but', recv: 'VAR_re_ues', used: 'VAR_utilis_es', jrs: 'VAR_jours_rupture', sdu: 'VAR_stock_fin', vacs: ['VAR1', 'VAR2'] },
+            { lbl: 'VAA', stock: 'VAA_stock_d_but', recv: 'VAA_re_ues', used: 'VAA_utilis_es', jrs: 'VAA_jours_rupture', sdu: 'VAA_stock_fin', vacs: ['VAA'] },
+            { lbl: 'Td (VAT)', stock: 'Td_stock_d_but', recv: 'Td_re_ues', used: 'Td_utilis_es', jrs: 'Td_jours_rupture', sdu: 'Td_stock_fin', vacs: ['TD'] },
+            { lbl: 'VAP', stock: 'VAP_stock_d_but', recv: 'VAP_re_ues', used: 'VAP_utilis_es', jrs: 'VAP_jours_rupture', sdu: 'VAP_stock_fin', vacs: ['VAP1', 'VAP2', 'VAP3', 'VAP4'] }
+        ];
+        var LOGIST_ALL_FIELDS = [];
+        LOGIST_FIELDS.forEach(function (f) { LOGIST_ALL_FIELDS.push(f.stock, f.recv, f.used, f.jrs, f.sdu); });
         var TABS = [
             {
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
@@ -954,7 +954,21 @@
                 'PCV13_stock_d_but', 'PCV13_re_ues', 'VAR_stock_d_but', 'VAR_re_ues',
                 'Td_stock_d_but', 'Td_re_ues', 'VPO_stock_d_but', 'VPO_re_ues',
                 'VPI_stock_d_but', 'VPI_re_ues', 'ROTA_stock_d_but', 'ROTA_re_ues',
-                'VAA_stock_d_but', 'VAA_re_ues', 'VAP_stock_d_but', 'VAP_re_ues'].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
+                'VAA_stock_d_but', 'VAA_re_ues', 'VAP_stock_d_but', 'VAP_re_ues',
+                'seances_fixes_prevues', 'seances_fixes_realisees',
+                'seances_avancees_prevues', 'seances_avancees_realisees',
+                'seances_mobiles_prevues', 'seances_mobiles_realisees',
+                'BCG_utilis_es', 'BCG_jours_rupture', 'BCG_stock_fin',
+                'DTC_utilis_es', 'DTC_jours_rupture', 'DTC_stock_fin',
+                'VPO_utilis_es', 'VPO_jours_rupture', 'VPO_stock_fin',
+                'VPI_utilis_es', 'VPI_jours_rupture', 'VPI_stock_fin',
+                'VAR_utilis_es', 'VAR_jours_rupture', 'VAR_stock_fin',
+                'VAA_utilis_es', 'VAA_jours_rupture', 'VAA_stock_fin',
+                'Td_utilis_es', 'Td_jours_rupture', 'Td_stock_fin',
+                'PCV13_utilis_es', 'PCV13_jours_rupture', 'PCV13_stock_fin',
+                'ROTA_utilis_es', 'ROTA_jours_rupture', 'ROTA_stock_fin',
+                'VAP_utilis_es', 'VAP_jours_rupture', 'VAP_stock_fin'
+            ].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
             return rec;
         }
 
@@ -2941,294 +2955,321 @@
         };
     /* ═══ DONNÉES DE VACCINATION ═══ */
     function rVac(c) {
-        var D = S.flt, AD = S.data;
-        var f = S.filters;
-        var ol = getOrgLevel(D);
-        var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
-        var levelLbl = ol.l;
+            var D = S.flt, AD = S.data;
+            var f = S.filters;
+            var ol = getOrgLevel(D);
+            var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
+            var levelLbl = ol.l;
+            var isVAPprov = C.VAP_PROV.indexOf(f.province) >= 0;
 
-        /* ── Séances de vaccination : calendrier vaccinal ── */
-        var calBox = E('div', 'cb');
-        var calTitle = 'Nombre des vaccinés selon le calendrier vaccinal de : ' + perLbl;
-        calBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:12px">💉 ' + calTitle + '</h4>';
+            /* ── a) Cards indicateurs clés ── */
+            var nF = uv(D, function (r) { return r.org5; }).length;
+            var rep = D.filter(isRep), nT = D.length;
+            var comp = nT > 0 ? af(D, 'completude') : 0;
+            var prompt2 = nT > 0 ? af(D, 'promptitude') : 0;
+            var sfp = sf(D, 'seances_fixes_prevues'), sfr = sf(D, 'seances_fixes_realisees');
+            var sap = sf(D, 'seances_avancees_prevues'), sar = sf(D, 'seances_avancees_realisees');
+            var smp = sf(D, 'seances_mobiles_prevues'), smr = sf(D, 'seances_mobiles_realisees');
+            var pctFix = sfp > 0 ? (sfr / sfp * 100) : 0;
+            var pctAv = sap > 0 ? (sar / sap * 100) : 0;
+            var pctMob = smp > 0 ? (smr / smp * 100) : 0;
 
-        var isVAPprov = C.VAP_PROV.indexOf(f.province) >= 0;
-        var calRows = VACCIN_CALENDAR.filter(function (row) {
-            if (!isVAPprov) {
-                var hasNonVAP = row.ags.some(function (a) { return ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a) < 0; });
-                var onlyVAP = !hasNonVAP;
-                if (onlyVAP) return false;
-            }
-            return true;
-        });
+            var kd = E('div', 'kd');
+            kd.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px';
+            kd.innerHTML =
+                '<div class="kc bl" style="flex:1;min-width:130px"><div class="kv">' + comp.toFixed(1) + '%</div><div class="kl">Complétude</div></div>' +
+                '<div class="kc" style="flex:1;min-width:130px;border-left:5px solid #f39c12"><div class="kv" style="color:#f39c12">' + prompt2.toFixed(1) + '%</div><div class="kl">Promptitude</div></div>' +
+                '<div class="kc ' + (pctFix >= 80 ? 'gn' : pctFix >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctFix.toFixed(1) + ' %</div><div class="kl">% Séances fixes réalisées</div></div>' +
+                '<div class="kc ' + (pctAv >= 80 ? 'gn' : pctAv >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctAv.toFixed(1) + ' %</div><div class="kl">% Séances avancées réalisées</div></div>' +
+                '<div class="kc ' + (pctMob >= 80 ? 'gn' : pctMob >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctMob.toFixed(1) + ' %</div><div class="kl">% Séances mobiles réalisées</div></div>' +
+                '<div class="kc pu" style="flex:1;min-width:130px"><div class="kv">' + nF.toLocaleString() + '</div><div class="kl">Nombre ' + levelLbl + '</div></div>';
+            c.appendChild(kd);
 
-        var ch = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead>';
-        ch += '<tr style="background:#0b3a6f;color:#fff"><th style="min-width:120px">Âge</th><th style="min-width:140px">Antigène</th><th style="min-width:100px;text-align:right">Effectif vaccinés</th></tr></thead><tbody>';
+            /* ── b) Calendrier vaccinal en boxes ── */
+            var calBox = E('div', 'cb');
+            var dynLevel = f.fosa.length === 1 ? f.fosa[0] : f.as.length === 1 ? f.as[0] : f.zs.length === 1 ? f.zs[0] : f.antenne.length === 1 ? f.antenne[0] : f.province;
+            calBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:4px">💉 Nombre des vaccinés selon le calendrier vaccinal de : ' + perLbl + '</h4>' +
+                '<p style="font-size:11px;color:#555;margin:0 0 12px">' + levelLbl + ' : <strong>' + dynLevel + '</strong></p>';
 
-        calRows.forEach(function (row) {
-            var ags = row.ags.filter(function (a) {
-                if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a) >= 0) return false;
-                return true;
-            });
-            ags.forEach(function (ag, i) {
-                var val = sf(D, ag);
-                ch += '<tr style="background:' + (i % 2 === 0 ? '#f8fafc' : '#fff') + '">';
-                if (i === 0) ch += '<td rowspan="' + ags.length + '" style="font-weight:700;background:#e8f0fe;vertical-align:middle">' + row.age + '</td>';
-                ch += '<td style="font-weight:600">' + AG_LBL[ag] + '</td>';
-                ch += '<td style="text-align:right;font-weight:700;color:#0b3a6f">' + val.toLocaleString() + '</td></tr>';
-            });
-        });
+            var calDefs = [
+                { age: 'Naissance', ags: [['BCG'], ['VPO0']] },
+                { age: '6 semaines (1½ mois)', ags: [['DTC1', 'Penta1'], ['VPO1'], ['ROTA1'], ['PCV13_1', 'PCV13-1']] },
+                { age: '10 semaines (2½ mois)', ags: [['DTC2', 'Penta2'], ['VPO2'], ['ROTA2'], ['PCV13_2', 'PCV13-2']] },
+                { age: '14 semaines (3½ mois)', ags: [['DTC3', 'Penta3'], ['VPO3'], ['VPI1'], ['ROTA3'], ['PCV13_3', 'PCV13-3']] },
+                { age: '6 mois', ags: [['VAP1']], vap: true },
+                { age: '7 mois', ags: [['VAP2']], vap: true },
+                { age: '8 mois', ags: [['VAP3']], vap: true },
+                { age: '9 mois', ags: [['VAR1'], ['VPI2'], ['VAA']] },
+                { age: '15 mois', ags: [['VAR2'], ['VAP4']] }
+            ];
 
-        /* Td (Tx_Ab) */
-        var tdVal = sf(D, 'TD');
-        ch += '<tr style="background:#fff3e0"><td style="font-weight:700;background:#e8f0fe">Femmes enceintes</td>';
-        ch += '<td style="font-weight:600">Td 2+ (Tx_Ab)</td>';
-        ch += '<td style="text-align:right;font-weight:700;color:#0b3a6f">' + tdVal.toLocaleString() + '</td></tr>';
-
-        ch += '</tbody></table></div>';
-        calBox.innerHTML += ch;
-        c.appendChild(calBox);
-
-        /* ── Tableau effectifs par org unit ── */
-        var tblBox = E('div', 'cb');
-        tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:8px">📊 Effectifs des vaccinés par ' + levelLbl + '</h4>';
-
-        var allAgs = AG.slice();
-        if (isVAPprov) allAgs = allAgs.concat(AG_VAP);
-
-        /* Filtres dynamiques */
-        var ogs = grp(D, function (r) { return r[ol.k]; });
-        var orgNames = Object.keys(ogs).filter(Boolean).sort();
-
-        var fH = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap">';
-        fH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + levelLbl + ' <button class="frst" onclick="_rstVacOU()" title="Réinitialiser">↺</button></label>';
-        fH += '<button class="fbtn" id="vacBtnOU" onclick="_togADD(\'vacDdOU\')"><span>Tout (' + orgNames.length + ')</span><span class="cn">' + orgNames.length + '</span><span>▼</span></button>';
-        fH += '<div class="fd" id="vacDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'vacDdOU\')">';
-        fH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'vacDdOU\')"><span style="font-weight:700">Tout sélectionner</span></div>';
-        orgNames.forEach(function (ou) { fH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderVacTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
-        fH += '</div></div></div>';
-        tblBox.innerHTML += fH;
-
-        tblBox.innerHTML += '<div id="vacTblWrap"></div>';
-        c.appendChild(tblBox);
-
-        window._rstVacOU = function () {
-            document.querySelectorAll('#vacDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
-            _renderVacTbl();
-        };
-
-        window._renderVacTbl = function () {
-            var selOU = [];
-            document.querySelectorAll('#vacDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (cb) { if (cb.checked) selOU.push(cb.value); });
-            _updABtn('vacDdOU', 'vacBtnOU');
-
-            var h = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>';
-            h += '<tr style="background:#0b3a6f;color:#fff"><th style="min-width:160px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
-            allAgs.forEach(function (ag) { h += '<th style="min-width:70px;text-align:right;font-size:10px">' + AG_LBL[ag] + '</th>'; });
-            h += '<th style="min-width:70px;text-align:right;font-size:10px">Td 2+</th></tr></thead><tbody>';
-
-            var fltOrgs = selOU.length < orgNames.length ? orgNames.filter(function (o) { return selOU.indexOf(o) >= 0; }) : orgNames;
-
-            /* Ligne totale */
-            var totRow = '<tr style="background:#e8f0fe;font-weight:700"><td style="position:sticky;left:0;background:#e8f0fe;z-index:2">TOTAL</td>';
-            allAgs.forEach(function (ag) {
-                var tv = 0; fltOrgs.forEach(function (o) { tv += sf(ogs[o] || [], ag); });
-                totRow += '<td style="text-align:right">' + tv.toLocaleString() + '</td>';
-            });
-            var tvTd = 0; fltOrgs.forEach(function (o) { tvTd += sf(ogs[o] || [], 'TD'); });
-            totRow += '<td style="text-align:right">' + tvTd.toLocaleString() + '</td></tr>';
-            h += totRow;
-
-            fltOrgs.forEach(function (orgName, idx) {
-                var recs = ogs[orgName] || [];
-                h += '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + '">';
-                h += '<td style="position:sticky;left:0;background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';z-index:2;font-weight:600">' + tr(orgName, 30) + '</td>';
-                allAgs.forEach(function (ag) {
-                    var val = sf(recs, ag);
-                    h += '<td style="text-align:right">' + (val > 0 ? val.toLocaleString() : '<span style="color:#ccc">0</span>') + '</td>';
+            var bh = '<div style="display:flex;flex-wrap:wrap;gap:14px">';
+            calDefs.forEach(function (grp) {
+                if (grp.vap && !isVAPprov) return;
+                var ags2 = grp.ags.filter(function (a) {
+                    if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a[0]) >= 0) return false;
+                    return true;
                 });
-                var tdV = sf(recs, 'TD');
-                h += '<td style="text-align:right">' + (tdV > 0 ? tdV.toLocaleString() : '<span style="color:#ccc">0</span>') + '</td>';
-                h += '</tr>';
+                if (!ags2.length) return;
+
+                bh += '<div style="background:#fff;border:2px solid #0b3a6f;border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
+                bh += '<div style="background:#0b3a6f;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">' + grp.age.toUpperCase() + '</div>';
+                bh += '<div style="padding:8px 12px">';
+                ags2.forEach(function (agArr) {
+                    var agKey = agArr[0];
+                    var agLabel = agArr.length > 1 ? agArr[1] : AG_LBL[agKey] || agKey;
+                    var val = sf(D, agKey);
+                    bh += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee">';
+                    bh += '<span style="font-weight:600;color:#333">' + agLabel + '</span>';
+                    bh += '<span style="font-weight:700;color:#0b3a6f;font-size:14px">' + val.toLocaleString() + '</span></div>';
+                });
+                /* Tx_Ab pour 15 mois */
+                if (grp.age === '15 mois') {
+                    /* pas de Tx_Ab ici, on le met à part */
+                }
+                bh += '</div></div>';
             });
-            h += '</tbody></table></div>';
 
-            var w = document.getElementById('vacTblWrap');
-            if (w) w.innerHTML = h;
-        };
+            /* Box Tx_Ab + ECV */
+            bh += '<div style="background:#fff;border:2px solid #e65100;border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
+            bh += '<div style="background:#e65100;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">FEMMES ENCEINTES</div>';
+            bh += '<div style="padding:8px 12px">';
+            var tdVal = sf(D, 'TD');
+            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:600">Td 2+ (Tx_Ab)</span><span style="font-weight:700;color:#e65100;font-size:14px">' + tdVal.toLocaleString() + '</span></div>';
+            var ecvVal = sf(D, 'ECV_12_23') || 0;
+            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-weight:600">ECV 0-11 mois</span><span style="font-weight:700;color:#e65100;font-size:14px">' + ecvVal.toLocaleString() + '</span></div>';
+            bh += '</div></div>';
+            bh += '</div>';
+            calBox.innerHTML += bh;
+            c.appendChild(calBox);
 
-        setTimeout(function () { _renderVacTbl(); }, 100);
-    }
+            /* ── c) Tableau effectifs par org unit ── */
+            var tblBox = E('div', 'cb');
+            tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:8px">📊 Nombre des vaccinés par ' + levelLbl + '</h4>';
+
+            var allAgs = AG.slice();
+            if (isVAPprov) allAgs = allAgs.concat(AG_VAP);
+
+            var ogs = grp(D, function (r) { return r[ol.k]; });
+            var orgNames = Object.keys(ogs).filter(Boolean).sort();
+
+            var fH = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap">';
+            fH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + levelLbl + ' <button class="frst" onclick="_rstVacOU()" title="Réinitialiser">↺</button></label>';
+            fH += '<button class="fbtn" id="vacBtnOU" onclick="_togADD(\'vacDdOU\')"><span>Tout (' + orgNames.length + ')</span><span class="cn">' + orgNames.length + '</span><span>▼</span></button>';
+            fH += '<div class="fd" id="vacDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'vacDdOU\')">';
+            fH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'vacDdOU\')"><span style="font-weight:700">Tout sélectionner</span></div>';
+            orgNames.forEach(function (ou) { fH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderVacTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
+            fH += '</div></div></div>';
+            tblBox.innerHTML += fH;
+            tblBox.innerHTML += '<div id="vacTblWrap"></div>';
+            c.appendChild(tblBox);
+
+            window._rstVacOU = function () {
+                document.querySelectorAll('#vacDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
+                _renderVacTbl();
+            };
+
+            window._renderVacTbl = function () {
+                var selOU = [];
+                document.querySelectorAll('#vacDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (cb) { if (cb.checked) selOU.push(cb.value); });
+                _updABtn('vacDdOU', 'vacBtnOU');
+
+                var fltOrgs = selOU.length < orgNames.length ? orgNames.filter(function (o) { return selOU.indexOf(o) >= 0; }) : orgNames;
+
+                /* Entêtes groupées par âge */
+                var h = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>';
+                h += '<tr style="background:#0b3a6f;color:#fff"><th rowspan="2" style="min-width:160px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
+                VACCIN_CALENDAR.forEach(function (grp2) {
+                    var ags3 = grp2.ags.filter(function (a) { return isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a) < 0; });
+                    if (!ags3.length) return;
+                    h += '<th colspan="' + ags3.length + '" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + grp2.age + '</th>';
+                });
+                h += '</tr><tr style="background:#163d6f;color:#ddd;font-size:9px">';
+                VACCIN_CALENDAR.forEach(function (grp2) {
+                    grp2.ags.forEach(function (ag) {
+                        if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
+                        h += '<th style="text-align:right">' + (AG_LBL[ag] || ag) + '</th>';
+                    });
+                });
+                h += '</tr></thead><tbody>';
+
+                /* Ligne total */
+                h += '<tr style="background:#e8f0fe;font-weight:700"><td style="position:sticky;left:0;background:#e8f0fe;z-index:2">TOTAL</td>';
+                VACCIN_CALENDAR.forEach(function (grp2) {
+                    grp2.ags.forEach(function (ag) {
+                        if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
+                        var tv = 0; fltOrgs.forEach(function (o) { tv += sf(ogs[o] || [], ag); });
+                        h += '<td style="text-align:right">' + tv.toLocaleString() + '</td>';
+                    });
+                });
+                h += '</tr>';
+
+                fltOrgs.forEach(function (orgName, idx) {
+                    var recs = ogs[orgName] || [];
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:2;font-weight:600">' + tr(orgName, 30) + '</td>';
+                    VACCIN_CALENDAR.forEach(function (grp2) {
+                        grp2.ags.forEach(function (ag) {
+                            if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
+                            var val = sf(recs, ag);
+                            h += '<td style="text-align:right">' + (val > 0 ? val.toLocaleString() : '<span style="color:#ccc">0</span>') + '</td>';
+                        });
+                    });
+                    h += '</tr>';
+                });
+                h += '</tbody></table></div>';
+                var w = document.getElementById('vacTblWrap');
+                if (w) w.innerHTML = h;
+            };
+            setTimeout(function () { _renderVacTbl(); }, 100);
+        }
 
     /* ═══ DONNÉES LOGISTIQUES ═══ */
     function rLog(c) {
-        var D = S.flt, AD = S.data;
-        var f = S.filters;
-        var ol = getOrgLevel(D);
-        var nbLogFields = LOGIST_ALL_FIELDS.length; /* 20 variables logistiques */
+            var D = S.flt, AD = S.data;
+            var f = S.filters;
+            var ol = getOrgLevel(D);
 
-        /* ── Cards complétude logistique ── */
-        var cardBox = E('div', 'cb');
-        cardBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:12px">📋 Complétude de rapportage des données logistiques</h4>';
+            /* ── Cards complétude logistique ── */
+            var cardBox = E('div', 'cb');
+            cardBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:12px">📋 Complétude de rapportage des données logistiques</h4>';
 
-        /* Calculer la proportion de rapportage par org unit */
-        var ogs = grp(D, function (r) { return r[ol.k]; });
-        var orgNames = Object.keys(ogs).filter(Boolean).sort();
+            var ogs = grp(D, function (r) { return r[ol.k]; });
+            var orgNames = Object.keys(ogs).filter(Boolean).sort();
 
-        var rapByOU = {};
-        orgNames.forEach(function (ou) {
-            var recs = ogs[ou];
-            var totalFields = 0, filledFields = 0;
-            recs.forEach(function (r) {
-                LOGIST_ALL_FIELDS.forEach(function (fld) {
-                    totalFields++;
-                    if ((Number(r[fld]) || 0) > 0) filledFields++;
-                });
-            });
-            rapByOU[ou] = totalFields > 0 ? (filledFields / totalFields * 100) : 0;
-        });
-
-        var n0 = 0, nLt50 = 0, n50_80 = 0, nGe80 = 0;
-        orgNames.forEach(function (ou) {
-            var p = rapByOU[ou];
-            if (p === 0) n0++;
-            else if (p < 50) nLt50++;
-            else if (p < 80) n50_80++;
-            else nGe80++;
-        });
-        var nTot = orgNames.length || 1;
-
-        cardBox.innerHTML += '<div class="kd" style="display:flex;flex-wrap:wrap;gap:12px;margin:12px 0">' +
-            '<div class="kc rd" style="flex:1;min-width:200px"><div class="kv">' + (n0 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' avec rapportage 0%</div><div style="font-size:11px;color:#888">' + n0 + '/' + nTot + '</div></div>' +
-            '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid #f39c12"><div class="kv" style="color:#f39c12">' + (nLt50 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' avec rapportage <50%</div><div style="font-size:11px;color:#888">' + nLt50 + '/' + nTot + '</div></div>' +
-            '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid #2196f3"><div class="kv" style="color:#2196f3">' + (n50_80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' avec rapportage 50-79.9%</div><div style="font-size:11px;color:#888">' + n50_80 + '/' + nTot + '</div></div>' +
-            '<div class="kc gn" style="flex:1;min-width:200px"><div class="kv">' + (nGe80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' avec rapportage ≥80%</div><div style="font-size:11px;color:#888">' + nGe80 + '/' + nTot + '</div></div>' +
-            '</div>';
-        c.appendChild(cardBox);
-
-        /* ── Graphique barre rapportage par org unit ── */
-        var barBox = E('div', 'cb');
-        barBox.innerHTML = '<h4>📊 Rapportage des données logistiques par ' + ol.l + '</h4><canvas id="logBar" height="' + Math.max(50, orgNames.length * 3) + '"></canvas>';
-        c.appendChild(barBox);
-
-        setTimeout(function () {
-            var x = document.getElementById('logBar'); if (!x) return;
-            var sortedOrgs = orgNames.slice().sort(function (a, b) { return rapByOU[b] - rapByOU[a]; });
-            var vals = sortedOrgs.map(function (o) { return rapByOU[o]; });
-            var colors = vals.map(function (v) { return v >= 80 ? '#27ae60' : v >= 50 ? '#f39c12' : '#e74c3c'; });
-            S.charts.logBar = new Chart(x, {
-                type: 'bar',
-                data: { labels: sortedOrgs.map(function (l) { return tr(l, 24); }), datasets: [{ label: '% rapportage logistique', data: vals, backgroundColor: colors, borderRadius: 3 }] },
-                options: { indexAxis: sortedOrgs.length > 8 ? 'y' : 'x', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100, title: { display: true, text: '%' } }, y: { ticks: { font: { size: sortedOrgs.length > 25 ? 7 : 9 } } } } }
-            });
-        }, 100);
-
-        /* ── Évolution rapportage logistique ── */
-        var _allMosLog = uv(AD, function (r) { return r.period; }).sort();
-        var _cutLog = _getChartCutoff();
-        _allMosLog = _allMosLog.filter(function (m) { return m >= '202501' && m <= _cutLog; });
-
-        var _fltNoP = AD.filter(function (r) {
-            if (f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
-            if (f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
-            if (f.as.length && f.as.indexOf(r.org4) < 0) return false;
-            if (f.fosa.length && f.fosa.indexOf(r.org5) < 0) return false;
-            return true;
-        });
-
-        var evoBox = E('div', 'cb');
-        evoBox.innerHTML = '<h4>📈 Évolution de rapportage des variables logistiques</h4><canvas id="logEvo" height="50"></canvas>';
-        c.appendChild(evoBox);
-
-        setTimeout(function () {
-            var x = document.getElementById('logEvo'); if (!x) return;
-            var evoData = _allMosLog.map(function (m) {
-                var mRecs = _fltNoP.filter(function (r) { return r.period === m; });
-                var tF = 0, fF = 0;
-                mRecs.forEach(function (r) {
+            var rapByOU = {};
+            orgNames.forEach(function (ou) {
+                var recs = ogs[ou];
+                var totalFields = 0, filledFields = 0;
+                recs.forEach(function (r) {
                     LOGIST_ALL_FIELDS.forEach(function (fld) {
-                        tF++;
-                        if ((Number(r[fld]) || 0) > 0) fF++;
+                        totalFields++;
+                        if ((Number(r[fld]) || 0) > 0) filledFields++;
                     });
                 });
-                return tF > 0 ? (fF / tF * 100) : 0;
+                rapByOU[ou] = totalFields > 0 ? (filledFields / totalFields * 100) : 0;
             });
-            S.charts.logEvo = new Chart(x, {
-                type: 'line',
-                data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: evoData, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] },
-                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+
+            var n0 = 0, nLt50 = 0, n50_80 = 0, nGe80 = 0;
+            orgNames.forEach(function (ou) {
+                var p = rapByOU[ou];
+                if (p === 0) n0++; else if (p < 50) nLt50++; else if (p < 80) n50_80++; else nGe80++;
             });
-        }, 200);
+            var nTot = orgNames.length || 1;
 
-        /* ── Rapport logistique par vaccin ── */
-        var repBox = E('div', 'cb');
-        repBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:8px">📦 Rapport logistique par vaccin</h4>';
+            cardBox.innerHTML += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:12px 0">' +
+                '<div class="kc rd" style="flex:1;min-width:180px"><div class="kv">' + (n0 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage 0%</div><div style="font-size:11px;color:#888">' + n0 + '/' + nTot + '</div></div>' +
+                '<div class="kc" style="flex:1;min-width:180px;border-left:5px solid #f39c12"><div class="kv" style="color:#f39c12">' + (nLt50 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage &lt;50%</div><div style="font-size:11px;color:#888">' + nLt50 + '/' + nTot + '</div></div>' +
+                '<div class="kc" style="flex:1;min-width:180px;border-left:5px solid #2196f3"><div class="kv" style="color:#2196f3">' + (n50_80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage 50-79.9%</div><div style="font-size:11px;color:#888">' + n50_80 + '/' + nTot + '</div></div>' +
+                '<div class="kc gn" style="flex:1;min-width:180px"><div class="kv">' + (nGe80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage ≥80%</div><div style="font-size:11px;color:#888">' + nGe80 + '/' + nTot + '</div></div></div>';
+            c.appendChild(cardBox);
 
-        /* Filtre OU */
-        var fH2 = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap">';
-        fH2 += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + ol.l + ' <button class="frst" onclick="_rstLogOU()" title="Réinitialiser">↺</button></label>';
-        fH2 += '<button class="fbtn" id="logBtnOU" onclick="_togADD(\'logDdOU\')"><span>Tout (' + orgNames.length + ')</span><span class="cn">' + orgNames.length + '</span><span>▼</span></button>';
-        fH2 += '<div class="fd" id="logDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'logDdOU\')">';
-        fH2 += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'logDdOU\')"><span style="font-weight:700">Tout sélectionner</span></div>';
-        orgNames.forEach(function (ou) { fH2 += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderLogTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
-        fH2 += '</div></div></div>';
-        repBox.innerHTML += fH2;
-        repBox.innerHTML += '<div id="logTblWrap"></div>';
-        c.appendChild(repBox);
+            /* ── Graphique barre rapportage ── */
+            var barBox = E('div', 'cb');
+            barBox.innerHTML = '<h4>📊 Rapportage des données logistiques par ' + ol.l + '</h4><canvas id="logBar" height="' + Math.max(50, orgNames.length * 3) + '"></canvas>';
+            c.appendChild(barBox);
+            setTimeout(function () {
+                var x = document.getElementById('logBar'); if (!x) return;
+                var sOrgs = orgNames.slice().sort(function (a, b) { return rapByOU[b] - rapByOU[a]; });
+                var vals = sOrgs.map(function (o) { return rapByOU[o]; });
+                var cols = vals.map(function (v) { return v >= 80 ? '#27ae60' : v >= 50 ? '#f39c12' : '#e74c3c'; });
+                S.charts.logBar = new Chart(x, { type: 'bar', data: { labels: sOrgs.map(function (l) { return tr(l, 24); }), datasets: [{ label: '% rapportage', data: vals, backgroundColor: cols, borderRadius: 3 }] }, options: { indexAxis: sOrgs.length > 8 ? 'y' : 'x', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: sOrgs.length > 25 ? 7 : 9 } } } } } });
+            }, 100);
 
-        window._rstLogOU = function () {
-            document.querySelectorAll('#logDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
-            _renderLogTbl();
-        };
-
-        window._renderLogTbl = function () {
-            var selOU = [];
-            document.querySelectorAll('#logDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (cb) { if (cb.checked) selOU.push(cb.value); });
-            _updABtn('logDdOU', 'logBtnOU');
-
-            var fltOrgs = selOU.length < orgNames.length ? orgNames.filter(function (o) { return selOU.indexOf(o) >= 0; }) : orgNames;
-
-            var h = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>';
-            h += '<tr style="background:#0b3a6f;color:#fff"><th rowspan="2" style="min-width:160px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
-            LOGIST_FIELDS.forEach(function (lf) {
-                h += '<th colspan="5" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + lf.lbl + '</th>';
+            /* ── Évolution rapportage logistique ── */
+            var _allMosLog = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m >= '202501' && m <= _getChartCutoff(); });
+            var _fltNoP = AD.filter(function (r) {
+                if (f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
+                if (f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                if (f.as.length && f.as.indexOf(r.org4) < 0) return false;
+                if (f.fosa.length && f.fosa.indexOf(r.org5) < 0) return false;
+                return true;
             });
-            h += '</tr><tr style="background:#163d6f;color:#ddd;font-size:9px">';
-            LOGIST_FIELDS.forEach(function () {
-                h += '<th>Stock début</th><th>Reçues</th><th>Dose dispo</th><th>Vaccinés</th><th>Écart</th>';
-            });
-            h += '</tr></thead><tbody>';
-
-            fltOrgs.forEach(function (orgName, idx) {
-                var recs = ogs[orgName] || [];
-                h += '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + '">';
-                h += '<td style="position:sticky;left:0;background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';z-index:2;font-weight:600">' + tr(orgName, 30) + '</td>';
-
-                LOGIST_FIELDS.forEach(function (lf) {
-                    var stk = sf(recs, lf.stock);
-                    var rcv = sf(recs, lf.recv);
-                    var dispo = stk + rcv;
-                    /* Vaccinés = somme des AG liés à ce vaccin */
-                    var triDef = TRIANG_DEFS.find(function (t) { return t.stock === lf.stock; });
-                    var vac = 0;
-                    if (triDef) triDef.vacs.forEach(function (v) { vac += sf(recs, v); });
-                    var ecart = dispo - vac;
-                    h += '<td style="text-align:right">' + stk.toLocaleString() + '</td>';
-                    h += '<td style="text-align:right">' + rcv.toLocaleString() + '</td>';
-                    h += '<td style="text-align:right;font-weight:600">' + dispo.toLocaleString() + '</td>';
-                    h += '<td style="text-align:right">' + vac.toLocaleString() + '</td>';
-                    h += '<td style="text-align:right;font-weight:700;color:' + (ecart < 0 ? '#e74c3c' : '#27ae60') + '">' + (ecart >= 0 ? '+' : '') + ecart.toLocaleString() + '</td>';
+            var evoBox = E('div', 'cb');
+            evoBox.innerHTML = '<h4>📈 Évolution de rapportage des variables logistiques</h4><canvas id="logEvo" height="50"></canvas>';
+            c.appendChild(evoBox);
+            setTimeout(function () {
+                var x = document.getElementById('logEvo'); if (!x) return;
+                var ed = _allMosLog.map(function (m) {
+                    var mR = _fltNoP.filter(function (r) { return r.period === m; });
+                    var tF = 0, fF = 0;
+                    mR.forEach(function (r) { LOGIST_ALL_FIELDS.forEach(function (fld) { tF++; if ((Number(r[fld]) || 0) > 0) fF++; }); });
+                    return tF > 0 ? (fF / tF * 100) : 0;
                 });
-                h += '</tr>';
-            });
-            h += '</tbody></table></div>';
+                S.charts.logEvo = new Chart(x, { type: 'line', data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: ed, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
+            }, 200);
 
-            var w = document.getElementById('logTblWrap');
-            if (w) w.innerHTML = h;
-        };
+            /* ── Rapport logistique complet ── */
+            var repBox = E('div', 'cb');
+            repBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:8px">📦 Rapport logistique par vaccin</h4>';
 
-        setTimeout(function () { _renderLogTbl(); }, 100);
-    }
+            var fH2 = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap">';
+            fH2 += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + ol.l + ' <button class="frst" onclick="_rstLogOU()" title="Réinitialiser">↺</button></label>';
+            fH2 += '<button class="fbtn" id="logBtnOU" onclick="_togADD(\'logDdOU\')"><span>Tout (' + orgNames.length + ')</span><span class="cn">' + orgNames.length + '</span><span>▼</span></button>';
+            fH2 += '<div class="fd" id="logDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'logDdOU\')">';
+            fH2 += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllA(this,\'logDdOU\')"><span style="font-weight:700">Tout sélectionner</span></div>';
+            orgNames.forEach(function (ou) { fH2 += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderLogTbl()"><span>' + tr(ou, 30) + '</span></div>'; });
+            fH2 += '</div></div></div>';
+            repBox.innerHTML += fH2;
+            repBox.innerHTML += '<div id="logTblWrap"></div>';
+            c.appendChild(repBox);
+
+            window._rstLogOU = function () {
+                document.querySelectorAll('#logDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
+                _renderLogTbl();
+            };
+
+            window._renderLogTbl = function () {
+                var selOU = [];
+                document.querySelectorAll('#logDdOU .fi:not(.fa) input[type=checkbox]').forEach(function (cb) { if (cb.checked) selOU.push(cb.value); });
+                _updABtn('logDdOU', 'logBtnOU');
+                var fltOrgs = selOU.length < orgNames.length ? orgNames.filter(function (o) { return selOU.indexOf(o) >= 0; }) : orgNames;
+
+                var h = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:10px"><thead>';
+                h += '<tr style="background:#0b3a6f;color:#fff"><th rowspan="2" style="min-width:150px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
+                LOGIST_FIELDS.forEach(function (lf) {
+                    h += '<th colspan="9" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + lf.lbl + '</th>';
+                });
+                h += '</tr><tr style="background:#163d6f;color:#ddd;font-size:8px">';
+                LOGIST_FIELDS.forEach(function () {
+                    h += '<th>Stock début</th><th>Reçues</th><th>Dose dispo</th><th>Administré</th><th>Utilisé</th><th>Perdu</th><th>Tx perte</th><th>SDU</th><th>JRS</th>';
+                });
+                h += '</tr></thead><tbody>';
+
+                fltOrgs.forEach(function (orgName, idx) {
+                    var recs = ogs[orgName] || [];
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:2;font-weight:600;font-size:10px">' + tr(orgName, 28) + '</td>';
+
+                    LOGIST_FIELDS.forEach(function (lf) {
+                        var stk = sf(recs, lf.stock);
+                        var rcv = sf(recs, lf.recv);
+                        var dispo = stk + rcv;
+                        var admin = lf.vacs.reduce(function (s, v) { return s + sf(recs, v); }, 0);
+                        var used = sf(recs, lf.used);
+                        var perdu = used > 0 ? used - admin : 0;
+                        var txPerte = used > 0 ? (perdu / used * 100) : 0;
+                        var sdu = sf(recs, lf.sdu);
+                        var jrs = sf(recs, lf.jrs);
+
+                        h += '<td style="text-align:right">' + stk.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right">' + rcv.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right;font-weight:600">' + dispo.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right">' + admin.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right">' + used.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right;color:' + (perdu > 0 ? '#e74c3c' : '#27ae60') + '">' + perdu.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right;color:' + (txPerte > 10 ? '#e74c3c' : txPerte > 5 ? '#f39c12' : '#27ae60') + '">' + txPerte.toFixed(1) + '%</td>';
+                        h += '<td style="text-align:right">' + sdu.toLocaleString() + '</td>';
+                        h += '<td style="text-align:right;color:' + (jrs > 0 ? '#e74c3c' : '#27ae60') + ';font-weight:' + (jrs > 0 ? '700' : '400') + '">' + jrs + '</td>';
+                    });
+                    h += '</tr>';
+                });
+                h += '</tbody></table></div>';
+                var w = document.getElementById('logTblWrap');
+                if (w) w.innerHTML = h;
+            };
+            setTimeout(function () { _renderLogTbl(); }, 100);
+        }
         /* ═══ START ═══ */
         loadAll();
     </script>
