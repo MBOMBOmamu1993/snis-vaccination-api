@@ -3077,19 +3077,13 @@
 
                 var fltOrgs = selOU.length < orgNames.length ? orgNames.filter(function (o) { return selOU.indexOf(o) >= 0; }) : orgNames;
 
-                /* Entêtes groupées par âge */
+                /* Entêtes */
                 var h = '<div class="tw" style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>';
-                h += '<tr style="background:#0b3a6f;color:#fff"><th rowspan="2" style="min-width:160px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
-                VACCIN_CALENDAR.forEach(function (grp2) {
-                    var ags3 = grp2.ags.filter(function (a) { return isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a) < 0; });
-                    if (!ags3.length) return;
-                    h += '<th colspan="' + ags3.length + '" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + grp2.age + '</th>';
-                });
-                h += '</tr><tr style="background:#163d6f;color:#ddd;font-size:9px">';
+                h += '<tr style="background:#0b3a6f;color:#fff"><th style="min-width:160px;position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
                 VACCIN_CALENDAR.forEach(function (grp2) {
                     grp2.ags.forEach(function (ag) {
                         if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
-                        h += '<th style="text-align:right">' + (AG_LBL[ag] || ag) + '</th>';
+                        h += '<th style="text-align:right;font-size:9px">' + (AG_LBL[ag] || ag) + '</th>';
                     });
                 });
                 h += '</tr></thead><tbody>';
