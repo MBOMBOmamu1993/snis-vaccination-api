@@ -863,9 +863,9 @@
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
-            { id: 'fosa', lb: 'Données de vaccination et logistiques', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Données logistiques', ic: '📦' }] },
-            { id: 'as', lb: 'Aire de Santé', fl: ['province', 'antenne', 'zs', 'as', 'period'], pp: [{ t: 'Tableau de bord AS', ic: '📍' }] },
-            { id: 'zs', lb: 'Zone de Santé', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Tableau de bord ZS', ic: '🗺️' }] },
+            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Données logistiques', ic: '📦' }] },
+            { id: 'as', lb: 'Aire de Santé', fl: ['province', 'antenne', 'zs', 'as', 'period'], pp: [{ t: 'Vaccination AS', ic: '📍' }, { t: 'Logistique AS', ic: '📦' }] },
+            { id: 'zs', lb: 'Zone de Santé', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Vaccination ZS', ic: '🗺️' }, { t: 'Logistique ZS', ic: '📦' }] },
             { id: 'ant', lb: 'Antenne PEV', fl: ['province', 'antenne', 'period'], pp: [{ t: 'Tableau de bord Antenne', ic: '📡' }] },
             { id: 'nat', lb: 'National', fl: ['province', 'period'], pp: [{ t: 'Tableau de bord National', ic: '🇨🇩' }] },
             { id: 'gen', lb: 'Aperçu général', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: 'Aperçu général', ic: '🎯' }] }
@@ -1128,6 +1128,16 @@
         function rFlt() {
             var c = document.getElementById('FS'); c.innerHTML = '';
             var tab = TABS[S.tab];
+
+            /* SÉLECTEUR DE NIVEAU */
+            var fgL = E('div', 'fg');
+            fgL.innerHTML = '<label>Niveau de données</label>';
+            var sL = document.createElement('select');
+            sL.style.background = '#fffbe6'; sL.style.borderColor = '#ffe58f';
+            sL.innerHTML = '<option value="">FOSA (Détail)</option><option value="as">Aire de Santé</option><option value="zs">Zone de Santé</option>';
+            sL.value = lvl;
+            sL.onchange = function() { window.location.href = '?lvl=' + this.value; };
+            fgL.appendChild(sL); c.appendChild(fgL);
 
             /* 1) PROVINCE - choix unique (select) */
             if (tab.fl.indexOf('province') >= 0) {
@@ -1398,7 +1408,7 @@
             db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
-            else if (tab.id === 'fosa') { [rVac, rLog][S.pg](ct); }
+            else if (tab.id === 'vacc' || tab.id === 'as' || tab.id === 'zs') { [rVac, rLog][S.pg](ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
             if (tab.pp.length > 1) { bar.style.display = 'flex'; document.getElementById('PI').textContent = 'Page ' + (S.pg + 1) + ' sur ' + tab.pp.length; document.getElementById('BP').disabled = S.pg === 0; document.getElementById('BN').disabled = S.pg >= tab.pp.length - 1; }
