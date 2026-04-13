@@ -85,12 +85,8 @@ jobs:
           git add docs/data docs/data/ou_map.json docs/data/ou_map.json.gz docs/data/ou_map.meta.json
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "auto: sync FOSA (last ${{ inputs.months || '3' }} months)"
-          for i in 1 2 3; do
-            git pull --rebase origin main || true
-            git push origin HEAD:main && break
-            echo "Push attempt $i failed, retrying..."
-            sleep 5
-          done
+          chmod +x scripts/safe_push.sh
+          ./scripts/safe_push.sh main
 
 # ─────────────────────────────────────────────────────────────
 # JOB AS  (01:30 UTC auto  OU  manuel level=AS)
@@ -146,12 +142,8 @@ jobs:
           git add docs/data_as docs/data_as/ou_map_as.json docs/data_as/ou_map_as.json.gz docs/data_as/ou_map_as.meta.json
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "auto: sync AS (last ${{ inputs.months || '3' }} months)"
-          for i in 1 2 3; do
-            git pull --rebase origin main || true
-            git push origin HEAD:main && break
-            echo "Push attempt $i failed, retrying..."
-            sleep 5
-          done
+          chmod +x scripts/safe_push.sh
+          ./scripts/safe_push.sh main
 
 # ─────────────────────────────────────────────────────────────
 # JOB ZS  (02:00 UTC auto  OU  manuel level=ZS)
@@ -207,9 +199,5 @@ jobs:
           git add docs/data_zs docs/data_zs/ou_map_zs.json docs/data_zs/ou_map_zs.json.gz docs/data_zs/ou_map_zs.meta.json
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "auto: sync ZS (last ${{ inputs.months || '3' }} months)"
-          for i in 1 2 3; do
-            git pull --rebase origin main || true
-            git push origin HEAD:main && break
-            echo "Push attempt $i failed, retrying..."
-            sleep 5
-          done
+          chmod +x scripts/safe_push.sh
+          ./scripts/safe_push.sh main

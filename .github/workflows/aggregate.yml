@@ -59,9 +59,7 @@ jobs:
           
           # On vérifie s'il y a des changements avant de pousser
           if ! git diff --staged --quiet; then
-            git pull --rebase origin main
             git commit -m "auto: refresh ALL dashboard aggregates (FOSA, AS, ZS)"
-            git push
-          else
-            echo "Aucun changement détecté dans les données agrégées (FOSA, AS, ZS)."
+            chmod +x scripts/safe_push.sh
+            ./scripts/safe_push.sh main
           fi
