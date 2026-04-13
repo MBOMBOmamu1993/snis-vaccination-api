@@ -800,11 +800,11 @@
         };
 
         var AG_FIELD_MAP = {
-            BCG: 'BCG_all', VPO0: 'VPO0_all', DTC1: 'DTC1_all', VPO1: 'VPO1_all',
-            ROTA1: 'ROTA1_all', PCV13_1: 'PCV13_1_all', DTC2: 'DTC2_all', VPO2: 'VPO2_all',
-            ROTA2: 'ROTA2_all', PCV13_2: 'PCV13_2_all', DTC3: 'DTC3_all', VPO3: 'VPO3_all',
-            VPI1: 'VPI1_all', ROTA3: 'ROTA3_all', PCV13_3: 'PCV13_3_all',
-            VAR1: 'VAR1_all', VPI2: 'VPI2_all', VAA: 'VAA_all', VAR2: 'VAR2_all',
+            BCG: 'BCG_0_11', VPO0: 'VPO0_0_11', DTC1: 'DTC1_0_11', VPO1: 'VPO1_0_11',
+            ROTA1: 'ROTA1_0_11', PCV13_1: 'PCV13_1_0_11', DTC2: 'DTC2_0_11', VPO2: 'VPO2_0_11',
+            ROTA2: 'ROTA2_0_11', PCV13_2: 'PCV13_2_0_11', DTC3: 'DTC3_0_11', VPO3: 'VPO3_0_11',
+            VPI1: 'VPI1_0_11', ROTA3: 'ROTA3_0_11', PCV13_3: 'PCV13_3_0_11',
+            VAR1: 'VAR1_0_11', VPI2: 'VPI2_0_11', VAA: 'VAA_0_11', VAR2: 'VAR2_12_23',
             TD: 'Td_2_plus',
             VAP1: 'VAP1_0_11', VAP2: 'VAP2_0_11', VAP3: 'VAP3_0_11', VAP4: 'VAP4_12_23'
         };
@@ -1128,16 +1128,6 @@
         function rFlt() {
             var c = document.getElementById('FS'); c.innerHTML = '';
             var tab = TABS[S.tab];
-
-            /* SÉLECTEUR DE NIVEAU */
-            var fgL = E('div', 'fg');
-            fgL.innerHTML = '<label>Niveau de données</label>';
-            var sL = document.createElement('select');
-            sL.style.background = '#fffbe6'; sL.style.borderColor = '#ffe58f';
-            sL.innerHTML = '<option value="">FOSA (Détail)</option><option value="as">Aire de Santé</option><option value="zs">Zone de Santé</option>';
-            sL.value = lvl;
-            sL.onchange = function() { window.location.href = '?lvl=' + this.value; };
-            fgL.appendChild(sL); c.appendChild(fgL);
 
             /* 1) PROVINCE - choix unique (select) */
             if (tab.fl.indexOf('province') >= 0) {
