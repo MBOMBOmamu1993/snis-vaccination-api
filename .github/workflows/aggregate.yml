@@ -54,11 +54,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # On ajoute tous les dossiers (FOSA, AS, ZS) dans un seul commit
-          git add -A docs/data/dashboard/ docs/data_as/dashboard/ docs/data_zs/dashboard/ docs/.nojekyll
+          # On ajoute tous les dossiers de données générés (FOSA, AS, ZS)
+          git add docs/data/dashboard/ docs/data_as/dashboard/ docs/data_zs/dashboard/ docs/.nojekyll
           
           # On vérifie s'il y a des changements avant de pousser
           if ! git diff --staged --quiet; then
+            git pull --rebase origin main
             git commit -m "auto: refresh ALL dashboard aggregates (FOSA, AS, ZS)"
             git push
           else
