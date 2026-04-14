@@ -3013,10 +3013,7 @@
 
             var bh = '<div style="display:flex;flex-wrap:wrap;gap:14px">';
             VACCIN_CALENDAR.forEach(function (grp) {
-                var ags2 = grp.ags.filter(function (a) {
-                    return isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(a) < 0;
-                });
-                if (!ags2.length) return;
+                var ags2 = grp.ags;
                 var col = calColors[grp.age] || '#0b3a6f';
 
                 bh += '<div style="background:#fff;border:2px solid ' + col + ';border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
@@ -3036,9 +3033,7 @@
             bh += '<div style="background:#d84315;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;text-align:center">Femmes enceintes</div>';
             bh += '<div style="padding:8px 12px">';
             var tdVal = sf(D, 'TD');
-            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="font-weight:600">Td 2+</span><span style="font-weight:700;color:#d84315;font-size:14px">' + tdVal.toLocaleString() + '</span></div>';
-            var ecvVal = sf(D, 'ECV_12_23') || 0;
-            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-weight:600">ECV 12-23 mois</span><span style="font-weight:700;color:#d84315;font-size:14px">' + ecvVal.toLocaleString() + '</span></div>';
+            bh += '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-weight:600">Td 2+</span><span style="font-weight:700;color:#d84315;font-size:14px">' + tdVal.toLocaleString() + '</span></div>';
             bh += '</div></div>';
             bh += '</div>';
             calBox.innerHTML += bh;
