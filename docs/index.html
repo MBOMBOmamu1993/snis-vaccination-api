@@ -3223,7 +3223,7 @@
                 var stk = sf(D, p + '_stock_d_but');
                 var rcv = sf(D, p + '_re_ues');
                 var used = sf(D, p + '_utilis_es');
-                var admin = item.vacs ? item.vacs.reduce(function (s, v) { return s + sf(D, v); }, 0) : 0;
+                var admin = item.vacs ? item.vacs.reduce(function (s, v) { return s + sf(D, v); }, 0) : sf(D, p + '_administr_es');
                 var perdu = sf(D, p + '_pertes');
                 var denom = (admin || 0) + (perdu || 0);
                 var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
