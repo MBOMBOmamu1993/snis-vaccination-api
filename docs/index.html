@@ -974,7 +974,7 @@
             ['seances_fixes_prevues', 'seances_fixes_realisees',
                 'seances_avancees_prevues', 'seances_avancees_realisees',
                 'seances_mobiles_prevues', 'seances_mobiles_realisees',
-                'ECV_12_23'
+                'ECV_12_23', 'VAR2_0_11', 'HPV_administr_es'
             ].forEach(function (f) { rec[f] = Number(r[f]) || 0; });
             LOGIST_ALL_FIELDS.forEach(function (f) { rec[f] = Number(r[f]) || 0; });
             return rec;
@@ -1908,11 +1908,12 @@
                     var fLD = ld2.filter(function (r) { return selOU.indexOf(r[ol.k]) >= 0; });
                     var fGrps = SAME_AGE.filter(function (g, gi) { return selAG.indexOf(gi) >= 0; });
                     if (!fGrps.length) fGrps = SAME_AGE;
-                    var h = '<div class="tw"><table class="dt"><thead><tr><th>' + ol.l + '</th>';
+                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr><th style="position:sticky;left:0;background:#0b3a6f;z-index:2">' + ol.l + '</th>';
                     fGrps.forEach(function (g) { h += '<th>' + g.age + '</th><th>%Var</th>'; });
                     h += '<th>Cohérence vaccins<br><small>même âge</small></th></tr></thead><tbody>';
-                    fLD.slice(0, 60).forEach(function (r) {
-                        h += '<tr><td>' + tr(r[ol.k], 24) + '</td>';
+                    fLD.slice(0, 60).forEach(function (r, idx) {
+                        var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                        h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(r[ol.k], 24) + '</td>';
                         var totC = 0, badC = 0;
                         SAME_AGE.forEach(function (g) { for (var j = 0; j < g.v.length - 1; j++) { totC++; var a2 = Number(r[g.v[j]]) || 0, b2 = Number(r[g.v[j + 1]]) || 0, den = b2 || a2 || 1; if (Math.abs((a2 - b2) / den * 100) > 10) badC++; } });
                         var cohOui = totC === 0 || (badC / totC) <= 0.30;
@@ -1971,16 +1972,17 @@
 
                     // Ajout de l'ID id="triTbl" sur la table pour l'exportation
                     var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="triTbl"><thead>';
-                    h += '<tr><th rowspan="2" style="min-width:120px">' + ol.l + '</th>';
+                    h += '<tr><th rowspan="2" style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:120px">' + ol.l + '</th>';
                     fAgs.forEach(function (ag) { h += '<th colspan="3" style="text-align:center;border-bottom:1px solid #bbb">' + ag.lbl + '</th>'; });
                     h += '<th rowspan="2" style="white-space:nowrap">Proportion<br>écarts négatifs</th><th rowspan="2" style="white-space:nowrap">Cohérence<br>vaccinés-doses</th></tr>';
                     h += '<tr>';
                     fAgs.forEach(function () { h += '<th style="text-align:right;white-space:nowrap;font-size:10px">Dose disponible</th><th style="text-align:right;white-space:nowrap;font-size:10px">Vaccinés</th><th style="text-align:right;white-space:nowrap;font-size:10px">Écart</th>'; });
                     h += '</tr></thead><tbody>';
                     /* Une seule ligne par unité d'organisation */
-                    Object.keys(ouG).filter(Boolean).sort().forEach(function (ouName) {
+                    Object.keys(ouG).filter(Boolean).sort().forEach(function (ouName, idx) {
+                        var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                         var recs = ouG[ouName], neg = 0;
-                        h += '<tr><td style="font-size:10px;font-weight:700">' + tr(ouName, 22) + '</td>';
+                        h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-size:10px;font-weight:700">' + tr(ouName, 22) + '</td>';
                         fAgs.forEach(function (ag) {
                             var st = recs.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0);
                             var rv = recs.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0);
@@ -2578,7 +2580,7 @@
 
             /* ═══ Org unit encodant des données non prévues ═══ */
             var _encOL = getOrgLevel(D);
-            var _encAGs = ['VAR2', 'HPV'];
+            var _encAGs = ['VAR2_0_11', 'HPV_administr_es'];
             // Optimisation: stocker le résultat de la vérification VAP
             if (S.filters.province && typeof S.provCache === 'undefined') {
                 S.provCache = {};
@@ -2595,10 +2597,10 @@
             var _isVAPProv = S.filters.province ? S.provCache[S.filters.province].isVAP : false;
             if (!_isVAPProv) _encAGs = _encAGs.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']);
 
-            var _encLbls = { VAR2: 'VAR2 0-11 mois', HPV: 'HPV', VAP1: 'VAP1', VAP2: 'VAP2', VAP3: 'VAP3', VAP4: 'VAP4' };
+            var _encLbls = { VAR2_0_11: 'VAR2 0-11 mois', HPV_administr_es: 'HPV', VAP1: 'VAP1', VAP2: 'VAP2', VAP3: 'VAP3', VAP4: 'VAP4' };
 
 
-            var _encColors = { VAR2: '#7b1fa2', HPV: '#1565c0', VAP1: '#e65100', VAP2: '#00838f', VAP3: '#2e7d32', VAP4: '#c62828' };
+            var _encColors = { VAR2_0_11: '#7b1fa2', HPV_administr_es: '#1565c0', VAP1: '#e65100', VAP2: '#00838f', VAP3: '#2e7d32', VAP4: '#c62828' };
             var _encOUs = uv(D, function (r) { return r[_encOL.k]; });
 
             var b3 = E('div', 'cb');
@@ -2906,7 +2908,7 @@
                 var TH = ' style="white-space:normal;max-width:72px;text-align:center;vertical-align:middle;line-height:1.3"';
                 if (isFOSA) {
                     h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-                        '<th>' + lvC.l + '</th>' +
+                        '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:120px">' + lvC.l + '</th>' +
                         '<th>Nombre total<br>ESS attendus</th>' +
                         '<th>Nombre ESS<br>ayant rapporté</th>' +
                         '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
@@ -2917,10 +2919,11 @@
                         '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
                         '<th>Score Total<br>(/120)</th><th>% Score<br>Total</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
                         '</tr></thead><tbody>';
-                    rows.forEach(function (r) {
+                    rows.forEach(function (r, idx) {
+                        var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                         var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                         var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
-                        h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
+                        h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:700"><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
                             '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
                             '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
                             '<td class="' + (r.bCohAge ? 'cg' : 'crd') + '">' + (r.bCohAge ? 'Oui' : 'Non') + '</td><td style="font-weight:700">' + r.scCage + '</td>' +
@@ -2934,7 +2937,7 @@
                     });
                 } else {
                     h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
-                        '<th>' + lvC.l + '</th>' +
+                        '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:120px">' + lvC.l + '</th>' +
                         '<th>Nombre<br>total ESS</th>' +
                         '<th>Nombre ESS<br>ayant rapporté</th>' +
                         '<th>Taux de<br>rapportage (%)</th><th>Score<br>Rapportage (/20)</th>' +
@@ -2944,10 +2947,11 @@
                         '<th>Taux d\'abandon<br>moyen (%)</th><th>Score Taux<br>d\'Abandon (/20)</th>' +
                         '<th>Score Composite<br>(/100)</th><th>Interpré-<br>tation</th><th>Points à<br>améliorer</th>' +
                         '</tr></thead><tbody>';
-                    rows.forEach(function (r) {
+                    rows.forEach(function (r, idx) {
+                        var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                         var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
                         var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
-                        h += '<tr><td><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
+                        h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:700"><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
                             '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
                             '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
                             '<td class="' + (r.pctCohBonne >= 50 ? 'cg' : 'crd') + '">' + r.pctCohBonne.toFixed(1) + '%</td><td style="font-weight:700">' + r.scCcomb + '</td>' +
