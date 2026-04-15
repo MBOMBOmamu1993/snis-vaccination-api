@@ -3220,6 +3220,11 @@
             h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Tx perte %</th>';
             h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Jrs rupture</th>';
             h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">SDU</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Stock max</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Qté à cmd</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">CMM</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Ajustement</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">MSD</th>';
             h += '</tr></thead><tbody>';
 
             LOGIST_FIELDS.forEach(function (item, idx) {
@@ -3233,6 +3238,11 @@
                 var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
                 var jrs = sf(D, p + '_jours_rupture');
                 var sdu = sf(D, p + '_stock_fin');
+                var smax = sf(D, p + '_stock_max');
+                var qcmd = sf(D, p + '_qte_a_commander');
+                var cmm = sf(D, p + '_cmm');
+                var aj = sf(D, p + '_ajustement');
+                var msd = sf(D, p + '_msd');
 
                 var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 h += '<tr style="background:' + bg + '">';
@@ -3249,6 +3259,11 @@
                 var jrCol = jrs > 0 ? '#e74c3c' : '#27ae60';
                 h += '<td style="text-align:right;color:' + jrCol + ';font-weight:600">' + (jrs ? jrs.toLocaleString() : '0') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (sdu ? sdu.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (smax ? smax.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (qcmd ? qcmd.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (cmm ? cmm.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (aj ? aj.toLocaleString() : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (msd ? msd.toLocaleString() : '\u2014') + '</td>';
                 h += '</tr>';
             });
 

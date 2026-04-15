@@ -144,6 +144,29 @@ DX_LIST = """
           "jJUIodWQH0T.WZwmzIuRvwV;jJUIodWQH0T.GSCwhT2SCCr;jJUIodWQH0T.pdKyvaYRqCj;"
           "K8Yt0p1z21M.dxDQKDcTn6Z;K8Yt0p1z21M.XEN3ucCGa07;K8Yt0p1z21M.J8mw9rFkY4v;"
           "K8Yt0p1z21M.WZwmzIuRvwV;K8Yt0p1z21M.GSCwhT2SCCr;K8Yt0p1z21M.pdKyvaYRqCj;"
+          "uAWIVDnGPGH.Lpu56KTyGvy;uAWIVDnGPGH.ddJmZUacsvQ;uAWIVDnGPGH.t5L9ODSuYOG;uAWIVDnGPGH.pGSfKOKL9s0;uAWIVDnGPGH.jpmZl19SSta;"
+          "l1bhrYUPsde.Lpu56KTyGvy;l1bhrYUPsde.ddJmZUacsvQ;l1bhrYUPsde.t5L9ODSuYOG;l1bhrYUPsde.pGSfKOKL9s0;l1bhrYUPsde.jpmZl19SSta;"
+          "Hjlw6DpooIo.Lpu56KTyGvy;Hjlw6DpooIo.ddJmZUacsvQ;Hjlw6DpooIo.t5L9ODSuYOG;Hjlw6DpooIo.pGSfKOKL9s0;Hjlw6DpooIo.jpmZl19SSta;"
+          "BCXcLiQNI8M.Lpu56KTyGvy;BCXcLiQNI8M.ddJmZUacsvQ;BCXcLiQNI8M.t5L9ODSuYOG;BCXcLiQNI8M.pGSfKOKL9s0;BCXcLiQNI8M.jpmZl19SSta;"
+          "IisI6JudbS8.Lpu56KTyGvy;IisI6JudbS8.ddJmZUacsvQ;IisI6JudbS8.t5L9ODSuYOG;IisI6JudbS8.pGSfKOKL9s0;IisI6JudbS8.jpmZl19SSta;"
+          "vrTdwvAQSUc.Lpu56KTyGvy;vrTdwvAQSUc.ddJmZUacsvQ;vrTdwvAQSUc.t5L9ODSuYOG;vrTdwvAQSUc.pGSfKOKL9s0;vrTdwvAQSUc.jpmZl19SSta;"
+          "iFMn6ceqdIN.Lpu56KTyGvy;iFMn6ceqdIN.ddJmZUacsvQ;iFMn6ceqdIN.t5L9ODSuYOG;iFMn6ceqdIN.pGSfKOKL9s0;iFMn6ceqdIN.jpmZl19SSta;"
+          "hqqlXMmY95c.Lpu56KTyGvy;hqqlXMmY95c.ddJmZUacsvQ;hqqlXMmY95c.t5L9ODSuYOG;hqqlXMmY95c.pGSfKOKL9s0;hqqlXMmY95c.jpmZl19SSta;"
+          "MJrLCya7qzt.Lpu56KTyGvy;MJrLCya7qzt.ddJmZUacsvQ;MJrLCya7qzt.t5L9ODSuYOG;MJrLCya7qzt.pGSfKOKL9s0;MJrLCya7qzt.jpmZl19SSta;"
+          "RYaAzE1eqya.Lpu56KTyGvy;RYaAzE1eqya.ddJmZUacsvQ;RYaAzE1eqya.t5L9ODSuYOG;RYaAzE1eqya.pGSfKOKL9s0;RYaAzE1eqya.jpmZl19SSta;"
+          "BfoCv6bUeBk.Lpu56KTyGvy;BfoCv6bUeBk.ddJmZUacsvQ;BfoCv6bUeBk.t5L9ODSuYOG;BfoCv6bUeBk.pGSfKOKL9s0;BfoCv6bUeBk.jpmZl19SSta;"
+          "laQa8YfpVrp.kOWsLrtvrhn;"
+          "nnSKbBscmxH.kOWsLrtvrhn;"
+          "fQfJhi742vt.kOWsLrtvrhn;"
+          "bwUoJJgDst9.kOWsLrtvrhn;"
+          "blfdHcia9nP.kOWsLrtvrhn;"
+          "bqJvWJtJwtK.kOWsLrtvrhn;"
+          "DNZEo533IMh.kOWsLrtvrhn;"
+          "ZMcyV45XAkW.kOWsLrtvrhn;"
+          "gzPW3f2ijo5.kOWsLrtvrhn;"
+          "tmp1zLSXw0Q.kOWsLrtvrhn;"
+          "jJUIodWQH0T.kOWsLrtvrhn;"
+          "K8Yt0p1z21M.kOWsLrtvrhn;"
           "W25tOXS0rxS.g6mIyKoGIh2;W25tOXS0rxS.QRyK6yxKBU3;W25tOXS0rxS.Rby9Jdri29F;"
           "W25tOXS0rxS.FCXzheCQXtr;W25tOXS0rxS.VrEj0UVVGr4;"
           "uNdFg1eymsa.g6mIyKoGIh2;uNdFg1eymsa.QRyK6yxKBU3;uNdFg1eymsa.Rby9Jdri29F;"
@@ -630,6 +653,75 @@ RENAME_MAP: Dict[str, str] = {
     "K8Yt0p1z21M.GSCwhT2SCCr": "R_ceptacles dose-stock debut mois",
     "K8Yt0p1z21M.pdKyvaYRqCj": "R_ceptacles dose-utilisee",
 
+
+    # Nouvelles variables logistiques
+    "uAWIVDnGPGH.Lpu56KTyGvy": "DTC Stock Max",
+    "uAWIVDnGPGH.ddJmZUacsvQ": "DTC Qté à commander",
+    "uAWIVDnGPGH.t5L9ODSuYOG": "DTC CMM",
+    "uAWIVDnGPGH.pGSfKOKL9s0": "DTC Adjustment",
+    "uAWIVDnGPGH.jpmZl19SSta": "DTC MSD",
+    "l1bhrYUPsde.Lpu56KTyGvy": "BCG Stock Max",
+    "l1bhrYUPsde.ddJmZUacsvQ": "BCG Qté à commander",
+    "l1bhrYUPsde.t5L9ODSuYOG": "BCG CMM",
+    "l1bhrYUPsde.pGSfKOKL9s0": "BCG Adjustment",
+    "l1bhrYUPsde.jpmZl19SSta": "BCG MSD",
+    "Hjlw6DpooIo.Lpu56KTyGvy": "VAR Stock Max",
+    "Hjlw6DpooIo.ddJmZUacsvQ": "VAR Qté à commander",
+    "Hjlw6DpooIo.t5L9ODSuYOG": "VAR CMM",
+    "Hjlw6DpooIo.pGSfKOKL9s0": "VAR Adjustment",
+    "Hjlw6DpooIo.jpmZl19SSta": "VAR MSD",
+    "BCXcLiQNI8M.Lpu56KTyGvy": "VPO Stock Max",
+    "BCXcLiQNI8M.ddJmZUacsvQ": "VPO Qté à commander",
+    "BCXcLiQNI8M.t5L9ODSuYOG": "VPO CMM",
+    "BCXcLiQNI8M.pGSfKOKL9s0": "VPO Adjustment",
+    "BCXcLiQNI8M.jpmZl19SSta": "VPO MSD",
+    "IisI6JudbS8.Lpu56KTyGvy": "VPI Stock Max",
+    "IisI6JudbS8.ddJmZUacsvQ": "VPI Qté à commander",
+    "IisI6JudbS8.t5L9ODSuYOG": "VPI CMM",
+    "IisI6JudbS8.pGSfKOKL9s0": "VPI Adjustment",
+    "IisI6JudbS8.jpmZl19SSta": "VPI MSD",
+    "vrTdwvAQSUc.Lpu56KTyGvy": "VAA Stock Max",
+    "vrTdwvAQSUc.ddJmZUacsvQ": "VAA Qté à commander",
+    "vrTdwvAQSUc.t5L9ODSuYOG": "VAA CMM",
+    "vrTdwvAQSUc.pGSfKOKL9s0": "VAA Adjustment",
+    "vrTdwvAQSUc.jpmZl19SSta": "VAA MSD",
+    "iFMn6ceqdIN.Lpu56KTyGvy": "VAT Stock Max",
+    "iFMn6ceqdIN.ddJmZUacsvQ": "VAT Qté à commander",
+    "iFMn6ceqdIN.t5L9ODSuYOG": "VAT CMM",
+    "iFMn6ceqdIN.pGSfKOKL9s0": "VAT Adjustment",
+    "iFMn6ceqdIN.jpmZl19SSta": "VAT MSD",
+    "hqqlXMmY95c.Lpu56KTyGvy": "PCV13 Stock Max",
+    "hqqlXMmY95c.ddJmZUacsvQ": "PCV13 Qté à commander",
+    "hqqlXMmY95c.t5L9ODSuYOG": "PCV13 CMM",
+    "hqqlXMmY95c.pGSfKOKL9s0": "PCV13 Adjustment",
+    "hqqlXMmY95c.jpmZl19SSta": "PCV13 MSD",
+    "MJrLCya7qzt.Lpu56KTyGvy": "ROTA Stock Max",
+    "MJrLCya7qzt.ddJmZUacsvQ": "ROTA Qté à commander",
+    "MJrLCya7qzt.t5L9ODSuYOG": "ROTA CMM",
+    "MJrLCya7qzt.pGSfKOKL9s0": "ROTA Adjustment",
+    "MJrLCya7qzt.jpmZl19SSta": "ROTA MSD",
+    "RYaAzE1eqya.Lpu56KTyGvy": "VAP Stock Max",
+    "RYaAzE1eqya.ddJmZUacsvQ": "VAP Qté à commander",
+    "RYaAzE1eqya.t5L9ODSuYOG": "VAP CMM",
+    "RYaAzE1eqya.pGSfKOKL9s0": "VAP Adjustment",
+    "RYaAzE1eqya.jpmZl19SSta": "VAP MSD",
+    "BfoCv6bUeBk.Lpu56KTyGvy": "HPV Stock Max",
+    "BfoCv6bUeBk.ddJmZUacsvQ": "HPV Qté à commander",
+    "BfoCv6bUeBk.t5L9ODSuYOG": "HPV CMM",
+    "BfoCv6bUeBk.pGSfKOKL9s0": "HPV Adjustment",
+    "BfoCv6bUeBk.jpmZl19SSta": "HPV MSD",
+    "laQa8YfpVrp.kOWsLrtvrhn": "Diluant_BCG dose-stock disponible utilisable",
+    "nnSKbBscmxH.kOWsLrtvrhn": "Diluant_VAR dose-stock disponible utilisable",
+    "fQfJhi742vt.kOWsLrtvrhn": "Diluant_VAA dose-stock disponible utilisable",
+    "bwUoJJgDst9.kOWsLrtvrhn": "SAB_005ml dose-stock disponible utilisable",
+    "blfdHcia9nP.kOWsLrtvrhn": "SAB_05ml dose-stock disponible utilisable",
+    "bqJvWJtJwtK.kOWsLrtvrhn": "Ser_dilution_2ml dose-stock disponible utilisable",
+    "DNZEo533IMh.kOWsLrtvrhn": "Ser_dilution_5ml dose-stock disponible utilisable",
+    "ZMcyV45XAkW.kOWsLrtvrhn": "SAB_auto_bloquante dose-stock disponible utilisable",
+    "gzPW3f2ijo5.kOWsLrtvrhn": "Ser_dilution_6ml dose-stock disponible utilisable",
+    "tmp1zLSXw0Q.kOWsLrtvrhn": "Adaptateurs dose-stock disponible utilisable",
+    "jJUIodWQH0T.kOWsLrtvrhn": "Compte_goutte dose-stock disponible utilisable",
+    "K8Yt0p1z21M.kOWsLrtvrhn": "R_ceptacles dose-stock disponible utilisable",
     # ============================================
     # ANTIGÈNES 12-23 MOIS - RENAME MAP
     # ============================================
