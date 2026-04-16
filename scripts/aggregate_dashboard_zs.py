@@ -300,7 +300,8 @@ SUM_SPECS: dict[str, list[str]] = {
     "R_ceptacles_utilis_es": ["R_ceptacles_utilis_es"], "R_ceptacles_pertes": ["R_ceptacles_pertes"],
     "R_ceptacles_stock_fin": ["R_ceptacles_stock_fin", "R_ceptacles dose-stock disponible utilisable"], "R_ceptacles_jours_rupture": ["R_ceptacles_jours_rupture"],
     "R_ceptacles_administr_es": ["R_ceptacles_administr_es","R_ceptacles dose-administree"],
-    # ── NOUVELLES VARIABLES DE GESTION LOGISTIQUE ──
+    # ── NOUVELLES VARIABLES DE GESTION LOGISTIQUE ── VACCINS & NON-VACCINS ──
+    # Vaccins logistiques
     "BCG_stock_max": ["BCG_stock_max", "BCG Stock Max"],
     "BCG_qte_a_commander": ["BCG_qte_a_commander", "BCG Qté à commander"],
     "BCG_cmm": ["BCG_cmm", "BCG CMM"],
@@ -356,6 +357,68 @@ SUM_SPECS: dict[str, list[str]] = {
     "Td_cmm": ["Td_cmm", "VAT CMM"],
     "Td_ajustement": ["Td_ajustement", "VAT Adjustment"],
     "Td_msd": ["Td_msd", "VAT MSD"],
+    # Non-vaccins: Diluants & SAB
+    "Diluant_BCG_stock_max": ["Diluant_BCG Stock Max"],
+    "Diluant_BCG_qte_a_commander": ["Diluant_BCG Qté à commander"],
+    "Diluant_BCG_cmm": ["Diluant_BCG CMM"],
+    "Diluant_BCG_ajustement": ["Diluant_BCG Adjustment"],
+    "Diluant_BCG_msd": ["Diluant_BCG MSD"],
+    "Diluant_VAR_stock_max": ["Diluant_VAR Stock Max"],
+    "Diluant_VAR_qte_a_commander": ["Diluant_VAR Qté à commander"],
+    "Diluant_VAR_cmm": ["Diluant_VAR CMM"],
+    "Diluant_VAR_ajustement": ["Diluant_VAR Adjustment"],
+    "Diluant_VAR_msd": ["Diluant_VAR MSD"],
+    "Diluant_VAA_stock_max": ["Diluant_VAA Stock Max"],
+    "Diluant_VAA_qte_a_commander": ["Diluant_VAA Qté à commander"],
+    "Diluant_VAA_cmm": ["Diluant_VAA CMM"],
+    "Diluant_VAA_ajustement": ["Diluant_VAA Adjustment"],
+    "Diluant_VAA_msd": ["Diluant_VAA MSD"],
+    "SAB_005ml_stock_max": ["SAB_005ml Stock Max"],
+    "SAB_005ml_qte_a_commander": ["SAB_005ml Qté à commander"],
+    "SAB_005ml_cmm": ["SAB_005ml CMM"],
+    "SAB_005ml_ajustement": ["SAB_005ml Adjustment"],
+    "SAB_005ml_msd": ["SAB_005ml MSD"],
+    "SAB_05ml_stock_max": ["SAB_05ml Stock Max"],
+    "SAB_05ml_qte_a_commander": ["SAB_05ml Qté à commander"],
+    "SAB_05ml_cmm": ["SAB_05ml CMM"],
+    "SAB_05ml_ajustement": ["SAB_05ml Adjustment"],
+    "SAB_05ml_msd": ["SAB_05ml MSD"],
+    "SAB_auto_bloquante_stock_max": ["SAB_auto_bloquante Stock Max"],
+    "SAB_auto_bloquante_qte_a_commander": ["SAB_auto_bloquante Qté à commander"],
+    "SAB_auto_bloquante_cmm": ["SAB_auto_bloquante CMM"],
+    "SAB_auto_bloquante_ajustement": ["SAB_auto_bloquante Adjustment"],
+    "SAB_auto_bloquante_msd": ["SAB_auto_bloquante MSD"],
+    # Instruments et consommables non vaccins
+    "Ser_dilution_2ml_stock_max": ["Ser_dilution_2ml Stock Max"],
+    "Ser_dilution_2ml_qte_a_commander": ["Ser_dilution_2ml Qté à commander"],
+    "Ser_dilution_2ml_cmm": ["Ser_dilution_2ml CMM"],
+    "Ser_dilution_2ml_ajustement": ["Ser_dilution_2ml Adjustment"],
+    "Ser_dilution_2ml_msd": ["Ser_dilution_2ml MSD"],
+    "Ser_dilution_5ml_stock_max": ["Ser_dilution_5ml Stock Max"],
+    "Ser_dilution_5ml_qte_a_commander": ["Ser_dilution_5ml Qté à commander"],
+    "Ser_dilution_5ml_cmm": ["Ser_dilution_5ml CMM"],
+    "Ser_dilution_5ml_ajustement": ["Ser_dilution_5ml Adjustment"],
+    "Ser_dilution_5ml_msd": ["Ser_dilution_5ml MSD"],
+    "Ser_dilution_6ml_stock_max": ["Ser_dilution_6ml Stock Max"],
+    "Ser_dilution_6ml_qte_a_commander": ["Ser_dilution_6ml Qté à commander"],
+    "Ser_dilution_6ml_cmm": ["Ser_dilution_6ml CMM"],
+    "Ser_dilution_6ml_ajustement": ["Ser_dilution_6ml Adjustment"],
+    "Ser_dilution_6ml_msd": ["Ser_dilution_6ml MSD"],
+    "Adaptateurs_stock_max": ["Adaptateurs Stock Max"],
+    "Adaptateurs_qte_a_commander": ["Adaptateurs Qté à commander"],
+    "Adaptateurs_cmm": ["Adaptateurs CMM"],
+    "Adaptateurs_ajustement": ["Adaptateurs Adjustment"],
+    "Adaptateurs_msd": ["Adaptateurs MSD"],
+    "Compte_goutte_stock_max": ["Compte_goutte Stock Max"],
+    "Compte_goutte_qte_a_commander": ["Compte_goutte Qté à commander"],
+    "Compte_goutte_cmm": ["Compte_goutte CMM"],
+    "Compte_goutte_ajustement": ["Compte_goutte Adjustment"],
+    "Compte_goutte_msd": ["Compte_goutte MSD"],
+    "R_ceptacles_stock_max": ["R_ceptacles Stock Max"],
+    "R_ceptacles_qte_a_commander": ["R_ceptacles Qté à commander"],
+    "R_ceptacles_cmm": ["R_ceptacles CMM"],
+    "R_ceptacles_ajustement": ["R_ceptacles Adjustment"],
+    "R_ceptacles_msd": ["R_ceptacles MSD"],
 }
 
 # ==========================================================
@@ -486,10 +549,10 @@ for month in months_list:
                     
                     for sf, sources in SUM_SPECS.items():
                         val = sum(nv(row, s) for s in sources)
-                        if val != 0: row[sf] = val
+                        row[sf] = val
                     for sf, sources in DERIVED_SUM_SPECS.items():
                         val = sum(nv(row, s) for s in sources)
-                        if val != 0: row[sf] = val
+                        row[sf] = val
                     
                     total_records += 1
                     if prov: all_provinces.add(prov)
@@ -507,7 +570,7 @@ for month in months_list:
                     g["sum_prompt"] += nv(row, "Promptitude")
                     for k in ALL_AGG_KEYS:
                         val = row.get(k, 0.0)
-                        if val != 0: g[k] = g.get(k, 0.0) + val
+                        g[k] = g.get(k, 0.0) + val
                 except Exception: pass
 
     print(f"  {month}: {total_records} records processed")
