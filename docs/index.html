@@ -839,6 +839,7 @@
             { lbl: 'Vaccin VAA', pfx: 'VAA', unit: 'Dose 10 d/fl.', vacs: ['VAA'] },
             { lbl: 'Vaccin Td (VAT)', pfx: 'Td', unit: 'Dose 10 d/fl.', vacs: ['TD'] },
             { lbl: 'Vaccin VAP', pfx: 'VAP', unit: 'Dose', vacs: ['VAP1', 'VAP2', 'VAP3', 'VAP4'] },
+            { lbl: 'Vaccin HPV', pfx: 'HPV', unit: 'Dose', vacs: ['HPV'] },
             { lbl: 'Diluant BCG', pfx: 'Diluant_BCG', unit: 'Ampoule' },
             { lbl: 'Diluant VAR', pfx: 'Diluant_VAR', unit: 'Ampoule' },
             { lbl: 'Diluant VAA', pfx: 'Diluant_VAA', unit: 'Ampoule' },
@@ -856,7 +857,10 @@
         var LOGIST_ALL_FIELDS = [];
         LOGIST_FIELDS.forEach(function (f) {
             var p = f.pfx;
-            LOGIST_ALL_FIELDS.push(p + '_stock_d_but', p + '_re_ues', p + '_utilis_es', p + '_pertes', p + '_jours_rupture', p + '_stock_fin', p + '_administr_es');
+            LOGIST_ALL_FIELDS.push(
+                p + '_stock_d_but', p + '_re_ues', p + '_utilis_es', p + '_pertes', p + '_jours_rupture', p + '_stock_fin', p + '_administr_es',
+                p + '_stock_max', p + '_qte_a_commander', p + '_cmm', p + '_ajustement', p + '_msd'
+            );
         });
         var TABS = [
             {
