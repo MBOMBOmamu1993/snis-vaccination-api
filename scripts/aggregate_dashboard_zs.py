@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import json
 import gzip
 import os
@@ -10,22 +9,18 @@ from pathlib import Path
 from collections import defaultdict
 import shutil
 
-
 DOCS = Path("docs")
 DATA = DOCS / "data_zs"
 MONTHLY = DATA / "monthly"
 DASH = DATA / "dashboard"
-
 
 # Clean previous dashboard
 if DASH.exists():
     shutil.rmtree(DASH)
 DASH.mkdir(parents=True, exist_ok=True)
 
-
 # Empêcher Jekyll d'ignorer les fichiers
 (DOCS / ".nojekyll").touch()
-
 
 # ── Load ou_map ──
 ou_map_gz = DATA / "ou_map_zs.json.gz"
@@ -39,7 +34,6 @@ elif ou_map_js.exists():
 else:
     print("ERROR: ou_map.json(.gz) not found"); sys.exit(1)
 
-
 # ── Load antenne_rules ──
 ANT_RULES: dict = {}
 ant_path = DOCS / "config" / "antenne_rules.json"
@@ -47,9 +41,8 @@ if ant_path.exists():
     with open(ant_path, encoding="utf-8") as f:
         ANT_RULES = json.load(f)
 
-
 # ==========================================================
-# SOMMATIONS PRIMAIRES (champs NDJSON renommés)
+# SOMMATIONS PRIMAIRES
 # ==========================================================
 SUM_SPECS: dict[str, list[str]] = {
     # ── 0-11 MOIS ──
@@ -203,7 +196,7 @@ SUM_SPECS: dict[str, list[str]] = {
     "seances_mobiles_prevues": ["S_ances_mobiles_pr_vues"],
     "seances_mobiles_realisees": ["S_ances_mobiles_r_alis_es"],
 
-    # ── LOGISTIQUE VACCINS (rename_map) ──
+    # ── LOGISTIQUE VACCINS ──
     "BCG_utilis_es": ["BCG_utilis_es"], "BCG_pertes": ["BCG_pertes"],
     "BCG_jours_rupture": ["BCG_jours_rupture"], "BCG_stock_fin": ["BCG_stock_fin", "BCG dose-stock disponible utilisable"],
     "DTC_utilis_es": ["DTC_utilis_es"], "DTC_pertes": ["DTC_pertes"],
@@ -268,7 +261,7 @@ SUM_SPECS: dict[str, list[str]] = {
     "Diluant_VAP_utilis_es": ["Diluant_VAP_utilis_es"], "Diluant_VAP_pertes": ["Diluant_VAP_pertes"],
     "Diluant_VAP_stock_fin": ["Diluant_VAP_stock_fin", "Diluant_VAP dose-stock disponible utilisable"], "Diluant_VAP_jours_rupture": ["Diluant_VAP_jours_rupture"],
     "Diluant_VAP_administr_es": ["Diluant_VAP_administr_es","Diluant_VAP dose-administree"],
-    # ── SAB (rename_map) ──
+    # ── SAB ──
     "SAB_005ml_stock_d_but": ["SAB_005ml_stock_d_but"], "SAB_005ml_re_ues": ["SAB_005ml_re_ues"],
     "SAB_005ml_utilis_es": ["SAB_005ml_utilis_es"], "SAB_005ml_pertes": ["SAB_005ml_pertes"],
     "SAB_005ml_stock_fin": ["SAB_005ml_stock_fin", "SAB_005ml dose-stock disponible utilisable"], "SAB_005ml_jours_rupture": ["SAB_005ml_jours_rupture"],
@@ -281,7 +274,7 @@ SUM_SPECS: dict[str, list[str]] = {
     "SAB_auto_bloquante_utilis_es": ["SAB_auto_bloquante_utilis_es"], "SAB_auto_bloquante_pertes": ["SAB_auto_bloquante_pertes"],
     "SAB_auto_bloquante_stock_fin": ["SAB_auto_bloquante_stock_fin", "SAB_auto_bloquante dose-stock disponible utilisable"], "SAB_auto_bloquante_jours_rupture": ["SAB_auto_bloquante_jours_rupture"],
     "SAB_auto_bloquante_administr_es": ["SAB_auto_bloquante_administr_es","SAB_auto_bloquante dose-administree"],
-    # ── SERINGUES DILUTION (rename_map) ──
+    # ── SERINGUES DILUTION ──
     "Ser_dilution_2ml_stock_d_but": ["Ser_dilution_2ml_stock_d_but"], "Ser_dilution_2ml_re_ues": ["Ser_dilution_2ml_re_ues"],
     "Ser_dilution_2ml_utilis_es": ["Ser_dilution_2ml_utilis_es"], "Ser_dilution_2ml_pertes": ["Ser_dilution_2ml_pertes"],
     "Ser_dilution_2ml_stock_fin": ["Ser_dilution_2ml_stock_fin", "Ser_dilution_2ml dose-stock disponible utilisable"], "Ser_dilution_2ml_jours_rupture": ["Ser_dilution_2ml_jours_rupture"],
@@ -294,7 +287,7 @@ SUM_SPECS: dict[str, list[str]] = {
     "Ser_dilution_6ml_utilis_es": ["Ser_dilution_6ml_utilis_es"], "Ser_dilution_6ml_pertes": ["Ser_dilution_6ml_pertes"],
     "Ser_dilution_6ml_stock_fin": ["Ser_dilution_6ml_stock_fin", "Ser_dilution_6ml dose-stock disponible utilisable"], "Ser_dilution_6ml_jours_rupture": ["Ser_dilution_6ml_jours_rupture"],
     "Ser_dilution_6ml_administr_es": ["Ser_dilution_6ml_administr_es","Ser_dilution_6ml dose-administree"],
-    # ── ADAPTATEURS / COMPTE-GOUTTE / RÉCEPTACLES (rename_map) ──
+    # ── ADAPTATEURS / COMPTE-GOUTTE / RÉCEPTACLES ──
     "Adaptateurs_stock_d_but": ["Adaptateurs_stock_d_but"], "Adaptateurs_re_ues": ["Adaptateurs_re_ues"],
     "Adaptateurs_utilis_es": ["Adaptateurs_utilis_es"], "Adaptateurs_pertes": ["Adaptateurs_pertes"],
     "Adaptateurs_stock_fin": ["Adaptateurs_stock_fin", "Adaptateurs dose-stock disponible utilisable"], "Adaptateurs_jours_rupture": ["Adaptateurs_jours_rupture"],
@@ -365,12 +358,10 @@ SUM_SPECS: dict[str, list[str]] = {
     "Td_msd": ["Td_msd", "VAT MSD"],
 }
 
-
 # ==========================================================
-# SOMMATIONS DÉRIVÉES (calculées après les primaires)
+# SOMMATIONS DÉRIVÉES
 # ==========================================================
 DERIVED_SUM_SPECS: dict[str, list[str]] = {
-    # 12-59m = 12-23m + 24-59m
     "BCG_12_59": ["BCG_12_23","BCG_24_59"],
     "DTC1_12_59": ["DTC1_12_23","DTC1_24_59"],
     "DTC2_12_59": ["DTC2_12_23","DTC2_24_59"],
@@ -393,7 +384,6 @@ DERIVED_SUM_SPECS: dict[str, list[str]] = {
     "ECV_12_59": ["ECV_12_23","ECV_24_59"],
     "VAP_12_59": ["VAP4_12_23","VAP_24_59"],
     "HPV_12_59": ["HPV_12_23","HPV_24_59"],
-    # All ages = 0-11m + 12-59m
     "BCG_all": ["BCG_0_11","BCG_12_59"],
     "DTC1_all": ["DTC1_0_11","DTC1_12_59"],
     "DTC2_all": ["DTC2_0_11","DTC2_12_59"],
@@ -414,109 +404,72 @@ DERIVED_SUM_SPECS: dict[str, list[str]] = {
     "VAR2_all": ["VAR2_0_11","VAR2_12_59"],
     "VAA_all": ["VAA_0_11","VAA_12_59"],
 }
-
-
 ALL_AGG_KEYS = list(SUM_SPECS.keys()) + list(DERIVED_SUM_SPECS.keys())
-
-
-KEEP_KEYS = {"_Province", "_ZS", "_Antenne", "_YM", "Compl_tude", "Promptitude"}.union(ALL_AGG_KEYS)
-KEEP_KEYS_LIST = list(KEEP_KEYS)
-
 
 def nv(row: dict, field: str) -> float:
     v = row.get(field)
-    if v is None or v == "":
-        return 0.0
-    try:
-        return float(v)
-    except Exception:
-        return 0.0
-
-
-
+    if v is None or v == "": return 0.0
+    try: return float(v)
+    except Exception: return 0.0
 
 def normalize_org3(org3: str) -> str:
     s = (org3 or "").strip()
-    if len(s) > 3 and s[2] == " ":
-        s = s[3:].strip()
+    if len(s) > 3 and s[2] == " ": s = s[3:].strip()
     for suf in [" Zone de Santé", " Zone de Sante"]:
-        if s.endswith(suf):
-            s = s[: -len(suf)].strip()
-            break
+        if s.endswith(suf): s = s[: -len(suf)].strip(); break
     return s
-
-
-
 
 def resolve_antenne(province: str, zs: str) -> str:
     rules = ANT_RULES.get(province, {})
     norm = normalize_org3(zs)
     return rules.get(norm, rules.get(zs, ""))
 
-
-
-
 def period_to_ym(p: str) -> str:
     p = (p or "").strip()
-    if len(p) >= 7 and p[4] == "-":
-        return p[:4] + p[5:7]
-    if len(p) >= 6 and p.isdigit():
-        return p[:6]
-    mmm = {
-        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
-        "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
-        "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
-    }
+    if len(p) >= 7 and p[4] == "-": return p[:4] + p[5:7]
+    if len(p) >= 6 and p.isdigit(): return p[:6]
+    mmm = {"Jan":"01","Feb":"02","Mar":"03","Apr":"04","May":"05","Jun":"06","Jul":"07","Aug":"08","Sep":"09","Oct":"10","Nov":"11","Dec":"12"}
     parts = p.split("-")
-    if len(parts) == 3 and parts[1] in mmm:
-        return parts[2] + mmm[parts[1]]
+    if len(parts) == 3 and parts[1] in mmm: return parts[2] + mmm[parts[1]]
     return p
-
-
-
 
 def slug(name: str) -> str:
     s = re.sub(r"[^\w\s-]", "", (name or "unknown").strip())
     s = re.sub(r"[\s-]+", "_", s)
     return s.lower() or "unknown"
 
+# ── Aggregation Storage ──
+agg_zs = {}
+all_provinces = set()
+all_antennes = set()
+all_zs_names = set()
+all_months = set()
+total_records = 0
 
-
-
-# ── Load all records ──
-print("Loading all NDJSON files (ZS)...")
+print("Loading and aggregating NDJSON files (ZS) on-the-fly...")
 with open(DATA / "index.json", encoding="utf-8") as f:
     index = json.load(f)
 
-
-all_records: list[dict] = []
 months_list = sorted(index.get("months", {}).keys())
-
 
 for month in months_list:
     parts = index["months"][month].get("parts", [])
     for part in parts:
         fname = part.get("plain") or part.get("file", "")
-        if not fname:
-            continue
+        if not fname: continue
         fpath = MONTHLY / month / fname
         gz_path = MONTHLY / month / part.get("file", "")
 
         f_obj = None
-        if fpath.exists() and not fname.endswith(".gz"):
-            f_obj = open(fpath, encoding="utf-8")
-        elif gz_path.exists() and str(gz_path).endswith(".gz"):
-            f_obj = gzip.open(gz_path, "rt", encoding="utf-8")
+        if fpath.exists() and not fname.endswith(".gz"): f_obj = open(fpath, encoding="utf-8")
+        elif gz_path.exists() and str(gz_path).endswith(".gz"): f_obj = gzip.open(gz_path, "rt", encoding="utf-8")
         elif fpath.exists():
             try:
-                with gzip.open(fpath, "rt", encoding="utf-8") as temp_f:
-                    temp_f.read(1)
+                with gzip.open(fpath, "rt", encoding="utf-8") as temp_f: temp_f.read(1)
                 f_obj = gzip.open(fpath, "rt", encoding="utf-8")
-            except Exception:
-                f_obj = open(fpath, encoding="utf-8")
+            except Exception: f_obj = open(fpath, encoding="utf-8")
 
-        if not f_obj:
-            continue
+        if not f_obj: continue
 
         with f_obj as f:
             for line in f:
@@ -526,187 +479,106 @@ for month in months_list:
                     row = json.loads(line)
                     ou = row.get("OrgUnit", "")
                     meta = OU_MAP.get(ou, {})
-                    row["_Province"] = meta.get("Org2", "")
-                    row["_ZS"] = meta.get("Org3", "")
-                    row["_Antenne"] = resolve_antenne(row["_Province"], row["_ZS"])
-                    row["_YM"] = period_to_ym(row.get("Period", ""))
+                    prov = meta.get("Org2", "")
+                    zs = meta.get("Org3", "")
+                    ant = resolve_antenne(prov, zs)
+                    ym = period_to_ym(row.get("Period", ""))
+                    
                     for sf, sources in SUM_SPECS.items():
-                        row[sf] = sum(nv(row, s) for s in sources)
+                        val = sum(nv(row, s) for s in sources)
+                        if val != 0: row[sf] = val
                     for sf, sources in DERIVED_SUM_SPECS.items():
-                        row[sf] = sum(nv(row, s) for s in sources)
-                    minimized_row = {k: row[k] for k in KEEP_KEYS_LIST if k in row}
-                    all_records.append(minimized_row)
+                        val = sum(nv(row, s) for s in sources)
+                        if val != 0: row[sf] = val
+                    
+                    total_records += 1
+                    if prov: all_provinces.add(prov)
+                    if ant: all_antennes.add(ant)
+                    if zs: all_zs_names.add(zs)
+                    if ym: all_months.add(ym)
+
+                    key = (prov, zs, ant, ym)
+                    if key not in agg_zs: agg_zs[key] = {"n":0, "rap":0, "sum_comp":0.0, "sum_prompt":0.0}
+                    g = agg_zs[key]
+                    g["n"] += 1
+                    comp = nv(row, "Compl_tude")
+                    if comp > 0: g["rap"] += 1
+                    g["sum_comp"] += comp
+                    g["sum_prompt"] += nv(row, "Promptitude")
+                    for k in ALL_AGG_KEYS:
+                        val = row.get(k, 0.0)
+                        if val != 0: g[k] = g.get(k, 0.0) + val
                 except Exception: pass
 
+    print(f"  {month}: {total_records} records processed")
 
-    print(f"  {month}: {len(all_records)} total records")
+# ── Hierarchical Aggregation ──
+def update_agg_from_agg(target_agg, target_key, source_g):
+    if target_key not in target_agg: target_agg[target_key] = {"n":0, "rap":0, "sum_comp":0.0, "sum_prompt":0.0}
+    tg = target_agg[target_key]
+    tg["n"] += source_g["n"]; tg["rap"] += source_g["rap"]
+    tg["sum_comp"] += source_g["sum_comp"]; tg["sum_prompt"] += source_g["sum_prompt"]
+    for k in ALL_AGG_KEYS:
+        if k in source_g: tg[k] = tg.get(k, 0.0) + source_g[k]
 
+print("Performing hierarchical aggregation...")
+agg_prov = {}
+for key, g in agg_zs.items():
+    prov, zs, ant, ym = key
+    update_agg_from_agg(agg_prov, (prov, ym), g)
 
-print(f"Total: {len(all_records)} records")
-
-
-
-
-# ── Aggregation helper ──
-def agg_group(records: list[dict], group_fields: list[str]) -> list[dict]:
-    groups: dict[tuple, dict] = defaultdict(lambda: {
-        "n": 0, "rap": 0,
-        "sum_comp": 0.0, "sum_prompt": 0.0,
-        **{k: 0.0 for k in ALL_AGG_KEYS},
-    })
-
-
-    for r in records:
-        key = tuple(r.get(f, "") for f in group_fields)
-        g = groups[key]
-        g["n"] += 1
-        comp = nv(r, "Compl_tude")
-        if comp > 0:
-            g["rap"] += 1
-        g["sum_comp"] += comp
-        g["sum_prompt"] += nv(r, "Promptitude")
+# ── Finalize ──
+def finalize(agg_dict, fields):
+    res = []
+    for key, g in agg_dict.items():
+        d = {f: key[i] for i, f in enumerate(fields)}
+        n = g["n"]
+        d["n"] = n; d["rap"] = g["rap"]
+        d["comp"] = round(g["sum_comp"] / n, 2) if n > 0 else 0
+        d["prompt"] = round(g["sum_prompt"] / n, 2) if n > 0 else 0
         for k in ALL_AGG_KEYS:
-            g[k] += nv(r, k)
+            if k in g: d[k] = round(g[k], 2)
+        res.append(d)
+    return res
 
+zs_month = finalize(agg_zs, ["_Province", "_ZS", "_Antenne", "_YM"])
+prov_month = finalize(agg_prov, ["_Province", "_YM"])
 
-    result = []
-    for key, g in groups.items():
-        entry: dict = {}
-        for i, f in enumerate(group_fields):
-            entry[f] = key[i]
-        entry["n"] = g["n"]
-        entry["rap"] = g["rap"]
-        entry["comp"] = round(g["sum_comp"] / g["n"], 2) if g["n"] > 0 else 0
-        entry["prompt"] = round(g["sum_prompt"] / g["n"], 2) if g["n"] > 0 else 0
-        for k in ALL_AGG_KEYS:
-            if g[k] > 0:
-                entry[k] = g[k]
-        result.append(entry)
-
-
-    return result
-
-
-
-
-# ── Write helpers ──
-def write_json(path: Path, data: any) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
-    size = os.path.getsize(path)
-    print(f"  Written {path} ({size / 1024:.0f} KB)")
-
-
-
-
-def write_split(base_dir: Path, records: list[dict], key_field: str = "_Province") -> dict:
-    base_dir.mkdir(parents=True, exist_ok=True)
-    by_key: dict[str, list] = defaultdict(list)
-    for r in records:
-        by_key[r.get(key_field, "") or "unknown"].append(r)
-
-
-    manifest = {}
-    for k, rows in sorted(by_key.items()):
-        fname = slug(k) + ".json"
-        write_json(base_dir / fname, rows)
-        manifest[k] = fname
-
-
-    write_json(base_dir / "manifest.json", manifest)
-    return manifest
-
-
-
-
-# ── Generate ──
-print("Aggregating...")
-
-
-prov_month = agg_group(all_records, ["_Province", "_YM"])
-print(f"  Province×Month: {len(prov_month)} rows")
-
-
-zs_month = agg_group(all_records, ["_Province", "_ZS", "_Antenne", "_YM"])
-print(f"  ZS×Month: {len(zs_month)} rows")
-
-
-# No AS level in ZS data
-
-
-
-# No FOSA/AS level in ZS data (data is already at ZS level)
-
-
-
-all_provinces = sorted({r["_Province"] for r in all_records if r.get("_Province")})
-all_antennes = sorted({r["_Antenne"] for r in all_records if r.get("_Antenne")})
-all_zs = sorted({r["_ZS"] for r in all_records if r.get("_ZS")})
-
-
-all_months = sorted({r["_YM"] for r in all_records if r.get("_YM")})
-prov_slugs = {p: slug(p) for p in all_provinces}
-
+# ── Write ──
+def write_json(path: Path, data: any):
+    with open(path, "w", encoding="utf-8") as f: json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+    print(f"  Written {path} ({os.path.getsize(path) / 1024:.0f} KB)")
 
 meta_data = {
     "generated_at": index.get("generated_at", ""),
-    "total_records": len(all_records),
-    "provinces": all_provinces,
-    "province_slugs": prov_slugs,
-    "antennes": all_antennes,
-    "zs": all_zs,
-    
-    "months": all_months,
-    
+    "total_records": total_records,
+    "provinces": sorted(all_provinces),
+    "province_slugs": {p: slug(p) for p in sorted(all_provinces)},
+    "antennes": sorted(all_antennes),
+    "zs": sorted(all_zs_names),
+    "months": sorted(all_months),
 }
 
-
-print("\nWriting output files...")
+print("\nWriting files...")
 write_json(DASH / "meta.json", meta_data)
 write_json(DASH / "by_province.json", prov_month)
 write_json(DASH / "by_zs.json", zs_month)
 
-
-
-
-
-
-
-
-print("\nBuilding heatmap by province...")
-hm_dir = DASH / "heatmap"
-hm_dir.mkdir(parents=True, exist_ok=True)
-hm_by_prov: dict[str, dict] = defaultdict(dict)
+print("\nBuilding heatmap...")
+hm_dir = DASH / "heatmap"; hm_dir.mkdir(parents=True, exist_ok=True)
+hm_by_prov = defaultdict(dict)
 for r in zs_month:
     prov = r.get("_Province", "") or "unknown"
-    entity = r.get("_ZS", "")
-    ym = r.get("_YM", "")
+    entity = r.get("_ZS", ""); ym = r.get("_YM", "")
     if entity and ym:
-        if entity not in hm_by_prov[prov]:
-            hm_by_prov[prov][entity] = {}
+        if entity not in hm_by_prov[prov]: hm_by_prov[prov][entity] = {}
         hm_by_prov[prov][entity][ym] = 1 if r["rap"] > 0 else 0
-
 
 hm_manifest = {}
 for prov, data in sorted(hm_by_prov.items()):
     fname = slug(prov) + ".json"
     write_json(hm_dir / fname, data)
     hm_manifest[prov] = fname
-
-
 write_json(hm_dir / "manifest.json", hm_manifest)
 
-
 print("\n✅ Dashboard aggregation complete! (ZS)")
-total_size = 0
-file_count = 0
-for p in DASH.rglob("*.json"):
-    total_size += os.path.getsize(p)
-    file_count += 1
-print(f"  {file_count} files, total {total_size / 1024 / 1024:.1f} MB")
-
-
-for p in DASH.rglob("*.json"):
-    sz = os.path.getsize(p)
-    if sz > 90_000_000:
-        print(f"  ⚠️  WARNING: {p} is {sz / 1024 / 1024:.0f} MB (near GitHub limit)")

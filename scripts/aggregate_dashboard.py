@@ -106,7 +106,7 @@ SUM_SPECS: dict[str, list[str]] = {
     "VPO0_12_23_fixe": ["VPO0_12_23_mois_fixe1","VPO0_12_23_mois_fixe2"],
     "VPO1_12_23": ["VPO1_12_23_mois_fixe1","VPO1_12_23_mois_fixe2","VPO1_12_23_mois_avanc_1","VPO1_12_23_mois_avanc_2","VPO1_12_23_mois_mobile1"],
     "VPO1_12_23_fixe": ["VPO1_12_23_mois_fixe1","VPO1_12_23_mois_fixe2"],
-    "VPO2_12_23": ["VPO2_12_23_mois_fixe1","VPO2_12_23_mois_fixe2","VPO2_12_23_mois_avanc_1","VPO2_12_23_mois_avanc_2","VPO2_12_23_mois_mobile1"],
+    "VPO2_12_23": ["VPO2_12_23_mois_fixe1","VPO2_23_mois_fixe2","VPO2_12_23_mois_avanc_1","VPO2_12_23_mois_avanc_2","VPO2_12_23_mois_mobile1"],
     "VPO2_12_23_fixe": ["VPO2_12_23_mois_fixe1","VPO2_12_23_mois_fixe2"],
     "VPO3_12_23": ["VPO3_12_23_mois_fixe1","VPO3_12_23_mois_fixe2","VPO3_12_23_mois_avanc_1","VPO3_12_23_mois_avanc_2","VPO3_12_23_mois_mobile1"],
     "VPO3_12_23_fixe": ["VPO3_12_23_mois_fixe1","VPO3_12_23_mois_fixe2"],
@@ -187,176 +187,175 @@ SUM_SPECS: dict[str, list[str]] = {
 
     # ── Td ──
     "Td_2_plus": ["Td_2","Td_3","Td_4","Td_5"],
-      "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
- # ── SÉANCES DE VACCINATION ──
- "seances_fixes_prevues": ["S_ances_fixes_pr_vues"],
- "seances_fixes_realisees": ["S_ances_fixes_r_alis_es"],
- "seances_avancees_prevues": ["S_ances_avanc_es_pr_vues"],
- "seances_avancees_realisees": ["S_ances_avanc_es_r_alis_es"],
- "seances_mobiles_prevues": ["S_ances_mobiles_pr_vues"],
- "seances_mobiles_realisees": ["S_ances_mobiles_r_alis_es"],
+    "Td_total": ["Td_1","Td_2","Td_3","Td_4","Td_5"],
+    # ── SÉANCES DE VACCINATION ──
+    "seances_fixes_prevues": ["S_ances_fixes_pr_vues"],
+    "seances_fixes_realisees": ["S_ances_fixes_r_alis_es"],
+    "seances_avancees_prevues": ["S_ances_avanc_es_pr_vues"],
+    "seances_avancees_realisees": ["S_ances_avanc_es_r_alis_es"],
+    "seances_mobiles_prevues": ["S_ances_mobiles_pr_vues"],
+    "seances_mobiles_realisees": ["S_ances_mobiles_r_alis_es"],
 
- # ── LOGISTIQUE VACCINS (rename_map) ──
- "BCG_utilis_es": ["BCG_utilis_es"], "BCG_pertes": ["BCG_pertes"],
- "BCG_jours_rupture": ["BCG_jours_rupture"], "BCG_stock_fin": ["BCG_stock_fin", "BCG dose-stock disponible utilisable"],
- "DTC_utilis_es": ["DTC_utilis_es"], "DTC_pertes": ["DTC_pertes"],
- "DTC_jours_rupture": ["DTC_jours_rupture"], "DTC_stock_fin": ["DTC_stock_fin", "DTC dose-stock disponible utilisable"],
- "VPO_utilis_es": ["VPO_utilis_es"], "VPO_pertes": ["VPO_pertes"],
- "VPO_jours_rupture": ["VPO_jours_rupture"], "VPO_stock_fin": ["VPO_stock_fin", "VPO dose-stock disponible utilisable"],
- "VPI_utilis_es": ["VPI_utilis_es"], "VPI_pertes": ["VPI_pertes"],
- "VPI_jours_rupture": ["VPI_jours_rupture"], "VPI_stock_fin": ["VPI_stock_fin", "VPI dose-stock disponible utilisable"],
- "VAR_utilis_es": ["VAR_utilis_es"], "VAR_pertes": ["VAR_pertes"],
- "VAR_jours_rupture": ["VAR_jours_rupture"], "VAR_stock_fin": ["VAR_stock_fin", "VAR dose-stock disponible utilisable"],
- "VAA_utilis_es": ["VAA_utilis_es"], "VAA_pertes": ["VAA_pertes"],
- "VAA_jours_rupture": ["VAA_jours_rupture"], "VAA_stock_fin": ["VAA_stock_fin", "VAA dose-stock disponible utilisable"],
- "Td_utilis_es": ["Td_utilis_es"], "Td_pertes": ["Td_pertes"],
- "Td_jours_rupture": ["Td_jours_rupture"], "Td_stock_fin": ["Td_stock_fin", "VAT dose-stock disponible utilisable"],
- "PCV13_utilis_es": ["PCV13_utilis_es","PCV13 dose-utilisee"], "PCV13_pertes": ["PCV13_pertes"],
- "PCV13_jours_rupture": ["PCV13_jours_rupture"], "PCV13_stock_fin": ["PCV13_stock_fin", "PCV13 dose-stock disponible utilisable"],
- "PCV13_administr_es": ["PCV13_administr_es","PCV13 dose-administree"],
- "ROTA_utilis_es": ["ROTA_utilis_es","ROTA dose-utilisee"], "ROTA_pertes": ["ROTA_pertes"],
- "ROTA_jours_rupture": ["ROTA_jours_rupture"], "ROTA_stock_fin": ["ROTA_stock_fin", "ROTA dose-stock disponible utilisable"],
- "ROTA_administr_es": ["ROTA_administr_es","ROTA dose-administree"],
- "VAP_utilis_es": ["VAP_utilis_es"], "VAP_pertes": ["VAP_pertes"],
- "VAP_jours_rupture": ["VAP_jours_rupture"], "VAP_stock_fin": ["VAP_stock_fin", "VAP dose-stock disponible utilisable"],
- "VAP_administr_es": ["VAP_administr_es","VAP dose-administree"],
- "HPV_utilis_es": ["HPV_utilis_es"], "HPV_pertes": ["HPV_pertes"],
- "HPV_jours_rupture": ["HPV_jours_rupture"], "HPV_stock_fin": ["HPV_stock_fin", "HPV dose-stock disponible utilisable"],
- "HPV_administr_es": ["HPV_administr_es","HPV dose-administree"],
- # ── LOGISTIQUE (Triangulation) stock_d_but + re_ues ──
- "BCG_re_ues": ["BCG_re_ues"],
- "BCG_stock_d_but": ["BCG_stock_d_but"],
- "DTC_re_ues": ["DTC_re_ues"],
- "DTC_stock_d_but": ["DTC_stock_d_but"],
- "PCV13_re_ues": ["PCV13_re_ues"],
- "PCV13_stock_d_but": ["PCV13_stock_d_but"],
- "VAR_re_ues": ["VAR_re_ues"],
- "VAR_stock_d_but": ["VAR_stock_d_but"],
- "Td_re_ues": ["Td_re_ues"],
- "Td_stock_d_but": ["Td_stock_d_but"],
- "VPO_re_ues": ["VPO_re_ues"],
- "VPO_stock_d_but": ["VPO_stock_d_but"],
- "VPI_re_ues": ["VPI_re_ues"],
- "VPI_stock_d_but": ["VPI_stock_d_but"],
- "ROTA_re_ues": ["ROTA_re_ues"],
- "ROTA_stock_d_but": ["ROTA_stock_d_but"],
- "VAA_re_ues": ["VAA_re_ues"],
- "VAA_stock_d_but": ["VAA_stock_d_but"],
- "VAP_re_ues": ["VAP_re_ues"],
- "VAP_stock_d_but": ["VAP_stock_d_but"],
- # ── DILUANTS (rename_map) ──
- "Diluant_BCG_stock_d_but": ["Diluant_BCG_stock_d_but"], "Diluant_BCG_re_ues": ["Diluant_BCG_re_ues"],
- "Diluant_BCG_utilis_es": ["Diluant_BCG_utilis_es"], "Diluant_BCG_pertes": ["Diluant_BCG_pertes"],
- "Diluant_BCG_stock_fin": ["Diluant_BCG_stock_fin", "Diluant_BCG dose-stock disponible utilisable"], "Diluant_BCG_jours_rupture": ["Diluant_BCG_jours_rupture"],
- "Diluant_BCG_administr_es": ["Diluant_BCG_administr_es","Diluant_BCG dose-administree"],
- "Diluant_VAR_stock_d_but": ["Diluant_VAR_stock_d_but"], "Diluant_VAR_re_ues": ["Diluant_VAR_re_ues"],
- "Diluant_VAR_utilis_es": ["Diluant_VAR_utilis_es"], "Diluant_VAR_pertes": ["Diluant_VAR_pertes"],
- "Diluant_VAR_stock_fin": ["Diluant_VAR_stock_fin", "Diluant_VAR dose-stock disponible utilisable"], "Diluant_VAR_jours_rupture": ["Diluant_VAR_jours_rupture"],
- "Diluant_VAR_administr_es": ["Diluant_VAR_administr_es","Diluant_VAR dose-administree"],
- "Diluant_VAA_stock_d_but": ["Diluant_VAA_stock_d_but"], "Diluant_VAA_re_ues": ["Diluant_VAA_re_ues"],
- "Diluant_VAA_utilis_es": ["Diluant_VAA_utilis_es"], "Diluant_VAA_pertes": ["Diluant_VAA_pertes"],
- "Diluant_VAA_stock_fin": ["Diluant_VAA_stock_fin", "Diluant_VAA dose-stock disponible utilisable"], "Diluant_VAA_jours_rupture": ["Diluant_VAA_jours_rupture"],
- "Diluant_VAA_administr_es": ["Diluant_VAA_administr_es","Diluant_VAA dose-administree"],
- "Diluant_VAP_stock_d_but": ["Diluant_VAP_stock_d_but"], "Diluant_VAP_re_ues": ["Diluant_VAP_re_ues"],
- "Diluant_VAP_utilis_es": ["Diluant_VAP_utilis_es"], "Diluant_VAP_pertes": ["Diluant_VAP_pertes"],
- "Diluant_VAP_stock_fin": ["Diluant_VAP_stock_fin", "Diluant_VAP dose-stock disponible utilisable"], "Diluant_VAP_jours_rupture": ["Diluant_VAP_jours_rupture"],
- "Diluant_VAP_administr_es": ["Diluant_VAP_administr_es","Diluant_VAP dose-administree"],
- # ── SAB (rename_map) ──
- "SAB_005ml_stock_d_but": ["SAB_005ml_stock_d_but"], "SAB_005ml_re_ues": ["SAB_005ml_re_ues"],
- "SAB_005ml_utilis_es": ["SAB_005ml_utilis_es"], "SAB_005ml_pertes": ["SAB_005ml_pertes"],
- "SAB_005ml_stock_fin": ["SAB_005ml_stock_fin", "SAB_005ml dose-stock disponible utilisable"], "SAB_005ml_jours_rupture": ["SAB_005ml_jours_rupture"],
- "SAB_005ml_administr_es": ["SAB_005ml_administr_es","SAB_005ml dose-administree"],
- "SAB_05ml_stock_d_but": ["SAB_05ml_stock_d_but"], "SAB_05ml_re_ues": ["SAB_05ml_re_ues"],
- "SAB_05ml_utilis_es": ["SAB_05ml_utilis_es"], "SAB_05ml_pertes": ["SAB_05ml_pertes"],
- "SAB_05ml_stock_fin": ["SAB_05ml_stock_fin", "SAB_05ml dose-stock disponible utilisable"], "SAB_05ml_jours_rupture": ["SAB_05ml_jours_rupture"],
- "SAB_05ml_administr_es": ["SAB_05ml_administr_es","SAB_05ml dose-administree"],
- "SAB_auto_bloquante_stock_d_but": ["SAB_auto_bloquante_stock_d_but"], "SAB_auto_bloquante_re_ues": ["SAB_auto_bloquante_re_ues"],
- "SAB_auto_bloquante_utilis_es": ["SAB_auto_bloquante_utilis_es"], "SAB_auto_bloquante_pertes": ["SAB_auto_bloquante_pertes"],
- "SAB_auto_bloquante_stock_fin": ["SAB_auto_bloquante_stock_fin", "SAB_auto_bloquante dose-stock disponible utilisable"], "SAB_auto_bloquante_jours_rupture": ["SAB_auto_bloquante_jours_rupture"],
- "SAB_auto_bloquante_administr_es": ["SAB_auto_bloquante_administr_es","SAB_auto_bloquante dose-administree"],
- # ── SERINGUES DILUTION (rename_map) ──
- "Ser_dilution_2ml_stock_d_but": ["Ser_dilution_2ml_stock_d_but"], "Ser_dilution_2ml_re_ues": ["Ser_dilution_2ml_re_ues"],
- "Ser_dilution_2ml_utilis_es": ["Ser_dilution_2ml_utilis_es"], "Ser_dilution_2ml_pertes": ["Ser_dilution_2ml_pertes"],
- "Ser_dilution_2ml_stock_fin": ["Ser_dilution_2ml_stock_fin", "Ser_dilution_2ml dose-stock disponible utilisable"], "Ser_dilution_2ml_jours_rupture": ["Ser_dilution_2ml_jours_rupture"],
- "Ser_dilution_2ml_administr_es": ["Ser_dilution_2ml_administr_es","Ser_dilution_2ml dose-administree"],
- "Ser_dilution_5ml_stock_d_but": ["Ser_dilution_5ml_stock_d_but"], "Ser_dilution_5ml_re_ues": ["Ser_dilution_5ml_re_ues"],
- "Ser_dilution_5ml_utilis_es": ["Ser_dilution_5ml_utilis_es"], "Ser_dilution_5ml_pertes": ["Ser_dilution_5ml_pertes"],
- "Ser_dilution_5ml_stock_fin": ["Ser_dilution_5ml_stock_fin", "Ser_dilution_5ml dose-stock disponible utilisable"], "Ser_dilution_5ml_jours_rupture": ["Ser_dilution_5ml_jours_rupture"],
- "Ser_dilution_5ml_administr_es": ["Ser_dilution_5ml_administr_es","Ser_dilution_5ml dose-administree"],
- "Ser_dilution_6ml_stock_d_but": ["Ser_dilution_6ml_stock_d_but"], "Ser_dilution_6ml_re_ues": ["Ser_dilution_6ml_re_ues"],
- "Ser_dilution_6ml_utilis_es": ["Ser_dilution_6ml_utilis_es"], "Ser_dilution_6ml_pertes": ["Ser_dilution_6ml_pertes"],
- "Ser_dilution_6ml_stock_fin": ["Ser_dilution_6ml_stock_fin", "Ser_dilution_6ml dose-stock disponible utilisable"], "Ser_dilution_6ml_jours_rupture": ["Ser_dilution_6ml_jours_rupture"],
- "Ser_dilution_6ml_administr_es": ["Ser_dilution_6ml_administr_es","Ser_dilution_6ml dose-administree"],
- # ── ADAPTATEURS / COMPTE-GOUTTE / RÉCEPTACLES (rename_map) ──
- "Adaptateurs_stock_d_but": ["Adaptateurs_stock_d_but"], "Adaptateurs_re_ues": ["Adaptateurs_re_ues"],
- "Adaptateurs_utilis_es": ["Adaptateurs_utilis_es"], "Adaptateurs_pertes": ["Adaptateurs_pertes"],
- "Adaptateurs_stock_fin": ["Adaptateurs_stock_fin", "Adaptateurs dose-stock disponible utilisable"], "Adaptateurs_jours_rupture": ["Adaptateurs_jours_rupture"],
- "Adaptateurs_administr_es": ["Adaptateurs_administr_es","Adaptateurs dose-administree"],
- "Compte_goutte_stock_d_but": ["Compte_goutte_stock_d_but"], "Compte_goutte_re_ues": ["Compte_goutte_re_ues"],
- "Compte_goutte_utilis_es": ["Compte_goutte_utilis_es"], "Compte_goutte_pertes": ["Compte_goutte_pertes"],
- "Compte_goutte_stock_fin": ["Compte_goutte_stock_fin", "Compte_goutte dose-stock disponible utilisable"], "Compte_goutte_jours_rupture": ["Compte_goutte_jours_rupture"],
- "Compte_goutte_administr_es": ["Compte_goutte_administr_es","Compte_goutte dose-administree"],
- "R_ceptacles_stock_d_but": ["R_ceptacles_stock_d_but"], "R_ceptacles_re_ues": ["R_ceptacles_re_ues"],
- "R_ceptacles_utilis_es": ["R_ceptacles_utilis_es"], "R_ceptacles_pertes": ["R_ceptacles_pertes"],
- "R_ceptacles_stock_fin": ["R_ceptacles_stock_fin", "R_ceptacles dose-stock disponible utilisable"], "R_ceptacles_jours_rupture": ["R_ceptacles_jours_rupture"],
- "R_ceptacles_administr_es": ["R_ceptacles_administr_es","R_ceptacles dose-administree"],
- # ── NOUVELLES VARIABLES DE GESTION LOGISTIQUE ──
- "BCG_stock_max": ["BCG_stock_max", "BCG Stock Max"],
- "BCG_qte_a_commander": ["BCG_qte_a_commander", "BCG Qté à commander"],
- "BCG_cmm": ["BCG_cmm", "BCG CMM"],
- "BCG_ajustement": ["BCG_ajustement", "BCG Adjustment"],
- "BCG_msd": ["BCG_msd", "BCG MSD"],
- "DTC_stock_max": ["DTC_stock_max", "DTC Stock Max"],
- "DTC_qte_a_commander": ["DTC_qte_a_commander", "DTC Qté à commander"],
- "DTC_cmm": ["DTC_cmm", "DTC CMM"],
- "DTC_ajustement": ["DTC_ajustement", "DTC Adjustment"],
- "DTC_msd": ["DTC_msd", "DTC MSD"],
- "VPO_stock_max": ["VPO_stock_max", "VPO Stock Max"],
- "VPO_qte_a_commander": ["VPO_qte_a_commander", "VPO Qté à commander"],
- "VPO_cmm": ["VPO_cmm", "VPO CMM"],
- "VPO_ajustement": ["VPO_ajustement", "VPO Adjustment"],
- "VPO_msd": ["VPO_msd", "VPO MSD"],
- "VPI_stock_max": ["VPI_stock_max", "VPI Stock Max"],
- "VPI_qte_a_commander": ["VPI_qte_a_commander", "VPI Qté à commander"],
- "VPI_cmm": ["VPI_cmm", "VPI CMM"],
- "VPI_ajustement": ["VPI_ajustement", "VPI Adjustment"],
- "VPI_msd": ["VPI_msd", "VPI MSD"],
- "VAR_stock_max": ["VAR_stock_max", "VAR Stock Max"],
- "VAR_qte_a_commander": ["VAR_qte_a_commander", "VAR Qté à commander"],
- "VAR_cmm": ["VAR_cmm", "VAR CMM"],
- "VAR_ajustement": ["VAR_ajustement", "VAR Adjustment"],
- "VAR_msd": ["VAR_msd", "VAR MSD"],
- "VAA_stock_max": ["VAA_stock_max", "VAA Stock Max"],
- "VAA_qte_a_commander": ["VAA_qte_a_commander", "VAA Qté à commander"],
- "VAA_cmm": ["VAA_cmm", "VAA CMM"],
- "VAA_ajustement": ["VAA_ajustement", "VAA Adjustment"],
- "VAA_msd": ["VAA_msd", "VAA MSD"],
- "PCV13_stock_max": ["PCV13_stock_max", "PCV13 Stock Max"],
- "PCV13_qte_a_commander": ["PCV13_qte_a_commander", "PCV13 Qté à commander"],
- "PCV13_cmm": ["PCV13_cmm", "PCV13 CMM"],
- "PCV13_ajustement": ["PCV13_ajustement", "PCV13 Adjustment"],
- "PCV13_msd": ["PCV13_msd", "PCV13 MSD"],
- "ROTA_stock_max": ["ROTA_stock_max", "ROTA Stock Max"],
- "ROTA_qte_a_commander": ["ROTA_qte_a_commander", "ROTA Qté à commander"],
- "ROTA_cmm": ["ROTA_cmm", "ROTA CMM"],
- "ROTA_ajustement": ["ROTA_ajustement", "ROTA Adjustment"],
- "ROTA_msd": ["ROTA_msd", "ROTA MSD"],
- "VAP_stock_max": ["VAP_stock_max", "VAP Stock Max"],
- "VAP_qte_a_commander": ["VAP_qte_a_commander", "VAP Qté à commander"],
- "VAP_cmm": ["VAP_cmm", "VAP CMM"],
- "VAP_ajustement": ["VAP_ajustement", "VAP Adjustment"],
- "VAP_msd": ["VAP_msd", "VAP MSD"],
- "HPV_stock_max": ["HPV_stock_max", "HPV Stock Max"],
- "HPV_qte_a_commander": ["HPV_qte_a_commander", "HPV Qté à commander"],
- "HPV_cmm": ["HPV_cmm", "HPV CMM"],
- "HPV_ajustement": ["HPV_ajustement", "HPV Adjustment"],
- "HPV_msd": ["HPV_msd", "HPV MSD"],
- "Td_stock_max": ["Td_stock_max", "VAT Stock Max"],
- "Td_qte_a_commander": ["Td_qte_a_commander", "VAT Qté à commander"],
- "Td_cmm": ["Td_cmm", "VAT CMM"],
- "Td_ajustement": ["Td_ajustement", "VAT Adjustment"],
- "Td_msd": ["Td_msd", "VAT MSD"],
-
+    # ── LOGISTIQUE VACCINS (rename_map) ──
+    "BCG_utilis_es": ["BCG_utilis_es"], "BCG_pertes": ["BCG_pertes"],
+    "BCG_jours_rupture": ["BCG_jours_rupture"], "BCG_stock_fin": ["BCG_stock_fin", "BCG dose-stock disponible utilisable"],
+    "DTC_utilis_es": ["DTC_utilis_es"], "DTC_pertes": ["DTC_pertes"],
+    "DTC_jours_rupture": ["DTC_jours_rupture"], "DTC_stock_fin": ["DTC_stock_fin", "DTC dose-stock disponible utilisable"],
+    "VPO_utilis_es": ["VPO_utilis_es"], "VPO_pertes": ["VPO_pertes"],
+    "VPO_jours_rupture": ["VPO_jours_rupture"], "VPO_stock_fin": ["VPO_stock_fin", "VPO dose-stock disponible utilisable"],
+    "VPI_utilis_es": ["VPI_utilis_es"], "VPI_pertes": ["VPI_pertes"],
+    "VPI_jours_rupture": ["VPI_jours_rupture"], "VPI_stock_fin": ["VPI_stock_fin", "VPI dose-stock disponible utilisable"],
+    "VAR_utilis_es": ["VAR_utilis_es"], "VAR_pertes": ["VAR_pertes"],
+    "VAR_jours_rupture": ["VAR_jours_rupture"], "VAR_stock_fin": ["VAR_stock_fin", "VAR dose-stock disponible utilisable"],
+    "VAA_utilis_es": ["VAA_utilis_es"], "VAA_pertes": ["VAA_pertes"],
+    "VAA_jours_rupture": ["VAA_jours_rupture"], "VAA_stock_fin": ["VAA_stock_fin", "VAA dose-stock disponible utilisable"],
+    "Td_utilis_es": ["Td_utilis_es"], "Td_pertes": ["Td_pertes"],
+    "Td_jours_rupture": ["Td_jours_rupture"], "Td_stock_fin": ["Td_stock_fin", "VAT dose-stock disponible utilisable"],
+    "PCV13_utilis_es": ["PCV13_utilis_es","PCV13 dose-utilisee"], "PCV13_pertes": ["PCV13_pertes"],
+    "PCV13_jours_rupture": ["PCV13_jours_rupture"], "PCV13_stock_fin": ["PCV13_stock_fin", "PCV13 dose-stock disponible utilisable"],
+    "PCV13_administr_es": ["PCV13_administr_es","PCV13 dose-administree"],
+    "ROTA_utilis_es": ["ROTA_utilis_es","ROTA dose-utilisee"], "ROTA_pertes": ["ROTA_pertes"],
+    "ROTA_jours_rupture": ["ROTA_jours_rupture"], "ROTA_stock_fin": ["ROTA_stock_fin", "ROTA dose-stock disponible utilisable"],
+    "ROTA_administr_es": ["ROTA_administr_es","ROTA dose-administree"],
+    "VAP_utilis_es": ["VAP_utilis_es"], "VAP_pertes": ["VAP_pertes"],
+    "VAP_jours_rupture": ["VAP_jours_rupture"], "VAP_stock_fin": ["VAP_stock_fin", "VAP dose-stock disponible utilisable"],
+    "VAP_administr_es": ["VAP_administr_es","VAP dose-administree"],
+    "HPV_utilis_es": ["HPV_utilis_es"], "HPV_pertes": ["HPV_pertes"],
+    "HPV_jours_rupture": ["HPV_jours_rupture"], "HPV_stock_fin": ["HPV_stock_fin", "HPV dose-stock disponible utilisable"],
+    "HPV_administr_es": ["HPV_administr_es","HPV dose-administree"],
+    # ── LOGISTIQUE (Triangulation) stock_d_but + re_ues ──
+    "BCG_re_ues": ["BCG_re_ues"],
+    "BCG_stock_d_but": ["BCG_stock_d_but"],
+    "DTC_re_ues": ["DTC_re_ues"],
+    "DTC_stock_d_but": ["DTC_stock_d_but"],
+    "PCV13_re_ues": ["PCV13_re_ues"],
+    "PCV13_stock_d_but": ["PCV13_stock_d_but"],
+    "VAR_re_ues": ["VAR_re_ues"],
+    "VAR_stock_d_but": ["VAR_stock_d_but"],
+    "Td_re_ues": ["Td_re_ues"],
+    "Td_stock_d_but": ["Td_stock_d_but"],
+    "VPO_re_ues": ["VPO_re_ues"],
+    "VPO_stock_d_but": ["VPO_stock_d_but"],
+    "VPI_re_ues": ["VPI_re_ues"],
+    "VPI_stock_d_but": ["VPI_stock_d_but"],
+    "ROTA_re_ues": ["ROTA_re_ues"],
+    "ROTA_stock_d_but": ["ROTA_stock_d_but"],
+    "VAA_re_ues": ["VAA_re_ues"],
+    "VAA_stock_d_but": ["VAA_stock_d_but"],
+    "VAP_re_ues": ["VAP_re_ues"],
+    "VAP_stock_d_but": ["VAP_stock_d_but"],
+    # ── DILUANTS (rename_map) ──
+    "Diluant_BCG_stock_d_but": ["Diluant_BCG_stock_d_but"], "Diluant_BCG_re_ues": ["Diluant_BCG_re_ues"],
+    "Diluant_BCG_utilis_es": ["Diluant_BCG_utilis_es"], "Diluant_BCG_pertes": ["Diluant_BCG_pertes"],
+    "Diluant_BCG_stock_fin": ["Diluant_BCG_stock_fin", "Diluant_BCG dose-stock disponible utilisable"], "Diluant_BCG_jours_rupture": ["Diluant_BCG_jours_rupture"],
+    "Diluant_BCG_administr_es": ["Diluant_BCG_administr_es","Diluant_BCG dose-administree"],
+    "Diluant_VAR_stock_d_but": ["Diluant_VAR_stock_d_but"], "Diluant_VAR_re_ues": ["Diluant_VAR_re_ues"],
+    "Diluant_VAR_utilis_es": ["Diluant_VAR_utilis_es"], "Diluant_VAR_pertes": ["Diluant_VAR_pertes"],
+    "Diluant_VAR_stock_fin": ["Diluant_VAR_stock_fin", "Diluant_VAR dose-stock disponible utilisable"], "Diluant_VAR_jours_rupture": ["Diluant_VAR_jours_rupture"],
+    "Diluant_VAR_administr_es": ["Diluant_VAR_administr_es","Diluant_VAR dose-administree"],
+    "Diluant_VAA_stock_d_but": ["Diluant_VAA_stock_d_but"], "Diluant_VAA_re_ues": ["Diluant_VAA_re_ues"],
+    "Diluant_VAA_utilis_es": ["Diluant_VAA_utilis_es"], "Diluant_VAA_pertes": ["Diluant_VAA_pertes"],
+    "Diluant_VAA_stock_fin": ["Diluant_VAA_stock_fin", "Diluant_VAA dose-stock disponible utilisable"], "Diluant_VAA_jours_rupture": ["Diluant_VAA_jours_rupture"],
+    "Diluant_VAA_administr_es": ["Diluant_VAA_administr_es","Diluant_VAA dose-administree"],
+    "Diluant_VAP_stock_d_but": ["Diluant_VAP_stock_d_but"], "Diluant_VAP_re_ues": ["Diluant_VAP_re_ues"],
+    "Diluant_VAP_utilis_es": ["Diluant_VAP_utilis_es"], "Diluant_VAP_pertes": ["Diluant_VAP_pertes"],
+    "Diluant_VAP_stock_fin": ["Diluant_VAP_stock_fin", "Diluant_VAP dose-stock disponible utilisable"], "Diluant_VAP_jours_rupture": ["Diluant_VAP_jours_rupture"],
+    "Diluant_VAP_administr_es": ["Diluant_VAP_administr_es","Diluant_VAP dose-administree"],
+    # ── SAB (rename_map) ──
+    "SAB_005ml_stock_d_but": ["SAB_005ml_stock_d_but"], "SAB_005ml_re_ues": ["SAB_005ml_re_ues"],
+    "SAB_005ml_utilis_es": ["SAB_005ml_utilis_es"], "SAB_005ml_pertes": ["SAB_005ml_pertes"],
+    "SAB_005ml_stock_fin": ["SAB_005ml_stock_fin", "SAB_005ml dose-stock disponible utilisable"], "SAB_005ml_jours_rupture": ["SAB_005ml_jours_rupture"],
+    "SAB_005ml_administr_es": ["SAB_005ml_administr_es","SAB_005ml dose-administree"],
+    "SAB_05ml_stock_d_but": ["SAB_05ml_stock_d_but"], "SAB_05ml_re_ues": ["SAB_05ml_re_ues"],
+    "SAB_05ml_utilis_es": ["SAB_05ml_utilis_es"], "SAB_05ml_pertes": ["SAB_05ml_pertes"],
+    "SAB_05ml_stock_fin": ["SAB_05ml_stock_fin", "SAB_05ml dose-stock disponible utilisable"], "SAB_05ml_jours_rupture": ["SAB_05ml_jours_rupture"],
+    "SAB_05ml_administr_es": ["SAB_05ml_administr_es","SAB_05ml dose-administree"],
+    "SAB_auto_bloquante_stock_d_but": ["SAB_auto_bloquante_stock_d_but"], "SAB_auto_bloquante_re_ues": ["SAB_auto_bloquante_re_ues"],
+    "SAB_auto_bloquante_utilis_es": ["SAB_auto_bloquante_utilis_es"], "SAB_auto_bloquante_pertes": ["SAB_auto_bloquante_pertes"],
+    "SAB_auto_bloquante_stock_fin": ["SAB_auto_bloquante_stock_fin", "SAB_auto_bloquante dose-stock disponible utilisable"], "SAB_auto_bloquante_jours_rupture": ["SAB_auto_bloquante_jours_rupture"],
+    "SAB_auto_bloquante_administr_es": ["SAB_auto_bloquante_administr_es","SAB_auto_bloquante dose-administree"],
+    # ── SERINGUES DILUTION (rename_map) ──
+    "Ser_dilution_2ml_stock_d_but": ["Ser_dilution_2ml_stock_d_but"], "Ser_dilution_2ml_re_ues": ["Ser_dilution_2ml_re_ues"],
+    "Ser_dilution_2ml_utilis_es": ["Ser_dilution_2ml_utilis_es"], "Ser_dilution_2ml_pertes": ["Ser_dilution_2ml_pertes"],
+    "Ser_dilution_2ml_stock_fin": ["Ser_dilution_2ml_stock_fin", "Ser_dilution_2ml dose-stock disponible utilisable"], "Ser_dilution_2ml_jours_rupture": ["Ser_dilution_2ml_jours_rupture"],
+    "Ser_dilution_2ml_administr_es": ["Ser_dilution_2ml_administr_es","Ser_dilution_2ml dose-administree"],
+    "Ser_dilution_5ml_stock_d_but": ["Ser_dilution_5ml_stock_d_but"], "Ser_dilution_5ml_re_ues": ["Ser_dilution_5ml_re_ues"],
+    "Ser_dilution_5ml_utilis_es": ["Ser_dilution_5ml_utilis_es"], "Ser_dilution_5ml_pertes": ["Ser_dilution_5ml_pertes"],
+    "Ser_dilution_5ml_stock_fin": ["Ser_dilution_5ml_stock_fin", "Ser_dilution_5ml dose-stock disponible utilisable"], "Ser_dilution_5ml_jours_rupture": ["Ser_dilution_5ml_jours_rupture"],
+    "Ser_dilution_5ml_administr_es": ["Ser_dilution_5ml_administr_es","Ser_dilution_5ml dose-administree"],
+    "Ser_dilution_6ml_stock_d_but": ["Ser_dilution_6ml_stock_d_but"], "Ser_dilution_6ml_re_ues": ["Ser_dilution_6ml_re_ues"],
+    "Ser_dilution_6ml_utilis_es": ["Ser_dilution_6ml_utilis_es"], "Ser_dilution_6ml_pertes": ["Ser_dilution_6ml_pertes"],
+    "Ser_dilution_6ml_stock_fin": ["Ser_dilution_6ml_stock_fin", "Ser_dilution_6ml dose-stock disponible utilisable"], "Ser_dilution_6ml_jours_rupture": ["Ser_dilution_6ml_jours_rupture"],
+    "Ser_dilution_6ml_administr_es": ["Ser_dilution_6ml_administr_es","Ser_dilution_6ml dose-administree"],
+    # ── ADAPTATEURS / COMPTE-GOUTTE / RÉCEPTACLES (rename_map) ──
+    "Adaptateurs_stock_d_but": ["Adaptateurs_stock_d_but"], "Adaptateurs_re_ues": ["Adaptateurs_re_ues"],
+    "Adaptateurs_utilis_es": ["Adaptateurs_utilis_es"], "Adaptateurs_pertes": ["Adaptateurs_pertes"],
+    "Adaptateurs_stock_fin": ["Adaptateurs_stock_fin", "Adaptateurs dose-stock disponible utilisable"], "Adaptateurs_jours_rupture": ["Adaptateurs_jours_rupture"],
+    "Adaptateurs_administr_es": ["Adaptateurs_administr_es","Adaptateurs dose-administree"],
+    "Compte_goutte_stock_d_but": ["Compte_goutte_stock_d_but"], "Compte_goutte_re_ues": ["Compte_goutte_re_ues"],
+    "Compte_goutte_utilis_es": ["Compte_goutte_utilis_es"], "Compte_goutte_pertes": ["Compte_goutte_pertes"],
+    "Compte_goutte_stock_fin": ["Compte_goutte_stock_fin", "Compte_goutte dose-stock disponible utilisable"], "Compte_goutte_jours_rupture": ["Compte_goutte_jours_rupture"],
+    "Compte_goutte_administr_es": ["Compte_goutte_administr_es","Compte_goutte dose-administree"],
+    "R_ceptacles_stock_d_but": ["R_ceptacles_stock_d_but"], "R_ceptacles_re_ues": ["R_ceptacles_re_ues"],
+    "R_ceptacles_utilis_es": ["R_ceptacles_utilis_es"], "R_ceptacles_pertes": ["R_ceptacles_pertes"],
+    "R_ceptacles_stock_fin": ["R_ceptacles_stock_fin", "R_ceptacles dose-stock disponible utilisable"], "R_ceptacles_jours_rupture": ["R_ceptacles_jours_rupture"],
+    "R_ceptacles_administr_es": ["R_ceptacles_administr_es","R_ceptacles dose-administree"],
+    # ── NOUVELLES VARIABLES DE GESTION LOGISTIQUE ──
+    "BCG_stock_max": ["BCG_stock_max", "BCG Stock Max"],
+    "BCG_qte_a_commander": ["BCG_qte_a_commander", "BCG Qté à commander"],
+    "BCG_cmm": ["BCG_cmm", "BCG CMM"],
+    "BCG_ajustement": ["BCG_ajustement", "BCG Adjustment"],
+    "BCG_msd": ["BCG_msd", "BCG MSD"],
+    "DTC_stock_max": ["DTC_stock_max", "DTC Stock Max"],
+    "DTC_qte_a_commander": ["DTC_qte_a_commander", "DTC Qté à commander"],
+    "DTC_cmm": ["DTC_cmm", "DTC CMM"],
+    "DTC_ajustement": ["DTC_ajustement", "DTC Adjustment"],
+    "DTC_msd": ["DTC_msd", "DTC MSD"],
+    "VPO_stock_max": ["VPO_stock_max", "VPO Stock Max"],
+    "VPO_qte_a_commander": ["VPO_qte_a_commander", "VPO Qté à commander"],
+    "VPO_cmm": ["VPO_cmm", "VPO CMM"],
+    "VPO_ajustement": ["VPO_ajustement", "VPO Adjustment"],
+    "VPO_msd": ["VPO_msd", "VPO MSD"],
+    "VPI_stock_max": ["VPI_stock_max", "VPI Stock Max"],
+    "VPI_qte_a_commander": ["VPI_qte_a_commander", "VPI Qté à commander"],
+    "VPI_cmm": ["VPI_cmm", "VPI CMM"],
+    "VPI_ajustement": ["VPI_ajustement", "VPI Adjustment"],
+    "VPI_msd": ["VPI_msd", "VPI MSD"],
+    "VAR_stock_max": ["VAR_stock_max", "VAR Stock Max"],
+    "VAR_qte_a_commander": ["VAR_qte_a_commander", "VAR Qté à commander"],
+    "VAR_cmm": ["VAR_cmm", "VAR CMM"],
+    "VAR_ajustement": ["VAR_ajustement", "VAR Adjustment"],
+    "VAR_msd": ["VAR_msd", "VAR MSD"],
+    "VAA_stock_max": ["VAA_stock_max", "VAA Stock Max"],
+    "VAA_qte_a_commander": ["VAA_qte_a_commander", "VAA Qté à commander"],
+    "VAA_cmm": ["VAA_cmm", "VAA CMM"],
+    "VAA_ajustement": ["VAA_ajustement", "VAA Adjustment"],
+    "VAA_msd": ["VAA_msd", "VAA MSD"],
+    "PCV13_stock_max": ["PCV13_stock_max", "PCV13 Stock Max"],
+    "PCV13_qte_a_commander": ["PCV13_qte_a_commander", "PCV13 Qté à commander"],
+    "PCV13_cmm": ["PCV13_cmm", "PCV13 CMM"],
+    "PCV13_ajustement": ["PCV13_ajustement", "PCV13 Adjustment"],
+    "PCV13_msd": ["PCV13_msd", "PCV13 MSD"],
+    "ROTA_stock_max": ["ROTA_stock_max", "ROTA Stock Max"],
+    "ROTA_qte_a_commander": ["ROTA_qte_a_commander", "ROTA Qté à commander"],
+    "ROTA_cmm": ["ROTA_cmm", "ROTA CMM"],
+    "ROTA_ajustement": ["ROTA_ajustement", "ROTA Adjustment"],
+    "ROTA_msd": ["ROTA_msd", "ROTA MSD"],
+    "VAP_stock_max": ["VAP_stock_max", "VAP Stock Max"],
+    "VAP_qte_a_commander": ["VAP_qte_a_commander", "VAP Qté à commander"],
+    "VAP_cmm": ["VAP_cmm", "VAP CMM"],
+    "VAP_ajustement": ["VAP_ajustement", "VAP Adjustment"],
+    "VAP_msd": ["VAP_msd", "VAP MSD"],
+    "HPV_stock_max": ["HPV_stock_max", "HPV Stock Max"],
+    "HPV_qte_a_commander": ["HPV_qte_a_commander", "HPV Qté à commander"],
+    "HPV_cmm": ["HPV_cmm", "HPV CMM"],
+    "HPV_ajustement": ["HPV_ajustement", "HPV Adjustment"],
+    "HPV_msd": ["HPV_msd", "HPV MSD"],
+    "Td_stock_max": ["Td_stock_max", "VAT Stock Max"],
+    "Td_qte_a_commander": ["Td_qte_a_commander", "VAT Qté à commander"],
+    "Td_cmm": ["Td_cmm", "VAT CMM"],
+    "Td_ajustement": ["Td_ajustement", "VAT Adjustment"],
+    "Td_msd": ["Td_msd", "VAT MSD"],
 }
 
 # ==========================================================
@@ -409,13 +408,6 @@ DERIVED_SUM_SPECS: dict[str, list[str]] = {
 }
 ALL_AGG_KEYS = list(SUM_SPECS.keys()) + list(DERIVED_SUM_SPECS.keys())
 
-# Ligne ajoutée pour la gestion de la mémoire :
-KEEP_KEYS = {"_Province", "_ZS", "_Antenne", "_AS", "_FOSA", "_YM", "Compl_tude", "Promptitude"}.union(ALL_AGG_KEYS)
-# Pré-calculer les sources existantes pour éviter des lookups inutiles
-SUM_SOURCES_FLAT = set()
-for sources in SUM_SPECS.values():
-    SUM_SOURCES_FLAT.update(sources)
-KEEP_KEYS_LIST = list(KEEP_KEYS)  # pré-calculer une fois
 def nv(row: dict, field: str) -> float:
     v = row.get(field)
     if v is None or v == "":
@@ -424,7 +416,6 @@ def nv(row: dict, field: str) -> float:
         return float(v)
     except Exception:
         return 0.0
-
 
 def normalize_org3(org3: str) -> str:
     s = (org3 or "").strip()
@@ -436,12 +427,10 @@ def normalize_org3(org3: str) -> str:
             break
     return s
 
-
 def resolve_antenne(province: str, zs: str) -> str:
     rules = ANT_RULES.get(province, {})
     norm = normalize_org3(zs)
     return rules.get(norm, rules.get(zs, ""))
-
 
 def period_to_ym(p: str) -> str:
     p = (p or "").strip()
@@ -459,19 +448,29 @@ def period_to_ym(p: str) -> str:
         return parts[2] + mmm[parts[1]]
     return p
 
-
 def slug(name: str) -> str:
     s = re.sub(r"[^\w\s-]", "", (name or "unknown").strip())
     s = re.sub(r"[\s-]+", "_", s)
     return s.lower() or "unknown"
 
+# ── Aggregation Storage ──
+# key: (Prov, ZS, Ant, AS, FOSA, YM)
+agg_fosa = {}
 
-# ── Load all records ──
-print("Loading all NDJSON files (FOSA)...")
+# Metadata sets
+all_provinces = set()
+all_antennes = set()
+all_zs = set()
+all_as_list = set()
+all_fosa_names = set()
+all_months = set()
+total_records = 0
+
+# ── Load and Aggregate ──
+print("Loading and aggregating NDJSON files (FOSA) on-the-fly...")
 with open(DATA / "index.json", encoding="utf-8") as f:
     index = json.load(f)
 
-all_records: list[dict] = []
 months_list = sorted(index.get("months", {}).keys())
 
 for month in months_list:
@@ -483,7 +482,6 @@ for month in months_list:
         fpath = MONTHLY / month / fname
         gz_path = MONTHLY / month / part.get("file", "")
 
-                # On ouvre le fichier de manière optimisée (Streaming)
         f_obj = None
         if fpath.exists() and not fname.endswith(".gz"):
             f_obj = open(fpath, encoding="utf-8")
@@ -491,7 +489,6 @@ for month in months_list:
             f_obj = gzip.open(gz_path, "rt", encoding="utf-8")
         elif fpath.exists():
             try:
-                # Test si c'est un gzip caché
                 with gzip.open(fpath, "rt", encoding="utf-8") as temp_f:
                     temp_f.read(1)
                 f_obj = gzip.open(fpath, "rt", encoding="utf-8")
@@ -501,7 +498,6 @@ for month in months_list:
         if not f_obj:
             continue
 
-        # Lecture ligne par ligne pour ne pas saturer la RAM (OOM)
         with f_obj as f:
             for line in f:
                 line = line.strip()
@@ -512,69 +508,105 @@ for month in months_list:
                     ou = row.get("OrgUnit", "")
                     meta = OU_MAP.get(ou, {})
                     
-                    row["_Province"] = meta.get("Org2", "")
-                    row["_ZS"] = meta.get("Org3", "")
-                    row["_AS"] = meta.get("Org4", "")
-                    row["_FOSA"] = meta.get("Org5", "")
-                    row["_Antenne"] = resolve_antenne(row["_Province"], row["_ZS"])
-                    row["_YM"] = period_to_ym(row.get("Period", ""))
+                    prov = meta.get("Org2", "")
+                    zs = meta.get("Org3", "")
+                    as_ = meta.get("Org4", "")
+                    fosa = meta.get("Org5", "")
+                    ant = resolve_antenne(prov, zs)
+                    ym = period_to_ym(row.get("Period", ""))
                     
-                    # Sommations primaires
+                    # Calculate sums
                     for sf, sources in SUM_SPECS.items():
-                        row[sf] = sum(nv(row, s) for s in sources)
+                        val = sum(nv(row, s) for s in sources)
+                        if val != 0: row[sf] = val
                         
-                    # Sommations dérivées
                     for sf, sources in DERIVED_SUM_SPECS.items():
-                        row[sf] = sum(nv(row, s) for s in sources)
+                        val = sum(nv(row, s) for s in sources)
+                        if val != 0: row[sf] = val
                     
-                    # MAGIE : On supprime toutes les colonnes inutiles pour libérer la mémoire
-                    minimized_row = {k: row[k] for k in KEEP_KEYS_LIST if k in row}
-                    all_records.append(minimized_row)
+                    total_records += 1
+                    if prov: all_provinces.add(prov)
+                    if ant: all_antennes.add(ant)
+                    if zs: all_zs.add(zs)
+                    if as_: all_as_list.add(as_)
+                    if fosa: all_fosa_names.add(fosa)
+                    if ym: all_months.add(ym)
+
+                    key = (prov, zs, ant, as_, fosa, ym)
+                    if key not in agg_fosa:
+                        agg_fosa[key] = {"n": 0, "rap": 0, "sum_comp": 0.0, "sum_prompt": 0.0}
                     
+                    g = agg_fosa[key]
+                    g["n"] += 1
+                    comp = nv(row, "Compl_tude")
+                    if comp > 0: g["rap"] += 1
+                    g["sum_comp"] += comp
+                    g["sum_prompt"] += nv(row, "Promptitude")
+                    
+                    for k in ALL_AGG_KEYS:
+                        val = row.get(k, 0.0)
+                        if val != 0:
+                            g[k] = g.get(k, 0.0) + val
                 except Exception:
                     pass
 
-    print(f"  {month}: {len(all_records)} total records")
+    print(f"  {month}: {total_records} records processed so far")
 
-print(f"Total: {len(all_records)} records")
+print(f"Total: {total_records} records, {len(agg_fosa)} FOSA-month entries")
 
+# ── Hierarchical Aggregation ──
+def update_agg_from_agg(target_agg, target_key, source_g):
+    if target_key not in target_agg:
+        target_agg[target_key] = {"n": 0, "rap": 0, "sum_comp": 0.0, "sum_prompt": 0.0}
+    tg = target_agg[target_key]
+    tg["n"] += source_g["n"]
+    tg["rap"] += source_g["rap"]
+    tg["sum_comp"] += source_g["sum_comp"]
+    tg["sum_prompt"] += source_g["sum_prompt"]
+    for k in ALL_AGG_KEYS:
+        if k in source_g:
+            tg[k] = tg.get(k, 0.0) + source_g[k]
 
-# ── Aggregation helper ──
-def agg_group(records: list[dict], group_fields: list[str]) -> list[dict]:
-    groups: dict[tuple, dict] = defaultdict(lambda: {
-        "n": 0, "rap": 0,
-        "sum_comp": 0.0, "sum_prompt": 0.0,
-        **{k: 0.0 for k in ALL_AGG_KEYS},
-    })
+print("Performing hierarchical aggregation...")
+agg_as = {}
+agg_zs = {}
+agg_prov = {}
 
-    for r in records:
-        key = tuple(r.get(f, "") for f in group_fields)
-        g = groups[key]
-        g["n"] += 1
-        comp = nv(r, "Compl_tude")
-        if comp > 0:
-            g["rap"] += 1
-        g["sum_comp"] += comp
-        g["sum_prompt"] += nv(r, "Promptitude")
+for key, g in agg_fosa.items():
+    prov, zs, ant, as_, fosa, ym = key
+    
+    # AS
+    as_key = (prov, zs, ant, as_, ym)
+    update_agg_from_agg(agg_as, as_key, g)
+    
+    # ZS
+    zs_key = (prov, zs, ant, ym)
+    update_agg_from_agg(agg_zs, zs_key, g)
+    
+    # Prov
+    prov_key = (prov, ym)
+    update_agg_from_agg(agg_prov, prov_key, g)
+
+# ── Finalize Helpers ──
+def finalize(agg_dict, fields):
+    res = []
+    for key, g in agg_dict.items():
+        d = {f: key[i] for i, f in enumerate(fields)}
+        n = g["n"]
+        d["n"] = n
+        d["rap"] = g["rap"]
+        d["comp"] = round(g["sum_comp"] / n, 2) if n > 0 else 0
+        d["prompt"] = round(g["sum_prompt"] / n, 2) if n > 0 else 0
         for k in ALL_AGG_KEYS:
-            g[k] += nv(r, k)
+            if k in g:
+                d[k] = round(g[k], 2)
+        res.append(d)
+    return res
 
-    result = []
-    for key, g in groups.items():
-        entry: dict = {}
-        for i, f in enumerate(group_fields):
-            entry[f] = key[i]
-        entry["n"] = g["n"]
-        entry["rap"] = g["rap"]
-        entry["comp"] = round(g["sum_comp"] / g["n"], 2) if g["n"] > 0 else 0
-        entry["prompt"] = round(g["sum_prompt"] / g["n"], 2) if g["n"] > 0 else 0
-        for k in ALL_AGG_KEYS:
-            if g[k] > 0:
-                entry[k] = g[k]
-        result.append(entry)
-
-    return result
-
+fosa_month = finalize(agg_fosa, ["_Province", "_ZS", "_Antenne", "_AS", "_FOSA", "_YM"])
+as_month = finalize(agg_as, ["_Province", "_ZS", "_Antenne", "_AS", "_YM"])
+zs_month = finalize(agg_zs, ["_Province", "_ZS", "_Antenne", "_YM"])
+prov_month = finalize(agg_prov, ["_Province", "_YM"])
 
 # ── Write helpers ──
 def write_json(path: Path, data: any) -> None:
@@ -582,7 +614,6 @@ def write_json(path: Path, data: any) -> None:
         json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
     size = os.path.getsize(path)
     print(f"  Written {path} ({size / 1024:.0f} KB)")
-
 
 def write_split(base_dir: Path, records: list[dict], key_field: str = "_Province") -> dict:
     base_dir.mkdir(parents=True, exist_ok=True)
@@ -599,40 +630,19 @@ def write_split(base_dir: Path, records: list[dict], key_field: str = "_Province
     write_json(base_dir / "manifest.json", manifest)
     return manifest
 
-
-# ── Generate ──
-print("Aggregating...")
-
-prov_month = agg_group(all_records, ["_Province", "_YM"])
-print(f"  Province×Month: {len(prov_month)} rows")
-
-zs_month = agg_group(all_records, ["_Province", "_ZS", "_Antenne", "_YM"])
-print(f"  ZS×Month: {len(zs_month)} rows")
-
-as_month = agg_group(all_records, ["_Province", "_ZS", "_Antenne", "_AS", "_YM"])
-print(f"  AS×Month: {len(as_month)} rows")
-
-fosa_month = agg_group(all_records, ["_Province", "_ZS", "_Antenne", "_AS", "_FOSA", "_YM"])
-print(f"  FOSA×Month: {len(fosa_month)} rows")
-
-all_provinces = sorted({r["_Province"] for r in all_records if r.get("_Province")})
-all_antennes = sorted({r["_Antenne"] for r in all_records if r.get("_Antenne")})
-all_zs = sorted({r["_ZS"] for r in all_records if r.get("_ZS")})
-all_as_list = sorted({r["_AS"] for r in all_records if r.get("_AS")})
-all_fosa = sorted({r["_FOSA"] for r in all_records if r.get("_FOSA")})
-all_months = sorted({r["_YM"] for r in all_records if r.get("_YM")})
-prov_slugs = {p: slug(p) for p in all_provinces}
+# ── Generate Metadata ──
+prov_slugs = {p: slug(p) for p in sorted(all_provinces)}
 
 meta_data = {
     "generated_at": index.get("generated_at", ""),
-    "total_records": len(all_records),
-    "provinces": all_provinces,
+    "total_records": total_records,
+    "provinces": sorted(all_provinces),
     "province_slugs": prov_slugs,
-    "antennes": all_antennes,
-    "zs": all_zs,
-    "as": all_as_list,
-    "months": all_months,
-    "nb_fosa": len(all_fosa),
+    "antennes": sorted(all_antennes),
+    "zs": sorted(all_zs),
+    "as": sorted(all_as_list),
+    "months": sorted(all_months),
+    "nb_fosa": len(all_fosa_names),
 }
 
 print("\nWriting output files...")
