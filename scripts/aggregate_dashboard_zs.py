@@ -548,31 +548,14 @@ for month in months_list:
                     ym = period_to_ym(row.get("Period", ""))
                     
                     # Calculate sums
-                    row_has_data = False
                     for sf, sources in SUM_SPECS.items():
                         val = sum(nv(row, s) for s in sources)
-                        if val != 0:
-                            row[sf] = round(val, 2)
-                            row_has_data = True
-                        else:
-                            row[sf] = 0.0
+                        row[sf] = round(val, 2)
 
                     for sf, sources in DERIVED_SUM_SPECS.items():
                         val = sum(nv(row, s) for s in sources)
-                        if val != 0:
-                            row[sf] = round(val, 2)
-                            row_has_data = True
-                        else:
-                            row[sf] = 0.0
+                        row[sf] = round(val, 2)
                     
-                    # Also check basic indicators
-                    if not row_has_data:
-                        if nv(row, "Compl_tude") != 0 or nv(row, "Promptitude") != 0:
-                            row_has_data = True
-                    
-                    if not row_has_data:
-                        continue
-
                     total_records += 1
                     if prov: all_provinces.add(prov)
                     if ant: all_antennes.add(ant)
@@ -589,8 +572,7 @@ for month in months_list:
                     g["sum_prompt"] += round(nv(row, "Promptitude"), 2)
                     for k in ALL_AGG_KEYS:
                         val = row.get(k, 0.0)
-                        if val != 0:
-                            g[k] = round(g.get(k, 0.0) + val, 2)
+                        g[k] = round(g.get(k, 0.0) + val, 2)
                 except Exception: pass
 
     print(f"  {month}: {total_records} records processed")
