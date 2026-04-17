@@ -897,9 +897,13 @@
         async function fetchGzip(url) {
             try {
                 var response = await fetch(url);
-                if (!response.ok) throw new Error('Erreur HTTP: ' + response.status);
-                
-                // Détection auto : si l'URL se termine par .gz ou si le serveur renvoie du gzip
+                if (!response.ok) {
+                    if (url.indexOf('.gz') !== -1) {
+                        console.warn('Gzip non trouvé, tentative version non-compressée:', url);
+                        return await fetchGzip(url.replace('.gz', ''));
+                    }
+                    throw new Error('Erreur HTTP ' + response.status + ' sur ' + url);
+                }
                 if (url.indexOf('.gz') !== -1) {
                     var arrayBuffer = await response.arrayBuffer();
                     var decompressed = pako.ungzip(new Uint8Array(arrayBuffer), { to: 'string' });
@@ -911,7 +915,6 @@
                 throw e;
             }
         }
-
         function mL(ym) { if (!ym || ym.length < 6) return ym || ''; var n = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']; return n[parseInt(ym.substr(4, 2), 10) - 1] + ' ' + ym.substr(0, 4); }
         function grp(a, fn) { var g = {}; a.forEach(function (r) { var k = fn(r) || '_'; if (!g[k]) g[k] = []; g[k].push(r); }); return g; }
         function sf(a, f) { return a.reduce(function (s, r) { return s + (Number(r[f]) || 0); }, 0); }
