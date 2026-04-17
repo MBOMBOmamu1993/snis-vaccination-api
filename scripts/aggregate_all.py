@@ -210,44 +210,79 @@ BASE_SUM_SPECS = {
     "seances_mobiles_realisees": ["S_ances_mobiles_r_alis_es"],
 
     # ── LOGISTIQUE VACCINS ──
-    "BCG_utilis_es": ["BCG_utilis_es"], "BCG_pertes": ["BCG_pertes"],
-    "BCG_jours_rupture": ["BCG_jours_rupture"], "BCG_stock_fin": ["BCG_stock_fin", "BCG dose-stock disponible utilisable"],
-    "DTC_utilis_es": ["DTC_utilis_es"], "DTC_pertes": ["DTC_pertes"],
-    "DTC_jours_rupture": ["DTC_jours_rupture"], "DTC_stock_fin": ["DTC_stock_fin", "DTC dose-stock disponible utilisable"],
-    "VPO_utilis_es": ["VPO_utilis_es"], "VPO_pertes": ["VPO_pertes"],
-    "VPO_jours_rupture": ["VPO_jours_rupture"], "VPO_stock_fin": ["VPO_stock_fin", "VPO dose-stock disponible utilisable"],
-    "VPI_utilis_es": ["VPI_utilis_es"], "VPI_pertes": ["VPI_pertes"],
-    "VPI_jours_rupture": ["VPI_jours_rupture"], "VPI_stock_fin": ["VPI_stock_fin", "VPI dose-stock disponible utilisable"],
-    "VAR_utilis_es": ["VAR_utilis_es"], "VAR_pertes": ["VAR_pertes"],
-    "VAR_jours_rupture": ["VAR_jours_rupture"], "VAR_stock_fin": ["VAR_stock_fin", "VAR dose-stock disponible utilisable"],
-    "VAA_utilis_es": ["VAA_utilis_es"], "VAA_pertes": ["VAA_pertes"],
-    "VAA_jours_rupture": ["VAA_jours_rupture"], "VAA_stock_fin": ["VAA_stock_fin", "VAA dose-stock disponible utilisable"],
-    "Td_utilis_es": ["Td_utilis_es"], "Td_pertes": ["Td_pertes"],
-    "Td_jours_rupture": ["Td_jours_rupture"], "Td_stock_fin": ["Td_stock_fin", "VAT dose-stock disponible utilisable"],
-    "PCV13_utilis_es": ["PCV13_utilis_es","PCV13 dose-utilisee"], "PCV13_pertes": ["PCV13_pertes"],
-    "PCV13_jours_rupture": ["PCV13_jours_rupture"], "PCV13_stock_fin": ["PCV13_stock_fin", "PCV13 dose-stock disponible utilisable"],
-    "PCV13_administr_es": ["PCV13_administr_es","PCV13 dose-administree"],
-    "ROTA_utilis_es": ["ROTA_utilis_es","ROTA dose-utilisee"], "ROTA_pertes": ["ROTA_pertes"],
-    "ROTA_jours_rupture": ["ROTA_jours_rupture"], "ROTA_stock_fin": ["ROTA_stock_fin", "ROTA dose-stock disponible utilisable"],
-    "ROTA_administr_es": ["ROTA_administr_es","ROTA dose-administree"],
-    "VAP_utilis_es": ["VAP_utilis_es"], "VAP_pertes": ["VAP_pertes"],
-    "VAP_jours_rupture": ["VAP_jours_rupture"], "VAP_stock_fin": ["VAP_stock_fin", "VAP dose-stock disponible utilisable"],
-    "VAP_administr_es": ["VAP_administr_es","VAP dose-administree"],
-    "HPV_utilis_es": ["HPV_utilis_es"], "HPV_pertes": ["HPV_pertes"],
-    "HPV_jours_rupture": ["HPV_jours_rupture"], "HPV_stock_fin": ["HPV_stock_fin", "HPV dose-stock disponible utilisable"],
-    "HPV_administr_es": ["HPV_administr_es","HPV dose-administree"],
-    
-    # ── LOGISTIQUE (Triangulation) stock_d_but + re_ues ──
-    "BCG_re_ues": ["BCG_re_ues"], "BCG_stock_d_but": ["BCG_stock_d_but"],
-    "DTC_re_ues": ["DTC_re_ues"], "DTC_stock_d_but": ["DTC_stock_d_but"],
-    "PCV13_re_ues": ["PCV13_re_ues"], "PCV13_stock_d_but": ["PCV13_stock_d_but"],
-    "VAR_re_ues": ["VAR_re_ues"], "VAR_stock_d_but": ["VAR_stock_d_but"],
-    "Td_re_ues": ["Td_re_ues"], "Td_stock_d_but": ["Td_stock_d_but"],
-    "VPO_re_ues": ["VPO_re_ues"], "VPO_stock_d_but": ["VPO_stock_d_but"],
-    "VPI_re_ues": ["VPI_re_ues"], "VPI_stock_d_but": ["VPI_stock_d_but"],
-    "ROTA_re_ues": ["ROTA_re_ues"], "ROTA_stock_d_but": ["ROTA_stock_d_but"],
-    "VAA_re_ues": ["VAA_re_ues"], "VAA_stock_d_but": ["VAA_stock_d_but"],
-    "VAP_re_ues": ["VAP_re_ues"], "VAP_stock_d_but": ["VAP_stock_d_but"],
+    "BCG_stock_d_but": ["BCG_stock_d_but"], "BCG_re_ues": ["BCG_re_ues"], "BCG_utilis_es": ["BCG_utilis_es"], "BCG_pertes": ["BCG_pertes"], "BCG_stock_fin": ["BCG_stock_fin"], "BCG_jours_rupture": ["BCG_jours_rupture"], "BCG_administr_es": ["BCG_administr_es"],
+    "BCG_stock_max": ["BCG_stock_max"], "BCG_qte_a_commander": ["BCG_qte_a_commander"], "BCG_cmm": ["BCG_cmm"], "BCG_ajustement": ["BCG_ajustement"], "BCG_msd": ["BCG_msd"],
+
+    "DTC_stock_d_but": ["DTC_stock_d_but"], "DTC_re_ues": ["DTC_re_ues"], "DTC_utilis_es": ["DTC_utilis_es"], "DTC_pertes": ["DTC_pertes"], "DTC_stock_fin": ["DTC_stock_fin"], "DTC_jours_rupture": ["DTC_jours_rupture"], "DTC_administr_es": ["DTC_administr_es"],
+    "DTC_stock_max": ["DTC_stock_max"], "DTC_qte_a_commander": ["DTC_qte_a_commander"], "DTC_cmm": ["DTC_cmm"], "DTC_ajustement": ["DTC_ajustement"], "DTC_msd": ["DTC_msd"],
+
+    "VPO_stock_d_but": ["VPO_stock_d_but"], "VPO_re_ues": ["VPO_re_ues"], "VPO_utilis_es": ["VPO_utilis_es"], "VPO_pertes": ["VPO_pertes"], "VPO_stock_fin": ["VPO_stock_fin"], "VPO_jours_rupture": ["VPO_jours_rupture"], "VPO_administr_es": ["VPO_administr_es"],
+    "VPO_stock_max": ["VPO_stock_max"], "VPO_qte_a_commander": ["VPO_qte_a_commander"], "VPO_cmm": ["VPO_cmm"], "VPO_ajustement": ["VPO_ajustement"], "VPO_msd": ["VPO_msd"],
+
+    "VPI_stock_d_but": ["VPI_stock_d_but"], "VPI_re_ues": ["VPI_re_ues"], "VPI_utilis_es": ["VPI_utilis_es"], "VPI_pertes": ["VPI_pertes"], "VPI_stock_fin": ["VPI_stock_fin"], "VPI_jours_rupture": ["VPI_jours_rupture"], "VPI_administr_es": ["VPI_administr_es"],
+    "VPI_stock_max": ["VPI_stock_max"], "VPI_qte_a_commander": ["VPI_qte_a_commander"], "VPI_cmm": ["VPI_cmm"], "VPI_ajustement": ["VPI_ajustement"], "VPI_msd": ["VPI_msd"],
+
+    "VAR_stock_d_but": ["VAR_stock_d_but"], "VAR_re_ues": ["VAR_re_ues"], "VAR_utilis_es": ["VAR_utilis_es"], "VAR_pertes": ["VAR_pertes"], "VAR_stock_fin": ["VAR_stock_fin"], "VAR_jours_rupture": ["VAR_jours_rupture"], "VAR_administr_es": ["VAR_administr_es"],
+    "VAR_stock_max": ["VAR_stock_max"], "VAR_qte_a_commander": ["VAR_qte_a_commander"], "VAR_cmm": ["VAR_cmm"], "VAR_ajustement": ["VAR_ajustement"], "VAR_msd": ["VAR_msd"],
+
+    "VAA_stock_d_but": ["VAA_stock_d_but"], "VAA_re_ues": ["VAA_re_ues"], "VAA_utilis_es": ["VAA_utilis_es"], "VAA_pertes": ["VAA_pertes"], "VAA_stock_fin": ["VAA_stock_fin"], "VAA_jours_rupture": ["VAA_jours_rupture"], "VAA_administr_es": ["VAA_administr_es"],
+    "VAA_stock_max": ["VAA_stock_max"], "VAA_qte_a_commander": ["VAA_qte_a_commander"], "VAA_cmm": ["VAA_cmm"], "VAA_ajustement": ["VAA_ajustement"], "VAA_msd": ["VAA_msd"],
+
+    "Td_stock_d_but": ["Td_stock_d_but"], "Td_re_ues": ["Td_re_ues"], "Td_utilis_es": ["Td_utilis_es"], "Td_pertes": ["Td_pertes"], "Td_stock_fin": ["Td_stock_fin"], "Td_jours_rupture": ["Td_jours_rupture"], "Td_administr_es": ["Td_administr_es"],
+    "Td_stock_max": ["Td_stock_max"], "Td_qte_a_commander": ["Td_qte_a_commander"], "Td_cmm": ["Td_cmm"], "Td_ajustement": ["Td_ajustement"], "Td_msd": ["Td_msd"],
+
+    "PCV13_stock_d_but": ["PCV13_stock_d_but"], "PCV13_re_ues": ["PCV13_re_ues"], "PCV13_utilis_es": ["PCV13_utilis_es"], "PCV13_pertes": ["PCV13_pertes"], "PCV13_stock_fin": ["PCV13_stock_fin"], "PCV13_jours_rupture": ["PCV13_jours_rupture"], "PCV13_administr_es": ["PCV13_administr_es"],
+    "PCV13_stock_max": ["PCV13_stock_max"], "PCV13_qte_a_commander": ["PCV13_qte_a_commander"], "PCV13_cmm": ["PCV13_cmm"], "PCV13_ajustement": ["PCV13_ajustement"], "PCV13_msd": ["PCV13_msd"],
+
+    "ROTA_stock_d_but": ["ROTA_stock_d_but"], "ROTA_re_ues": ["ROTA_re_ues"], "ROTA_utilis_es": ["ROTA_utilis_es"], "ROTA_pertes": ["ROTA_pertes"], "ROTA_stock_fin": ["ROTA_stock_fin"], "ROTA_jours_rupture": ["ROTA_jours_rupture"], "ROTA_administr_es": ["ROTA_administr_es"],
+    "ROTA_stock_max": ["ROTA_stock_max"], "ROTA_qte_a_commander": ["ROTA_qte_a_commander"], "ROTA_cmm": ["ROTA_cmm"], "ROTA_ajustement": ["ROTA_ajustement"], "ROTA_msd": ["ROTA_msd"],
+
+    "VAP_stock_d_but": ["VAP_stock_d_but"], "VAP_re_ues": ["VAP_re_ues"], "VAP_utilis_es": ["VAP_utilis_es"], "VAP_pertes": ["VAP_pertes"], "VAP_stock_fin": ["VAP_stock_fin"], "VAP_jours_rupture": ["VAP_jours_rupture"], "VAP_administr_es": ["VAP_administr_es"],
+    "VAP_stock_max": ["VAP_stock_max"], "VAP_qte_a_commander": ["VAP_qte_a_commander"], "VAP_cmm": ["VAP_cmm"], "VAP_ajustement": ["VAP_ajustement"], "VAP_msd": ["VAP_msd"],
+
+    "HPV_stock_d_but": ["HPV_stock_d_but"], "HPV_re_ues": ["HPV_re_ues"], "HPV_utilis_es": ["HPV_utilis_es"], "HPV_pertes": ["HPV_pertes"], "HPV_stock_fin": ["HPV_stock_fin"], "HPV_jours_rupture": ["HPV_jours_rupture"], "HPV_administr_es": ["HPV_administr_es"],
+    "HPV_stock_max": ["HPV_stock_max"], "HPV_qte_a_commander": ["HPV_qte_a_commander"], "HPV_cmm": ["HPV_cmm"], "HPV_ajustement": ["HPV_ajustement"], "HPV_msd": ["HPV_msd"],
+
+    # ── LOGISTIQUE NON-VACCINS ──
+    "Diluant_BCG_stock_d_but": ["Diluant_BCG_stock_d_but"], "Diluant_BCG_re_ues": ["Diluant_BCG_re_ues"], "Diluant_BCG_utilis_es": ["Diluant_BCG_utilis_es"], "Diluant_BCG_pertes": ["Diluant_BCG_pertes"], "Diluant_BCG_stock_fin": ["Diluant_BCG_stock_fin"], "Diluant_BCG_jours_rupture": ["Diluant_BCG_jours_rupture"], "Diluant_BCG_administr_es": ["Diluant_BCG_administr_es"],
+    "Diluant_BCG_stock_max": ["Diluant_BCG_stock_max"], "Diluant_BCG_qte_a_commander": ["Diluant_BCG_qte_a_commander"], "Diluant_BCG_cmm": ["Diluant_BCG_cmm"], "Diluant_BCG_ajustement": ["Diluant_BCG_ajustement"], "Diluant_BCG_msd": ["Diluant_BCG_msd"],
+
+    "Diluant_VAR_stock_d_but": ["Diluant_VAR_stock_d_but"], "Diluant_VAR_re_ues": ["Diluant_VAR_re_ues"], "Diluant_VAR_utilis_es": ["Diluant_VAR_utilis_es"], "Diluant_VAR_pertes": ["Diluant_VAR_pertes"], "Diluant_VAR_stock_fin": ["Diluant_VAR_stock_fin"], "Diluant_VAR_jours_rupture": ["Diluant_VAR_jours_rupture"], "Diluant_VAR_administr_es": ["Diluant_VAR_administr_es"],
+    "Diluant_VAR_stock_max": ["Diluant_VAR_stock_max"], "Diluant_VAR_qte_a_commander": ["Diluant_VAR_qte_a_commander"], "Diluant_VAR_cmm": ["Diluant_VAR_cmm"], "Diluant_VAR_ajustement": ["Diluant_VAR_ajustement"], "Diluant_VAR_msd": ["Diluant_VAR_msd"],
+
+    "Diluant_VAA_stock_d_but": ["Diluant_VAA_stock_d_but"], "Diluant_VAA_re_ues": ["Diluant_VAA_re_ues"], "Diluant_VAA_utilis_es": ["Diluant_VAA_utilis_es"], "Diluant_VAA_pertes": ["Diluant_VAA_pertes"], "Diluant_VAA_stock_fin": ["Diluant_VAA_stock_fin"], "Diluant_VAA_jours_rupture": ["Diluant_VAA_jours_rupture"], "Diluant_VAA_administr_es": ["Diluant_VAA_administr_es"],
+    "Diluant_VAA_stock_max": ["Diluant_VAA_stock_max"], "Diluant_VAA_qte_a_commander": ["Diluant_VAA_qte_a_commander"], "Diluant_VAA_cmm": ["Diluant_VAA_cmm"], "Diluant_VAA_ajustement": ["Diluant_VAA_ajustement"], "Diluant_VAA_msd": ["Diluant_VAA_msd"],
+
+    "Diluant_VAP_stock_d_but": ["Diluant_VAP_stock_d_but"], "Diluant_VAP_re_ues": ["Diluant_VAP_re_ues"], "Diluant_VAP_utilis_es": ["Diluant_VAP_utilis_es"], "Diluant_VAP_pertes": ["Diluant_VAP_pertes"], "Diluant_VAP_stock_fin": ["Diluant_VAP_stock_fin"], "Diluant_VAP_jours_rupture": ["Diluant_VAP_jours_rupture"], "Diluant_VAP_administr_es": ["Diluant_VAP_administr_es"],
+    "Diluant_VAP_stock_max": ["Diluant_VAP_stock_max"], "Diluant_VAP_qte_a_commander": ["Diluant_VAP_qte_a_commander"], "Diluant_VAP_cmm": ["Diluant_VAP_cmm"], "Diluant_VAP_ajustement": ["Diluant_VAP_ajustement"], "Diluant_VAP_msd": ["Diluant_VAP_msd"],
+
+    "SAB_005ml_stock_d_but": ["SAB_005ml_stock_d_but"], "SAB_005ml_re_ues": ["SAB_005ml_re_ues"], "SAB_005ml_utilis_es": ["SAB_005ml_utilis_es"], "SAB_005ml_pertes": ["SAB_005ml_pertes"], "SAB_005ml_stock_fin": ["SAB_005ml_stock_fin"], "SAB_005ml_jours_rupture": ["SAB_005ml_jours_rupture"], "SAB_005ml_administr_es": ["SAB_005ml_administr_es"],
+    "SAB_005ml_stock_max": ["SAB_005ml_stock_max"], "SAB_005ml_qte_a_commander": ["SAB_005ml_qte_a_commander"], "SAB_005ml_cmm": ["SAB_005ml_cmm"], "SAB_005ml_ajustement": ["SAB_005ml_ajustement"], "SAB_005ml_msd": ["SAB_005ml_msd"],
+
+    "SAB_05ml_stock_d_but": ["SAB_05ml_stock_d_but"], "SAB_05ml_re_ues": ["SAB_05ml_re_ues"], "SAB_05ml_utilis_es": ["SAB_05ml_utilis_es"], "SAB_05ml_pertes": ["SAB_05ml_pertes"], "SAB_05ml_stock_fin": ["SAB_05ml_stock_fin"], "SAB_05ml_jours_rupture": ["SAB_05ml_jours_rupture"], "SAB_05ml_administr_es": ["SAB_05ml_administr_es"],
+    "SAB_05ml_stock_max": ["SAB_05ml_stock_max"], "SAB_05ml_qte_a_commander": ["SAB_05ml_qte_a_commander"], "SAB_05ml_cmm": ["SAB_05ml_cmm"], "SAB_05ml_ajustement": ["SAB_05ml_ajustement"], "SAB_05ml_msd": ["SAB_05ml_msd"],
+
+    "SAB_auto_bloquante_stock_d_but": ["SAB_auto_bloquante_stock_d_but"], "SAB_auto_bloquante_re_ues": ["SAB_auto_bloquante_re_ues"], "SAB_auto_bloquante_utilis_es": ["SAB_auto_bloquante_utilis_es"], "SAB_auto_bloquante_pertes": ["SAB_auto_bloquante_pertes"], "SAB_auto_bloquante_stock_fin": ["SAB_auto_bloquante_stock_fin"], "SAB_auto_bloquante_jours_rupture": ["SAB_auto_bloquante_jours_rupture"], "SAB_auto_bloquante_administr_es": ["SAB_auto_bloquante_administr_es"],
+    "SAB_auto_bloquante_stock_max": ["SAB_auto_bloquante_stock_max"], "SAB_auto_bloquante_qte_a_commander": ["SAB_auto_bloquante_qte_a_commander"], "SAB_auto_bloquante_cmm": ["SAB_auto_bloquante_cmm"], "SAB_auto_bloquante_ajustement": ["SAB_auto_bloquante_ajustement"], "SAB_auto_bloquante_msd": ["SAB_auto_bloquante_msd"],
+
+    "Ser_dilution_2ml_stock_d_but": ["Ser_dilution_2ml_stock_d_but"], "Ser_dilution_2ml_re_ues": ["Ser_dilution_2ml_re_ues"], "Ser_dilution_2ml_utilis_es": ["Ser_dilution_2ml_utilis_es"], "Ser_dilution_2ml_pertes": ["Ser_dilution_2ml_pertes"], "Ser_dilution_2ml_stock_fin": ["Ser_dilution_2ml_stock_fin"], "Ser_dilution_2ml_jours_rupture": ["Ser_dilution_2ml_jours_rupture"], "Ser_dilution_2ml_administr_es": ["Ser_dilution_2ml_administr_es"],
+    "Ser_dilution_2ml_stock_max": ["Ser_dilution_2ml_stock_max"], "Ser_dilution_2ml_qte_a_commander": ["Ser_dilution_2ml_qte_a_commander"], "Ser_dilution_2ml_cmm": ["Ser_dilution_2ml_cmm"], "Ser_dilution_2ml_ajustement": ["Ser_dilution_2ml_ajustement"], "Ser_dilution_2ml_msd": ["Ser_dilution_2ml_msd"],
+
+    "Ser_dilution_5ml_stock_d_but": ["Ser_dilution_5ml_stock_d_but"], "Ser_dilution_5ml_re_ues": ["Ser_dilution_5ml_re_ues"], "Ser_dilution_5ml_utilis_es": ["Ser_dilution_5ml_utilis_es"], "Ser_dilution_5ml_pertes": ["Ser_dilution_5ml_pertes"], "Ser_dilution_5ml_stock_fin": ["Ser_dilution_5ml_stock_fin"], "Ser_dilution_5ml_jours_rupture": ["Ser_dilution_5ml_jours_rupture"], "Ser_dilution_5ml_administr_es": ["Ser_dilution_5ml_administr_es"],
+    "Ser_dilution_5ml_stock_max": ["Ser_dilution_5ml_stock_max"], "Ser_dilution_5ml_qte_a_commander": ["Ser_dilution_5ml_qte_a_commander"], "Ser_dilution_5ml_cmm": ["Ser_dilution_5ml_cmm"], "Ser_dilution_5ml_ajustement": ["Ser_dilution_5ml_ajustement"], "Ser_dilution_5ml_msd": ["Ser_dilution_5ml_msd"],
+
+    "Ser_dilution_6ml_stock_d_but": ["Ser_dilution_6ml_stock_d_but"], "Ser_dilution_6ml_re_ues": ["Ser_dilution_6ml_re_ues"], "Ser_dilution_6ml_utilis_es": ["Ser_dilution_6ml_utilis_es"], "Ser_dilution_6ml_pertes": ["Ser_dilution_6ml_pertes"], "Ser_dilution_6ml_stock_fin": ["Ser_dilution_6ml_stock_fin"], "Ser_dilution_6ml_jours_rupture": ["Ser_dilution_6ml_jours_rupture"], "Ser_dilution_6ml_administr_es": ["Ser_dilution_6ml_administr_es"],
+    "Ser_dilution_6ml_stock_max": ["Ser_dilution_6ml_stock_max"], "Ser_dilution_6ml_qte_a_commander": ["Ser_dilution_6ml_qte_a_commander"], "Ser_dilution_6ml_cmm": ["Ser_dilution_6ml_cmm"], "Ser_dilution_6ml_ajustement": ["Ser_dilution_6ml_ajustement"], "Ser_dilution_6ml_msd": ["Ser_dilution_6ml_msd"],
+
+    "Adaptateurs_stock_d_but": ["Adaptateurs_stock_d_but"], "Adaptateurs_re_ues": ["Adaptateurs_re_ues"], "Adaptateurs_utilis_es": ["Adaptateurs_utilis_es"], "Adaptateurs_pertes": ["Adaptateurs_pertes"], "Adaptateurs_stock_fin": ["Adaptateurs_stock_fin"], "Adaptateurs_jours_rupture": ["Adaptateurs_jours_rupture"], "Adaptateurs_administr_es": ["Adaptateurs_administr_es"],
+    "Adaptateurs_stock_max": ["Adaptateurs_stock_max"], "Adaptateurs_qte_a_commander": ["Adaptateurs_qte_a_commander"], "Adaptateurs_cmm": ["Adaptateurs_cmm"], "Adaptateurs_ajustement": ["Adaptateurs_ajustement"], "Adaptateurs_msd": ["Adaptateurs_msd"],
+
+    "Compte_goutte_stock_d_but": ["Compte_goutte_stock_d_but"], "Compte_goutte_re_ues": ["Compte_goutte_re_ues"], "Compte_goutte_utilis_es": ["Compte_goutte_utilis_es"], "Compte_goutte_pertes": ["Compte_goutte_pertes"], "Compte_goutte_stock_fin": ["Compte_goutte_stock_fin"], "Compte_goutte_jours_rupture": ["Compte_goutte_jours_rupture"], "Compte_goutte_administr_es": ["Compte_goutte_administr_es"],
+    "Compte_goutte_stock_max": ["Compte_goutte_stock_max"], "Compte_goutte_qte_a_commander": ["Compte_goutte_qte_a_commander"], "Compte_goutte_cmm": ["Compte_goutte_cmm"], "Compte_goutte_ajustement": ["Compte_goutte_ajustement"], "Compte_goutte_msd": ["Compte_goutte_msd"],
+
+    "R_ceptacles_stock_d_but": ["R_ceptacles_stock_d_but"], "R_ceptacles_re_ues": ["R_ceptacles_re_ues"], "R_ceptacles_utilis_es": ["R_ceptacles_utilis_es"], "R_ceptacles_pertes": ["R_ceptacles_pertes"], "R_ceptacles_stock_fin": ["R_ceptacles_stock_fin"], "R_ceptacles_jours_rupture": ["R_ceptacles_jours_rupture"], "R_ceptacles_administr_es": ["R_ceptacles_administr_es"],
+    "R_ceptacles_stock_max": ["R_ceptacles_stock_max"], "R_ceptacles_qte_a_commander": ["R_ceptacles_qte_a_commander"], "R_ceptacles_cmm": ["R_ceptacles_cmm"], "R_ceptacles_ajustement": ["R_ceptacles_ajustement"], "R_ceptacles_msd": ["R_ceptacles_msd"],
+
 }
 
 DERIVED_SUM_SPECS = {
