@@ -36,17 +36,8 @@ jobs:
         with:
           python-version: '3.11'
 
-      # --- 1. Lancement du script FOSA ---
-      - name: Generate aggregated dashboard data (FOSA)
-        run: python scripts/aggregate_dashboard.py
-
-      # --- 2. Lancement du script AS ---
-      - name: Generate AS aggregated dashboard data
-        run: python scripts/aggregate_dashboard_as.py
-
-      # --- 3. Lancement du script ZS ---
-      - name: Generate ZS aggregated dashboard data
-        run: python scripts/aggregate_dashboard_zs.py
+      - name: Generate ALL aggregated dashboard data (FOSA, AS, ZS)
+        run: python scripts/aggregate_all.py
 
       # --- 4. Sauvegarde Globale ---
       - name: Commit all aggregated data
@@ -59,7 +50,7 @@ jobs:
           
           # On vérifie s'il y a des changements avant de pousser
           if ! git diff --staged --quiet; then
-            git commit -m "auto: refresh ALL dashboard aggregates (FOSA, AS, ZS)"
+            git commit -m "auto: refresh ALL dashboard aggregates (FOSA, AS, ZS) with population"
             chmod +x scripts/safe_push.sh
             ./scripts/safe_push.sh main
           fi
