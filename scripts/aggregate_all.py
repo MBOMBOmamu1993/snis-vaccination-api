@@ -253,10 +253,8 @@ BASE_SUM_SPECS = {
     "Diluant_VAA_stock_d_but": ["Diluant_VAA_stock_d_but"], "Diluant_VAA_re_ues": ["Diluant_VAA_re_ues"], "Diluant_VAA_utilis_es": ["Diluant_VAA_utilis_es"], "Diluant_VAA_pertes": ["Diluant_VAA_pertes"], "Diluant_VAA_stock_fin": ["Diluant_VAA_stock_fin"], "Diluant_VAA_jours_rupture": ["Diluant_VAA_jours_rupture"], "Diluant_VAA_administr_es": ["Diluant_VAA_administr_es"],
     "Diluant_VAA_stock_max": ["Diluant_VAA_stock_max"], "Diluant_VAA_qte_a_commander": ["Diluant_VAA_qte_a_commander"], "Diluant_VAA_cmm": ["Diluant_VAA_cmm"], "Diluant_VAA_ajustement": ["Diluant_VAA_ajustement"], "Diluant_VAA_msd": ["Diluant_VAA_msd"],
 
-    "Diluant_VAP_stock_d_but": ["Diluant_VAP_stock_d_but"], "Diluant_VAP_re_ues": ["Diluant_VAP_re_ues"], "Diluant_VAP_utilis_es": ["Diluant_VAP_utilis_es"], "Diluant_VAP_pertes": ["Diluant_VAP_pertes"], "Diluant_VAP_stock_fin": ["Diluant_VAP_stock_fin"], "Diluant_VAP_jours_rupture": ["Diluant_VAP_jours_rupture"], "Diluant_VAP_administr_es": ["Diluant_VAP_administr_es"],
-    "Diluant_VAP_stock_max": ["Diluant_VAP_stock_max"], "Diluant_VAP_qte_a_commander": ["Diluant_VAP_qte_a_commander"], "Diluant_VAP_cmm": ["Diluant_VAP_cmm"], "Diluant_VAP_ajustement": ["Diluant_VAP_ajustement"], "Diluant_VAP_msd": ["Diluant_VAP_msd"],
-
-    "SAB_005ml_stock_d_but": ["SAB_005ml_stock_d_but"], "SAB_005ml_re_ues": ["SAB_005ml_re_ues"], "SAB_005ml_utilis_es": ["SAB_005ml_utilis_es"], "SAB_005ml_pertes": ["SAB_005ml_pertes"], "SAB_005ml_stock_fin": ["SAB_005ml_stock_fin"], "SAB_005ml_jours_rupture": ["SAB_005ml_jours_rupture"], "SAB_005ml_administr_es": ["SAB_005ml_administr_es"],
+    "SAB_005ml_stock_d_but": ["SAB_005ml_stock_d_but"],
+ "SAB_005ml_re_ues": ["SAB_005ml_re_ues"], "SAB_005ml_utilis_es": ["SAB_005ml_utilis_es"], "SAB_005ml_pertes": ["SAB_005ml_pertes"], "SAB_005ml_stock_fin": ["SAB_005ml_stock_fin"], "SAB_005ml_jours_rupture": ["SAB_005ml_jours_rupture"], "SAB_005ml_administr_es": ["SAB_005ml_administr_es"],
     "SAB_005ml_stock_max": ["SAB_005ml_stock_max"], "SAB_005ml_qte_a_commander": ["SAB_005ml_qte_a_commander"], "SAB_005ml_cmm": ["SAB_005ml_cmm"], "SAB_005ml_ajustement": ["SAB_005ml_ajustement"], "SAB_005ml_msd": ["SAB_005ml_msd"],
 
     "SAB_05ml_stock_d_but": ["SAB_05ml_stock_d_but"], "SAB_05ml_re_ues": ["SAB_05ml_re_ues"], "SAB_05ml_utilis_es": ["SAB_05ml_utilis_es"], "SAB_05ml_pertes": ["SAB_05ml_pertes"], "SAB_05ml_stock_fin": ["SAB_05ml_stock_fin"], "SAB_05ml_jours_rupture": ["SAB_05ml_jours_rupture"], "SAB_05ml_administr_es": ["SAB_05ml_administr_es"],
