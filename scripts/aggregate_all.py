@@ -327,8 +327,11 @@ def slug(name):
     s = re.sub(r"[\s-]+", "_", s)
     return s.lower() or "unknown"
 
-def write_json(path, data):
-    with open(path, "w", encoding="utf-8") as f:
+def write_json_gz(path, data):
+    # Ensure path ends with .gz
+    if not str(path).endswith(".gz"):
+        path = Path(str(path) + ".gz")
+    with gzip.open(path, "wt", encoding="utf-8", compresslevel=9) as f:
         json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
 
 def finalize_row(key, g, fields, agg_keys):
@@ -512,8 +515,8 @@ def process_level(level_cfg, ant_rules):
         # Split File
         if level_cfg["split_by"]:
             rows = [finalize_row(k, v, fields, current_agg_keys) for k, v in prov_agg.items()]
-            fname = slug(p_name) + ".json"
-            write_json(split_dir / fname, rows)
+            fname = slug(p_name) + ".json.gz"
+            write_json_gz(split_dir / fname, rows)
             manifest[p_name] = fname
             rows = None # Free
             
@@ -526,25 +529,29 @@ def process_level(level_cfg, ant_rules):
                 ym = d_key.get("_YM", "")
                 if entity and ym:
                     hm_data[entity][ym] = 1 if g["rap"] > 0 else 0
-            fname = slug(p_name) + ".json"
-            write_json(hm_dir / fname, hm_data)
+            fname = slug(p_name) + ".json.gz"
+            write_json_gz(hm_dir / fname, hm_data)
             hm_manifest[p_name] = fname
             hm_data = None # Free
             
         # CLEAR Provincial Memory
         del agg_by_prov[p_name]
     
-    if level_cfg["split_by"]: write_json(split_dir / "manifest.json", manifest)
-    if level_cfg["has_heatmap"]: write_json(hm_dir / "manifest.json", hm_manifest)
+    if level_cfg["split_by"]: write_json_gz(split_dir / "manifest.json", manifest)
+    if level_cfg["has_heatmap"]: write_json_gz(hm_dir / "manifest.json", hm_manifest)
     
     # Finalize ZS and Prov global files
     print(f"  Writing global files...")
     zs_final = [finalize_row(k, v, ["_Province", "_ZS", "_Antenne", "_YM"], current_agg_keys) for k, v in agg_zs.items()]
     prov_final = [finalize_row(k, v, ["_Province", "_YM"], current_agg_keys) for k, v in agg_prov.items()]
-    write_json(dash_dir / "by_province.json", prov_final)
-    write_json(dash_dir / "by_zs.json", zs_final)
+    write_json_gz(dash_dir / "by_province.json", prov_final)
+    write_json_gz(dash_dir / "by_zs.json", zs_final)
     
-    # Write Meta
+    # Write Meta (keep meta.json plain as it's very small and used for initial load)
+    def write_json_plain(path, data):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+    
     meta = {
         "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         "total_records": total_records,
@@ -554,7 +561,7 @@ def process_level(level_cfg, ant_rules):
         "months": sorted(list(all_months)),
         "include_pop": include_pop
     }
-    write_json(dash_dir / "meta.json", meta)
+    write_json_plain(dash_dir / "meta.json", meta)
     print(f"✅ Level {name} complete.")
 
 # ── Entry Point ──
