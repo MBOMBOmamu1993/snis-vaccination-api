@@ -888,9 +888,9 @@
             cascaded: { antenne: [], zs: [], as: [], fosa: [] },
             loaded: false, meta: null,
             hmIndex: {}, hmCache: {}, heatmap: {},
-            fosaIndex: {}, fosaCache: {}, fosaData: [],
-            asIndex: {}, asCache: {}, asData: [],
-            zsData: []
+            fosaIndex: {}, fosaCache: {}, fosaTCache: {}, fosaData: [],
+            asIndex: {}, asCache: {}, asTCache: {}, asData: [],
+            zsFiltCache: {}, zsData: []
         };
 
         /* ═══ HELPERS ═══ */
@@ -1027,6 +1027,7 @@
                 S.fosaIndex = fosaR;
                 S.asIndex = asR;
                 S.hmCache = {}; S.fosaCache = {}; S.asCache = {};
+                S.fosaTCache = {}; S.asTCache = {}; S.zsFiltCache = {};
 
                 sp(55, 'Transformation ZS...');
                 S.zsData = byZS.map(transformRecord);
@@ -1089,17 +1090,27 @@
             }
             if (promises.length) await Promise.all(promises);
 
-            /* Construire fosaData et asData pour cette province */
-            S.fosaData = []; S.asData = [];
-            var fd = S.fosaCache[prov];
-            if (fd && fd.length) fd.forEach(function (r) { S.fosaData.push(transformRecord(r)); });
-            var ad = S.asCache[prov];
-            if (ad && ad.length) ad.forEach(function (r) { S.asData.push(transformRecord(r)); });
+            /* Construire fosaData et asData pour cette province (avec cache transformé) */
+            if (!S.fosaTCache[prov]) {
+                var fd = S.fosaCache[prov];
+                S.fosaTCache[prov] = (fd && fd.length) ? fd.map(transformRecord) : [];
+            }
+            if (!S.asTCache[prov]) {
+                var ad = S.asCache[prov];
+                S.asTCache[prov] = (ad && ad.length) ? ad.map(transformRecord) : [];
+            }
+            S.fosaData = S.fosaTCache[prov];
+            S.asData = S.asTCache[prov];
 
             /* Utiliser le niveau le plus fin disponible */
             if (S.fosaData.length) S.data = S.fosaData;
             else if (S.asData.length) S.data = S.asData;
-            else S.data = S.zsData.filter(function (r) { return r.org2 === prov; });
+            else {
+                if (!S.zsFiltCache[prov]) {
+                    S.zsFiltCache[prov] = S.zsData.filter(function (r) { return r.org2 === prov; });
+                }
+                S.data = S.zsFiltCache[prov];
+            }
 
             console.log('Province ' + prov + ': FOSA=' + S.fosaData.length + ' AS=' + S.asData.length + ' ZS=' + S.data.length);
         }
