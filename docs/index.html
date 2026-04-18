@@ -917,10 +917,7 @@
         }
         function mL(ym) { if (!ym || ym.length < 6) return ym || ''; var n = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']; return n[parseInt(ym.substr(4, 2), 10) - 1] + ' ' + ym.substr(0, 4); }
         function grp(a, fn) { var g = {}; a.forEach(function (r) { var k = fn(r) || '_'; if (!g[k]) g[k] = []; g[k].push(r); }); return g; }
-        function sf(a, f) {
-            var field = AG_FIELD_MAP[f] || f;
-            return a.reduce(function (s, r) { return s + (Number(r[field]) || 0); }, 0);
-        }
+        function sf(a, f) { return a.reduce(function (s, r) { return s + (Number(r[f]) || 0); }, 0); }
         function af(a, f) { return a.length ? sf(a, f) / a.length : 0; }
         function uv(a, fn) { var s = {}, r = []; a.forEach(function (x) { var v = fn(x); if (v && !s[v]) { s[v] = 1; r.push(v); } }); return r.sort(); }
         function pct(n, d) { return d ? (n / d * 100) : 0; }
