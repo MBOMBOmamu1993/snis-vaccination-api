@@ -3259,12 +3259,12 @@
                 var stk = sf(D, p + '_stock_d_but');
                 var rcv = sf(D, p + '_re_ues');
                 var used = sf(D, p + '_utilis_es');
-                var admin = item.vacs ? item.vacs.reduce(function (s, v) { return s + sf(D, v); }, 0) : sf(D, p + '_administr_es');
+                var admin = sf(D, p + '_administr_es'); // Fixed: use standardized logistical administr_es key
                 var perdu = sf(D, p + '_pertes');
                 var denom = (admin || 0) + (perdu || 0);
                 var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
                 var jrs = sf(D, p + '_jours_rupture');
-                var sdu = sf(D, p + '_stock_fin');
+                var sdu = sf(D, p + '_stock_fin'); // SDU = Stock Fin
                 var smax = sf(D, p + '_stock_max');
                 var qcmd = sf(D, p + '_qte_a_commander');
                 var cmm = sf(D, p + '_cmm');
