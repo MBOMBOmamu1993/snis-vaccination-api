@@ -16,10 +16,10 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # ============================================================
-# 1) CONFIG: COLLE/EDITE ICI
+# 1) CONFIG: AJOUTE TES INDICATEURS ICI
 # ============================================================
 
-# (A) ✅ AJOUTE TES INDICATEURS ICI (séparés par ;)
+# (A) AJOUTE ICI TON DX_LIST COMPLET
 # Exemple:
 # DX_LIST = "dx1;dx2;dx3"
 DX_LIST = """
@@ -487,7 +487,7 @@ RENAME_MAP: Dict[str, str] = {
     "bZDbSvdUcPC": "Td 4",
     "lXsTq1MDSv": "Td 5",
 
-         # ============================================
+    # ============================================
     # LOGISTIQUES - RENAME MAP
     # ============================================
     "uAWIVDnGPGH.dxDQKDcTn6Z": "DTC dose-administree",
@@ -498,6 +498,11 @@ RENAME_MAP: Dict[str, str] = {
     "uAWIVDnGPGH.pdKyvaYRqCj": "DTC dose-utilisee",
     "uAWIVDnGPGH.kOWsLrtvrhn": "DTC dose-stock disponible utilisable",
     "uAWIVDnGPGH.mZLRF4eSPIk": "DTC dose-sortie",
+    "uAWIVDnGPGH.Lpu56KTyGvy": "DTC Stock Max",
+    "uAWIVDnGPGH.ddJmZUacsvQ": "DTC Qté à commander",
+    "uAWIVDnGPGH.t5L9ODSuYOG": "DTC CMM",
+    "uAWIVDnGPGH.pGSfKOKL9s0": "DTC Adjustment",
+    "uAWIVDnGPGH.jpmZl19SSta": "DTC MSD",
 
     "l1bhrYUPsde.dxDQKDcTn6Z": "BCG dose-administree",
     "l1bhrYUPsde.XEN3ucCGa07": "BCG dose-jour rupture stock",
@@ -507,6 +512,11 @@ RENAME_MAP: Dict[str, str] = {
     "l1bhrYUPsde.pdKyvaYRqCj": "BCG dose-utilisee",
     "l1bhrYUPsde.kOWsLrtvrhn": "BCG dose-stock disponible utilisable",
     "l1bhrYUPsde.mZLRF4eSPIk": "BCG dose-sortie",
+    "l1bhrYUPsde.Lpu56KTyGvy": "BCG Stock Max",
+    "l1bhrYUPsde.ddJmZUacsvQ": "BCG Qté à commander",
+    "l1bhrYUPsde.t5L9ODSuYOG": "BCG CMM",
+    "l1bhrYUPsde.pGSfKOKL9s0": "BCG Adjustment",
+    "l1bhrYUPsde.jpmZl19SSta": "BCG MSD",
 
     "Hjlw6DpooIo.dxDQKDcTn6Z": "VAR dose-administree",
     "Hjlw6DpooIo.XEN3ucCGa07": "VAR dose-jour rupture stock",
@@ -516,6 +526,11 @@ RENAME_MAP: Dict[str, str] = {
     "Hjlw6DpooIo.pdKyvaYRqCj": "VAR dose-utilisee",
     "Hjlw6DpooIo.kOWsLrtvrhn": "VAR dose-stock disponible utilisable",
     "Hjlw6DpooIo.mZLRF4eSPIk": "VAR dose-sortie",
+    "Hjlw6DpooIo.Lpu56KTyGvy": "VAR Stock Max",
+    "Hjlw6DpooIo.ddJmZUacsvQ": "VAR Qté à commander",
+    "Hjlw6DpooIo.t5L9ODSuYOG": "VAR CMM",
+    "Hjlw6DpooIo.pGSfKOKL9s0": "VAR Adjustment",
+    "Hjlw6DpooIo.jpmZl19SSta": "VAR MSD",
 
     "BCXcLiQNI8M.dxDQKDcTn6Z": "VPO dose-administree",
     "BCXcLiQNI8M.XEN3ucCGa07": "VPO dose-jour rupture stock",
@@ -525,6 +540,11 @@ RENAME_MAP: Dict[str, str] = {
     "BCXcLiQNI8M.pdKyvaYRqCj": "VPO dose-utilisee",
     "BCXcLiQNI8M.kOWsLrtvrhn": "VPO dose-stock disponible utilisable",
     "BCXcLiQNI8M.mZLRF4eSPIk": "VPO dose-sortie",
+    "BCXcLiQNI8M.Lpu56KTyGvy": "VPO Stock Max",
+    "BCXcLiQNI8M.ddJmZUacsvQ": "VPO Qté à commander",
+    "BCXcLiQNI8M.t5L9ODSuYOG": "VPO CMM",
+    "BCXcLiQNI8M.pGSfKOKL9s0": "VPO Adjustment",
+    "BCXcLiQNI8M.jpmZl19SSta": "VPO MSD",
 
     "IisI6JudbS8.dxDQKDcTn6Z": "VPI dose-administree",
     "IisI6JudbS8.XEN3ucCGa07": "VPI dose-jour rupture stock",
@@ -534,6 +554,11 @@ RENAME_MAP: Dict[str, str] = {
     "IisI6JudbS8.pdKyvaYRqCj": "VPI dose-utilisee",
     "IisI6JudbS8.mZLRF4eSPIk": "VPI dose-sortie",
     "IisI6JudbS8.kOWsLrtvrhn": "VPI dose-stock disponible utilisable",
+    "IisI6JudbS8.Lpu56KTyGvy": "VPI Stock Max",
+    "IisI6JudbS8.ddJmZUacsvQ": "VPI Qté à commander",
+    "IisI6JudbS8.t5L9ODSuYOG": "VPI CMM",
+    "IisI6JudbS8.pGSfKOKL9s0": "VPI Adjustment",
+    "IisI6JudbS8.jpmZl19SSta": "VPI MSD",
 
     "vrTdwvAQSUc.dxDQKDcTn6Z": "VAA dose-administree",
     "vrTdwvAQSUc.XEN3ucCGa07": "VAA dose-jour rupture stock",
@@ -543,6 +568,11 @@ RENAME_MAP: Dict[str, str] = {
     "vrTdwvAQSUc.pdKyvaYRqCj": "VAA dose-utilisee",
     "vrTdwvAQSUc.kOWsLrtvrhn": "VAA dose-stock disponible utilisable",
     "vrTdwvAQSUc.mZLRF4eSPIk": "VAA dose-sortie",
+    "vrTdwvAQSUc.Lpu56KTyGvy": "VAA Stock Max",
+    "vrTdwvAQSUc.ddJmZUacsvQ": "VAA Qté à commander",
+    "vrTdwvAQSUc.t5L9ODSuYOG": "VAA CMM",
+    "vrTdwvAQSUc.pGSfKOKL9s0": "VAA Adjustment",
+    "vrTdwvAQSUc.jpmZl19SSta": "VAA MSD",
 
     "iFMn6ceqdIN.dxDQKDcTn6Z": "VAT dose-administree",
     "iFMn6ceqdIN.XEN3ucCGa07": "VAT dose-jour rupture stock",
@@ -552,6 +582,11 @@ RENAME_MAP: Dict[str, str] = {
     "iFMn6ceqdIN.pdKyvaYRqCj": "VAT dose-utilisee",
     "iFMn6ceqdIN.kOWsLrtvrhn": "VAT dose-stock disponible utilisable",
     "iFMn6ceqdIN.mZLRF4eSPIk": "VAT dose-sortie",
+    "iFMn6ceqdIN.Lpu56KTyGvy": "VAT Stock Max",
+    "iFMn6ceqdIN.ddJmZUacsvQ": "VAT Qté à commander",
+    "iFMn6ceqdIN.t5L9ODSuYOG": "VAT CMM",
+    "iFMn6ceqdIN.pGSfKOKL9s0": "VAT Adjustment",
+    "iFMn6ceqdIN.jpmZl19SSta": "VAT MSD",
 
     "hqqlXMmY95c.dxDQKDcTn6Z": "PCV13 dose-administree",
     "hqqlXMmY95c.XEN3ucCGa07": "PCV13 dose-jour rupture stock",
@@ -560,6 +595,11 @@ RENAME_MAP: Dict[str, str] = {
     "hqqlXMmY95c.GSCwhT2SCCr": "PCV13 dose-stock debut mois",
     "hqqlXMmY95c.pdKyvaYRqCj": "PCV13 dose-utilisee",
     "hqqlXMmY95c.kOWsLrtvrhn": "PCV13 dose-stock disponible utilisable",
+    "hqqlXMmY95c.Lpu56KTyGvy": "PCV13 Stock Max",
+    "hqqlXMmY95c.ddJmZUacsvQ": "PCV13 Qté à commander",
+    "hqqlXMmY95c.t5L9ODSuYOG": "PCV13 CMM",
+    "hqqlXMmY95c.pGSfKOKL9s0": "PCV13 Adjustment",
+    "hqqlXMmY95c.jpmZl19SSta": "PCV13 MSD",
 
     "MJrLCya7qzt.dxDQKDcTn6Z": "ROTA dose-administree",
     "MJrLCya7qzt.XEN3ucCGa07": "ROTA dose-jour rupture stock",
@@ -568,6 +608,11 @@ RENAME_MAP: Dict[str, str] = {
     "MJrLCya7qzt.GSCwhT2SCCr": "ROTA dose-stock debut mois",
     "MJrLCya7qzt.pdKyvaYRqCj": "ROTA dose-utilisee",
     "MJrLCya7qzt.kOWsLrtvrhn": "ROTA dose-stock disponible utilisable",
+    "MJrLCya7qzt.Lpu56KTyGvy": "ROTA Stock Max",
+    "MJrLCya7qzt.ddJmZUacsvQ": "ROTA Qté à commander",
+    "MJrLCya7qzt.t5L9ODSuYOG": "ROTA CMM",
+    "MJrLCya7qzt.pGSfKOKL9s0": "ROTA Adjustment",
+    "MJrLCya7qzt.jpmZl19SSta": "ROTA MSD",
 
     "RYaAzE1eqya.dxDQKDcTn6Z": "VAP dose-administree",
     "RYaAzE1eqya.XEN3ucCGa07": "VAP dose-jour rupture stock",
@@ -576,6 +621,11 @@ RENAME_MAP: Dict[str, str] = {
     "RYaAzE1eqya.GSCwhT2SCCr": "VAP dose-stock debut mois",
     "RYaAzE1eqya.pdKyvaYRqCj": "VAP dose-utilisee",
     "RYaAzE1eqya.kOWsLrtvrhn": "VAP dose-stock disponible utilisable",
+    "RYaAzE1eqya.Lpu56KTyGvy": "VAP Stock Max",
+    "RYaAzE1eqya.ddJmZUacsvQ": "VAP Qté à commander",
+    "RYaAzE1eqya.t5L9ODSuYOG": "VAP CMM",
+    "RYaAzE1eqya.pGSfKOKL9s0": "VAP Adjustment",
+    "RYaAzE1eqya.jpmZl19SSta": "VAP MSD",
 
     "BfoCv6bUeBk.dxDQKDcTn6Z": "HPV dose-administree",
     "BfoCv6bUeBk.XEN3ucCGa07": "HPV dose-jour rupture stock",
@@ -584,6 +634,11 @@ RENAME_MAP: Dict[str, str] = {
     "BfoCv6bUeBk.GSCwhT2SCCr": "HPV dose-stock debut mois",
     "BfoCv6bUeBk.pdKyvaYRqCj": "HPV dose-utilisee",
     "BfoCv6bUeBk.kOWsLrtvrhn": "HPV dose-stock disponible utilisable",
+    "BfoCv6bUeBk.Lpu56KTyGvy": "HPV Stock Max",
+    "BfoCv6bUeBk.ddJmZUacsvQ": "HPV Qté à commander",
+    "BfoCv6bUeBk.t5L9ODSuYOG": "HPV CMM",
+    "BfoCv6bUeBk.pGSfKOKL9s0": "HPV Adjustment",
+    "BfoCv6bUeBk.jpmZl19SSta": "HPV MSD",
 
     "laQa8YfpVrp.dxDQKDcTn6Z": "Diluant_BCG dose-administree",
     "laQa8YfpVrp.XEN3ucCGa07": "Diluant_BCG dose-jour rupture stock",
@@ -592,6 +647,11 @@ RENAME_MAP: Dict[str, str] = {
     "laQa8YfpVrp.GSCwhT2SCCr": "Diluant_BCG dose-stock debut mois",
     "laQa8YfpVrp.pdKyvaYRqCj": "Diluant_BCG dose-utilisee",
     "laQa8YfpVrp.kOWsLrtvrhn": "Diluant_BCG dose-stock disponible utilisable",
+    "laQa8YfpVrp.Lpu56KTyGvy": "Diluant_BCG Stock Max",
+    "laQa8YfpVrp.ddJmZUacsvQ": "Diluant_BCG qte a commander",
+    "laQa8YfpVrp.t5L9ODSuYOG": "Diluant_BCG cmm",
+    "laQa8YfpVrp.pGSfKOKL9s0": "Diluant_BCG ajustement",
+    "laQa8YfpVrp.jpmZl19SSta": "Diluant_BCG msd",
 
     "nnSKbBscmxH.dxDQKDcTn6Z": "Diluant_VAR dose-administree",
     "nnSKbBscmxH.XEN3ucCGa07": "Diluant_VAR dose-jour rupture stock",
@@ -600,6 +660,11 @@ RENAME_MAP: Dict[str, str] = {
     "nnSKbBscmxH.GSCwhT2SCCr": "Diluant_VAR dose-stock debut mois",
     "nnSKbBscmxH.pdKyvaYRqCj": "Diluant_VAR dose-utilisee",
     "nnSKbBscmxH.kOWsLrtvrhn": "Diluant_VAR dose-stock disponible utilisable",
+    "nnSKbBscmxH.Lpu56KTyGvy": "Diluant_VAR Stock Max",
+    "nnSKbBscmxH.ddJmZUacsvQ": "Diluant_VAR qte a commander",
+    "nnSKbBscmxH.t5L9ODSuYOG": "Diluant_VAR cmm",
+    "nnSKbBscmxH.pGSfKOKL9s0": "Diluant_VAR ajustement",
+    "nnSKbBscmxH.jpmZl19SSta": "Diluant_VAR msd",
 
     "fQfJhi742vt.dxDQKDcTn6Z": "Diluant_VAA dose-administree",
     "fQfJhi742vt.XEN3ucCGa07": "Diluant_VAA dose-jour rupture stock",
@@ -608,6 +673,11 @@ RENAME_MAP: Dict[str, str] = {
     "fQfJhi742vt.GSCwhT2SCCr": "Diluant_VAA dose-stock debut mois",
     "fQfJhi742vt.pdKyvaYRqCj": "Diluant_VAA dose-utilisee",
     "fQfJhi742vt.kOWsLrtvrhn": "Diluant_VAA dose-stock disponible utilisable",
+    "fQfJhi742vt.Lpu56KTyGvy": "Diluant_VAA Stock Max",
+    "fQfJhi742vt.ddJmZUacsvQ": "Diluant_VAA qte a commander",
+    "fQfJhi742vt.t5L9ODSuYOG": "Diluant_VAA cmm",
+    "fQfJhi742vt.pGSfKOKL9s0": "Diluant_VAA ajustement",
+    "fQfJhi742vt.jpmZl19SSta": "Diluant_VAA msd",
 
     "bwUoJJgDst9.dxDQKDcTn6Z": "SAB_005ml dose-administree",
     "bwUoJJgDst9.XEN3ucCGa07": "SAB_005ml dose-jour rupture stock",
@@ -616,6 +686,11 @@ RENAME_MAP: Dict[str, str] = {
     "bwUoJJgDst9.GSCwhT2SCCr": "SAB_005ml dose-stock debut mois",
     "bwUoJJgDst9.pdKyvaYRqCj": "SAB_005ml dose-utilisee",
     "bwUoJJgDst9.kOWsLrtvrhn": "SAB_005ml dose-stock disponible utilisable",
+    "bwUoJJgDst9.Lpu56KTyGvy": "SAB_005ml Stock Max",
+    "bwUoJJgDst9.ddJmZUacsvQ": "SAB_005ml qte a commander",
+    "bwUoJJgDst9.t5L9ODSuYOG": "SAB_005ml cmm",
+    "bwUoJJgDst9.pGSfKOKL9s0": "SAB_005ml ajustement",
+    "bwUoJJgDst9.jpmZl19SSta": "SAB_005ml msd",
 
     "blfdHcia9nP.dxDQKDcTn6Z": "SAB_05ml dose-administree",
     "blfdHcia9nP.XEN3ucCGa07": "SAB_05ml dose-jour rupture stock",
@@ -624,14 +699,11 @@ RENAME_MAP: Dict[str, str] = {
     "blfdHcia9nP.GSCwhT2SCCr": "SAB_05ml dose-stock debut mois",
     "blfdHcia9nP.pdKyvaYRqCj": "SAB_05ml dose-utilisee",
     "blfdHcia9nP.kOWsLrtvrhn": "SAB_05ml dose-stock disponible utilisable",
-
-    "ZMcyV45XAkW.dxDQKDcTn6Z": "SAB_auto_bloquante dose-administree",
-    "ZMcyV45XAkW.XEN3ucCGa07": "SAB_auto_bloquante dose-jour rupture stock",
-    "ZMcyV45XAkW.J8mw9rFkY4v": "SAB_auto_bloquante dose-perdue",
-    "ZMcyV45XAkW.WZwmzIuRvwV": "SAB_auto_bloquante dose-recue mois",
-    "ZMcyV45XAkW.GSCwhT2SCCr": "SAB_auto_bloquante dose-stock debut mois",
-    "ZMcyV45XAkW.pdKyvaYRqCj": "SAB_auto_bloquante dose-utilisee",
-    "ZMcyV45XAkW.kOWsLrtvrhn": "SAB_auto_bloquante dose-stock disponible utilisable",
+    "blfdHcia9nP.Lpu56KTyGvy": "SAB_05ml Stock Max",
+    "blfdHcia9nP.ddJmZUacsvQ": "SAB_05ml qte a commander",
+    "blfdHcia9nP.t5L9ODSuYOG": "SAB_05ml cmm",
+    "blfdHcia9nP.pGSfKOKL9s0": "SAB_05ml ajustement",
+    "blfdHcia9nP.jpmZl19SSta": "SAB_05ml msd",
 
     "bqJvWJtJwtK.dxDQKDcTn6Z": "Ser_dilution_2ml dose-administree",
     "bqJvWJtJwtK.XEN3ucCGa07": "Ser_dilution_2ml dose-jour rupture stock",
@@ -640,6 +712,11 @@ RENAME_MAP: Dict[str, str] = {
     "bqJvWJtJwtK.GSCwhT2SCCr": "Ser_dilution_2ml dose-stock debut mois",
     "bqJvWJtJwtK.pdKyvaYRqCj": "Ser_dilution_2ml dose-utilisee",
     "bqJvWJtJwtK.kOWsLrtvrhn": "Ser_dilution_2ml dose-stock disponible utilisable",
+    "bqJvWJtJwtK.Lpu56KTyGvy": "Ser_dilution_2ml Stock Max",
+    "bqJvWJtJwtK.ddJmZUacsvQ": "Ser_dilution_2ml qte a commander",
+    "bqJvWJtJwtK.t5L9ODSuYOG": "Ser_dilution_2ml cmm",
+    "bqJvWJtJwtK.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
+    "bqJvWJtJwtK.jpmZl19SSta": "Ser_dilution_2ml msd",
 
     "DNZEo533IMh.dxDQKDcTn6Z": "Ser_dilution_5ml dose-administree",
     "DNZEo533IMh.XEN3ucCGa07": "Ser_dilution_5ml dose-jour rupture stock",
@@ -648,255 +725,11 @@ RENAME_MAP: Dict[str, str] = {
     "DNZEo533IMh.GSCwhT2SCCr": "Ser_dilution_5ml dose-stock debut mois",
     "DNZEo533IMh.pdKyvaYRqCj": "Ser_dilution_5ml dose-utilisee",
     "DNZEo533IMh.kOWsLrtvrhn": "Ser_dilution_5ml dose-stock disponible utilisable",
-
-    "gzPW3f2ijo5.dxDQKDcTn6Z": "Ser_dilution_6ml dose-administree",
-    "gzPW3f2ijo5.XEN3ucCGa07": "Ser_dilution_6ml dose-jour rupture stock",
-    "gzPW3f2ijo5.J8mw9rFkY4v": "Ser_dilution_6ml dose-perdue",
-    "gzPW3f2ijo5.WZwmzIuRvwV": "Ser_dilution_6ml dose-recue mois",
-    "gzPW3f2ijo5.GSCwhT2SCCr": "Ser_dilution_6ml dose-stock debut mois",
-    "gzPW3f2ijo5.pdKyvaYRqCj": "Ser_dilution_6ml dose-utilisee",
-    "gzPW3f2ijo5.kOWsLrtvrhn": "Ser_dilution_6ml dose-stock disponible utilisable",
-
-    "tmp1zLSXw0Q.dxDQKDcTn6Z": "Adaptateurs dose-administree",
-    "tmp1zLSXw0Q.XEN3ucCGa07": "Adaptateurs dose-jour rupture stock",
-    "tmp1zLSXw0Q.J8mw9rFkY4v": "Adaptateurs dose-perdue",
-    "tmp1zLSXw0Q.WZwmzIuRvwV": "Adaptateurs dose-recue mois",
-    "tmp1zLSXw0Q.GSCwhT2SCCr": "Adaptateurs dose-stock debut mois",
-    "tmp1zLSXw0Q.pdKyvaYRqCj": "Adaptateurs dose-utilisee",
-    "tmp1zLSXw0Q.kOWsLrtvrhn": "Adaptateurs dose-stock disponible utilisable",
-
-    "jJUIodWQH0T.dxDQKDcTn6Z": "Compte_goutte dose-administree",
-    "jJUIodWQH0T.XEN3ucCGa07": "Compte_goutte dose-jour rupture stock",
-    "jJUIodWQH0T.J8mw9rFkY4v": "Compte_goutte dose-perdue",
-    "jJUIodWQH0T.WZwmzIuRvwV": "Compte_goutte dose-recue mois",
-    "jJUIodWQH0T.GSCwhT2SCCr": "Compte_goutte dose-stock debut mois",
-    "jJUIodWQH0T.pdKyvaYRqCj": "Compte_goutte dose-utilisee",
-    "jJUIodWQH0T.kOWsLrtvrhn": "Compte_goutte dose-stock disponible utilisable",
-
-    "K8Yt0p1z21M.dxDQKDcTn6Z": "R_ceptacles dose-administree",
-    "K8Yt0p1z21M.XEN3ucCGa07": "R_ceptacles dose-jour rupture stock",
-    "K8Yt0p1z21M.J8mw9rFkY4v": "R_ceptacles dose-perdue",
-    "K8Yt0p1z21M.WZwmzIuRvwV": "R_ceptacles dose-recue mois",
-    "K8Yt0p1z21M.GSCwhT2SCCr": "R_ceptacles dose-stock debut mois",
-    "K8Yt0p1z21M.pdKyvaYRqCj": "R_ceptacles dose-utilisee",
-    "K8Yt0p1z21M.kOWsLrtvrhn": "R_ceptacles dose-stock disponible utilisable",
-
-
-    # Nouvelles variables logistiques
-    "uAWIVDnGPGH.Lpu56KTyGvy": "DTC Stock Max",
-    "uAWIVDnGPGH.ddJmZUacsvQ": "DTC Qté à commander",
-    "uAWIVDnGPGH.t5L9ODSuYOG": "DTC CMM",
-    "uAWIVDnGPGH.pGSfKOKL9s0": "DTC Adjustment",
-    "uAWIVDnGPGH.jpmZl19SSta": "DTC MSD",
-    "l1bhrYUPsde.Lpu56KTyGvy": "BCG Stock Max",
-    "l1bhrYUPsde.ddJmZUacsvQ": "BCG Qté à commander",
-    "l1bhrYUPsde.t5L9ODSuYOG": "BCG CMM",
-    "l1bhrYUPsde.pGSfKOKL9s0": "BCG Adjustment",
-    "l1bhrYUPsde.jpmZl19SSta": "BCG MSD",
-    "Hjlw6DpooIo.Lpu56KTyGvy": "VAR Stock Max",
-    "Hjlw6DpooIo.ddJmZUacsvQ": "VAR Qté à commander",
-    "Hjlw6DpooIo.t5L9ODSuYOG": "VAR CMM",
-    "Hjlw6DpooIo.pGSfKOKL9s0": "VAR Adjustment",
-    "Hjlw6DpooIo.jpmZl19SSta": "VAR MSD",
-    "BCXcLiQNI8M.Lpu56KTyGvy": "VPO Stock Max",
-    "BCXcLiQNI8M.ddJmZUacsvQ": "VPO Qté à commander",
-    "BCXcLiQNI8M.t5L9ODSuYOG": "VPO CMM",
-    "BCXcLiQNI8M.pGSfKOKL9s0": "VPO Adjustment",
-    "BCXcLiQNI8M.jpmZl19SSta": "VPO MSD",
-    "IisI6JudbS8.Lpu56KTyGvy": "VPI Stock Max",
-    "IisI6JudbS8.ddJmZUacsvQ": "VPI Qté à commander",
-    "IisI6JudbS8.t5L9ODSuYOG": "VPI CMM",
-    "IisI6JudbS8.pGSfKOKL9s0": "VPI Adjustment",
-    "IisI6JudbS8.jpmZl19SSta": "VPI MSD",
-    "vrTdwvAQSUc.Lpu56KTyGvy": "VAA Stock Max",
-    "vrTdwvAQSUc.ddJmZUacsvQ": "VAA Qté à commander",
-    "vrTdwvAQSUc.t5L9ODSuYOG": "VAA CMM",
-    "vrTdwvAQSUc.pGSfKOKL9s0": "VAA Adjustment",
-    "vrTdwvAQSUc.jpmZl19SSta": "VAA MSD",
-    "iFMn6ceqdIN.Lpu56KTyGvy": "VAT Stock Max",
-    "iFMn6ceqdIN.ddJmZUacsvQ": "VAT Qté à commander",
-    "iFMn6ceqdIN.t5L9ODSuYOG": "VAT CMM",
-    "iFMn6ceqdIN.pGSfKOKL9s0": "VAT Adjustment",
-    "iFMn6ceqdIN.jpmZl19SSta": "VAT MSD",
-    "hqqlXMmY95c.Lpu56KTyGvy": "PCV13 Stock Max",
-    "hqqlXMmY95c.ddJmZUacsvQ": "PCV13 Qté à commander",
-    "hqqlXMmY95c.t5L9ODSuYOG": "PCV13 CMM",
-    "hqqlXMmY95c.pGSfKOKL9s0": "PCV13 Adjustment",
-    "hqqlXMmY95c.jpmZl19SSta": "PCV13 MSD",
-    "MJrLCya7qzt.Lpu56KTyGvy": "ROTA Stock Max",
-    "MJrLCya7qzt.ddJmZUacsvQ": "ROTA Qté à commander",
-    "MJrLCya7qzt.t5L9ODSuYOG": "ROTA CMM",
-    "MJrLCya7qzt.pGSfKOKL9s0": "ROTA Adjustment",
-    "MJrLCya7qzt.jpmZl19SSta": "ROTA MSD",
-    "RYaAzE1eqya.Lpu56KTyGvy": "VAP Stock Max",
-    "RYaAzE1eqya.ddJmZUacsvQ": "VAP Qté à commander",
-    "RYaAzE1eqya.t5L9ODSuYOG": "VAP CMM",
-    "RYaAzE1eqya.pGSfKOKL9s0": "VAP Adjustment",
-    "RYaAzE1eqya.jpmZl19SSta": "VAP MSD",
-    "BfoCv6bUeBk.Lpu56KTyGvy": "HPV Stock Max",
-    "BfoCv6bUeBk.ddJmZUacsvQ": "HPV Qté à commander",
-    "BfoCv6bUeBk.t5L9ODSuYOG": "HPV CMM",
-    "BfoCv6bUeBk.pGSfKOKL9s0": "HPV Adjustment",
-    "BfoCv6bUeBk.jpmZl19SSta": "HPV MSD",
-    "laQa8YfpVrp.Lpu56KTyGvy": "Diluant_BCG Stock Max",
-    "laQa8YfpVrp.ddJmZUacsvQ": "Diluant_BCG qte a commander",
-    "laQa8YfpVrp.t5L9ODSuYOG": "Diluant_BCG cmm",
-    "laQa8YfpVrp.pGSfKOKL9s0": "Diluant_BCG ajustement",
-    "laQa8YfpVrp.jpmZl19SSta": "Diluant_BCG msd",
-    "nnSKbBscmxH.Lpu56KTyGvy": "Diluant_VAR Stock Max",
-    "nnSKbBscmxH.ddJmZUacsvQ": "Diluant_VAR qte a commander",
-    "nnSKbBscmxH.t5L9ODSuYOG": "Diluant_VAR cmm",
-    "nnSKbBscmxH.pGSfKOKL9s0": "Diluant_VAR ajustement",
-    "nnSKbBscmxH.jpmZl19SSta": "Diluant_VAR msd",
-    "fQfJhi742vt.Lpu56KTyGvy": "Diluant_VAA Stock Max",
-    "fQfJhi742vt.ddJmZUacsvQ": "Diluant_VAA qte a commander",
-    "fQfJhi742vt.t5L9ODSuYOG": "Diluant_VAA cmm",
-    "fQfJhi742vt.pGSfKOKL9s0": "Diluant_VAA ajustement",
-    "fQfJhi742vt.jpmZl19SSta": "Diluant_VAA msd",
-    "bwUoJJgDst9.Lpu56KTyGvy": "SAB_005ml Stock Max",
-    "bwUoJJgDst9.ddJmZUacsvQ": "SAB_005ml qte a commander",
-    "bwUoJJgDst9.t5L9ODSuYOG": "SAB_005ml cmm",
-    "bwUoJJgDst9.pGSfKOKL9s0": "SAB_005ml ajustement",
-    "bwUoJJgDst9.jpmZl19SSta": "SAB_005ml msd",
-    "blfdHcia9nP.Lpu56KTyGvy": "SAB_05ml Stock Max",
-    "blfdHcia9nP.ddJmZUacsvQ": "SAB_05ml qte a commander",
-    "blfdHcia9nP.t5L9ODSuYOG": "SAB_05ml cmm",
-    "blfdHcia9nP.pGSfKOKL9s0": "SAB_05ml ajustement",
-    "blfdHcia9nP.jpmZl19SSta": "SAB_05ml msd",
-    "bqJvWJtJwtK.Lpu56KTyGvy": "Ser_dilution_2ml Stock Max",
-    "bqJvWJtJwtK.ddJmZUacsvQ": "Ser_dilution_2ml qte a commander",
-    "bqJvWJtJwtK.t5L9ODSuYOG": "Ser_dilution_2ml cmm",
-    "bqJvWJtJwtK.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
-    "bqJvWJtJwtK.jpmZl19SSta": "Ser_dilution_2ml msd",
     "DNZEo533IMh.Lpu56KTyGvy": "Ser_dilution_5ml Stock Max",
     "DNZEo533IMh.ddJmZUacsvQ": "Ser_dilution_5ml qte a commander",
     "DNZEo533IMh.t5L9ODSuYOG": "Ser_dilution_5ml cmm",
     "DNZEo533IMh.pGSfKOKL9s0": "Ser_dilution_5ml ajustement",
     "DNZEo533IMh.jpmZl19SSta": "Ser_dilution_5ml msd",
-    "ZMcyV45XAkW.Lpu56KTyGvy": "SAB_auto_bloquante Stock Max",
-    "ZMcyV45XAkW.ddJmZUacsvQ": "SAB_auto_bloquante qte a commander",
-    "ZMcyV45XAkW.t5L9ODSuYOG": "SAB_auto_bloquante cmm",
-    "ZMcyV45XAkW.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
-    "ZMcyV45XAkW.jpmZl19SSta": "SAB_auto_bloquante msd",
-    "gzPW3f2ijo5.Lpu56KTyGvy": "Ser_dilution_6ml Stock Max",
-    "gzPW3f2ijo5.ddJmZUacsvQ": "Ser_dilution_6ml qte a commander",
-    "gzPW3f2ijo5.t5L9ODSuYOG": "Ser_dilution_6ml cmm",
-    "gzPW3f2ijo5.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
-    "gzPW3f2ijo5.jpmZl19SSta": "Ser_dilution_6ml msd",
-    "tmp1zLSXw0Q.Lpu56KTyGvy": "Adaptateurs Stock Max",
-    "tmp1zLSXw0Q.ddJmZUacsvQ": "Adaptateurs qte a commander",
-    "tmp1zLSXw0Q.t5L9ODSuYOG": "Adaptateurs cmm",
-    "tmp1zLSXw0Q.pGSfKOKL9s0": "Adaptateurs ajustement",
-    "tmp1zLSXw0Q.jpmZl19SSta": "Adaptateurs msd",
-    "jJUIodWQH0T.Lpu56KTyGvy": "Compte_goutte Stock Max",
-    "jJUIodWQH0T.ddJmZUacsvQ": "Compte_goutte qte a commander",
-    "jJUIodWQH0T.t5L9ODSuYOG": "Compte_goutte cmm",
-    "jJUIodWQH0T.pGSfKOKL9s0": "Compte_goutte ajustement",
-    "jJUIodWQH0T.jpmZl19SSta": "Compte_goutte msd",
-    "K8Yt0p1z21M.Lpu56KTyGvy": "R_ceptacles Stock Max",
-    "K8Yt0p1z21M.ddJmZUacsvQ": "R_ceptacles qte a commander",
-    "K8Yt0p1z21M.t5L9ODSuYOG": "R_ceptacles cmm",
-    "K8Yt0p1z21M.pGSfKOKL9s0": "R_ceptacles ajustement",
-    "K8Yt0p1z21M.jpmZl19SSta": "R_ceptacles msd",
-
-    "vrTdwvAQSUc.dxDQKDcTn6Z": "VAA dose-administree",
-    "vrTdwvAQSUc.XEN3ucCGa07": "VAA dose-jour rupture stock",
-    "vrTdwvAQSUc.J8mw9rFkY4v": "VAA dose-perdue",
-    "vrTdwvAQSUc.WZwmzIuRvwV": "VAA dose-recue mois",
-    "vrTdwvAQSUc.GSCwhT2SCCr": "VAA dose-stock debut mois",
-    "vrTdwvAQSUc.pdKyvaYRqCj": "VAA dose-utilisee",
-    "vrTdwvAQSUc.kOWsLrtvrhn": "VAA dose-stock disponible utilisable",
-    "vrTdwvAQSUc.mZLRF4eSPIk": "VAA dose-sortie",
-
-    "iFMn6ceqdIN.dxDQKDcTn6Z": "VAT dose-administree",
-    "iFMn6ceqdIN.XEN3ucCGa07": "VAT dose-jour rupture stock",
-    "iFMn6ceqdIN.J8mw9rFkY4v": "VAT dose-perdue",
-    "iFMn6ceqdIN.WZwmzIuRvwV": "VAT dose-recue mois",
-    "iFMn6ceqdIN.GSCwhT2SCCr": "VAT dose-stock debut mois",
-    "iFMn6ceqdIN.pdKyvaYRqCj": "VAT dose-utilisee",
-    "iFMn6ceqdIN.kOWsLrtvrhn": "VAT dose-stock disponible utilisable",
-    "iFMn6ceqdIN.mZLRF4eSPIk": "VAT dose-sortie",
-
-    "hqqlXMmY95c.dxDQKDcTn6Z": "PCV13 dose-administree",
-    "hqqlXMmY95c.XEN3ucCGa07": "PCV13 dose-jour rupture stock",
-    "hqqlXMmY95c.J8mw9rFkY4v": "PCV13 dose-perdue",
-    "hqqlXMmY95c.WZwmzIuRvwV": "PCV13 dose-recue mois",
-    "hqqlXMmY95c.GSCwhT2SCCr": "PCV13 dose-stock debut mois",
-    "hqqlXMmY95c.pdKyvaYRqCj": "PCV13 dose-utilisee",
-    "hqqlXMmY95c.kOWsLrtvrhn": "PCV13 dose-stock disponible utilisable",
-
-    "MJrLCya7qzt.dxDQKDcTn6Z": "ROTA dose-administree",
-    "MJrLCya7qzt.XEN3ucCGa07": "ROTA dose-jour rupture stock",
-    "MJrLCya7qzt.J8mw9rFkY4v": "ROTA dose-perdue",
-    "MJrLCya7qzt.WZwmzIuRvwV": "ROTA dose-recue mois",
-    "MJrLCya7qzt.GSCwhT2SCCr": "ROTA dose-stock debut mois",
-    "MJrLCya7qzt.pdKyvaYRqCj": "ROTA dose-utilisee",
-    "MJrLCya7qzt.kOWsLrtvrhn": "ROTA dose-stock disponible utilisable",
-
-    "RYaAzE1eqya.dxDQKDcTn6Z": "VAP dose-administree",
-    "RYaAzE1eqya.XEN3ucCGa07": "VAP dose-jour rupture stock",
-    "RYaAzE1eqya.J8mw9rFkY4v": "VAP dose-perdue",
-    "RYaAzE1eqya.WZwmzIuRvwV": "VAP dose-recue mois",
-    "RYaAzE1eqya.GSCwhT2SCCr": "VAP dose-stock debut mois",
-    "RYaAzE1eqya.pdKyvaYRqCj": "VAP dose-utilisee",
-    "RYaAzE1eqya.kOWsLrtvrhn": "VAP dose-stock disponible utilisable",
-
-    "BfoCv6bUeBk.dxDQKDcTn6Z": "HPV dose-administree",
-    "BfoCv6bUeBk.XEN3ucCGa07": "HPV dose-jour rupture stock",
-    "BfoCv6bUeBk.J8mw9rFkY4v": "HPV dose-perdue",
-    "BfoCv6bUeBk.WZwmzIuRvwV": "HPV dose-recue mois",
-    "BfoCv6bUeBk.GSCwhT2SCCr": "HPV dose-stock debut mois",
-    "BfoCv6bUeBk.pdKyvaYRqCj": "HPV dose-utilisee",
-    "BfoCv6bUeBk.kOWsLrtvrhn": "HPV dose-stock disponible utilisable",
-
-    "laQa8YfpVrp.dxDQKDcTn6Z": "Diluant_BCG dose-administree",
-    "laQa8YfpVrp.XEN3ucCGa07": "Diluant_BCG dose-jour rupture stock",
-    "laQa8YfpVrp.J8mw9rFkY4v": "Diluant_BCG dose-perdue",
-    "laQa8YfpVrp.WZwmzIuRvwV": "Diluant_BCG dose-recue mois",
-    "laQa8YfpVrp.GSCwhT2SCCr": "Diluant_BCG dose-stock debut mois",
-    "laQa8YfpVrp.pdKyvaYRqCj": "Diluant_BCG dose-utilisee",
-
-    "nnSKbBscmxH.dxDQKDcTn6Z": "Diluant_VAR dose-administree",
-    "nnSKbBscmxH.XEN3ucCGa07": "Diluant_VAR dose-jour rupture stock",
-    "nnSKbBscmxH.J8mw9rFkY4v": "Diluant_VAR dose-perdue",
-    "nnSKbBscmxH.WZwmzIuRvwV": "Diluant_VAR dose-recue mois",
-    "nnSKbBscmxH.GSCwhT2SCCr": "Diluant_VAR dose-stock debut mois",
-    "nnSKbBscmxH.pdKyvaYRqCj": "Diluant_VAR dose-utilisee",
-
-    "fQfJhi742vt.dxDQKDcTn6Z": "Diluant_VAA dose-administree",
-    "fQfJhi742vt.XEN3ucCGa07": "Diluant_VAA dose-jour rupture stock",
-    "fQfJhi742vt.J8mw9rFkY4v": "Diluant_VAA dose-perdue",
-    "fQfJhi742vt.WZwmzIuRvwV": "Diluant_VAA dose-recue mois",
-    "fQfJhi742vt.GSCwhT2SCCr": "Diluant_VAA dose-stock debut mois",
-    "fQfJhi742vt.pdKyvaYRqCj": "Diluant_VAA dose-utilisee",
-
-    "bwUoJJgDst9.dxDQKDcTn6Z": "SAB_005ml dose-administree",
-    "bwUoJJgDst9.XEN3ucCGa07": "SAB_005ml dose-jour rupture stock",
-    "bwUoJJgDst9.J8mw9rFkY4v": "SAB_005ml dose-perdue",
-    "bwUoJJgDst9.WZwmzIuRvwV": "SAB_005ml dose-recue mois",
-    "bwUoJJgDst9.GSCwhT2SCCr": "SAB_005ml dose-stock debut mois",
-    "bwUoJJgDst9.pdKyvaYRqCj": "SAB_005ml dose-utilisee",
-
-    "blfdHcia9nP.dxDQKDcTn6Z": "SAB_05ml dose-administree",
-    "blfdHcia9nP.XEN3ucCGa07": "SAB_05ml dose-jour rupture stock",
-    "blfdHcia9nP.J8mw9rFkY4v": "SAB_05ml dose-perdue",
-    "blfdHcia9nP.WZwmzIuRvwV": "SAB_05ml dose-recue mois",
-    "blfdHcia9nP.GSCwhT2SCCr": "SAB_05ml dose-stock debut mois",
-    "blfdHcia9nP.pdKyvaYRqCj": "SAB_05ml dose-utilisee",
-
-    "bqJvWJtJwtK.dxDQKDcTn6Z": "Ser_dilution_2ml dose-administree",
-    "bqJvWJtJwtK.XEN3ucCGa07": "Ser_dilution_2ml dose-jour rupture stock",
-    "bqJvWJtJwtK.J8mw9rFkY4v": "Ser_dilution_2ml dose-perdue",
-    "bqJvWJtJwtK.WZwmzIuRvwV": "Ser_dilution_2ml dose-recue mois",
-    "bqJvWJtJwtK.GSCwhT2SCCr": "Ser_dilution_2ml dose-stock debut mois",
-    "bqJvWJtJwtK.pdKyvaYRqCj": "Ser_dilution_2ml dose-utilisee",
-
-    "DNZEo533IMh.dxDQKDcTn6Z": "Ser_dilution_5ml dose-administree",
-    "DNZEo533IMh.XEN3ucCGa07": "Ser_dilution_5ml dose-jour rupture stock",
-    "DNZEo533IMh.J8mw9rFkY4v": "Ser_dilution_5ml dose-perdue",
-    "DNZEo533IMh.WZwmzIuRvwV": "Ser_dilution_5ml dose-recue mois",
-    "DNZEo533IMh.GSCwhT2SCCr": "Ser_dilution_5ml dose-stock debut mois",
-    "DNZEo533IMh.pdKyvaYRqCj": "Ser_dilution_5ml dose-utilisee",
 
     "ZMcyV45XAkW.dxDQKDcTn6Z": "SAB_auto_bloquante dose-administree",
     "ZMcyV45XAkW.XEN3ucCGa07": "SAB_auto_bloquante dose-jour rupture stock",
@@ -904,6 +737,12 @@ RENAME_MAP: Dict[str, str] = {
     "ZMcyV45XAkW.WZwmzIuRvwV": "SAB_auto_bloquante dose-recue mois",
     "ZMcyV45XAkW.GSCwhT2SCCr": "SAB_auto_bloquante dose-stock debut mois",
     "ZMcyV45XAkW.pdKyvaYRqCj": "SAB_auto_bloquante dose-utilisee",
+    "ZMcyV45XAkW.kOWsLrtvrhn": "SAB_auto_bloquante dose-stock disponible utilisable",
+    "ZMcyV45XAkW.Lpu56KTyGvy": "SAB_auto_bloquante Stock Max",
+    "ZMcyV45XAkW.ddJmZUacsvQ": "SAB_auto_bloquante qte a commander",
+    "ZMcyV45XAkW.t5L9ODSuYOG": "SAB_auto_bloquante cmm",
+    "ZMcyV45XAkW.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
+    "ZMcyV45XAkW.jpmZl19SSta": "SAB_auto_bloquante msd",
 
     "gzPW3f2ijo5.dxDQKDcTn6Z": "Ser_dilution_6ml dose-administree",
     "gzPW3f2ijo5.XEN3ucCGa07": "Ser_dilution_6ml dose-jour rupture stock",
@@ -911,6 +750,12 @@ RENAME_MAP: Dict[str, str] = {
     "gzPW3f2ijo5.WZwmzIuRvwV": "Ser_dilution_6ml dose-recue mois",
     "gzPW3f2ijo5.GSCwhT2SCCr": "Ser_dilution_6ml dose-stock debut mois",
     "gzPW3f2ijo5.pdKyvaYRqCj": "Ser_dilution_6ml dose-utilisee",
+    "gzPW3f2ijo5.kOWsLrtvrhn": "Ser_dilution_6ml dose-stock disponible utilisable",
+    "gzPW3f2ijo5.Lpu56KTyGvy": "Ser_dilution_6ml Stock Max",
+    "gzPW3f2ijo5.ddJmZUacsvQ": "Ser_dilution_6ml qte a commander",
+    "gzPW3f2ijo5.t5L9ODSuYOG": "Ser_dilution_6ml cmm",
+    "gzPW3f2ijo5.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
+    "gzPW3f2ijo5.jpmZl19SSta": "Ser_dilution_6ml msd",
 
     "tmp1zLSXw0Q.dxDQKDcTn6Z": "Adaptateurs dose-administree",
     "tmp1zLSXw0Q.XEN3ucCGa07": "Adaptateurs dose-jour rupture stock",
@@ -918,6 +763,12 @@ RENAME_MAP: Dict[str, str] = {
     "tmp1zLSXw0Q.WZwmzIuRvwV": "Adaptateurs dose-recue mois",
     "tmp1zLSXw0Q.GSCwhT2SCCr": "Adaptateurs dose-stock debut mois",
     "tmp1zLSXw0Q.pdKyvaYRqCj": "Adaptateurs dose-utilisee",
+    "tmp1zLSXw0Q.kOWsLrtvrhn": "Adaptateurs dose-stock disponible utilisable",
+    "tmp1zLSXw0Q.Lpu56KTyGvy": "Adaptateurs Stock Max",
+    "tmp1zLSXw0Q.ddJmZUacsvQ": "Adaptateurs qte a commander",
+    "tmp1zLSXw0Q.t5L9ODSuYOG": "Adaptateurs cmm",
+    "tmp1zLSXw0Q.pGSfKOKL9s0": "Adaptateurs ajustement",
+    "tmp1zLSXw0Q.jpmZl19SSta": "Adaptateurs msd",
 
     "jJUIodWQH0T.dxDQKDcTn6Z": "Compte_goutte dose-administree",
     "jJUIodWQH0T.XEN3ucCGa07": "Compte_goutte dose-jour rupture stock",
@@ -925,6 +776,12 @@ RENAME_MAP: Dict[str, str] = {
     "jJUIodWQH0T.WZwmzIuRvwV": "Compte_goutte dose-recue mois",
     "jJUIodWQH0T.GSCwhT2SCCr": "Compte_goutte dose-stock debut mois",
     "jJUIodWQH0T.pdKyvaYRqCj": "Compte_goutte dose-utilisee",
+    "jJUIodWQH0T.kOWsLrtvrhn": "Compte_goutte dose-stock disponible utilisable",
+    "jJUIodWQH0T.Lpu56KTyGvy": "Compte_goutte Stock Max",
+    "jJUIodWQH0T.ddJmZUacsvQ": "Compte_goutte qte a commander",
+    "jJUIodWQH0T.t5L9ODSuYOG": "Compte_goutte cmm",
+    "jJUIodWQH0T.pGSfKOKL9s0": "Compte_goutte ajustement",
+    "jJUIodWQH0T.jpmZl19SSta": "Compte_goutte msd",
 
     "K8Yt0p1z21M.dxDQKDcTn6Z": "R_ceptacles dose-administree",
     "K8Yt0p1z21M.XEN3ucCGa07": "R_ceptacles dose-jour rupture stock",
@@ -932,139 +789,12 @@ RENAME_MAP: Dict[str, str] = {
     "K8Yt0p1z21M.WZwmzIuRvwV": "R_ceptacles dose-recue mois",
     "K8Yt0p1z21M.GSCwhT2SCCr": "R_ceptacles dose-stock debut mois",
     "K8Yt0p1z21M.pdKyvaYRqCj": "R_ceptacles dose-utilisee",
-
-
-    # Nouvelles variables logistiques
-    "uAWIVDnGPGH.Lpu56KTyGvy": "DTC Stock Max",
-    "uAWIVDnGPGH.ddJmZUacsvQ": "DTC Qté à commander",
-    "uAWIVDnGPGH.t5L9ODSuYOG": "DTC CMM",
-    "uAWIVDnGPGH.pGSfKOKL9s0": "DTC Adjustment",
-    "uAWIVDnGPGH.jpmZl19SSta": "DTC MSD",
-    "l1bhrYUPsde.Lpu56KTyGvy": "BCG Stock Max",
-    "l1bhrYUPsde.ddJmZUacsvQ": "BCG Qté à commander",
-    "l1bhrYUPsde.t5L9ODSuYOG": "BCG CMM",
-    "l1bhrYUPsde.pGSfKOKL9s0": "BCG Adjustment",
-    "l1bhrYUPsde.jpmZl19SSta": "BCG MSD",
-    "Hjlw6DpooIo.Lpu56KTyGvy": "VAR Stock Max",
-    "Hjlw6DpooIo.ddJmZUacsvQ": "VAR Qté à commander",
-    "Hjlw6DpooIo.t5L9ODSuYOG": "VAR CMM",
-    "Hjlw6DpooIo.pGSfKOKL9s0": "VAR Adjustment",
-    "Hjlw6DpooIo.jpmZl19SSta": "VAR MSD",
-    "BCXcLiQNI8M.Lpu56KTyGvy": "VPO Stock Max",
-    "BCXcLiQNI8M.ddJmZUacsvQ": "VPO Qté à commander",
-    "BCXcLiQNI8M.t5L9ODSuYOG": "VPO CMM",
-    "BCXcLiQNI8M.pGSfKOKL9s0": "VPO Adjustment",
-    "BCXcLiQNI8M.jpmZl19SSta": "VPO MSD",
-    "IisI6JudbS8.Lpu56KTyGvy": "VPI Stock Max",
-    "IisI6JudbS8.ddJmZUacsvQ": "VPI Qté à commander",
-    "IisI6JudbS8.t5L9ODSuYOG": "VPI CMM",
-    "IisI6JudbS8.pGSfKOKL9s0": "VPI Adjustment",
-    "IisI6JudbS8.jpmZl19SSta": "VPI MSD",
-    "vrTdwvAQSUc.Lpu56KTyGvy": "VAA Stock Max",
-    "vrTdwvAQSUc.ddJmZUacsvQ": "VAA Qté à commander",
-    "vrTdwvAQSUc.t5L9ODSuYOG": "VAA CMM",
-    "vrTdwvAQSUc.pGSfKOKL9s0": "VAA Adjustment",
-    "vrTdwvAQSUc.jpmZl19SSta": "VAA MSD",
-    "iFMn6ceqdIN.Lpu56KTyGvy": "VAT Stock Max",
-    "iFMn6ceqdIN.ddJmZUacsvQ": "VAT Qté à commander",
-    "iFMn6ceqdIN.t5L9ODSuYOG": "VAT CMM",
-    "iFMn6ceqdIN.pGSfKOKL9s0": "VAT Adjustment",
-    "iFMn6ceqdIN.jpmZl19SSta": "VAT MSD",
-    "hqqlXMmY95c.Lpu56KTyGvy": "PCV13 Stock Max",
-    "hqqlXMmY95c.ddJmZUacsvQ": "PCV13 Qté à commander",
-    "hqqlXMmY95c.t5L9ODSuYOG": "PCV13 CMM",
-    "hqqlXMmY95c.pGSfKOKL9s0": "PCV13 Adjustment",
-    "hqqlXMmY95c.jpmZl19SSta": "PCV13 MSD",
-    "MJrLCya7qzt.Lpu56KTyGvy": "ROTA Stock Max",
-    "MJrLCya7qzt.ddJmZUacsvQ": "ROTA Qté à commander",
-    "MJrLCya7qzt.t5L9ODSuYOG": "ROTA CMM",
-    "MJrLCya7qzt.pGSfKOKL9s0": "ROTA Adjustment",
-    "MJrLCya7qzt.jpmZl19SSta": "ROTA MSD",
-    "RYaAzE1eqya.Lpu56KTyGvy": "VAP Stock Max",
-    "RYaAzE1eqya.ddJmZUacsvQ": "VAP Qté à commander",
-    "RYaAzE1eqya.t5L9ODSuYOG": "VAP CMM",
-    "RYaAzE1eqya.pGSfKOKL9s0": "VAP Adjustment",
-    "RYaAzE1eqya.jpmZl19SSta": "VAP MSD",
-    "BfoCv6bUeBk.Lpu56KTyGvy": "HPV Stock Max",
-    "BfoCv6bUeBk.ddJmZUacsvQ": "HPV Qté à commander",
-    "BfoCv6bUeBk.t5L9ODSuYOG": "HPV CMM",
-    "BfoCv6bUeBk.pGSfKOKL9s0": "HPV Adjustment",
-    "BfoCv6bUeBk.jpmZl19SSta": "HPV MSD",
-    "laQa8YfpVrp.kOWsLrtvrhn": "Diluant_BCG dose-stock disponible utilisable",
-    "laQa8YfpVrp.Lpu56KTyGvy": "Diluant_BCG Stock Max",
-    "laQa8YfpVrp.ddJmZUacsvQ": "Diluant_BCG qte a commander",
-    "laQa8YfpVrp.t5L9ODSuYOG": "Diluant_BCG cmm",
-    "laQa8YfpVrp.pGSfKOKL9s0": "Diluant_BCG ajustement",
-    "laQa8YfpVrp.jpmZl19SSta": "Diluant_BCG msd",
-    "nnSKbBscmxH.kOWsLrtvrhn": "Diluant_VAR dose-stock disponible utilisable",
-    "nnSKbBscmxH.Lpu56KTyGvy": "Diluant_VAR Stock Max",
-    "nnSKbBscmxH.ddJmZUacsvQ": "Diluant_VAR qte a commander",
-    "nnSKbBscmxH.t5L9ODSuYOG": "Diluant_VAR cmm",
-    "nnSKbBscmxH.pGSfKOKL9s0": "Diluant_VAR ajustement",
-    "nnSKbBscmxH.jpmZl19SSta": "Diluant_VAR msd",
-    "fQfJhi742vt.kOWsLrtvrhn": "Diluant_VAA dose-stock disponible utilisable",
-    "fQfJhi742vt.Lpu56KTyGvy": "Diluant_VAA Stock Max",
-    "fQfJhi742vt.ddJmZUacsvQ": "Diluant_VAA qte a commander",
-    "fQfJhi742vt.t5L9ODSuYOG": "Diluant_VAA cmm",
-    "fQfJhi742vt.pGSfKOKL9s0": "Diluant_VAA ajustement",
-    "fQfJhi742vt.jpmZl19SSta": "Diluant_VAA msd",
-    "bwUoJJgDst9.kOWsLrtvrhn": "SAB_005ml dose-stock disponible utilisable",
-    "bwUoJJgDst9.Lpu56KTyGvy": "SAB_005ml Stock Max",
-    "bwUoJJgDst9.ddJmZUacsvQ": "SAB_005ml qte a commander",
-    "bwUoJJgDst9.t5L9ODSuYOG": "SAB_005ml cmm",
-    "bwUoJJgDst9.pGSfKOKL9s0": "SAB_005ml ajustement",
-    "bwUoJJgDst9.jpmZl19SSta": "SAB_005ml msd",
-    "blfdHcia9nP.kOWsLrtvrhn": "SAB_05ml dose-stock disponible utilisable",
-    "blfdHcia9nP.Lpu56KTyGvy": "SAB_05ml Stock Max",
-    "blfdHcia9nP.ddJmZUacsvQ": "SAB_05ml qte a commander",
-    "blfdHcia9nP.t5L9ODSuYOG": "SAB_05ml cmm",
-    "blfdHcia9nP.pGSfKOKL9s0": "SAB_05ml ajustement",
-    "blfdHcia9nP.jpmZl19SSta": "SAB_05ml msd",
-    "bqJvWJtJwtK.kOWsLrtvrhn": "Ser_dilution_2ml dose-stock disponible utilisable",
-    "bqJvWJtJwtK.Lpu56KTyGvy": "Ser_dilution_2ml Stock Max",
-    "bqJvWJtJwtK.ddJmZUacsvQ": "Ser_dilution_2ml qte a commander",
-    "bqJvWJtJwtK.t5L9ODSuYOG": "Ser_dilution_2ml cmm",
-    "bqJvWJtJwtK.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
-    "bqJvWJtJwtK.jpmZl19SSta": "Ser_dilution_2ml msd",
-    "DNZEo533IMh.kOWsLrtvrhn": "Ser_dilution_5ml dose-stock disponible utilisable",
-    "DNZEo533IMh.Lpu56KTyGvy": "Ser_dilution_5ml Stock Max",
-    "DNZEo533IMh.ddJmZUacsvQ": "Ser_dilution_5ml qte a commander",
-    "DNZEo533IMh.t5L9ODSuYOG": "Ser_dilution_5ml cmm",
-    "DNZEo533IMh.pGSfKOKL9s0": "Ser_dilution_5ml ajustement",
-    "DNZEo533IMh.jpmZl19SSta": "Ser_dilution_5ml msd",
-    "ZMcyV45XAkW.kOWsLrtvrhn": "SAB_auto_bloquante dose-stock disponible utilisable",
-    "ZMcyV45XAkW.Lpu56KTyGvy": "SAB_auto_bloquante Stock Max",
-    "ZMcyV45XAkW.ddJmZUacsvQ": "SAB_auto_bloquante qte a commander",
-    "ZMcyV45XAkW.t5L9ODSuYOG": "SAB_auto_bloquante cmm",
-    "ZMcyV45XAkW.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
-    "ZMcyV45XAkW.jpmZl19SSta": "SAB_auto_bloquante msd",
-    "gzPW3f2ijo5.kOWsLrtvrhn": "Ser_dilution_6ml dose-stock disponible utilisable",
-    "gzPW3f2ijo5.Lpu56KTyGvy": "Ser_dilution_6ml Stock Max",
-    "gzPW3f2ijo5.ddJmZUacsvQ": "Ser_dilution_6ml qte a commander",
-    "gzPW3f2ijo5.t5L9ODSuYOG": "Ser_dilution_6ml cmm",
-    "gzPW3f2ijo5.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
-    "gzPW3f2ijo5.jpmZl19SSta": "Ser_dilution_6ml msd",
-    "tmp1zLSXw0Q.kOWsLrtvrhn": "Adaptateurs dose-stock disponible utilisable",
-    "tmp1zLSXw0Q.Lpu56KTyGvy": "Adaptateurs Stock Max",
-    "tmp1zLSXw0Q.ddJmZUacsvQ": "Adaptateurs qte a commander",
-    "tmp1zLSXw0Q.t5L9ODSuYOG": "Adaptateurs cmm",
-    "tmp1zLSXw0Q.pGSfKOKL9s0": "Adaptateurs ajustement",
-    "tmp1zLSXw0Q.jpmZl19SSta": "Adaptateurs msd",
-    "jJUIodWQH0T.kOWsLrtvrhn": "Compte_goutte dose-stock disponible utilisable",
-    "jJUIodWQH0T.Lpu56KTyGvy": "Compte_goutte Stock Max",
-    "jJUIodWQH0T.ddJmZUacsvQ": "Compte_goutte qte a commander",
-    "jJUIodWQH0T.t5L9ODSuYOG": "Compte_goutte cmm",
-    "jJUIodWQH0T.pGSfKOKL9s0": "Compte_goutte ajustement",
-    "jJUIodWQH0T.jpmZl19SSta": "Compte_goutte msd",
     "K8Yt0p1z21M.kOWsLrtvrhn": "R_ceptacles dose-stock disponible utilisable",
     "K8Yt0p1z21M.Lpu56KTyGvy": "R_ceptacles Stock Max",
     "K8Yt0p1z21M.ddJmZUacsvQ": "R_ceptacles qte a commander",
     "K8Yt0p1z21M.t5L9ODSuYOG": "R_ceptacles cmm",
     "K8Yt0p1z21M.pGSfKOKL9s0": "R_ceptacles ajustement",
     "K8Yt0p1z21M.jpmZl19SSta": "R_ceptacles msd",
-    # ============================================
-    # ANTIGÈNES 12-23 MOIS - RENAME MAP
-    # ============================================
     "W25tOXS0rxS.g6mIyKoGIh2": "BCG 12-23 mois fixe1",
     "W25tOXS0rxS.QRyK6yxKBU3": "BCG 12-23 mois fixe2",
     "W25tOXS0rxS.Rby9Jdri29F": "BCG 12-23 mois avance",
@@ -1109,7 +839,7 @@ RENAME_MAP: Dict[str, str] = {
 
     "SPGaDDw2JzG.g6mIyKoGIh2": "VPO3 12-23 mois fixe1",
     "SPGaDDw2JzG.QRyK6yxKBU3": "VPO3 12-23 mois fixe2",
-    "SPGaDDw2JzG.Rby9Jdri29F": "VPO3 12-23 mois avance",
+    "SPGaDDw2JzG.Rby9Jdri29F": "SPGaDDw2JzG.Rby9Jdri29F", # FIXED mapping
     "SPGaDDw2JzG.FCXzheCQXtr": "VPO3 12-23 mois mobile1",
     "SPGaDDw2JzG.VrEj0UVVGr4": "VPO3 12-23 mois mobile2",
 
@@ -1177,9 +907,6 @@ RENAME_MAP: Dict[str, str] = {
     "M2JQW0H44dI.QRyK6yxKBU3": "ECV 12-23 mois fixe",
     "M2JQW0H44dI.VrEj0UVVGr4": "ECV 12-23 mois mobile",
 
-    # ============================================
-    # ANTIGÈNES 24-59 MOIS - RENAME MAP
-    # ============================================
     "W25tOXS0rxS.tWyeOXJgU3A": "BCG 24-59 mois fixe",
     "W25tOXS0rxS.cI92X1TYlnD": "BCG 24-59 mois avance",
     "W25tOXS0rxS.BisCHS3wArx": "BCG 24-59 mois mobile",
@@ -1290,9 +1017,6 @@ def month_range(start_yyyymm: str, end_yyyymm: str) -> List[str]:
 
 
 def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
-    """
-    Split une liste de dx pour ne pas dépasser la longueur max de la query DHIS2.
-    """
     chunks: List[List[str]] = []
     cur: List[str] = []
     cur_len = 0
@@ -1311,10 +1035,6 @@ def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
 
 
 def load_zoho_rename_map(path: Path) -> Dict[str, str]:
-    """
-    docs/config/rename_map.json:
-      { "BCG avancé1": "BCG_avanc_1", ... }
-    """
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
@@ -1322,26 +1042,17 @@ def load_zoho_rename_map(path: Path) -> Dict[str, str]:
 
 
 def period_iso_to_zoho(period_iso: str) -> str:
-    """
-    period_iso: YYYY-MM-DD  ->  DD-MMM-YYYY
-    """
     s = (period_iso or "").strip()
     if len(s) >= 10 and s[4] == "-" and s[7] == "-":
         y = int(s[0:4])
         m = int(s[5:7])
         d = int(s[8:10])
         if 1 <= m <= 12:
-            return f"{d:02d}-{MMM[m-1]}-{y:04d}"
+            return f"{d:02d}-{MMM[m - 1]}-{y:04d}"
     return s
 
 
 def normalize_number(v: Any) -> Any:
-    """
-    - None / "" / "null" -> 0
-    - 12.0 -> 12
-    - "12.0" -> 12
-    - "12,5" -> 12.5
-    """
     if v is None:
         return 0
 
@@ -1369,7 +1080,7 @@ def normalize_number(v: Any) -> Any:
 
 
 # ============================================================
-# 3) DHIS2 CLIENT (robuste anti-504)
+# 3) DHIS2 CLIENT (FOSA = ORG LEVEL 5)
 # ============================================================
 
 @dataclass
@@ -1377,7 +1088,7 @@ class Dhis2Client:
     base_url: str
     username: str
     password: str
-    timeout_s: int = 1200  # 20 minutes (anti timeout)
+    timeout_s: int = 1200
 
     def __post_init__(self) -> None:
         retry = Retry(
@@ -1397,9 +1108,9 @@ class Dhis2Client:
 
     def _get(self, path: str, params: Dict[str, object]) -> dict:
         url = self.base_url.rstrip("/") + "/" + path.lstrip("/")
-
         last_err = ""
-        for attempt in range(1, 8):  # 7 essais
+
+        for attempt in range(1, 8):
             r = self.session.get(
                 url,
                 params=params,
@@ -1413,15 +1124,20 @@ class Dhis2Client:
 
             if r.status_code in (429, 500, 502, 503, 504):
                 last_err = f"{r.status_code} {r.text[:200]}"
-                # backoff raisonnable (évite de "traîner" trop)
-                sleep_s = min(90.0, 5.0 * attempt)  # 5s,10s,... max 90s
-                print(f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 sleep={sleep_s}s url={path}", flush=True)
+                sleep_s = min(90.0, 5.0 * attempt)
+                print(
+                    f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 "
+                    f"sleep={sleep_s}s url={path}",
+                    flush=True,
+                )
                 time.sleep(sleep_s)
                 continue
 
             r.raise_for_status()
 
-        raise requests.exceptions.HTTPError(f"DHIS2 API failed after retries: {url} last={last_err}")
+        raise requests.exceptions.HTTPError(
+            f"DHIS2 API failed after retries: {url} last={last_err}"
+        )
 
     def analytics(self, dx_items: List[str], pe: str, ou: str = "LEVEL-5") -> dict:
         params = {
@@ -1442,10 +1158,6 @@ def _analytics_with_split(
     max_split_depth: int = 4,
     depth: int = 0,
 ) -> dict:
-    """
-    Tente analytics.
-    Si timeout/504, split dx_items en 2 et retry (requêtes plus petites).
-    """
     try:
         return client.analytics(dx_items=dx_items, pe=pe, ou="LEVEL-5")
     except Exception as e:
@@ -1466,20 +1178,33 @@ def _analytics_with_split(
         right = dx_items[mid:]
 
         print(
-            f"WARN: analytics failed depth={depth} dx={len(dx_items)} -> split {len(left)}+{len(right)} reason={msg[:140]}",
+            f"WARN: analytics failed depth={depth} dx={len(dx_items)} "
+            f"-> split {len(left)}+{len(right)} reason={msg[:140]}",
             flush=True,
         )
 
         out = {"rows": []}
-        a = _analytics_with_split(client, pe, left, max_split_depth=max_split_depth, depth=depth + 1)
-        b = _analytics_with_split(client, pe, right, max_split_depth=max_split_depth, depth=depth + 1)
+        a = _analytics_with_split(
+            client,
+            pe,
+            left,
+            max_split_depth=max_split_depth,
+            depth=depth + 1,
+        )
+        b = _analytics_with_split(
+            client,
+            pe,
+            right,
+            max_split_depth=max_split_depth,
+            depth=depth + 1,
+        )
         out["rows"].extend(a.get("rows") or [])
         out["rows"].extend(b.get("rows") or [])
         return out
 
 
 # ============================================================
-# 4) TRANSFORM: analytics rows -> records pivots Zoho-ready
+# 4) TRANSFORM
 # ============================================================
 
 def rows_to_records(analytics_json: dict) -> List[dict]:
@@ -1501,8 +1226,8 @@ def rows_to_records(analytics_json: dict) -> List[dict]:
 def pivot_records(
     long_recs: List[dict],
     dx_expected: List[str],
-    rename_map_dx_to_label: Dict[str, str],   # dx -> label DHIS2
-    zoho_map_label_to_link: Dict[str, str],   # label -> Zoho field link name
+    rename_map_dx_to_label: Dict[str, str],
+    zoho_map_label_to_link: Dict[str, str],
 ) -> List[dict]:
     idx: Dict[Tuple[str, str], dict] = {}
 
@@ -1526,7 +1251,8 @@ def pivot_records(
 
     out: List[dict] = []
     for row in idx.values():
-        period_iso = f"{row['pe'][:4]}-{row['pe'][4:6]}-01"
+        pe = str(row["pe"])
+        period_iso = f"{pe[:4]}-{pe[4:6]}-01"
         period_zoho = period_iso_to_zoho(period_iso)
 
         out_row: dict = {
@@ -1561,8 +1287,6 @@ def fetch_period(
         print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
         data = _analytics_with_split(client, pe, ch)
         long_all.extend(rows_to_records(data))
-
-        # Petite pause (par défaut faible) pour éviter 504, sans "traîner" trop
         if sleep_s and sleep_s > 0:
             time.sleep(sleep_s)
 
@@ -1570,7 +1294,7 @@ def fetch_period(
 
 
 # ============================================================
-# 5) OUTPUT: NDJSON split + index.json
+# 5) OUTPUT
 # ============================================================
 
 def write_ndjson_parts_dual(
@@ -1655,18 +1379,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default="202501", help="YYYYMM")
     ap.add_argument("--end", default=None, help="YYYYMM (optional)")
-    ap.add_argument("--months", type=int, default=3, help="Refresh last N months (scheduled runs)")
+    ap.add_argument("--months", type=int, default=3, help="Refresh last N months")
     ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to --end/current")
-    ap.add_argument("--out", default="docs/data", help="Output folder (docs/ for GitHub Pages)")
+    ap.add_argument("--out", default="docs/data", help="Output folder")
     ap.add_argument("--dx_chunk_chars", type=int, default=6500)
-
-    # ✅ Pour que ça ne traîne pas : par défaut 0.2s au lieu de 1s
-    ap.add_argument("--sleep", type=float, default=0.2, help="Sleep between DHIS2 calls (reduce 504)")
-    ap.add_argument("--max_plain_bytes", type=int, default=800_000, help="Max bytes per .ndjson part (recommend ~800k)")
-
-    # ✅ Retry des mois échoués (même anciens)
-    ap.add_argument("--retry_failed", action="store_true", help="Also retry previously failed months from index.json")
-    ap.add_argument("--retry_limit", type=int, default=2, help="How many failed months to retry per run")
+    ap.add_argument("--sleep", type=float, default=0.2, help="Sleep between DHIS2 calls")
+    ap.add_argument("--max_plain_bytes", type=int, default=800_000)
+    ap.add_argument("--retry_failed", action="store_true")
+    ap.add_argument("--retry_limit", type=int, default=2)
 
     args = ap.parse_args()
 
@@ -1701,7 +1421,6 @@ def main() -> int:
     monthly_root = out_dir / "monthly"
     index_path = out_dir / "index.json"
 
-    # ✅ Index cumulatif: garder l’existant, mettre à jour seulement les mois recalculés
     index: Dict[str, Any] = {"generated_at": None, "months": {}, "retry_queue": []}
     if index_path.exists():
         try:
@@ -1713,22 +1432,18 @@ def main() -> int:
         except Exception:
             index = {"generated_at": None, "months": {}, "retry_queue": []}
 
-    # ---- Choix des périodes
     if args.backfill:
         periods = all_months
     else:
         periods = all_months[-max(1, args.months):]
-
-        # ✅ Ajouter des mois échoués à retenter (même si anciens)
         if args.retry_failed:
             rq = [m for m in (index.get("retry_queue") or []) if isinstance(m, str)]
             extra = [m for m in rq if m not in periods]
-            periods = periods + extra[: max(0, int(args.retry_limit))]
+            periods = periods + extra[:max(0, int(args.retry_limit))]
 
     ok_months: List[str] = []
     failed_months: List[str] = []
 
-    # Petite déduplication (au cas où)
     seen = set()
     periods = [m for m in periods if not (m in seen or seen.add(m))]
 
@@ -1750,7 +1465,6 @@ def main() -> int:
             print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)
             failed_months.append(pe)
 
-            # ✅ Mettre pe dans retry_queue (pour le retenter plus tard)
             rq = index.get("retry_queue") or []
             if pe not in rq:
                 rq.append(pe)
@@ -1760,7 +1474,6 @@ def main() -> int:
         month_folder = monthly_root / pe
         month_folder.mkdir(parents=True, exist_ok=True)
 
-        # ✅ seulement si succès: on réécrit le mois
         for p in month_folder.glob("*"):
             try:
                 p.unlink()
@@ -1776,7 +1489,6 @@ def main() -> int:
         index["months"][pe] = {"parts": parts, "rows": len(records)}
         ok_months.append(pe)
 
-        # ✅ retirer pe de retry_queue si succès
         rq = index.get("retry_queue") or []
         if pe in rq:
             rq = [m for m in rq if m != pe]
