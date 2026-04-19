@@ -3080,9 +3080,9 @@
                 '<div class="kc" style="flex:1;min-width:130px;border-left:5px solid #f39c12"><div class="kv" style="color:#f39c12">' + prompt2.toFixed(1) + '%</div><div class="kl">Promptitude</div></div>' +
                 '<div class="kc ' + (pctFix >= 80 ? 'gn' : pctFix >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctFix.toFixed(1) + ' %</div><div class="kl">% Séances fixes réalisées</div></div>' +
                 '<div class="kc ' + (pctAv >= 80 ? 'gn' : pctAv >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctAv.toFixed(1) + ' %</div><div class="kl">% Séances avancées réalisées</div></div>' +
-                '<div class="kc ' + (pctMob >= 80 ? 'gn' : pctMob >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctMob.toFixed(1) + ' %</div><div class="kl">% Séances mobiles réalisées</div></div>' +
-                '<div class="kc pu" style="flex:1;min-width:130px"><div class="kv">' + nF.toLocaleString() + '</div><div class="kl">Nombre ' + levelLbl + '</div></div>';
+                '<div class="kc ' + (pctMob >= 80 ? 'gn' : pctMob >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctMob.toFixed(1) + ' %</div><div class="kl">% Séances mobiles réalisées</div></div>';
             c.appendChild(kd);
+
 
             /* ── b) Calendrier vaccinal en boxes colorées ── */
             var calBox = E('div', 'cb');
@@ -3321,8 +3321,13 @@
                 var used = sf(D, p + '_utilis_es');
                 var admin = sf(D, p + '_administr_es'); // Fixed: use standardized logistical administr_es key
                 var perdu = sf(D, p + '_pertes');
+                // Perdue vide mais utilisée & administrée existent → Perdue = Utilisée − Administrée
+                if ((!perdu || perdu <= 0) && used > 0 && admin > 0 && used > admin) {
+                    perdu = used - admin;
+                }
                 var denom = (admin || 0) + (perdu || 0);
                 var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
+
                 var jrs = sf(D, p + '_jours_rupture');
                 var sdu = sf(D, p + '_stock_fin'); // SDU = Stock Fin
                 var smax = sf(D, p + '_stock_max');
