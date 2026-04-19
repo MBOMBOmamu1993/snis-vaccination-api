@@ -817,19 +817,19 @@
             { age: '14 semaines', v: ['DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3'] },
             { age: '9 mois', v: ['VAR1', 'VPI2', 'VAA'] }
         ];
-    var VACCIN_CALENDAR = [
-        { age: 'Naissance', ags: ['BCG', 'VPO0'] },
-        { age: '6 semaines', ags: ['DTC1', 'VPO1', 'ROTA1', 'PCV13_1'] },
-        { age: '10 semaines', ags: ['DTC2', 'VPO2', 'ROTA2', 'PCV13_2'] },
-        { age: '14 semaines', ags: ['DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3'] },
-        { age: '6 mois', ags: ['VAP1'] },
-        { age: '7 mois', ags: ['VAP2'] },
-        { age: '8 mois', ags: ['VAP3'] },
-        { age: '9 mois', ags: ['VAR1', 'VPI2', 'VAA'] },
-        { age: '15 mois', ags: ['VAR2', 'VAP4'] }
-    ];
+        var VACCIN_CALENDAR = [
+            { age: 'Naissance', ags: ['BCG', 'VPO0'] },
+            { age: '6 semaines', ags: ['DTC1', 'VPO1', 'ROTA1', 'PCV13_1'] },
+            { age: '10 semaines', ags: ['DTC2', 'VPO2', 'ROTA2', 'PCV13_2'] },
+            { age: '14 semaines', ags: ['DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3'] },
+            { age: '6 mois', ags: ['VAP1'] },
+            { age: '7 mois', ags: ['VAP2'] },
+            { age: '8 mois', ags: ['VAP3'] },
+            { age: '9 mois', ags: ['VAR1', 'VPI2', 'VAA'] },
+            { age: '15 mois', ags: ['VAR2', 'VAP4'] }
+        ];
 
-    var LOGIST_FIELDS = [
+        var LOGIST_FIELDS = [
             { lbl: 'Vaccin BCG', pfx: 'BCG', unit: 'Dose 20 d/fl.', vacs: ['BCG'] },
             { lbl: 'Vaccin VPO', pfx: 'VPO', unit: 'Dose 20 d/fl.', vacs: ['VPO0', 'VPO1', 'VPO2', 'VPO3'] },
             { lbl: 'Vaccin DTC/Penta', pfx: 'DTC', unit: 'Dose 10 d/fl.', vacs: ['DTC1', 'DTC2', 'DTC3'] },
@@ -1113,51 +1113,79 @@
         }
 
         /* ═══ CASCADING FILTERS ═══ */
-        function computeCascade(changedDim) {
-            var src = S.data;
-            var order = ['antenne', 'zs', 'as', 'fosa'];
-            var chIdx = changedDim ? order.indexOf(changedDim) : -1;
-            // chIdx = -1 → province changée ou init → tout auto-remplir
-            // chIdx = 0 → antenne changée → garder antenne, reset zs/as/fosa
-            // chIdx = 1 → zs changée → garder antenne+zs, reset as/fosa
-            // etc.
+                function computeCascade(changedDim) {
+                        var src = S.data;
+                        var order = ['antenne', 'zs', 'as', 'fosa'];
+                        var chIdx = changedDim ? order.indexOf(changedDim) : -1;
+                        // chIdx = -1 → province changée ou init → tout auto-remplir
+                        // chIdx = 0 → antenne changée → garder antenne, reset zs/as/fosa
+                        // chIdx = 1 → zs changée → garder antenne+zs, reset as/fosa
+                        // etc.
 
-            var avAnt = uv(src, function (r) { return r.antenne; });
-            S.cascaded.antenne = avAnt;
-            S.filters.antenne = S.filters.antenne.filter(function (a) { return avAnt.indexOf(a) >= 0; });
-            if (chIdx < 0 && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
+                        // Helpers : Set (hash) pour lookup O(1), et filtre rapide avec court-circuit
+                        // si tous les choix possibles sont cochés (filtre = no-op).
+                        function _toSet(arr) { var s = {}; for (var i = 0; i < arr.length; i++) s[arr[i]] = 1; return s; }
+                        function _fastSub(srcArr, keyFn, selArr, fullLen) {
+                            if (!selArr.length || selArr.length >= fullLen) return srcArr; // no-op
+                            var set = _toSet(selArr);
+                            var out = []; for (var i = 0; i < srcArr.length; i++) { if (set[keyFn(srcArr[i])]) out.push(srcArr[i]); }
+                            return out;
+                        }
 
-            var srcAnt = S.filters.antenne.length ? src.filter(function (r) { return S.filters.antenne.indexOf(r.antenne) >= 0; }) : src;
-            var avZS = uv(srcAnt, function (r) { return r.org3; });
-            S.cascaded.zs = avZS;
-            S.filters.zs = S.filters.zs.filter(function (a) { return avZS.indexOf(a) >= 0; });
-            if (chIdx < 1) S.filters.zs = avZS.slice();
+                        var avAnt = uv(src, function (r) { return r.antenne; });
+                        S.cascaded.antenne = avAnt;
+                        var _sAnt = _toSet(avAnt);
+                        S.filters.antenne = S.filters.antenne.filter(function (a) { return _sAnt[a]; });
+                        if (chIdx < 0 && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
 
-            var srcZS = S.filters.zs.length ? srcAnt.filter(function (r) { return S.filters.zs.indexOf(r.org3) >= 0; }) : srcAnt;
-            var avAS = uv(srcZS, function (r) { return r.org4; });
-            S.cascaded.as = avAS;
-            S.filters.as = S.filters.as.filter(function (a) { return avAS.indexOf(a) >= 0; });
-            if (chIdx < 2) S.filters.as = avAS.slice();
+                        var srcAnt = _fastSub(src, function (r) { return r.antenne; }, S.filters.antenne, avAnt.length);
+                        var avZS = uv(srcAnt, function (r) { return r.org3; });
+                        S.cascaded.zs = avZS;
+                        var _sZS = _toSet(avZS);
+                        S.filters.zs = S.filters.zs.filter(function (a) { return _sZS[a]; });
+                        if (chIdx < 1) S.filters.zs = avZS.slice();
 
-            var srcAS = S.filters.as.length ? srcZS.filter(function (r) { return S.filters.as.indexOf(r.org4) >= 0; }) : srcZS;
-            var avFOSA = uv(srcAS, function (r) { return r.org5; });
-            S.cascaded.fosa = avFOSA;
-            S.filters.fosa = S.filters.fosa.filter(function (a) { return avFOSA.indexOf(a) >= 0; });
-            if (chIdx < 3) S.filters.fosa = avFOSA.slice();
-        }
+                        var srcZS = _fastSub(srcAnt, function (r) { return r.org3; }, S.filters.zs, avZS.length);
+                        var avAS = uv(srcZS, function (r) { return r.org4; });
+                        S.cascaded.as = avAS;
+                        var _sAS = _toSet(avAS);
+                        S.filters.as = S.filters.as.filter(function (a) { return _sAS[a]; });
+                        if (chIdx < 2) S.filters.as = avAS.slice();
+
+                        var srcAS = _fastSub(srcZS, function (r) { return r.org4; }, S.filters.as, avAS.length);
+                        var avFOSA = uv(srcAS, function (r) { return r.org5; });
+                        S.cascaded.fosa = avFOSA;
+                        var _sFOSA = _toSet(avFOSA);
+                        S.filters.fosa = S.filters.fosa.filter(function (a) { return _sFOSA[a]; });
+                        if (chIdx < 3) S.filters.fosa = avFOSA.slice();
+                    }
+
         /* ═══ APPLY FILTER ═══ */
-        function apFlt() {
-            var f = S.filters;
-            S.flt = S.data.filter(function (r) {
-                if (f.province && r.org2 !== f.province) return false;
-                if (f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
-                if (f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
-                if (f.as.length && f.as.indexOf(r.org4) < 0) return false;
-                if (f.fosa.length && f.fosa.indexOf(r.org5) < 0) return false;
-                if (f.period.length && f.period.indexOf(r.period) < 0) return false;
-                return true;
-            });
-        }
+                function apFlt() {
+                        var f = S.filters, cas = S.cascaded || {};
+                        // Construit un Set (hash) O(1) par dimension. Court-circuit : si la liste
+                        // est vide (= pas de filtre) ou contient déjà tous les choix possibles,
+                        // on retourne null → on saute le test dans la boucle.
+                        function _mkSet(arr, fullLen) {
+                            if (!arr || !arr.length) return null;
+                            if (fullLen && arr.length >= fullLen) return null;
+                            var s = {}; for (var i = 0; i < arr.length; i++) s[arr[i]] = 1; return s;
+                        }
+                        var antS = _mkSet(f.antenne, (cas.antenne || []).length);
+                        var zsS = _mkSet(f.zs, (cas.zs || []).length);
+                        var asS = _mkSet(f.as, (cas.as || []).length);
+                        var foS = _mkSet(f.fosa, (cas.fosa || []).length);
+                        var peS = _mkSet(f.period, ((S.vals && S.vals.period) || []).length);
+                        S.flt = S.data.filter(function (r) {
+                            if (f.province && r.org2 !== f.province) return false;
+                            if (antS && !antS[r.antenne]) return false;
+                            if (zsS && !zsS[r.org3]) return false;
+                            if (asS && !asS[r.org4]) return false;
+                            if (foS && !foS[r.org5]) return false;
+                            if (peS && !peS[r.period]) return false;
+                            return true;
+                        });
+                    }
 
         /* ═══ RENDER FILTERS ═══ */
         function rFlt() {
@@ -1313,11 +1341,13 @@
             var aS = document.createElement('span'); aS.textContent = 'Tout sélectionner'; aS.style.fontWeight = '700';
             aD.appendChild(aS); dd.appendChild(aD);
 
-            /* Options individuelles */
+                        /* Options individuelles */
+            var _selSet = {}; for (var _k = 0; _k < selected.length; _k++) _selSet[selected[_k]] = 1;
             options.forEach(function (v) {
                 var it = E('div', 'fi');
                 var cb = document.createElement('input'); cb.type = 'checkbox';
-                cb.checked = (selected.indexOf(v) >= 0);
+                cb.checked = _selSet[v] === 1;
+
                 cb.onchange = function () {
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
@@ -1514,53 +1544,53 @@
             }, 500);
         }
 
-                /* ═══ P2: COHÉRENCE-TEMPS ═══ */
-                    function rP2(c) {
-                        var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT;
-                        var yr = mos.length ? mos[0].substr(0, 4) : '2025', yr1 = '' + (+yr - 1), yr2 = '' + (+yr - 2);
-                        var mNums = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-                        var mLabs = mNums.map(function (m) { return mL('2025' + m).split(' ')[0]; });
+        /* ═══ P2: COHÉRENCE-TEMPS ═══ */
+        function rP2(c) {
+            var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT;
+            var yr = mos.length ? mos[0].substr(0, 4) : '2025', yr1 = '' + (+yr - 1), yr2 = '' + (+yr - 2);
+            var mNums = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+            var mLabs = mNums.map(function (m) { return mL('2025' + m).split(' ')[0]; });
 
-                        /* Index AD par période — un seul passage, évite des filtrages répétés O(|AD|) */
-                        var _byPer = {};
-                        for (var _i = 0; _i < AD.length; _i++) { var _r = AD[_i]; var _p = _r.period; if (!_byPer[_p]) _byPer[_p] = []; _byPer[_p].push(_r); }
-                        function yrD(y, ag) { return mNums.map(function (m) { var recs = _byPer[y + m] || []; return recs.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); }); }
+            /* Index AD par période — un seul passage, évite des filtrages répétés O(|AD|) */
+            var _byPer = {};
+            for (var _i = 0; _i < AD.length; _i++) { var _r = AD[_i]; var _p = _r.period; if (!_byPer[_p]) _byPer[_p] = []; _byPer[_p].push(_r); }
+            function yrD(y, ag) { return mNums.map(function (m) { var recs = _byPer[y + m] || []; return recs.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); }); }
 
-                        /* Niveau d'org unit — invariant pour tous les antigènes, calculé une seule fois */
-                        var _f = S.filters;
-                        var _orgK, _orgL;
-                        if (_f.as && _f.as.length === 1) { _orgK = 'org5'; _orgL = 'FOSA'; }
-                        else if (_f.zs && _f.zs.length === 1) { _orgK = 'org4'; _orgL = 'Aire de Santé'; }
-                        else if (_f.antenne && _f.antenne.length === 1) { _orgK = 'org3'; _orgL = 'Zone de Santé'; }
-                        else {
-                            var _nbAnt = uv(D, function (r) { return r.antenne; }).length;
-                            if (_nbAnt > 1) { _orgK = 'antenne'; _orgL = 'Antenne PEV'; }
-                            else { _orgK = 'org3'; _orgL = 'Zone de Santé'; }
-                        }
+            /* Niveau d'org unit — invariant pour tous les antigènes, calculé une seule fois */
+            var _f = S.filters;
+            var _orgK, _orgL;
+            if (_f.as && _f.as.length === 1) { _orgK = 'org5'; _orgL = 'FOSA'; }
+            else if (_f.zs && _f.zs.length === 1) { _orgK = 'org4'; _orgL = 'Aire de Santé'; }
+            else if (_f.antenne && _f.antenne.length === 1) { _orgK = 'org3'; _orgL = 'Zone de Santé'; }
+            else {
+                var _nbAnt = uv(D, function (r) { return r.antenne; }).length;
+                if (_nbAnt > 1) { _orgK = 'antenne'; _orgL = 'Antenne PEV'; }
+                else { _orgK = 'org3'; _orgL = 'Zone de Santé'; }
+            }
 
-                        /* Fenêtre temporelle (règle du 20ème jour) — invariante */
-                        var _nowD = new Date(), _tDay = _nowD.getDate(), _tYr = _nowD.getFullYear(), _tMo = _nowD.getMonth() + 1;
-                        if (_tDay < 20) { _tMo -= 1; }
-                        if (_tMo <= 0) { _tMo += 12; _tYr -= 1; }
-                        var _limitPer = '' + _tYr + (_tMo < 10 ? '0' : '') + _tMo;
-                        var _allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < _limitPer; });
-                        var _targetMos = _allMos.slice(Math.max(0, _allMos.length - N));
-                        var _targetSet = {}; _targetMos.forEach(function (m) { _targetSet[m] = 1; });
+            /* Fenêtre temporelle (règle du 20ème jour) — invariante */
+            var _nowD = new Date(), _tDay = _nowD.getDate(), _tYr = _nowD.getFullYear(), _tMo = _nowD.getMonth() + 1;
+            if (_tDay < 20) { _tMo -= 1; }
+            if (_tMo <= 0) { _tMo += 12; _tYr -= 1; }
+            var _limitPer = '' + _tYr + (_tMo < 10 ? '0' : '') + _tMo;
+            var _allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < _limitPer; });
+            var _targetMos = _allMos.slice(Math.max(0, _allMos.length - N));
+            var _targetSet = {}; _targetMos.forEach(function (m) { _targetSet[m] = 1; });
 
-                        /* Pré-agrégation par (période, org) des 8 antigènes du scatter — un seul passage */
-                        var _AGS_SC = ['BCG', 'DTC1', 'DTC3', 'VAR1', 'VAA', 'VAR2', 'PCV13_1', 'PCV13_3'];
-                        var _sumPO = {};
-                        for (var _j = 0; _j < AD.length; _j++) {
-                            var _rr = AD[_j]; var _pp = _rr.period; if (!_targetSet[_pp]) continue;
-                            var _oo = _rr[_orgK] || ''; var _kk = _pp + '|' + _oo;
-                            var _bb = _sumPO[_kk]; if (!_bb) { _bb = _sumPO[_kk] = {}; }
-                            for (var _ii = 0; _ii < _AGS_SC.length; _ii++) {
-                                var _ag = _AGS_SC[_ii];
-                                _bb[_ag] = (_bb[_ag] || 0) + (Number(_rr[_ag]) || 0);
-                            }
-                        }
+            /* Pré-agrégation par (période, org) des 8 antigènes du scatter — un seul passage */
+            var _AGS_SC = ['BCG', 'DTC1', 'DTC3', 'VAR1', 'VAA', 'VAR2', 'PCV13_1', 'PCV13_3'];
+            var _sumPO = {};
+            for (var _j = 0; _j < AD.length; _j++) {
+                var _rr = AD[_j]; var _pp = _rr.period; if (!_targetSet[_pp]) continue;
+                var _oo = _rr[_orgK] || ''; var _kk = _pp + '|' + _oo;
+                var _bb = _sumPO[_kk]; if (!_bb) { _bb = _sumPO[_kk] = {}; }
+                for (var _ii = 0; _ii < _AGS_SC.length; _ii++) {
+                    var _ag = _AGS_SC[_ii];
+                    _bb[_ag] = (_bb[_ag] || 0) + (Number(_rr[_ag]) || 0);
+                }
+            }
 
-                        _AGS_SC.forEach(function (ag, i) {
+            _AGS_SC.forEach(function (ag, i) {
                 var row = E('div', 'cr');
                 var left = E('div', 'ch'); left.innerHTML = '<div class="cb"><h4>📈 ' + AG_LBL[ag] + ' — Évolution</h4><canvas id="ev' + i + '" height="60"></canvas></div>'; row.appendChild(left);
                 var right = E('div', 'ch'); right.innerHTML = '<div class="cb"><h4>🎯 ' + AG_LBL[ag] + ' vs Moy</h4><div id="dp' + i + '" style="height:290px"></div></div>'; row.appendChild(right);
@@ -1577,7 +1607,7 @@
                         }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
                     });
 
-                                        var dv = document.getElementById('dp' + i); if (!dv) return;
+                    var dv = document.getElementById('dp' + i); if (!dv) return;
                     var lastM = mos[mos.length - 1]; if (!lastM) return;
 
                     var ld = D.filter(function (r) { return r.period === lastM; });
@@ -1610,7 +1640,7 @@
                             x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: {
                                 size: 9, color: col,
                                 line: { width: 1, color: '#fff' }
-                                                        }, hoverinfo: 'text', name: _orgL
+                            }, hoverinfo: 'text', name: _orgL
 
                         },
                         {
@@ -1651,7 +1681,7 @@
             box.innerHTML = '<h4>\u26a0 Alertes &amp; Situation compl\u00e8te (moy. mobile ' + N + ' mois, \u00b1' + Math.round(thr * 100) + '%)</h4>';
             if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donn\u00e9e.</p>'; return box; }
 
-                        var ol = getOrgLevel(D);
+            var ol = getOrgLevel(D);
 
             /* Agréger par org unit au bon niveau */
             var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
@@ -3022,8 +3052,8 @@
                 sc.innerHTML += h + '</tbody></table></div>';
             }, 30);
         };
-    /* ═══ DONNÉES DE VACCINATION ═══ */
-    function rVac(c) {
+        /* ═══ DONNÉES DE VACCINATION ═══ */
+        function rVac(c) {
             var D = S.flt, AD = S.data;
             var f = S.filters;
             var ol = getOrgLevel(D);
@@ -3175,8 +3205,8 @@
             setTimeout(function () { _renderVacTbl(); }, 100);
         }
 
-    /* ═══ DONNÉES LOGISTIQUES ═══ */
-    function rLog(c) {
+        /* ═══ DONNÉES LOGISTIQUES ═══ */
+        function rLog(c) {
             var D = S.flt, AD = S.data;
             var f = S.filters;
             var ol = getOrgLevel(D);
