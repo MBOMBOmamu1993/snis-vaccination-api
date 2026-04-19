@@ -1035,9 +1035,11 @@
                     fetchGzip(BASE + '/by_fosa/manifest.json.gz').catch(function () { return {}; }),
                     fetchGzip(BASE + '/by_as/manifest.json.gz').catch(function () { return {}; })
                 ]);
-                sp(40, 'Parsing...');
+                                sp(40, 'Parsing...');
                 S.meta = mR;
+                _idbPurgeOld(mR && mR.generated_at); /* Supprime les caches de versions antérieures */
                 var byZS = zR;
+
                 S.hmIndex = hmR;
                 S.fosaIndex = fosaR;
                 S.asIndex = asR;
@@ -1094,32 +1096,105 @@
             }
         }
 
-                /* Yield au browser pour qu'il peigne (spinner etc.) avant du gros travail synchrone */
-                    function _yieldUI() { return new Promise(function (res) { setTimeout(res, 0); }); }
+                                /* Yield au browser pour qu'il peigne (spinner etc.) avant du gros travail synchrone */
+                                    function _yieldUI() { return new Promise(function (res) { setTimeout(res, 0); }); }
 
-                    /* Charger données FOSA+AS pour UNE province */
-                    async function loadProvinceData(prov) {
-                        if (!prov) return;
-                        var promises = [];
-                        if (S.fosaIndex[prov] && !S.fosaCache[prov]) {
-                            promises.push(fetchGzip(BASE + '/by_fosa/' + S.fosaIndex[prov]).then(function (d) { S.fosaCache[prov] = d; }).catch(function () { }));
-                        }
-                        if (S.asIndex[prov] && !S.asCache[prov]) {
-                            promises.push(fetchGzip(BASE + '/by_as/' + S.asIndex[prov]).then(function (d) { S.asCache[prov] = d; }).catch(function () { }));
-                        }
-                        if (promises.length) await Promise.all(promises);
+                                    /* ═══ INDEXEDDB CACHE (persistance inter-refresh) ═══
+                                     * Clé = meta.generated_at → quand DHIS2 régénère les données, la clé change
+                                     * et l'ancien cache est automatiquement purgé. Fraîcheur des données garantie.
+                                     * Fallback silencieux si IndexedDB est indisponible (navigation privée, quota…). */
+                                    var _idbP = null;
+                                    function _openIDB() {
+                                        if (_idbP) return _idbP;
+                                        _idbP = new Promise(function (resolve) {
+                                            try {
+                                                var req = indexedDB.open('pev-dashboard', 1);
+                                                req.onupgradeneeded = function (e) {
+                                                    var db = e.target.result;
+                                                    if (!db.objectStoreNames.contains('prov_cache')) db.createObjectStore('prov_cache');
+                                                };
+                                                req.onsuccess = function (e) { resolve(e.target.result); };
+                                                req.onerror = function () { resolve(null); };
+                                                req.onblocked = function () { resolve(null); };
+                                            } catch (_) { resolve(null); }
+                                        });
+                                        return _idbP;
+                                    }
+                                    function _idbGet(key) {
+                                        return _openIDB().then(function (db) {
+                                            if (!db) return null;
+                                            return new Promise(function (res) {
+                                                try {
+                                                    var r = db.transaction('prov_cache', 'readonly').objectStore('prov_cache').get(key);
+                                                    r.onsuccess = function () { res(r.result || null); };
+                                                    r.onerror = function () { res(null); };
+                                                } catch (_) { res(null); }
+                                            });
+                                        });
+                                    }
+                                    function _idbPut(key, val) {
+                                        return _openIDB().then(function (db) {
+                                            if (!db) return;
+                                            try { db.transaction('prov_cache', 'readwrite').objectStore('prov_cache').put(val, key); } catch (_) { }
+                                        });
+                                    }
+                                    function _idbPurgeOld(currentVer) {
+                                        if (!currentVer) return;
+                                        _openIDB().then(function (db) {
+                                            if (!db) return;
+                                            try {
+                                                var st = db.transaction('prov_cache', 'readwrite').objectStore('prov_cache');
+                                                var req = st.openKeyCursor();
+                                                req.onsuccess = function (e) {
+                                                    var cur = e.target.result; if (!cur) return;
+                                                    if (String(cur.key).indexOf(currentVer + '|') !== 0) st.delete(cur.key);
+                                                    cur.continue();
+                                                };
+                                            } catch (_) { }
+                                        });
+                                    }
+                                    function _cacheKey(ver, kind, prov) { return ver + '|' + kind + '|' + prov; }
 
-                        /* Le transform est synchrone et coûteux : on cède la main au browser
-                         * pour que le spinner soit effectivement peint avant le gros travail. */
-                        if (!S.fosaTCache[prov] || !S.asTCache[prov]) await _yieldUI();
-                        if (!S.fosaTCache[prov]) {
-                            var fd = S.fosaCache[prov];
-                            S.fosaTCache[prov] = (fd && fd.length) ? fd.map(transformRecord) : [];
-                        }
-                        if (!S.asTCache[prov]) {
-                            var ad = S.asCache[prov];
-                            S.asTCache[prov] = (ad && ad.length) ? ad.map(transformRecord) : [];
-                        }
+                                                        /* Charger données FOSA+AS pour UNE province */
+                                                            async function loadProvinceData(prov) {
+                                                                if (!prov) return;
+                                                                var ver = (S.meta && S.meta.generated_at) || 'v1';
+                                                                var kF = _cacheKey(ver, 'fosa', prov);
+                                                                var kA = _cacheKey(ver, 'as', prov);
+
+                                                                /* 1) Tenter IndexedDB : si dispo, on saute download ET transform (instantané) */
+                                                                if (!S.fosaTCache[prov]) {
+                                                                    var c1 = await _idbGet(kF);
+                                                                    if (c1) S.fosaTCache[prov] = c1;
+                                                                }
+                                                                if (!S.asTCache[prov]) {
+                                                                    var c2 = await _idbGet(kA);
+                                                                    if (c2) S.asTCache[prov] = c2;
+                                                                }
+
+                                                                /* 2) Sinon, télécharger les JSON compressés (seulement ce qui manque) */
+                                                                var promises = [];
+                                                                if (!S.fosaTCache[prov] && S.fosaIndex[prov] && !S.fosaCache[prov]) {
+                                                                    promises.push(fetchGzip(BASE + '/by_fosa/' + S.fosaIndex[prov]).then(function (d) { S.fosaCache[prov] = d; }).catch(function () { }));
+                                                                }
+                                                                if (!S.asTCache[prov] && S.asIndex[prov] && !S.asCache[prov]) {
+                                                                    promises.push(fetchGzip(BASE + '/by_as/' + S.asIndex[prov]).then(function (d) { S.asCache[prov] = d; }).catch(function () { }));
+                                                                }
+                                                                if (promises.length) await Promise.all(promises);
+
+                                                                /* 3) Transform + persister dans IDB (prochains refresh = instantanés) */
+                                                                if (!S.fosaTCache[prov] || !S.asTCache[prov]) await _yieldUI();
+                                                                if (!S.fosaTCache[prov]) {
+                                                                    var fd = S.fosaCache[prov];
+                                                                    S.fosaTCache[prov] = (fd && fd.length) ? fd.map(transformRecord) : [];
+                                                                    if (S.fosaTCache[prov].length) _idbPut(kF, S.fosaTCache[prov]);
+                                                                }
+                                                                if (!S.asTCache[prov]) {
+                                                                    var ad = S.asCache[prov];
+                                                                    S.asTCache[prov] = (ad && ad.length) ? ad.map(transformRecord) : [];
+                                                                    if (S.asTCache[prov].length) _idbPut(kA, S.asTCache[prov]);
+                                                                }
+
 
             S.fosaData = S.fosaTCache[prov];
             S.asData = S.asTCache[prov];
