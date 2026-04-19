@@ -1514,15 +1514,53 @@
             }, 500);
         }
 
-        /* ═══ P2: COHÉRENCE-TEMPS ═══ */
-        function rP2(c) {
-            var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT;
-            var yr = mos.length ? mos[0].substr(0, 4) : '2025', yr1 = '' + (+yr - 1), yr2 = '' + (+yr - 2);
-            var mNums = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-            var mLabs = mNums.map(function (m) { return mL('2025' + m).split(' ')[0]; });
-            function yrD(y, ag) { return mNums.map(function (m) { return AD.filter(function (r) { return r.period === y + m; }).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); }); }
+                /* ═══ P2: COHÉRENCE-TEMPS ═══ */
+                    function rP2(c) {
+                        var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }), N = C.MA, thr = C.CT;
+                        var yr = mos.length ? mos[0].substr(0, 4) : '2025', yr1 = '' + (+yr - 1), yr2 = '' + (+yr - 2);
+                        var mNums = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+                        var mLabs = mNums.map(function (m) { return mL('2025' + m).split(' ')[0]; });
 
-            ['BCG', 'DTC1', 'DTC3', 'VAR1', 'VAA', 'VAR2', 'PCV13_1', 'PCV13_3'].forEach(function (ag, i) {
+                        /* Index AD par période — un seul passage, évite des filtrages répétés O(|AD|) */
+                        var _byPer = {};
+                        for (var _i = 0; _i < AD.length; _i++) { var _r = AD[_i]; var _p = _r.period; if (!_byPer[_p]) _byPer[_p] = []; _byPer[_p].push(_r); }
+                        function yrD(y, ag) { return mNums.map(function (m) { var recs = _byPer[y + m] || []; return recs.reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); }); }
+
+                        /* Niveau d'org unit — invariant pour tous les antigènes, calculé une seule fois */
+                        var _f = S.filters;
+                        var _orgK, _orgL;
+                        if (_f.as && _f.as.length === 1) { _orgK = 'org5'; _orgL = 'FOSA'; }
+                        else if (_f.zs && _f.zs.length === 1) { _orgK = 'org4'; _orgL = 'Aire de Santé'; }
+                        else if (_f.antenne && _f.antenne.length === 1) { _orgK = 'org3'; _orgL = 'Zone de Santé'; }
+                        else {
+                            var _nbAnt = uv(D, function (r) { return r.antenne; }).length;
+                            if (_nbAnt > 1) { _orgK = 'antenne'; _orgL = 'Antenne PEV'; }
+                            else { _orgK = 'org3'; _orgL = 'Zone de Santé'; }
+                        }
+
+                        /* Fenêtre temporelle (règle du 20ème jour) — invariante */
+                        var _nowD = new Date(), _tDay = _nowD.getDate(), _tYr = _nowD.getFullYear(), _tMo = _nowD.getMonth() + 1;
+                        if (_tDay < 20) { _tMo -= 1; }
+                        if (_tMo <= 0) { _tMo += 12; _tYr -= 1; }
+                        var _limitPer = '' + _tYr + (_tMo < 10 ? '0' : '') + _tMo;
+                        var _allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < _limitPer; });
+                        var _targetMos = _allMos.slice(Math.max(0, _allMos.length - N));
+                        var _targetSet = {}; _targetMos.forEach(function (m) { _targetSet[m] = 1; });
+
+                        /* Pré-agrégation par (période, org) des 8 antigènes du scatter — un seul passage */
+                        var _AGS_SC = ['BCG', 'DTC1', 'DTC3', 'VAR1', 'VAA', 'VAR2', 'PCV13_1', 'PCV13_3'];
+                        var _sumPO = {};
+                        for (var _j = 0; _j < AD.length; _j++) {
+                            var _rr = AD[_j]; var _pp = _rr.period; if (!_targetSet[_pp]) continue;
+                            var _oo = _rr[_orgK] || ''; var _kk = _pp + '|' + _oo;
+                            var _bb = _sumPO[_kk]; if (!_bb) { _bb = _sumPO[_kk] = {}; }
+                            for (var _ii = 0; _ii < _AGS_SC.length; _ii++) {
+                                var _ag = _AGS_SC[_ii];
+                                _bb[_ag] = (_bb[_ag] || 0) + (Number(_rr[_ag]) || 0);
+                            }
+                        }
+
+                        _AGS_SC.forEach(function (ag, i) {
                 var row = E('div', 'cr');
                 var left = E('div', 'ch'); left.innerHTML = '<div class="cb"><h4>📈 ' + AG_LBL[ag] + ' — Évolution</h4><canvas id="ev' + i + '" height="60"></canvas></div>'; row.appendChild(left);
                 var right = E('div', 'ch'); right.innerHTML = '<div class="cb"><h4>🎯 ' + AG_LBL[ag] + ' vs Moy</h4><div id="dp' + i + '" style="height:290px"></div></div>'; row.appendChild(right);
@@ -1539,49 +1577,20 @@
                         }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
                     });
 
-                    var dv = document.getElementById('dp' + i); if (!dv) return;
+                                        var dv = document.getElementById('dp' + i); if (!dv) return;
                     var lastM = mos[mos.length - 1]; if (!lastM) return;
 
-                    /* ── Déterminer dynamiquement le niveau d'orgunit ── */
-                    var f = S.filters;
-                    var orgK, orgL;
-                    if (f.as && f.as.length === 1) {
-                        orgK = 'org5'; orgL = 'FOSA';
-                    } else if (f.zs && f.zs.length === 1) {
-                        orgK = 'org4'; orgL = 'Aire de Santé';
-                    } else if (f.antenne && f.antenne.length === 1) {
-                        orgK = 'org3'; orgL = 'Zone de Santé';
-                    } else {
-                        /* Province avec plusieurs antennes → Antenne ; sinon ZS */
-                        var nbAnt = uv(D, function (r) { return r.antenne; }).length;
-                        if (nbAnt > 1) {
-                            orgK = 'antenne'; orgL = 'Antenne PEV';
-                        } else {
-                            orgK = 'org3'; orgL = 'Zone de Santé';
-                        }
-                    }
-
                     var ld = D.filter(function (r) { return r.period === lastM; });
-                    var og = grp(ld, function (r) { return r[orgK]; });
+                    var og = grp(ld, function (r) { return r[_orgK]; });
                     var xV = [], yV = [], txt = [], col = [];
 
                     Object.keys(og).filter(Boolean).forEach(function (org) {
                         var cv = sf(og[org], ag);
 
-                        // Règle du 20ème jour pour définir la période limite
-                        var nowD = new Date(), tDay = nowD.getDate(), tYr = nowD.getFullYear(), tMo = nowD.getMonth() + 1;
-                        if (tDay < 20) { tMo -= 1; }
-                        if (tMo <= 0) { tMo += 12; tYr -= 1; }
-                        var limitPer = '' + tYr + (tMo < 10 ? '0' : '') + tMo;
-
-                        // Récupérer les 11 mois précédents
-                        var allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < limitPer; });
-                        var targetMos = allMos.slice(Math.max(0, allMos.length - N)); // N vaut 11
-
-                        // CORRECTION DU BUG : Agréger le total par mois avant de faire la moyenne
-                        var monthlyTotals = targetMos.map(function (m) {
-                            return AD.filter(function (r) { return r[orgK] === org && r.period === m; })
-                                .reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                        // Utilise l'index pré-calculé : O(1) par (mois, org) au lieu de O(|AD|)
+                        var monthlyTotals = _targetMos.map(function (m) {
+                            var b = _sumPO[m + '|' + org];
+                            return b ? (b[ag] || 0) : 0;
                         });
 
                         if (!monthlyTotals.length) return;
@@ -1601,7 +1610,8 @@
                             x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: {
                                 size: 9, color: col,
                                 line: { width: 1, color: '#fff' }
-                            }, hoverinfo: 'text', name: orgL
+                                                        }, hoverinfo: 'text', name: _orgL
+
                         },
                         {
                             x: [0, mx], y: [0, mx], type: 'scatter', mode: 'lines', line: { color: '#333', width: 2 },
@@ -1641,12 +1651,33 @@
             box.innerHTML = '<h4>\u26a0 Alertes &amp; Situation compl\u00e8te (moy. mobile ' + N + ' mois, \u00b1' + Math.round(thr * 100) + '%)</h4>';
             if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donn\u00e9e.</p>'; return box; }
 
-            var ol = getOrgLevel(D);
+                        var ol = getOrgLevel(D);
 
             /* Agréger par org unit au bon niveau */
             var ld = D.filter(function (r) { return r.period === lastM && isRep(r); });
             var og = grp(ld, function (r) { return r[ol.k]; });
             var orgNames = Object.keys(og).filter(Boolean).sort();
+
+            /* Fenêtre temporelle — invariante, calculée une seule fois */
+            var _nowDA = new Date(), _tDayA = _nowDA.getDate(), _tYrA = _nowDA.getFullYear(), _tMoA = _nowDA.getMonth() + 1;
+            if (_tDayA < 20) { _tMoA -= 1; }
+            if (_tMoA <= 0) { _tMoA += 12; _tYrA -= 1; }
+            var _limitPerA = '' + _tYrA + (_tMoA < 10 ? '0' : '') + _tMoA;
+            var _allMosA = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < _limitPerA; });
+            var _targetMosA = _allMosA.slice(Math.max(0, _allMosA.length - N));
+            var _targetSetA = {}; _targetMosA.forEach(function (m) { _targetSetA[m] = 1; });
+
+            /* Pré-agrégation par (période, org) pour tous les antigènes AG_ALL — un seul passage sur AD */
+            var _sumPOA = {};
+            for (var _iA = 0; _iA < AD.length; _iA++) {
+                var _rA = AD[_iA]; var _pA = _rA.period; if (!_targetSetA[_pA]) continue;
+                var _oA = _rA[ol.k] || ''; var _kA = _pA + '|' + _oA;
+                var _bA = _sumPOA[_kA]; if (!_bA) { _bA = _sumPOA[_kA] = {}; }
+                for (var _jA = 0; _jA < AG_ALL.length; _jA++) {
+                    var _agA = AG_ALL[_jA];
+                    _bA[_agA] = (_bA[_agA] || 0) + (Number(_rA[_agA]) || 0);
+                }
+            }
 
             var rows = [];
 
@@ -1656,21 +1687,12 @@
                 AG_ALL.forEach(function (ag) {
                     var val = sf(recs, ag);
 
-                    /* Moyenne mobile N périodes précédentes (avec règle du 20ème jour) */
-                    var nowD = new Date(), tDay = nowD.getDate(), tYr = nowD.getFullYear(), tMo = nowD.getMonth() + 1;
-                    if (tDay < 20) { tMo -= 1; }
-                    if (tMo <= 0) { tMo += 12; tYr -= 1; }
-                    var limitPer = '' + tYr + (tMo < 10 ? '0' : '') + tMo;
-
-                    var allMos = uv(AD, function (r) { return r.period; }).sort().filter(function (m) { return m < limitPer; });
-                    var targetMos = allMos.slice(Math.max(0, allMos.length - N));
-
-                    // CORRECTION DU BUG : Agréger le total mensuel de la Zone
                     var _isVAPag = ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0;
-                    var monthlyTotals = targetMos.map(function (m) {
-                        return AD.filter(function (r) { return r[ol.k] === orgName && r.period === m; })
-                            .reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
+                    var monthlyTotals = _targetMosA.map(function (m) {
+                        var b = _sumPOA[m + '|' + orgName];
+                        return b ? (b[ag] || 0) : 0;
                     });
+
 
                     // Pour VAP : ne garder que les mois non-zéro et exiger 11+ mois
                     if (_isVAPag) {
