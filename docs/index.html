@@ -957,7 +957,18 @@
             if (nbAnt > 1) return { k: 'antenne', l: 'Antenne PEV' };
             return { k: 'org3', l: 'Zone de Santé' };
         }
-        function sp(p, t, s) { var a = document.getElementById('PF'), b = document.getElementById('PT'), c = document.getElementById('LS'); if (a) a.style.width = p + '%'; if (b && t) b.textContent = t; if (c && s) c.textContent = s; }
+                function sp(p, t, s) { var a = document.getElementById('PF'), b = document.getElementById('PT'), c = document.getElementById('LS'); if (a) a.style.width = p + '%'; if (b && t) b.textContent = t; if (c && s) c.textContent = s; }
+                    /* Texte du bandeau haut-droit : enreg | mois | FOSA (province courante) */
+                    function _topBarText() {
+                        var nRec = (S.flt || S.data || []).length || (S.meta && S.meta.total_records) || 0;
+                        var nMois = (S.filters.period && S.filters.period.length) ? S.filters.period.length : ((S.vals.period || []).length);
+                        var src = S.fosaData && S.fosaData.length ? S.fosaData : (S.asData && S.asData.length ? S.asData : (S.data || []));
+                        var seen = Object.create(null), cnt = 0;
+                        for (var i = 0; i < src.length; i++) { var k = src[i].org5; if (k && !seen[k]) { seen[k] = 1; cnt++; } }
+                        return nRec.toLocaleString() + ' enreg. | ' + nMois + ' mois | ' + cnt.toLocaleString() + ' FOSA';
+                    }
+                    function _updTopBar() { var b = document.getElementById('PT'); if (b) b.textContent = _topBarText(); }
+
 
         /* ═══ DEFAULT PERIOD ═══ */
         function getDefaultPeriod(months) {
@@ -976,21 +987,28 @@
             return '' + yr + (mo < 10 ? '0' : '') + mo;
         }
         /* ═══ TRANSFORM RECORD ═══ */
-        function transformRecord(r) {
-            var rec = {
-                org2: r._Province || '', org3: r._ZS || '', org4: r._AS || '', org5: r._FOSA || '',
-                antenne: r._Antenne || '', period: r._YM || '',
-                completude: Number(r.comp) || 0, promptitude: Number(r.prompt) || 0,
-                isVAP: C.VAP_PROV.some(function (p) {
-                    if (!r._Province) return false;
-                    var pNorm = p.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
-                    var rNorm = r._Province.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
-                    return rNorm.indexOf(pNorm) !== -1;
-                }),
-                _n: Number(r.n) || 0, _rap: Number(r.rap) || 0
+                /* Cache isVAP par nom de province (normalisation coûteuse exécutée 1 seule fois) */
+                    var _isVAPCache = {};
+                    function _computeIsVAP(prov) {
+                        if (!prov) return false;
+                        if (_isVAPCache.hasOwnProperty(prov)) return _isVAPCache[prov];
+                        var rNorm = prov.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
+                        var res = C.VAP_PROV.some(function (p) {
+                            var pNorm = p.toLowerCase().replace(/[\s-]/g, '').replace(/[éèêë]/g, 'e');
+                            return rNorm.indexOf(pNorm) !== -1;
+                        });
+                        _isVAPCache[prov] = res;
+                        return res;
+                    }
+                    function transformRecord(r) {
+                        var rec = {
+                            org2: r._Province || '', org3: r._ZS || '', org4: r._AS || '', org5: r._FOSA || '',
+                            antenne: r._Antenne || '', period: r._YM || '',
+                            completude: Number(r.comp) || 0, promptitude: Number(r.prompt) || 0,
+                            isVAP: _computeIsVAP(r._Province),
+                            _n: Number(r.n) || 0, _rap: Number(r.rap) || 0
+                        };
 
-
-            };
             AG_ALL.forEach(function (ag) {
                 var src = AG_FIELD_MAP[ag];
                 var val = src ? (Number(r[src]) || 0) : 0;
@@ -1068,34 +1086,41 @@
                 sp(90, 'Rendu...');
                 bNav(); rFlt(); apFlt(); render();
                 var dt = ((Date.now() - t0) / 1000).toFixed(1);
-                sp(100, (S.meta.total_records || S.data.length).toLocaleString() + ' enreg. | ' + v.period.length + ' mois | ' + (S.meta.nb_fosa || v.fosa.length) + ' FOSA', '⚡ Prêt en ' + dt + 's');
+                                sp(100, _topBarText(), '⚡ Prêt en ' + dt + 's');
+
             } catch (e) {
                 console.error(e); sp(0, '❌ ' + e.message, '❌ Erreur');
                 document.getElementById('DB').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur</h3><p>' + e.message + '</p></div>';
             }
         }
 
-        /* Charger données FOSA+AS pour UNE province */
-        async function loadProvinceData(prov) {
-            if (!prov) return;
-            var promises = [];
-            if (S.fosaIndex[prov] && !S.fosaCache[prov]) {
-                promises.push(fetchGzip(BASE + '/by_fosa/' + S.fosaIndex[prov]).then(function (d) { S.fosaCache[prov] = d; }).catch(function () { }));
-            }
-            if (S.asIndex[prov] && !S.asCache[prov]) {
-                promises.push(fetchGzip(BASE + '/by_as/' + S.asIndex[prov]).then(function (d) { S.asCache[prov] = d; }).catch(function () { }));
-            }
-            if (promises.length) await Promise.all(promises);
+                /* Yield au browser pour qu'il peigne (spinner etc.) avant du gros travail synchrone */
+                    function _yieldUI() { return new Promise(function (res) { setTimeout(res, 0); }); }
 
-            /* Construire fosaData et asData pour cette province (avec cache transformé) */
-            if (!S.fosaTCache[prov]) {
-                var fd = S.fosaCache[prov];
-                S.fosaTCache[prov] = (fd && fd.length) ? fd.map(transformRecord) : [];
-            }
-            if (!S.asTCache[prov]) {
-                var ad = S.asCache[prov];
-                S.asTCache[prov] = (ad && ad.length) ? ad.map(transformRecord) : [];
-            }
+                    /* Charger données FOSA+AS pour UNE province */
+                    async function loadProvinceData(prov) {
+                        if (!prov) return;
+                        var promises = [];
+                        if (S.fosaIndex[prov] && !S.fosaCache[prov]) {
+                            promises.push(fetchGzip(BASE + '/by_fosa/' + S.fosaIndex[prov]).then(function (d) { S.fosaCache[prov] = d; }).catch(function () { }));
+                        }
+                        if (S.asIndex[prov] && !S.asCache[prov]) {
+                            promises.push(fetchGzip(BASE + '/by_as/' + S.asIndex[prov]).then(function (d) { S.asCache[prov] = d; }).catch(function () { }));
+                        }
+                        if (promises.length) await Promise.all(promises);
+
+                        /* Le transform est synchrone et coûteux : on cède la main au browser
+                         * pour que le spinner soit effectivement peint avant le gros travail. */
+                        if (!S.fosaTCache[prov] || !S.asTCache[prov]) await _yieldUI();
+                        if (!S.fosaTCache[prov]) {
+                            var fd = S.fosaCache[prov];
+                            S.fosaTCache[prov] = (fd && fd.length) ? fd.map(transformRecord) : [];
+                        }
+                        if (!S.asTCache[prov]) {
+                            var ad = S.asCache[prov];
+                            S.asTCache[prov] = (ad && ad.length) ? ad.map(transformRecord) : [];
+                        }
+
             S.fosaData = S.fosaTCache[prov];
             S.asData = S.asTCache[prov];
 
@@ -1176,16 +1201,18 @@
                         var asS = _mkSet(f.as, (cas.as || []).length);
                         var foS = _mkSet(f.fosa, (cas.fosa || []).length);
                         var peS = _mkSet(f.period, ((S.vals && S.vals.period) || []).length);
-                        S.flt = S.data.filter(function (r) {
-                            if (f.province && r.org2 !== f.province) return false;
-                            if (antS && !antS[r.antenne]) return false;
-                            if (zsS && !zsS[r.org3]) return false;
-                            if (asS && !asS[r.org4]) return false;
-                            if (foS && !foS[r.org5]) return false;
-                            if (peS && !peS[r.period]) return false;
-                            return true;
-                        });
-                    }
+                                                S.flt = S.data.filter(function (r) {
+                        if (f.province && r.org2 !== f.province) return false;
+                        if (antS && !antS[r.antenne]) return false;
+                        if (zsS && !zsS[r.org3]) return false;
+                        if (asS && !asS[r.org4]) return false;
+                        if (foS && !foS[r.org5]) return false;
+                        if (peS && !peS[r.period]) return false;
+                        return true;
+                    });
+                    _updTopBar();
+                }
+
 
         /* ═══ RENDER FILTERS ═══ */
         function rFlt() {
@@ -1202,7 +1229,8 @@
                     S.filters.province = S.vals.province[0] || '';
                     S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                     sp(50, 'Chargement...', '⏳');
-                    loadProvinceData(S.filters.province).then(function () { computeCascade(null); rFlt(); apFlt(); render(); sp(100, '', '⚡ Prêt'); });
+                                        loadProvinceData(S.filters.province).then(function () { computeCascade(null); rFlt(); apFlt(); render(); sp(100, _topBarText(), '⚡ Prêt'); });
+
                 };
                 plbl.appendChild(prst);
                 fg.appendChild(plbl);
@@ -1216,10 +1244,11 @@
                     S.filters.province = sel.value;
                     S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                     sp(50, 'Chargement province...', '⏳ Changement...');
-                    loadProvinceData(sel.value).then(function () {
+                                        loadProvinceData(sel.value).then(function () {
                         computeCascade(null); rFlt(); apFlt(); render();
-                        sp(100, '', '⚡ Prêt');
+                        sp(100, _topBarText(), '⚡ Prêt');
                     });
+
                 };
                 fg.appendChild(sel); c.appendChild(fg);
             }
@@ -1262,10 +1291,11 @@
                 S.filters.period = getDefaultPeriod(S.vals.period);
 
                 sp(50, 'Réinitialisation...', ' ⏳');
-                loadProvinceData(S.filters.province).then(function () {
+                                loadProvinceData(S.filters.province).then(function () {
                     computeCascade(null); rFlt(); apFlt(); render();
-                    sp(100, '', ' ⚡ Prêt');
+                    sp(100, _topBarText(), ' ⚡ Prêt');
                 });
+
             };
             c.appendChild(rstGlob);
 
