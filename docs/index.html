@@ -867,7 +867,7 @@
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
-            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Données logistiques', ic: '📦' }] },
+            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Courbe de suivi des CV', ic: '📈' }, { t: '4. Logistique', ic: '📦' }] },
             { id: 'as', lb: 'Aire de Santé', fl: ['province', 'antenne', 'zs', 'as', 'period'], pp: [{ t: 'Vaccination AS', ic: '📍' }, { t: 'Logistique AS', ic: '📦' }] },
             { id: 'zs', lb: 'Zone de Santé', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Vaccination ZS', ic: '🗺️' }, { t: 'Logistique ZS', ic: '📦' }] },
             { id: 'ant', lb: 'Antenne PEV', fl: ['province', 'antenne', 'period'], pp: [{ t: 'Tableau de bord Antenne', ic: '📡' }] },
@@ -1568,7 +1568,8 @@
             db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
-            else if (tab.id === 'vacc' || tab.id === 'as' || tab.id === 'zs') { [rVac, rLog][S.pg](ct); }
+            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rCourbesCV, rLog][S.pg](ct); }
+            else if (tab.id === 'as' || tab.id === 'zs') { [rVac, rLog][S.pg](ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
             if (tab.pp.length > 1) { bar.style.display = 'flex'; document.getElementById('PI').textContent = 'Page ' + (S.pg + 1) + ' sur ' + tab.pp.length; document.getElementById('BP').disabled = S.pg === 0; document.getElementById('BN').disabled = S.pg >= tab.pp.length - 1; }
@@ -3468,6 +3469,579 @@
             repBox.innerHTML += h;
             c.appendChild(repBox);
         }
+        /* ═══════════════════════════════════════════════════════
+         *  COUVERTURE VACCINALE — Données ZS avec population
+         *  Source : data_zs/dashboard/by_zs.json.gz
+         *  Chargement lazy à la première ouverture des pages CV
+         * ═══════════════════════════════════════════════════════ */
+        var _cvZSData = null;
+        var _cvLoadPromise = null;
+
+        function _loadCVZSData() {
+            if (_cvZSData) return Promise.resolve(_cvZSData);
+            if (_cvLoadPromise) return _cvLoadPromise;
+            _cvLoadPromise = fetchGzip('./data_zs/dashboard/by_zs.json.gz')
+                .then(function (d) { _cvZSData = d || []; return _cvZSData; })
+                .catch(function (e) { console.warn('CV ZS data unavailable:', e); _cvZSData = []; return []; });
+            return _cvLoadPromise;
+        }
+
+        /* ── Utilitaires CV ── */
+        function _safeDiv(n, d) { return (!d || !isFinite(d) || d === 0) ? null : n / d; }
+        function _fmtPct(v, dec) {
+            if (v === null || v === undefined || !isFinite(v)) return '–';
+            return (v * 100).toFixed(dec !== undefined ? dec : 1) + '%';
+        }
+        function _cvColor(pct) {
+            /* pct = valeur 0-100+ */
+            if (pct === null || pct === undefined || !isFinite(pct)) return '';
+            if (pct > 120) return '#7c3aed';
+            if (pct >= 95) return '#16a34a';
+            if (pct >= 80) return '#2563eb';
+            if (pct >= 50) return '#d97706';
+            return '#dc2626';
+        }
+        function _abandonColor(v) {
+            if (v === null || !isFinite(v)) return '#888';
+            if (v < 0) return '#6b7280';
+            if (v > 0.10) return '#dc2626';
+            return '#16a34a';
+        }
+        function _catColor(cat) {
+            var m = { 'Cat. 1': '#16a34a', 'Cat. 2': '#d97706', 'Cat. 3': '#2563eb', 'Cat. 4': '#dc2626' };
+            return m[cat] || '#94a3b8';
+        }
+        function _categorize(cv1Pct, abanPct) {
+            if (cv1Pct === null || abanPct === null) return 'N/A';
+            var h = cv1Pct >= 90, l = abanPct <= 10;
+            if (h && l) return 'Cat. 1';
+            if (h && !l) return 'Cat. 2';
+            if (!h && l) return 'Cat. 3';
+            return 'Cat. 4';
+        }
+
+        /* Population cible (une valeur annuelle par ZS, répétée chaque mois) */
+        function _cvTargets(recs, n_periods) {
+            var seen = {}, nv = 0, ns = 0, pop = 0;
+            recs.forEach(function (r) {
+                var k = r._ZS || r._Province || '';
+                if (!seen[k]) {
+                    seen[k] = 1;
+                    nv += Number(r.Pop_0_11m_nv) || 0;
+                    ns += Number(r.Pop_0_11m_survivants) || 0;
+                    pop += Number(r.Pop_par_AS) || 0;
+                }
+            });
+            return { pop: pop, nv: nv * n_periods / 12, ns: ns * n_periods / 12, nv_ann: nv, ns_ann: ns };
+        }
+
+        /* Somme d'un champ numérique sur des enregistrements bruts */
+        function _cvSum(recs, field) {
+            return recs.reduce(function (s, r) { return s + (Number(r[field]) || 0); }, 0);
+        }
+
+        /* Zéro-dose et enfants sous-vaccinés (calcul mensuel, somme sur la période) */
+        function _cvZD(recs) {
+            return recs.reduce(function (s, r) {
+                var ns_m = (Number(r.Pop_0_11m_survivants) || 0) / 12;
+                return s + Math.max(0, ns_m - (Number(r.DTC1_0_11) || 0));
+            }, 0);
+        }
+        function _cvESV(recs) {
+            return recs.reduce(function (s, r) {
+                var ns_m = (Number(r.Pop_0_11m_survivants) || 0) / 12;
+                return s + Math.max(0, ns_m - (Number(r.DTC3_0_11) || 0));
+            }, 0);
+        }
+
+        /* Filtre les données ZS avec les filtres principaux courants */
+        function _cvFilterData(data) {
+            var f = S.filters;
+            var perSet = {};
+            (f.period || []).forEach(function (p) { perSet[p] = 1; });
+            var antSet = null;
+            if (f.antenne && f.antenne.length && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
+                antSet = {}; f.antenne.forEach(function (a) { antSet[a] = 1; });
+            }
+            var zsSet = null;
+            if (f.zs && f.zs.length && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+                zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+            }
+            return data.filter(function (r) {
+                if (f.province && r._Province !== f.province) return false;
+                if (antSet && !antSet[r._Antenne]) return false;
+                if (zsSet && !zsSet[r._ZS]) return false;
+                if (f.period && f.period.length && !perSet[r._YM]) return false;
+                return true;
+            });
+        }
+
+        /* ═══ PAGE 2 : ANALYSES COUVERTURES VACCINALES ═══ */
+        function rAnalysesCV(c) {
+            c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement données couvertures vaccinales…</div>';
+            _loadCVZSData().then(function (data) {
+                c.innerHTML = '';
+                if (!data || !data.length) {
+                    c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;border:1px solid #fca5a5;color:#dc2626">' +
+                        '<strong>❌ Données couverture non disponibles.</strong><br>' +
+                        '<small>Le fichier <code>data_zs/dashboard/by_zs.json.gz</code> est requis.</small></div>';
+                    return;
+                }
+
+                var f = S.filters;
+                var isVAPprov = _computeIsVAP(f.province || '');
+                var n_periods = f.period.length || 1;
+                var perLbl = n_periods === 1 ? mL(f.period[0]) :
+                    (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
+
+                var cvFlt = _cvFilterData(data);
+                if (!cvFlt.length) {
+                    c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;color:#888">Aucune donnée pour les filtres sélectionnés.</div>';
+                    return;
+                }
+
+                var tgts = _cvTargets(cvFlt, n_periods);
+                var dtc1 = _cvSum(cvFlt, 'DTC1_0_11');
+                var dtc3 = _cvSum(cvFlt, 'DTC3_0_11');
+                var bcg = _cvSum(cvFlt, 'BCG_0_11');
+                var cv1 = _safeDiv(dtc1, tgts.ns);
+                var cv3 = _safeDiv(dtc3, tgts.ns);
+                var cvBCG = _safeDiv(bcg, tgts.nv);
+                var abandon = _safeDiv(dtc1 - dtc3, dtc1);
+                var zdTotal = _cvZD(cvFlt);
+                var esvTotal = _cvESV(cvFlt);
+
+                /* Grouper par ZS pour le tableau et les graphiques */
+                var orgG = {}, orgNames = [];
+                cvFlt.forEach(function (r) {
+                    var k = r._ZS || ''; if (!k) return;
+                    if (!orgG[k]) orgG[k] = [];
+                    orgG[k].push(r);
+                });
+                orgNames = Object.keys(orgG).filter(Boolean).sort();
+                var nBelow80 = orgNames.filter(function (ou) {
+                    var t2 = _cvTargets(orgG[ou], n_periods);
+                    var d3 = _cvSum(orgG[ou], 'DTC3_0_11');
+                    var cv3ou = _safeDiv(d3, t2.ns);
+                    return cv3ou !== null && cv3ou * 100 < 80;
+                }).length;
+
+                /* ── Titre ── */
+                var hdr = E('div', 'cb');
+                hdr.innerHTML = '<h3 style="color:#0b3a6f;margin:0 0 4px">📊 Analyses couvertures vaccinales</h3>' +
+                    '<p style="font-size:12px;color:#555;margin:0">Province : <strong>' + (f.province || 'Toutes') +
+                    '</strong> — Période : <strong>' + perLbl + '</strong>' +
+                    (isVAPprov ? ' &nbsp;<span style="background:#e65100;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700">Province VAP</span>' : '') +
+                    '</p><p style="font-size:10px;color:#888;margin:4px 0 0"><em>Niveaux couverts : National → Province → Antenne → Zone de Santé. Les analyses FOSA ne sont pas affichées (pas de population cible AS à ce niveau).</em></p>';
+                c.appendChild(hdr);
+
+                /* ── KPI Cards ── */
+                var kpiBox = E('div', 'kr'); kpiBox.style.marginBottom = '16px';
+                [
+                    { v: tgts.pop > 0 ? Math.round(tgts.pop).toLocaleString() : '–', l: 'Population (AS)', col: '#0b3a6f' },
+                    { v: tgts.nv > 0 ? Math.round(tgts.nv).toLocaleString() : '–', l: 'Cible NV période', col: '#1565c0' },
+                    { v: tgts.ns > 0 ? Math.round(tgts.ns).toLocaleString() : '–', l: 'Cible NS période', col: '#00838f' },
+                    { v: cvBCG !== null ? (cvBCG * 100).toFixed(1) + '%' : '–', l: 'CV BCG', col: _cvColor(cvBCG !== null ? cvBCG * 100 : null) || '#0b3a6f' },
+                    { v: cv1 !== null ? (cv1 * 100).toFixed(1) + '%' : '–', l: 'CV DTC1/Penta1', col: _cvColor(cv1 !== null ? cv1 * 100 : null) || '#0b3a6f' },
+                    { v: cv3 !== null ? (cv3 * 100).toFixed(1) + '%' : '–', l: 'CV DTC3/Penta3', col: _cvColor(cv3 !== null ? cv3 * 100 : null) || '#0b3a6f' },
+                    { v: abandon !== null ? (abandon * 100).toFixed(1) + '%' : '–', l: 'Abandon Penta1–3', col: _abandonColor(abandon) },
+                    { v: Math.round(zdTotal).toLocaleString(), l: 'Enfants zéro-dose', col: '#7c3aed' },
+                    { v: Math.round(esvTotal).toLocaleString(), l: 'Enfants sous-vaccinés', col: '#d97706' },
+                    { v: nBelow80 + '/' + orgNames.length, l: 'ZS avec DTC3 < 80%', col: nBelow80 > 0 ? '#dc2626' : '#16a34a' }
+                ].forEach(function (k) {
+                    var kc = E('div', 'kc');
+                    kc.style.cssText = 'flex:1;min-width:140px;border-left:5px solid ' + k.col;
+                    kc.innerHTML = '<div class="kv" style="color:' + k.col + '">' + k.v + '</div><div class="kl">' + k.l + '</div>';
+                    kpiBox.appendChild(kc);
+                });
+                c.appendChild(kpiBox);
+
+                /* ── Calendrier vaccinal CV ── */
+                var calColors = { 'Naissance': '#0b3a6f', '6 semaines': '#1565c0', '10 semaines': '#00838f', '14 semaines': '#2e7d32', '6 mois': '#6a1b9a', '7 mois': '#7b1fa2', '8 mois': '#8e24aa', '9 mois': '#e65100', '15 mois': '#c62828' };
+                var calBox = E('div', 'cb');
+                calBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">💉 Couvertures vaccinales selon le calendrier vaccinal — ' + perLbl + '</h4>';
+                var bh = '<div style="display:flex;flex-wrap:wrap;gap:12px">';
+                VACCIN_CALENDAR.forEach(function (grp2) {
+                    var col = calColors[grp2.age] || '#0b3a6f';
+                    var ags3 = grp2.ags.filter(function (ag) { return isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) < 0; });
+                    if (!ags3.length) return;
+                    bh += '<div style="background:#fff;border:2px solid ' + col + ';border-radius:10px;min-width:180px;flex:1;max-width:260px">';
+                    bh += '<div style="background:' + col + ';color:#fff;padding:7px 12px;font-weight:700;font-size:12px;text-align:center">' + grp2.age + '</div>';
+                    bh += '<div style="padding:8px 10px">';
+                    ags3.forEach(function (ag) {
+                        var field = AG_FIELD_MAP[ag]; if (!field) return;
+                        var doses = _cvSum(cvFlt, field);
+                        var useNV = (ag === 'BCG' || ag === 'TD');
+                        var tgt = useNV ? tgts.nv : tgts.ns;
+                        var cvPct = tgt > 0 ? doses / tgt * 100 : null;
+                        var cvc = _cvColor(cvPct) || '#888';
+                        bh += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0f0f0;gap:8px">';
+                        bh += '<span style="font-size:11px;color:#444">' + (AG_LBL[ag] || ag) + '</span>';
+                        bh += '<span style="font-size:12px;font-weight:700;color:' + cvc + '">' + (cvPct !== null ? cvPct.toFixed(1) + '%' : '–') + '</span>';
+                        bh += '</div>';
+                    });
+                    bh += '</div></div>';
+                });
+                /* Td */
+                bh += '<div style="background:#fff;border:2px solid #d84315;border-radius:10px;min-width:180px;flex:1;max-width:260px">';
+                bh += '<div style="background:#d84315;color:#fff;padding:7px 12px;font-weight:700;font-size:12px;text-align:center">Td / FAP</div><div style="padding:8px 10px">';
+                var tdD = _cvSum(cvFlt, 'Td_2_plus');
+                var tdCV = tgts.nv > 0 ? tdD / tgts.nv * 100 : null;
+                bh += '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:11px">Td 2+</span><span style="font-size:12px;font-weight:700;color:' + (_cvColor(tdCV) || '#888') + '">' + (tdCV !== null ? tdCV.toFixed(1) + '%' : '–') + '</span></div>';
+                bh += '</div></div></div>';
+                calBox.innerHTML += bh;
+                calBox.innerHTML += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>BCG et Td : dénominateur = Cible NV. Tous autres antigènes : dénominateur = Cible NS. VAP uniquement pour provinces ayant introduit le vaccin.</em></p>';
+                c.appendChild(calBox);
+
+                /* ── Indicateurs Mashako ── */
+                var mashBox = E('div', 'cb');
+                mashBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Indicateurs Mashako</h4>' +
+                    '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:14px;color:#92400e;font-size:12px">' +
+                    '<strong>⚠️ Données Mashako non encore disponibles dans le dashboard.</strong><br>' +
+                    'Les indicateurs de supervision, séances, disponibilité vaccins, chaîne du froid et rapportage nécessitent un export des tableaux Tableau Mashako.<br>' +
+                    '<em style="font-size:11px">Champs attendus : Score global Mashako, Supervision province→ZS, Supervision ZS→AS, Séances fixes/avancées, ' +
+                    'Disponibilité vaccins &amp; intrants, Fonctionnalité CDF, Cartes vaccination, Suivi enfants, Réunions de monitorage, Rapportage.</em><br>' +
+                    '<span style="font-size:11px">→ Veuillez fournir les exports Excel/CSV depuis les tableaux Tableau (liens dans docs/references/README.md).</span></div>';
+                c.appendChild(mashBox);
+
+                /* ── Tableau principal ── */
+                var vapAgs = ['VAP1', 'VAP2', 'VAP3', 'VAP4'];
+                var tableAgs = ['BCG', 'VPO0', 'DTC1', 'VPO1', 'ROTA1', 'PCV13_1', 'DTC2', 'VPO2', 'ROTA2', 'PCV13_2',
+                    'DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3', 'VAR1', 'VPI2', 'VAA', 'VAR2', 'TD'];
+                if (isVAPprov) tableAgs = tableAgs.concat(vapAgs);
+
+                var tblBox = E('div', 'cb');
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales par Zone de Santé</h4>';
+                var tH = '<div style="overflow-x:auto;max-height:580px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">Zone de Santé</th>' +
+                    '<th style="text-align:right;min-width:70px">Pop. AS</th>' +
+                    '<th style="text-align:right;min-width:70px">Cible NV</th>' +
+                    '<th style="text-align:right;min-width:70px">Cible NS</th>';
+                tableAgs.forEach(function (ag) { tH += '<th style="text-align:right;min-width:55px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>'; });
+                tH += '<th style="text-align:right;min-width:65px">Zéro-dose</th>' +
+                    '<th style="text-align:right;min-width:65px">Sous-vacc.</th>' +
+                    '<th style="text-align:right;min-width:70px">Abandon</th>' +
+                    '<th style="text-align:center;min-width:60px">Catégorie</th></tr></thead><tbody>';
+
+                /* Ligne TOTAL */
+                function _rowCells(recs, tgt, ags, bg) {
+                    var cells = '';
+                    var ouD1 = 0, ouD3 = 0;
+                    ags.forEach(function (ag) {
+                        var field = AG_FIELD_MAP[ag];
+                        var doses = field ? _cvSum(recs, field) : 0;
+                        if (ag === 'DTC1') ouD1 = doses;
+                        if (ag === 'DTC3') ouD3 = doses;
+                        var useNV = (ag === 'BCG' || ag === 'TD');
+                        var den = useNV ? tgt.nv : tgt.ns;
+                        var cvPct = den > 0 ? doses / den * 100 : null;
+                        var st = cvPct !== null ? 'background:' + _cvColor(cvPct) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
+                        cells += '<td style="' + st + '">' + (cvPct !== null ? cvPct.toFixed(1) + '%' : '–') + '</td>';
+                    });
+                    var ouZD = _cvZD(recs), ouESV = _cvESV(recs);
+                    var ouAb = _safeDiv(ouD1 - ouD3, ouD1);
+                    var cv1Pct = tgt.ns > 0 ? ouD1 / tgt.ns * 100 : null;
+                    var ouCat = _categorize(cv1Pct, ouAb !== null ? ouAb * 100 : null);
+                    cells += '<td style="text-align:right">' + Math.round(ouZD).toLocaleString() + '</td>';
+                    cells += '<td style="text-align:right">' + Math.round(ouESV).toLocaleString() + '</td>';
+                    var abCol = _abandonColor(ouAb);
+                    cells += '<td style="text-align:right;font-weight:700;color:' + abCol + '">' + (ouAb !== null ? (ouAb * 100).toFixed(1) + '%' : '–') + (ouAb !== null && ouAb < 0 ? ' ⚠️' : '') + '</td>';
+                    cells += '<td style="text-align:center;background:' + _catColor(ouCat) + ';color:#fff;font-weight:700">' + ouCat + '</td>';
+                    return cells;
+                }
+
+                tH += '<tr style="background:#e8f0fe;font-weight:800">' +
+                    '<td style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
+                    '<td style="text-align:right">' + (tgts.pop > 0 ? Math.round(tgts.pop).toLocaleString() : '–') + '</td>' +
+                    '<td style="text-align:right">' + Math.round(tgts.nv).toLocaleString() + '</td>' +
+                    '<td style="text-align:right">' + Math.round(tgts.ns).toLocaleString() + '</td>' +
+                    _rowCells(cvFlt, tgts, tableAgs, '#e8f0fe') + '</tr>';
+
+                orgNames.forEach(function (ouName, idx) {
+                    var recs = orgG[ouName];
+                    var t2 = _cvTargets(recs, n_periods);
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    tH += '<tr style="background:' + bg + '">' +
+                        '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
+                        '<td style="text-align:right">' + (t2.pop > 0 ? Math.round(t2.pop).toLocaleString() : '–') + '</td>' +
+                        '<td style="text-align:right">' + Math.round(t2.nv).toLocaleString() + '</td>' +
+                        '<td style="text-align:right">' + Math.round(t2.ns).toLocaleString() + '</td>' +
+                        _rowCells(recs, t2, tableAgs, bg) + '</tr>';
+                });
+                tH += '</tbody></table></div>';
+                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Couleurs CV : ' +
+                    '<span style="color:#16a34a;font-weight:700">■ ≥95%</span> · ' +
+                    '<span style="color:#2563eb;font-weight:700">■ 80–94%</span> · ' +
+                    '<span style="color:#d97706;font-weight:700">■ 50–79%</span> · ' +
+                    '<span style="color:#dc2626;font-weight:700">■ &lt;50%</span> · ' +
+                    '<span style="color:#7c3aed;font-weight:700">■ &gt;120% (atypique)</span>. ' +
+                    'Abandon ⚠️ = valeur négative, à vérifier. ' +
+                    (isVAPprov ? '' : 'VAP non affiché (province non VAP).') + '</em></p>';
+                tblBox.innerHTML += tH;
+                c.appendChild(tblBox);
+
+                /* ── Graphiques ── */
+                var chartBox = E('div', 'cb');
+                chartBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📈 Graphiques de couverture</h4>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+                    '<div style="background:#fafbfc;border-radius:8px;padding:12px"><canvas id="cvChart1" height="90"></canvas></div>' +
+                    '<div style="background:#fafbfc;border-radius:8px;padding:12px"><canvas id="cvChart2" height="90"></canvas></div>' +
+                    '<div style="background:#fafbfc;border-radius:8px;padding:12px"><canvas id="cvChart3" height="90"></canvas></div>' +
+                    '<div style="background:#fafbfc;border-radius:8px;padding:12px"><canvas id="cvChart4" height="90"></canvas></div>' +
+                    '</div>';
+                c.appendChild(chartBox);
+
+                /* Graphiques rendus après le paint DOM */
+                setTimeout(function () {
+                    /* 1. CV par antigène vs objectif 95% */
+                    var x1 = document.getElementById('cvChart1'); if (x1) {
+                        var agKeys = ['BCG', 'DTC1', 'DTC2', 'DTC3', 'VPO0', 'VPO3', 'PCV13_1', 'PCV13_3', 'ROTA1', 'ROTA3', 'VAR1', 'VAA', 'VPI1', 'VPI2'];
+                        if (isVAPprov) agKeys = agKeys.concat(['VAP1', 'VAP3']);
+                        var cvVals = agKeys.map(function (ag) {
+                            var field = AG_FIELD_MAP[ag]; if (!field) return 0;
+                            var useNV = (ag === 'BCG' || ag === 'TD');
+                            var den = useNV ? tgts.nv : tgts.ns;
+                            return den > 0 ? +(_cvSum(cvFlt, field) / den * 100).toFixed(1) : 0;
+                        });
+                        S.charts.cvChart1 = new Chart(x1, {
+                            type: 'bar',
+                            data: {
+                                labels: agKeys, datasets: [
+                                    { label: 'CV (%)', data: cvVals, backgroundColor: cvVals.map(function (v) { return _cvColor(v) || '#0b3a6f'; }), borderRadius: 3 },
+                                    { label: 'Objectif 95%', data: agKeys.map(function () { return 95; }), type: 'line', borderColor: '#dc2626', borderWidth: 2, borderDash: [5, 3], pointRadius: 0, fill: false }
+                                ]
+                            },
+                            options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'CV par antigène vs objectif 95%', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } } } }
+                        });
+                    }
+                    /* 2. Penta1 vs Penta3 par ZS (top 25) */
+                    var x2 = document.getElementById('cvChart2'); if (x2) {
+                        var top25 = orgNames.slice(0, 25);
+                        var d1v = [], d3v = [], lbls = [];
+                        top25.forEach(function (ou) {
+                            var t2 = _cvTargets(orgG[ou], n_periods); if (!t2.ns) return;
+                            lbls.push(tr(ou, 18));
+                            d1v.push(+(_cvSum(orgG[ou], 'DTC1_0_11') / t2.ns * 100).toFixed(1));
+                            d3v.push(+(_cvSum(orgG[ou], 'DTC3_0_11') / t2.ns * 100).toFixed(1));
+                        });
+                        S.charts.cvChart2 = new Chart(x2, {
+                            type: 'bar',
+                            data: { labels: lbls, datasets: [{ label: 'DTC1/Penta1', data: d1v, backgroundColor: 'rgba(21,101,192,0.75)', borderRadius: 2 }, { label: 'DTC3/Penta3', data: d3v, backgroundColor: 'rgba(46,125,50,0.75)', borderRadius: 2 }] },
+                            options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'Penta1 vs Penta3 par ZS', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130 } } }
+                        });
+                    }
+                    /* 3. Taux d'abandon Penta1–3 */
+                    var x3 = document.getElementById('cvChart3'); if (x3) {
+                        var abVals = [], abLbls = [], abCols = [];
+                        orgNames.slice(0, 25).forEach(function (ou) {
+                            var d1 = _cvSum(orgG[ou], 'DTC1_0_11'), d3 = _cvSum(orgG[ou], 'DTC3_0_11');
+                            var ab = _safeDiv(d1 - d3, d1); if (ab === null) return;
+                            abLbls.push(tr(ou, 18));
+                            abVals.push(+(ab * 100).toFixed(1));
+                            abCols.push(ab > 0.10 ? '#dc2626' : ab < 0 ? '#6b7280' : '#16a34a');
+                        });
+                        S.charts.cvChart3 = new Chart(x3, {
+                            type: 'bar',
+                            data: { labels: abLbls, datasets: [{ label: 'Abandon P1–P3 (%)', data: abVals, backgroundColor: abCols, borderRadius: 2 }] },
+                            options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Taux d\'abandon Penta1–Penta3 par ZS', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { title: { display: true, text: '%' } } } }
+                        });
+                    }
+                    /* 4. Top 15 zéro-dose */
+                    var x4 = document.getElementById('cvChart4'); if (x4) {
+                        var zdData = orgNames.map(function (ou) { return { ou: ou, zd: _cvZD(orgG[ou]) }; })
+                            .sort(function (a, b) { return b.zd - a.zd; }).slice(0, 15);
+                        S.charts.cvChart4 = new Chart(x4, {
+                            type: 'bar',
+                            data: { labels: zdData.map(function (d) { return tr(d.ou, 18); }), datasets: [{ label: 'Enfants zéro-dose', data: zdData.map(function (d) { return Math.round(d.zd); }), backgroundColor: '#7c3aed', borderRadius: 2 }] },
+                            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Top 15 ZS — enfants zéro-dose', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { beginAtZero: true } } }
+                        });
+                    }
+                }, 120);
+            });
+        }
+
+        /* ═══ PAGE 3 : COURBE DE SUIVI DES CV ═══ */
+        function rCourbesCV(c) {
+            c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement courbes de suivi…</div>';
+            _loadCVZSData().then(function (data) {
+                c.innerHTML = '';
+                if (!data || !data.length) {
+                    c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;border:1px solid #fca5a5;color:#dc2626">❌ Données non disponibles pour les courbes de suivi.</div>';
+                    return;
+                }
+
+                var f = S.filters;
+                var isVAPprov = _computeIsVAP(f.province || '');
+
+                /* Liste des antigènes disponibles pour ce contexte */
+                var avAgs = ['BCG', 'VPO0', 'DTC1', 'DTC3', 'VPO3', 'PCV13_1', 'PCV13_3', 'ROTA1', 'ROTA3', 'VAR1', 'VAA', 'VPI1', 'VPI2', 'TD'];
+                if (isVAPprov) avAgs = avAgs.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']);
+
+                /* ── Filtre antigène ── */
+                var selId = 'courbeAgSel_' + Date.now();
+                var hdr = E('div', 'cb');
+                hdr.innerHTML = '<h3 style="color:#0b3a6f;margin:0 0 10px">📈 Courbe de suivi des couvertures vaccinales</h3>' +
+                    '<div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">' +
+                    '<div class="fg"><label>Antigène :</label>' +
+                    '<select id="' + selId + '" style="padding:7px 10px;border:2px solid #d1d5db;border-radius:7px;font-size:12px;font-weight:600;min-width:200px">' +
+                    avAgs.map(function (ag) { return '<option value="' + ag + '">' + (AG_LBL[ag] || ag) + '</option>'; }).join('') +
+                    '</select></div></div>';
+                c.appendChild(hdr);
+
+                /* ── Zones de rendu ── */
+                var kpiBox = E('div', 'kr'); kpiBox.id = 'courbeKPIBox'; kpiBox.style.marginBottom = '16px';
+                c.appendChild(kpiBox);
+                var chartBox = E('div', 'cb');
+                chartBox.innerHTML = '<canvas id="courbeMainChart" height="55"></canvas>' +
+                    '<p id="courbeChartNote" style="font-size:10px;color:#888;margin:5px 0 0"></p>';
+                c.appendChild(chartBox);
+                var tblBox = E('div', 'cb');
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Tableau mensuel de suivi</h4><div id="courbeTblWrap"></div>';
+                c.appendChild(tblBox);
+
+                /* ── Fonction de rendu pour un antigène ── */
+                function renderCourbe(ag) {
+                    /* Données province filtrées (antenne+ZS mais pas période) */
+                    var antSet = null;
+                    if (f.antenne && f.antenne.length && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
+                        antSet = {}; f.antenne.forEach(function (a) { antSet[a] = 1; });
+                    }
+                    var zsSet = null;
+                    if (f.zs && f.zs.length && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+                        zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+                    }
+                    var provData = data.filter(function (r) {
+                        if (f.province && r._Province !== f.province) return false;
+                        if (antSet && !antSet[r._Antenne]) return false;
+                        if (zsSet && !zsSet[r._ZS]) return false;
+                        return true;
+                    });
+
+                    /* Tous les mois disponibles triés */
+                    var moSet = {}, allMos = [];
+                    provData.forEach(function (r) { if (r._YM && !moSet[r._YM]) { moSet[r._YM] = 1; allMos.push(r._YM); } });
+                    allMos.sort();
+
+                    /* Indicateur : est-ce que le mois est dans la période filtrée ? */
+                    var selSet = {};
+                    (f.period || []).forEach(function (p) { selSet[p] = 1; });
+                    var hasPeriodFilter = f.period && f.period.length > 0 && f.period.length < (S.vals.period || allMos).length;
+
+                    var field = AG_FIELD_MAP[ag];
+                    var useNV = (ag === 'BCG' || ag === 'TD');
+                    var objectif = (ag === 'TD') ? 90 : 95;
+
+                    /* Calcul mensuel */
+                    var monthData = allMos.map(function (ym) {
+                        var mRecs = provData.filter(function (r) { return r._YM === ym; });
+                        var tgt = _cvTargets(mRecs, 1);
+                        var doses = field ? _cvSum(mRecs, field) : 0;
+                        var den = useNV ? tgt.nv : tgt.ns;
+                        var cv = den > 0 ? doses / den * 100 : null;
+                        return { ym: ym, doses: doses, tgt: Math.round(den), cv: cv, inSel: !hasPeriodFilter || !!selSet[ym] };
+                    });
+
+                    /* ── Graphique principal ── */
+                    if (S.charts.courbeMainChart) { try { S.charts.courbeMainChart.destroy(); } catch (e) { } }
+                    var canvas = document.getElementById('courbeMainChart'); if (!canvas) return;
+                    var ptColors = monthData.map(function (d) {
+                        if (!d.inSel) return 'rgba(150,150,150,0.35)';
+                        return d.cv !== null ? (_cvColor(d.cv) || '#1565c0') : '#94a3b8';
+                    });
+                    S.charts.courbeMainChart = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: allMos.map(mL),
+                            datasets: [
+                                {
+                                    label: 'CV ' + ag + ' (%)', data: monthData.map(function (d) { return d.cv !== null ? +d.cv.toFixed(1) : null; }),
+                                    borderColor: '#1565c0', backgroundColor: 'rgba(21,101,192,0.06)', fill: true,
+                                    tension: 0.3, pointRadius: 5, pointBackgroundColor: ptColors, borderWidth: 2.5, spanGaps: true
+                                },
+                                {
+                                    label: 'Objectif ' + objectif + '%', data: allMos.map(function () { return objectif; }),
+                                    borderColor: '#dc2626', borderWidth: 2, borderDash: [6, 4], pointRadius: 0, fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } },
+                                title: { display: true, text: 'Courbe mensuelle — ' + (AG_LBL[ag] || ag) + ' — ' + (f.province || 'Nationale'), font: { size: 13, weight: 'bold' }, color: '#0b3a6f' }
+                            },
+                            scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } }, x: { ticks: { maxRotation: 45, font: { size: 10 } } } }
+                        }
+                    });
+
+                    var note = document.getElementById('courbeChartNote');
+                    if (note) note.textContent = (useNV ? 'Dénominateur : Cible NV (naissances vivantes).' : 'Dénominateur : Cible NS (nourrissons survivants).') +
+                        (hasPeriodFilter ? ' Points vifs = mois de la période filtrée ; points gris = hors filtre.' : '');
+
+                    /* ── KPI résumé ── */
+                    var selData = hasPeriodFilter ? monthData.filter(function (d) { return d.inSel; }) : monthData;
+                    var lastM = selData.length ? selData[selData.length - 1] : null;
+                    var allCVs = selData.map(function (d) { return d.cv; }).filter(function (v) { return v !== null; });
+                    var cumDoses = selData.reduce(function (s, d) { return s + d.doses; }, 0);
+                    var cumTgt = selData.reduce(function (s, d) { return s + d.tgt; }, 0);
+                    var cumCV = cumTgt > 0 ? cumDoses / cumTgt * 100 : null;
+                    var nUnder = allCVs.filter(function (v) { return v < objectif; }).length;
+                    var bestCV = allCVs.length ? Math.max.apply(null, allCVs) : null;
+                    var worstCV = allCVs.length ? Math.min.apply(null, allCVs) : null;
+
+                    var kb = document.getElementById('courbeKPIBox');
+                    if (kb) {
+                        kb.innerHTML = '';
+                        [
+                            { v: lastM && lastM.cv !== null ? lastM.cv.toFixed(1) + '%' : '–', l: 'CV dernier mois (' + (lastM ? mL(lastM.ym) : '–') + ')' },
+                            { v: cumCV !== null ? cumCV.toFixed(1) + '%' : '–', l: 'CV cumulée période sélectionnée' },
+                            { v: nUnder + '/' + allCVs.length, l: 'Mois sous objectif ' + objectif + '%' },
+                            { v: bestCV !== null ? bestCV.toFixed(1) + '%' : '–', l: 'Meilleure CV (mois)' },
+                            { v: worstCV !== null ? worstCV.toFixed(1) + '%' : '–', l: 'Plus faible CV (mois)' }
+                        ].forEach(function (k) {
+                            var kc = E('div', 'kc');
+                            kc.style.cssText = 'flex:1;min-width:130px;border-left:5px solid #1565c0';
+                            kc.innerHTML = '<div class="kv" style="color:#1565c0">' + k.v + '</div><div class="kl">' + k.l + '</div>';
+                            kb.appendChild(kc);
+                        });
+                    }
+
+                    /* ── Tableau mensuel ── */
+                    var tw = document.getElementById('courbeTblWrap'); if (!tw) return;
+                    var th2 = '<div style="overflow-x:auto;max-height:420px"><table class="dt" style="font-size:11px">' +
+                        '<thead><tr style="background:#0b3a6f;color:#fff"><th>Mois</th>' +
+                        '<th style="text-align:right">Doses</th><th style="text-align:right">Cible mensuelle</th>' +
+                        '<th style="text-align:right">CV (%)</th><th style="text-align:right">Écart obj. ' + objectif + '%</th>' +
+                        '<th style="text-align:center">Statut</th></tr></thead><tbody>';
+                    monthData.forEach(function (d, i) {
+                        var bg = d.inSel ? (i % 2 === 0 ? '#fff' : '#f8fafc') : '#f1f5f9';
+                        var cvStr = d.cv !== null ? d.cv.toFixed(1) + '%' : '–';
+                        var ecart = d.cv !== null ? d.cv - objectif : null;
+                        var ecartStr = ecart !== null ? (ecart >= 0 ? '+' : '') + ecart.toFixed(1) + '%' : '–';
+                        var ecartCol = ecart !== null ? (ecart >= 0 ? '#16a34a' : '#dc2626') : '#888';
+                        var statut = d.cv !== null ? (d.cv >= objectif ? '✅' : '⚠️') : '–';
+                        th2 += '<tr style="background:' + bg + (d.inSel ? '' : ';color:#999') + '">' +
+                            '<td>' + mL(d.ym) + (d.inSel ? '' : ' <em style="font-size:9px">(hors filtre)</em>') + '</td>' +
+                            '<td style="text-align:right">' + d.doses.toLocaleString() + '</td>' +
+                            '<td style="text-align:right">' + (d.tgt > 0 ? d.tgt.toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right;font-weight:700;color:' + (_cvColor(d.cv) || '#333') + '">' + cvStr + '</td>' +
+                            '<td style="text-align:right;font-weight:700;color:' + ecartCol + '">' + ecartStr + '</td>' +
+                            '<td style="text-align:center;font-size:14px">' + statut + '</td></tr>';
+                    });
+                    th2 += '</tbody></table></div>';
+                    tw.innerHTML = th2;
+                }
+
+                /* Rendu initial après le paint */
+                setTimeout(function () {
+                    renderCourbe('DTC1');
+                    var sel = document.getElementById(selId);
+                    if (sel) sel.onchange = function () { renderCourbe(sel.value); };
+                }, 120);
+            });
+        }
+
         /* ═══ START ═══ */
         loadAll();
     </script>
