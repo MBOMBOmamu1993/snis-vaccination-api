@@ -3470,20 +3470,57 @@
             c.appendChild(repBox);
         }
         /* ═══════════════════════════════════════════════════════
-         *  COUVERTURE VACCINALE — Données ZS avec population
-         *  Source : data_zs/dashboard/by_zs.json.gz
-         *  Chargement lazy à la première ouverture des pages CV
+         *  COUVERTURE VACCINALE — Données AS avec population
+         *  Sources :
+         *    Province/ZS/National : data_as/dashboard/by_zs.json.gz
+         *    Aire de Santé        : data_as/dashboard/by_as/{prov_file}
          * ═══════════════════════════════════════════════════════ */
-        var _cvZSData = null;
-        var _cvLoadPromise = null;
+        var _cvZSData = null, _cvZSPromise = null;
+        var _cvASManifest = null, _cvASManifestPromise = null;
+        var _cvASCache = {};
 
         function _loadCVZSData() {
             if (_cvZSData) return Promise.resolve(_cvZSData);
-            if (_cvLoadPromise) return _cvLoadPromise;
-            _cvLoadPromise = fetchGzip('./data_zs/dashboard/by_zs.json.gz')
+            if (_cvZSPromise) return _cvZSPromise;
+            _cvZSPromise = fetchGzip('./data_as/dashboard/by_zs.json.gz')
                 .then(function (d) { _cvZSData = d || []; return _cvZSData; })
                 .catch(function (e) { console.warn('CV ZS data unavailable:', e); _cvZSData = []; return []; });
-            return _cvLoadPromise;
+            return _cvZSPromise;
+        }
+
+        function _loadCVASManifest() {
+            if (_cvASManifest) return Promise.resolve(_cvASManifest);
+            if (_cvASManifestPromise) return _cvASManifestPromise;
+            _cvASManifestPromise = fetchGzip('./data_as/dashboard/by_as/manifest.json.gz')
+                .then(function (d) { _cvASManifest = d || {}; return _cvASManifest; })
+                .catch(function () { _cvASManifest = {}; return {}; });
+            return _cvASManifestPromise;
+        }
+
+        function _loadCVASData(prov) {
+            if (_cvASCache[prov]) return Promise.resolve(_cvASCache[prov]);
+            return _loadCVASManifest().then(function (idx) {
+                var file = idx[prov];
+                if (!file) { _cvASCache[prov] = []; return []; }
+                return fetchGzip('./data_as/dashboard/by_as/' + file)
+                    .then(function (d) { _cvASCache[prov] = d || []; return _cvASCache[prov]; })
+                    .catch(function () { _cvASCache[prov] = []; return []; });
+            });
+        }
+
+        /* Détermine le niveau d'affichage selon les filtres actifs */
+        function _cvGroupInfo() {
+            var f = S.filters;
+            var hasProv = !!(f.province && f.province !== '');
+            var hasZS = !!(hasProv && f.zs && f.zs.length &&
+                S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length);
+            if (hasZS) {
+                return { groupKey: '_AS', label: 'Aire de Santé', dedupKey: '_AS', useAS: true };
+            }
+            if (hasProv) {
+                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', useAS: false };
+            }
+            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', useAS: false };
         }
 
         /* ── Utilitaires CV ── */
@@ -3520,11 +3557,12 @@
             return 'Cat. 4';
         }
 
-        /* Population cible (une valeur annuelle par ZS, répétée chaque mois) */
-        function _cvTargets(recs, n_periods) {
+        /* Population cible — déduplique par dedupKey (pop annuelle répétée par mois) */
+        function _cvTargets(recs, n_periods, dedupKey) {
+            var key = dedupKey || '_ZS';
             var seen = {}, nv = 0, ns = 0, pop = 0;
             recs.forEach(function (r) {
-                var k = r._ZS || r._Province || '';
+                var k = r[key] || '';
                 if (!seen[k]) {
                     seen[k] = 1;
                     nv += Number(r.Pop_0_11m_nv) || 0;
@@ -3554,23 +3592,30 @@
             }, 0);
         }
 
-        /* Filtre les données ZS avec les filtres principaux courants */
-        function _cvFilterData(data) {
+        /* Filtre les données selon les filtres courants + infos de niveau */
+        function _cvFilterData(data, gi) {
             var f = S.filters;
             var perSet = {};
             (f.period || []).forEach(function (p) { perSet[p] = 1; });
             var antSet = null;
-            if (f.antenne && f.antenne.length && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
+            if (f.antenne && f.antenne.length && S.cascaded && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
                 antSet = {}; f.antenne.forEach(function (a) { antSet[a] = 1; });
             }
             var zsSet = null;
-            if (f.zs && f.zs.length && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+            if (gi && gi.useAS && f.zs && f.zs.length) {
                 zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+            } else if (f.zs && f.zs.length && S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+                zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+            }
+            var asSet = null;
+            if (gi && gi.useAS && f.as && f.as.length && S.cascaded && S.cascaded.as && f.as.length < S.cascaded.as.length) {
+                asSet = {}; f.as.forEach(function (a) { asSet[a] = 1; });
             }
             return data.filter(function (r) {
                 if (f.province && r._Province !== f.province) return false;
                 if (antSet && !antSet[r._Antenne]) return false;
                 if (zsSet && !zsSet[r._ZS]) return false;
+                if (asSet && !asSet[r._AS]) return false;
                 if (f.period && f.period.length && !perSet[r._YM]) return false;
                 return true;
             });
@@ -3578,13 +3623,15 @@
 
         /* ═══ PAGE 2 : ANALYSES COUVERTURES VACCINALES ═══ */
         function rAnalysesCV(c) {
+            var gi = _cvGroupInfo();
             c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement données couvertures vaccinales…</div>';
-            _loadCVZSData().then(function (data) {
+            var dataPromise = gi.useAS ? _loadCVASData(S.filters.province) : _loadCVZSData();
+            dataPromise.then(function (data) {
                 c.innerHTML = '';
                 if (!data || !data.length) {
                     c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;border:1px solid #fca5a5;color:#dc2626">' +
                         '<strong>❌ Données couverture non disponibles.</strong><br>' +
-                        '<small>Le fichier <code>data_zs/dashboard/by_zs.json.gz</code> est requis.</small></div>';
+                        '<small>Source : data_as/dashboard/' + (gi.useAS ? 'by_as/{province}' : 'by_zs') + '.json.gz</small></div>';
                     return;
                 }
 
@@ -3594,13 +3641,13 @@
                 var perLbl = n_periods === 1 ? mL(f.period[0]) :
                     (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
 
-                var cvFlt = _cvFilterData(data);
+                var cvFlt = _cvFilterData(data, gi);
                 if (!cvFlt.length) {
                     c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;color:#888">Aucune donnée pour les filtres sélectionnés.</div>';
                     return;
                 }
 
-                var tgts = _cvTargets(cvFlt, n_periods);
+                var tgts = _cvTargets(cvFlt, n_periods, gi.dedupKey);
                 var dtc1 = _cvSum(cvFlt, 'DTC1_0_11');
                 var dtc3 = _cvSum(cvFlt, 'DTC3_0_11');
                 var bcg = _cvSum(cvFlt, 'BCG_0_11');
@@ -3611,28 +3658,33 @@
                 var zdTotal = _cvZD(cvFlt);
                 var esvTotal = _cvESV(cvFlt);
 
-                /* Grouper par ZS pour le tableau et les graphiques */
+                /* Grouper par l'unité organique du niveau courant */
                 var orgG = {}, orgNames = [];
                 cvFlt.forEach(function (r) {
-                    var k = r._ZS || ''; if (!k) return;
+                    var k = r[gi.groupKey] || ''; if (!k) return;
                     if (!orgG[k]) orgG[k] = [];
                     orgG[k].push(r);
                 });
                 orgNames = Object.keys(orgG).filter(Boolean).sort();
                 var nBelow80 = orgNames.filter(function (ou) {
-                    var t2 = _cvTargets(orgG[ou], n_periods);
+                    var t2 = _cvTargets(orgG[ou], n_periods, gi.dedupKey);
                     var d3 = _cvSum(orgG[ou], 'DTC3_0_11');
                     var cv3ou = _safeDiv(d3, t2.ns);
                     return cv3ou !== null && cv3ou * 100 < 80;
                 }).length;
+                var belowLabel = gi.label + ' avec DTC3 < 80%';
 
                 /* ── Titre ── */
+                var scopeLbl = gi.useAS
+                    ? 'ZS : <strong>' + (f.zs && f.zs[0] ? f.zs[0] : '?') + '</strong>'
+                    : (f.province ? 'Province : <strong>' + f.province + '</strong>' : 'Niveau <strong>National</strong>');
                 var hdr = E('div', 'cb');
                 hdr.innerHTML = '<h3 style="color:#0b3a6f;margin:0 0 4px">📊 Analyses couvertures vaccinales</h3>' +
-                    '<p style="font-size:12px;color:#555;margin:0">Province : <strong>' + (f.province || 'Toutes') +
-                    '</strong> — Période : <strong>' + perLbl + '</strong>' +
+                    '<p style="font-size:12px;color:#555;margin:0">' + scopeLbl +
+                    ' — Période : <strong>' + perLbl + '</strong>' +
+                    ' — Niveau affiché : <strong>' + gi.label + '</strong>' +
                     (isVAPprov ? ' &nbsp;<span style="background:#e65100;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700">Province VAP</span>' : '') +
-                    '</p><p style="font-size:10px;color:#888;margin:4px 0 0"><em>Niveaux couverts : National → Province → Antenne → Zone de Santé. Les analyses FOSA ne sont pas affichées (pas de population cible AS à ce niveau).</em></p>';
+                    '</p><p style="font-size:10px;color:#888;margin:4px 0 0"><em>Niveaux : National → Province → Zone de Santé → Aire de Santé. FOSA exclus (pas de population cible).</em></p>';
                 c.appendChild(hdr);
 
                 /* ── KPI Cards ── */
@@ -3647,7 +3699,7 @@
                     { v: abandon !== null ? (abandon * 100).toFixed(1) + '%' : '–', l: 'Abandon Penta1–3', col: _abandonColor(abandon) },
                     { v: Math.round(zdTotal).toLocaleString(), l: 'Enfants zéro-dose', col: '#7c3aed' },
                     { v: Math.round(esvTotal).toLocaleString(), l: 'Enfants sous-vaccinés', col: '#d97706' },
-                    { v: nBelow80 + '/' + orgNames.length, l: 'ZS avec DTC3 < 80%', col: nBelow80 > 0 ? '#dc2626' : '#16a34a' }
+                    { v: nBelow80 + '/' + orgNames.length, l: belowLabel, col: nBelow80 > 0 ? '#dc2626' : '#16a34a' }
                 ].forEach(function (k) {
                     var kc = E('div', 'kc');
                     kc.style.cssText = 'flex:1;min-width:140px;border-left:5px solid ' + k.col;
@@ -3711,10 +3763,10 @@
                 if (isVAPprov) tableAgs = tableAgs.concat(vapAgs);
 
                 var tblBox = E('div', 'cb');
-                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales par Zone de Santé</h4>';
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales par ' + gi.label + '</h4>';
                 var tH = '<div style="overflow-x:auto;max-height:580px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
                     '<tr style="background:#0b3a6f;color:#fff">' +
-                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">Zone de Santé</th>' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
                     '<th style="text-align:right;min-width:70px">Pop. AS</th>' +
                     '<th style="text-align:right;min-width:70px">Cible NV</th>' +
                     '<th style="text-align:right;min-width:70px">Cible NS</th>';
@@ -3760,7 +3812,7 @@
 
                 orgNames.forEach(function (ouName, idx) {
                     var recs = orgG[ouName];
-                    var t2 = _cvTargets(recs, n_periods);
+                    var t2 = _cvTargets(recs, n_periods, gi.dedupKey);
                     var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                     tH += '<tr style="background:' + bg + '">' +
                         '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
@@ -3815,12 +3867,12 @@
                             options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'CV par antigène vs objectif 95%', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } } } }
                         });
                     }
-                    /* 2. Penta1 vs Penta3 par ZS (top 25) */
+                    /* 2. Penta1 vs Penta3 par org unit (top 25) */
                     var x2 = document.getElementById('cvChart2'); if (x2) {
                         var top25 = orgNames.slice(0, 25);
                         var d1v = [], d3v = [], lbls = [];
                         top25.forEach(function (ou) {
-                            var t2 = _cvTargets(orgG[ou], n_periods); if (!t2.ns) return;
+                            var t2 = _cvTargets(orgG[ou], n_periods, gi.dedupKey); if (!t2.ns) return;
                             lbls.push(tr(ou, 18));
                             d1v.push(+(_cvSum(orgG[ou], 'DTC1_0_11') / t2.ns * 100).toFixed(1));
                             d3v.push(+(_cvSum(orgG[ou], 'DTC3_0_11') / t2.ns * 100).toFixed(1));
@@ -3828,7 +3880,7 @@
                         S.charts.cvChart2 = new Chart(x2, {
                             type: 'bar',
                             data: { labels: lbls, datasets: [{ label: 'DTC1/Penta1', data: d1v, backgroundColor: 'rgba(21,101,192,0.75)', borderRadius: 2 }, { label: 'DTC3/Penta3', data: d3v, backgroundColor: 'rgba(46,125,50,0.75)', borderRadius: 2 }] },
-                            options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'Penta1 vs Penta3 par ZS', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130 } } }
+                            options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'Penta1 vs Penta3 par ' + gi.label, font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130 } } }
                         });
                     }
                     /* 3. Taux d'abandon Penta1–3 */
@@ -3854,7 +3906,7 @@
                         S.charts.cvChart4 = new Chart(x4, {
                             type: 'bar',
                             data: { labels: zdData.map(function (d) { return tr(d.ou, 18); }), datasets: [{ label: 'Enfants zéro-dose', data: zdData.map(function (d) { return Math.round(d.zd); }), backgroundColor: '#7c3aed', borderRadius: 2 }] },
-                            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Top 15 ZS — enfants zéro-dose', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { beginAtZero: true } } }
+                            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Top 15 ' + gi.label + ' — enfants zéro-dose', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { beginAtZero: true } } }
                         });
                     }
                 }, 120);
@@ -3863,8 +3915,10 @@
 
         /* ═══ PAGE 3 : COURBE DE SUIVI DES CV ═══ */
         function rCourbesCV(c) {
+            var gi = _cvGroupInfo();
             c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement courbes de suivi…</div>';
-            _loadCVZSData().then(function (data) {
+            var dataPromise = gi.useAS ? _loadCVASData(S.filters.province) : _loadCVZSData();
+            dataPromise.then(function (data) {
                 c.innerHTML = '';
                 if (!data || !data.length) {
                     c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;border:1px solid #fca5a5;color:#dc2626">❌ Données non disponibles pour les courbes de suivi.</div>';
@@ -3902,19 +3956,26 @@
 
                 /* ── Fonction de rendu pour un antigène ── */
                 function renderCourbe(ag) {
-                    /* Données province filtrées (antenne+ZS mais pas période) */
+                    /* Données filtrées (antenne+ZS+AS mais pas période) */
                     var antSet = null;
-                    if (f.antenne && f.antenne.length && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
+                    if (f.antenne && f.antenne.length && S.cascaded && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
                         antSet = {}; f.antenne.forEach(function (a) { antSet[a] = 1; });
                     }
                     var zsSet = null;
-                    if (f.zs && f.zs.length && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+                    if (gi.useAS && f.zs && f.zs.length) {
                         zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+                    } else if (f.zs && f.zs.length && S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+                        zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+                    }
+                    var asSet = null;
+                    if (gi.useAS && f.as && f.as.length && S.cascaded && S.cascaded.as && f.as.length < S.cascaded.as.length) {
+                        asSet = {}; f.as.forEach(function (a) { asSet[a] = 1; });
                     }
                     var provData = data.filter(function (r) {
                         if (f.province && r._Province !== f.province) return false;
                         if (antSet && !antSet[r._Antenne]) return false;
                         if (zsSet && !zsSet[r._ZS]) return false;
+                        if (asSet && !asSet[r._AS]) return false;
                         return true;
                     });
 
@@ -3935,7 +3996,7 @@
                     /* Calcul mensuel */
                     var monthData = allMos.map(function (ym) {
                         var mRecs = provData.filter(function (r) { return r._YM === ym; });
-                        var tgt = _cvTargets(mRecs, 1);
+                        var tgt = _cvTargets(mRecs, 1, gi.dedupKey);
                         var doses = field ? _cvSum(mRecs, field) : 0;
                         var den = useNV ? tgt.nv : tgt.ns;
                         var cv = den > 0 ? doses / den * 100 : null;
