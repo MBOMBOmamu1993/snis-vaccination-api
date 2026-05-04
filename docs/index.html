@@ -1633,10 +1633,10 @@
             });
             var bMRap = grp(_fltNoP, function (r) { return r.period; });
             var pM = mosRap.map(function (m) { var d = (bMRap[m] || []); var r2 = d.filter(isRep).length; return d.length ? (r2 / d.length * 100) : 0; });
-            var lb2 = E('div', 'cb'); lb2.innerHTML = '<h4>📈 % rapportage par mois</h4><canvas id="pMC" height="50"></canvas>'; c.appendChild(lb2);
+            var lb2 = E('div', 'cb'); lb2.innerHTML = '<h4>📈 % rapportage par mois</h4><div style="position:relative;height:280px"><canvas id="pMC"></canvas></div>'; c.appendChild(lb2);
             setTimeout(function () {
                 var x = document.getElementById('pMC'); if (!x) return;
-                S.charts.pMC = new Chart(x, { type: 'line', data: { labels: mosRap.map(mL), datasets: [{ label: '%', data: pM, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
+                S.charts.pMC = new Chart(x, { type: 'line', data: { labels: mosRap.map(mL), datasets: [{ label: '%', data: pM, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 300);
 
             /* Heatmap */
@@ -1698,7 +1698,7 @@
 
             _AGS_SC.forEach(function (ag, i) {
                 var row = E('div', 'cr');
-                var left = E('div', 'ch'); left.innerHTML = '<div class="cb"><h4>📈 ' + AG_LBL[ag] + ' — Évolution</h4><canvas id="ev' + i + '" height="60"></canvas></div>'; row.appendChild(left);
+                var left = E('div', 'ch'); left.innerHTML = '<div class="cb"><h4>📈 ' + AG_LBL[ag] + ' — Évolution</h4><div style="position:relative;height:260px"><canvas id="ev' + i + '"></canvas></div></div>'; row.appendChild(left);
                 var right = E('div', 'ch'); right.innerHTML = '<div class="cb"><h4>🎯 ' + AG_LBL[ag] + ' vs Moy</h4><div id="dp' + i + '" style="height:290px"></div></div>'; row.appendChild(right);
                 c.appendChild(row);
                 setTimeout(function () {
@@ -1710,7 +1710,7 @@
                                 { label: yr1, data: yrD(yr1, ag), borderColor: '#e91e63', fill: false, tension: .3, pointRadius: 4, borderWidth: 2, borderDash: [5, 3] },
                                 { label: yr2, data: yrD(yr2, ag), borderColor: '#ff9800', fill: false, tension: .3, pointRadius: 3, borderWidth: 2, borderDash: [8, 4] }
                             ]
-                        }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+                        }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
                     });
 
                     var dv = document.getElementById('dp' + i); if (!dv) return;
@@ -2530,7 +2530,7 @@
             var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
             (window._p4Det && window._p4Det.rows || []).forEach(function (r) { if (atB[r.ag]) { atB[r.ag].a += r.ac; atB[r.ag].t += r.ac + r.norm; } });
             var agK = AG.filter(function (a) { return atB[a].t > 0; });
-            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
         }
 
         window._changeP4Method = function (method) {
@@ -2601,7 +2601,7 @@
 
                     /* ── Carte : Atypiques et Normales par antigène ── */
                     var b1 = E('div', 'cb');
-                    b1.innerHTML = '<h4>\u26a0 Atypiques et Normales par antig\u00e8ne</h4><canvas id="atBChart" height="55"></canvas>';
+                    b1.innerHTML = '<h4>\u26a0 Atypiques et Normales par antig\u00e8ne</h4><div style="position:relative;height:320px"><canvas id="atBChart"></canvas></div>';
                     _p4HeavyWrap.appendChild(b1);
 
                     /* ═══ TABLEAU DÉTAILLÉ VALEURS ATYPIQUES ═══ */
@@ -3069,13 +3069,13 @@
                     '<div class="kc bl"><div class="kv">' + avgP.toFixed(0) + '%</div><div class="kl">Moy %score</div></div></div>';
 
                 /* Distribution histogram */
-                sc.innerHTML += '<div class="cb"><h4>📊 Distribution des scores</h4><canvas id="sDist" height="45"></canvas></div>';
+                sc.innerHTML += '<div class="cb"><h4>📊 Distribution des scores</h4><div style="position:relative;height:300px"><canvas id="sDist"></canvas></div></div>';
                 setTimeout(function () {
                     var x = document.getElementById('sDist'); if (!x) return;
                     var bins = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]];
                     var bL = bins.map(function (b) { return b[0] + '-' + (b[1] === 101 ? 100 : b[1]) + '%'; });
                     var bC = bins.map(function (b) { return rows.filter(function (r) { return r.pct100 >= b[0] && r.pct100 < b[1]; }).length; });
-                    S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#e74c3c', '#ff7043', '#f39c12', '#66bb6a', '#27ae60'], borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+                    S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#e74c3c', '#ff7043', '#f39c12', '#66bb6a', '#27ae60'], borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
                 }, 60);
 
                 /* Classification par score qualité — barres triées décroissant */
@@ -3373,7 +3373,7 @@
                 return true;
             });
             var evoBox = E('div', 'cb');
-            evoBox.innerHTML = '<h4>📈 Évolution de rapportage des variables logistiques</h4><canvas id="logEvo" height="50"></canvas>';
+            evoBox.innerHTML = '<h4>📈 Évolution de rapportage des variables logistiques</h4><div style="position:relative;height:300px"><canvas id="logEvo"></canvas></div>';
             c.appendChild(evoBox);
             setTimeout(function () {
                 var x = document.getElementById('logEvo'); if (!x) return;
@@ -3383,7 +3383,7 @@
                     mR.forEach(function (r) { LOGIST_ALL_FIELDS.forEach(function (fld) { tF++; if ((Number(r[fld]) || 0) > 0) fF++; }); });
                     return tF > 0 ? (fF / tF * 100) : 0;
                 });
-                S.charts.logEvo = new Chart(x, { type: 'line', data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: ed, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
+                S.charts.logEvo = new Chart(x, { type: 'line', data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: ed, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 200);
 
             /* ── Rapport logistique — tableau plat ── */
@@ -3520,15 +3520,21 @@
         function _cvGroupInfo() {
             var f = S.filters;
             var hasProv = !!(f.province && f.province !== '');
+            var hasAnt = !!(hasProv && f.antenne && f.antenne.length &&
+                S.cascaded && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length);
             var hasZS = !!(hasProv && f.zs && f.zs.length &&
                 S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length);
+            var hasAS = !!(hasZS && f.as && f.as.length &&
+                S.cascaded && S.cascaded.as && f.as.length < S.cascaded.as.length);
+            var scopeLevel = hasAS ? 'as' : (hasZS ? 'zs' : (hasAnt ? 'antenne' : (hasProv ? 'province' : 'national')));
+            var scopeLabel = { as: 'Aire de Santé', zs: 'Zone de Santé', antenne: 'Antenne PEV', province: 'Province', national: 'National' }[scopeLevel];
             if (hasZS) {
-                return { groupKey: '_AS', label: 'Aire de Santé', dedupKey: '_AS', useAS: true };
+                return { groupKey: '_AS', label: 'Aire de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel };
             }
             if (hasProv) {
-                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', useAS: false };
+                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel };
             }
-            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', useAS: false };
+            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel };
         }
 
         /* ── Utilitaires CV ── */
@@ -4008,17 +4014,24 @@
                     return true;
                 });
 
-                /* Année active (basée sur le filtre période ou la dernière année disponible) */
+                /* Année active : par défaut année en cours, sinon dernière disponible.
+                   Si filtre période actif, prend la dernière année du filtre. */
                 var yearsSet = {};
                 orgData.forEach(function (r) { if (r._YM) yearsSet[r._YM.substring(0, 4)] = 1; });
                 var years = Object.keys(yearsSet).sort();
-                var activeYear = years.length ? years[years.length - 1] : new Date().getFullYear().toString();
+                var nowD = new Date();
+                var curYr = nowD.getFullYear().toString();
+                var activeYear = yearsSet[curYr] ? curYr : (years.length ? years[years.length - 1] : curYr);
                 if (f.period && f.period.length) {
                     var sortedP = f.period.slice().sort();
                     activeYear = sortedP[sortedP.length - 1].substring(0, 4);
                 }
 
-                /* Données limitées à l'année active */
+                /* Mois courant (1-12) — pour limiter l'affichage si année active = année en cours */
+                var curMonth = (activeYear === curYr) ? (nowD.getMonth() + 1) : 12;
+
+                /* Données limitées à l'année active.
+                   _YM stocké au format 'YYYYMM' (ex: '202604'). */
                 var yearData = orgData.filter(function (r) { return r._YM && r._YM.substring(0, 4) === activeYear; });
                 var annualTgts = _cvTargets(yearData, 12, gi.dedupKey);
 
@@ -4056,11 +4069,23 @@
                 var monthLabels = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 
                 /* ── Header ── */
-                var scopeLbl = f.province ? 'Province : <strong>' + f.province + '</strong>' : '<strong>National</strong>';
+                var scopeNameMap = { as: f.as && f.as.length === 1 ? f.as[0] : (f.as && f.as.length ? f.as.length + ' AS sélectionnées' : ''),
+                                     zs: f.zs && f.zs.length === 1 ? f.zs[0] : (f.zs && f.zs.length ? f.zs.length + ' ZS sélectionnées' : ''),
+                                     antenne: f.antenne && f.antenne.length === 1 ? f.antenne[0] : (f.antenne && f.antenne.length ? f.antenne.length + ' antennes sélectionnées' : ''),
+                                     province: f.province || '',
+                                     national: 'National' };
+                var scopeName = scopeNameMap[gi.scopeLevel] || (f.province || 'National');
+                var scopeLbl = gi.scopeLevel === 'national'
+                    ? '<strong>National</strong>'
+                    : (gi.scopeLabel || 'Niveau') + ' : <strong>' + scopeName + '</strong>';
                 var hdr = E('div', 'cb');
                 hdr.innerHTML = '<h3 style="color:#0b3a6f;margin:0 0 4px">📈 Courbes de suivi des couvertures vaccinales</h3>' +
-                    '<p style="font-size:12px;color:#555;margin:0">' + scopeLbl + ' — Année : <strong style="color:#dc2626">' + activeYear + '</strong> — Niveau : <strong>' + gi.label + '</strong></p>';
+                    '<p style="font-size:12px;color:#555;margin:0">' + scopeLbl + ' — Année : <strong style="color:#dc2626">' + activeYear + '</strong></p>';
                 c.appendChild(hdr);
+
+                /* Pré-index yearData par _YM (format 'YYYYMM') pour éviter un re-filter par mois × antigène */
+                var byYM = {};
+                yearData.forEach(function (r) { var k = r._YM; if (!k) return; (byYM[k] || (byYM[k] = [])).push(r); });
 
                 /* ── Bloc par antigène (chart + table style Excel) ── */
                 ALL_AGS.forEach(function (agObj) {
@@ -4068,20 +4093,18 @@
                     var annualTarget = agObj.useNV ? annualTgts.nv : annualTgts.ns;
                     if (!annualTarget) return;
 
-                    /* Doses mensuelles */
-                    var monthlyDoses = months.map(function (mo) {
-                        var ym = activeYear + '-' + mo;
-                        var mRecs = yearData.filter(function (r) { return r._YM === ym; });
-                        return _cvSum(mRecs, field);
+                    /* Doses mensuelles — _YM stocké au format 'YYYYMM' (sans tiret) */
+                    var monthlyDoses = months.map(function (mo, i) {
+                        if (i + 1 > curMonth) return 0;
+                        var ym = activeYear + mo;
+                        return _cvSum(byYM[ym] || [], field);
                     });
-                    var hasData = months.map(function (mo) {
-                        var ym = activeYear + '-' + mo;
-                        return yearData.some(function (r) { return r._YM === ym; });
-                    });
-                    /* Cumulé */
-                    var cumulative = []; var sum = 0; var lastIdx = -1;
+                    /* Affiche valeur pour tous les mois de janvier au mois en cours (inclus) */
+                    var hasData = months.map(function (_, i) { return (i + 1) <= curMonth; });
+                    /* Cumulé : Jan = effectuées Jan ; Mois N = cumul N-1 + effectuées N */
+                    var cumulative = []; var sum = 0;
                     for (var i = 0; i < 12; i++) {
-                        if (hasData[i]) { sum += monthlyDoses[i]; cumulative.push(sum); lastIdx = i; }
+                        if (hasData[i]) { sum += (monthlyDoses[i] || 0); cumulative.push(sum); }
                         else { cumulative.push(null); }
                     }
                     /* Couvertures */
