@@ -3487,6 +3487,169 @@
         var _cvASManifest = null, _cvASManifestPromise = null;
         var _cvASCache = {};
 
+        /* ── Configuration Tableau Online (credentials stockés dans localStorage) ── */
+        var _TABLEAU = {
+            server: 'https://eu-west-1a.online.tableau.com',
+            site: 'axdata',
+            api: '2.8',
+            wbAntenne: '2254427',
+            wbZS: '2230514'
+        };
+        var _mashakoTableauPromise = null;
+
+        function _tableauCreds() {
+            try {
+                var c = JSON.parse(localStorage.getItem('_mashako_creds') || 'null');
+                return c && (c.pat_name || c.password) ? c : null;
+            } catch (e) { return null; }
+        }
+        function _tableauSaveCreds(obj) {
+            try { localStorage.setItem('_mashako_creds', JSON.stringify(obj)); } catch (e) { }
+        }
+
+        function _loadMashakoTableau() {
+            if (_mashakoTableauPromise) return _mashakoTableauPromise;
+            var creds = _tableauCreds();
+            if (!creds) return Promise.reject(new Error('no_creds'));
+
+            var base = _TABLEAU.server + '/api/' + _TABLEAU.api;
+            var body = creds.pat_name
+                ? { credentials: { personalAccessTokenName: creds.pat_name, personalAccessTokenSecret: creds.pat_secret, site: { contentUrl: _TABLEAU.site } } }
+                : { credentials: { name: creds.email, password: creds.password, site: { contentUrl: _TABLEAU.site } } };
+
+            _mashakoTableauPromise = fetch(base + '/auth/signin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(function (r) {
+                if (!r.ok) throw new Error('auth_failed_' + r.status);
+                return r.json();
+            })
+            .then(function (auth) {
+                var token = auth.credentials && auth.credentials.token;
+                var siteId = auth.credentials && auth.credentials.site && auth.credentials.site.id;
+                if (!token) throw new Error('auth_no_token');
+                var hdrs = { 'X-Tableau-Auth': token, 'Accept': 'application/json' };
+                return Promise.all([
+                    fetch(base + '/sites/' + siteId + '/workbooks/' + _TABLEAU.wbAntenne + '/views', { headers: hdrs }).then(function (r) { return r.json(); }),
+                    fetch(base + '/sites/' + siteId + '/workbooks/' + _TABLEAU.wbZS + '/views', { headers: hdrs }).then(function (r) { return r.json(); })
+                ]).then(function (wbs) {
+                    var viewIds = [];
+                    wbs.forEach(function (wb) {
+                        if (wb.views && wb.views.view) wb.views.view.forEach(function (v) { viewIds.push(v.id); });
+                    });
+                    return Promise.all(viewIds.map(function (vid) {
+                        return fetch(base + '/sites/' + siteId + '/views/' + vid + '/data', { headers: hdrs }).then(function (r) { return r.text(); });
+                    }));
+                });
+            })
+            .then(function (csvTexts) {
+                return _parseMashakoCSVs(csvTexts);
+            });
+            return _mashakoTableauPromise;
+        }
+
+        /* Normalise les CSV Tableau → même format que mashako.json */
+        function _parseMashakoCSVs(csvTexts) {
+            var rows = [];
+            var MK_KEY_MAP = {
+                'supervision des zones': 'sup_province',
+                'supervision zs': 'sup_zs_as',
+                'supervision vers as': 'sup_zs_as',
+                'disponibilit': 'dispo_vaccins',
+                'fonctionnalit': 'fonct_cdf',
+                'séances fixes': 'seances_fixes',
+                'fixes': 'seances_fixes',
+                'séances avanc': 'seances_avancees',
+                'avanc': 'seances_avancees',
+                'cartes': 'dispo_cartes',
+                'suivi des enfants': 'suivi_enfants',
+                'suivi enfants': 'suivi_enfants',
+                'réunions': 'reunions',
+                'rapport': 'rapport_donnees',
+                'score total': 'score_total',
+                'score': 'score_total'
+            };
+            csvTexts.forEach(function (csv) {
+                if (!csv || !csv.trim()) return;
+                var lines = csv.trim().split('\n');
+                if (lines.length < 2) return;
+                /* Detect header row */
+                var rawHdr = lines[0].split(',').map(function (h) { return h.replace(/^"|"$/g, '').trim(); });
+                var colMap = {};
+                rawHdr.forEach(function (h, i) {
+                    var hl = h.toLowerCase();
+                    if (hl.indexOf('antenne') >= 0) { colMap.antenne = i; return; }
+                    if (hl.indexOf('zone') >= 0 || hl === 'zs') { colMap.zs = i; return; }
+                    Object.keys(MK_KEY_MAP).forEach(function (pat) {
+                        if (hl.indexOf(pat) >= 0 && !colMap[MK_KEY_MAP[pat]]) colMap[MK_KEY_MAP[pat]] = i;
+                    });
+                });
+                for (var li = 1; li < lines.length; li++) {
+                    var cells = lines[li].split(',').map(function (c) { return c.replace(/^"|"$/g, '').trim(); });
+                    if (!cells.length || !cells[0]) continue;
+                    var antenne = colMap.antenne !== undefined ? cells[colMap.antenne] : '';
+                    var zs = colMap.zs !== undefined ? cells[colMap.zs] : '';
+                    if (!zs) continue;
+                    var rec = { antenne: antenne, zs: zs };
+                    ['sup_province','sup_zs_as','dispo_vaccins','fonct_cdf','seances_fixes','seances_avancees','dispo_cartes','suivi_enfants','reunions','rapport_donnees','score_total'].forEach(function (k) {
+                        var idx = colMap[k];
+                        var v = idx !== undefined ? parseFloat(cells[idx]) : NaN;
+                        rec[k] = isNaN(v) ? 0 : v > 1 ? v / 100 : v;
+                    });
+                    rows.push(rec);
+                }
+            });
+            return rows;
+        }
+
+        /* ── UI de configuration des credentials Tableau ── */
+        function _renderTableauCredUI(container, onSuccess) {
+            var creds = _tableauCreds() || {};
+            var ui = document.createElement('div');
+            ui.style.cssText = 'background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;max-width:480px;margin:0 auto';
+            ui.innerHTML = '<h5 style="margin:0 0 12px;color:#0b3a6f">🔐 Connexion Tableau Online (Mashako)</h5>' +
+                '<p style="font-size:11px;color:#555;margin:0 0 12px">Entrez vos identifiants Tableau une seule fois — ils seront sauvegardés localement dans votre navigateur.</p>' +
+                '<div style="display:flex;flex-direction:column;gap:8px">' +
+                '<div><label style="font-size:11px;font-weight:600">Email</label><br>' +
+                '<input id="_tk_email" type="email" value="' + (creds.email || 'fellybokota@gmail.com') + '" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>' +
+                '<div><label style="font-size:11px;font-weight:600">Mot de passe</label><br>' +
+                '<input id="_tk_pwd" type="password" value="' + (creds.password || '') + '" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>' +
+                '<p style="font-size:10px;color:#888;margin:0">— ou Personal Access Token (plus sécurisé) —</p>' +
+                '<div><label style="font-size:11px;font-weight:600">Nom du token PAT</label><br>' +
+                '<input id="_tk_patname" type="text" value="' + (creds.pat_name || '') + '" placeholder="ex: dashboard-pev" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>' +
+                '<div><label style="font-size:11px;font-weight:600">Valeur secrète du token PAT</label><br>' +
+                '<input id="_tk_patsecret" type="password" value="' + (creds.pat_secret || '') + '" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>' +
+                '</div>' +
+                '<button id="_tk_save" style="margin-top:14px;background:#0b3a6f;color:#fff;border:none;padding:9px 22px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">Sauvegarder et charger</button>' +
+                '<button id="_tk_skip" style="margin-top:8px;margin-left:10px;background:#e5e7eb;color:#333;border:none;padding:9px 16px;border-radius:6px;cursor:pointer;font-size:11px">Utiliser données Excel</button>' +
+                '<p id="_tk_msg" style="font-size:11px;color:#dc2626;margin:6px 0 0"></p>';
+            container.innerHTML = '';
+            container.appendChild(ui);
+            document.getElementById('_tk_save').onclick = function () {
+                var obj = {
+                    email: document.getElementById('_tk_email').value.trim(),
+                    password: document.getElementById('_tk_pwd').value,
+                    pat_name: document.getElementById('_tk_patname').value.trim(),
+                    pat_secret: document.getElementById('_tk_patsecret').value
+                };
+                _tableauSaveCreds(obj);
+                _mashakoTableauPromise = null;
+                document.getElementById('_tk_msg').textContent = '⏳ Connexion en cours…';
+                document.getElementById('_tk_msg').style.color = '#1565c0';
+                _loadMashakoTableau().then(function (rows) {
+                    onSuccess(rows);
+                }).catch(function (e) {
+                    document.getElementById('_tk_msg').textContent = '❌ Échec : ' + (e.message || e);
+                    document.getElementById('_tk_msg').style.color = '#dc2626';
+                });
+            };
+            document.getElementById('_tk_skip').onclick = function () {
+                fetch('./data_as/dashboard/mashako.json').then(function (r) { return r.json(); }).then(onSuccess).catch(function () { onSuccess([]); });
+            };
+        }
+
         function _loadCVZSData() {
             if (_cvZSData) return Promise.resolve(_cvZSData);
             if (_cvZSPromise) return _cvZSPromise;
@@ -3756,9 +3919,6 @@
                 c.appendChild(calBox);
 
                 /* ── Indicateurs Mashako ── */
-                var mashBox = E('div', 'cb');
-                mashBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Indicateurs Mashako</h4><div id="_mashContent">⏳ Chargement données Mashako…</div>';
-                c.appendChild(mashBox);
                 var MK_COLS = [
                     { k: 'sup_province', l: 'Sup. Province', obj: 0 },
                     { k: 'sup_zs_as', l: 'Sup. ZS→AS', obj: 0.8 },
@@ -3773,24 +3933,24 @@
                     { k: 'score_total', l: 'Score total', obj: 0.8 }
                 ];
                 function _mkColor(v, obj) {
-                    if (v === null) return '#888';
+                    if (v === null || v === undefined) return '#888';
+                    if (obj === 0) return v > 0 ? '#16a34a' : '#888';
                     if (v >= obj) return '#16a34a';
                     if (v >= obj * 0.6) return '#d97706';
                     return '#dc2626';
                 }
-                fetch('./data_as/dashboard/mashako.json').then(function (r) { return r.json(); }).then(function (mData) {
-                    var mFlt = mData;
+                function _renderMashakoData(mData) {
+                    var mFlt = mData || [];
                     if (f.zs && f.zs.length && S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
                         var zsFlt = {}; f.zs.forEach(function (z) { zsFlt[z.trim().toLowerCase()] = 1; });
-                        mFlt = mData.filter(function (m) { return zsFlt[m.zs.trim().toLowerCase()]; });
+                        mFlt = mFlt.filter(function (m) { return zsFlt[(m.zs || '').trim().toLowerCase()]; });
                     }
                     var mc = document.getElementById('_mashContent');
                     if (!mc) return;
                     if (!mFlt.length) {
-                        mc.innerHTML = '<div style="color:#888;font-size:12px;padding:8px">Aucune donnée Mashako pour la sélection courante (données disponibles pour Nord Kivu uniquement).</div>';
+                        mc.innerHTML = '<div style="color:#888;font-size:12px;padding:8px">Aucune donnée Mashako pour la sélection courante.</div>';
                         return;
                     }
-                    /* KPI summary cards */
                     var mkHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">';
                     MK_COLS.forEach(function (col) {
                         var vals = mFlt.map(function (m) { return m[col.k]; }).filter(function (v) { return v !== null && v !== undefined; });
@@ -3802,29 +3962,41 @@
                         mkHtml += '<div style="font-size:9px;color:#666">' + col.l + (col.obj > 0 ? ' (obj.' + (col.obj * 100).toFixed(0) + '%)' : '') + '</div></div>';
                     });
                     mkHtml += '</div>';
-                    /* Detail table */
                     mkHtml += '<div style="overflow-x:auto;max-height:340px"><table class="dt" style="font-size:9px;white-space:nowrap"><thead><tr style="background:#0b3a6f;color:#fff">';
                     mkHtml += '<th>Antenne</th><th>ZS</th>';
                     MK_COLS.forEach(function (col) { mkHtml += '<th style="text-align:right;min-width:55px">' + col.l + '</th>'; });
                     mkHtml += '</tr></thead><tbody>';
                     mFlt.forEach(function (m, idx) {
                         var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                        mkHtml += '<tr style="background:' + bg + '"><td>' + m.antenne + '</td><td>' + m.zs + '</td>';
+                        mkHtml += '<tr style="background:' + bg + '"><td>' + (m.antenne || '') + '</td><td>' + (m.zs || '') + '</td>';
                         MK_COLS.forEach(function (col) {
                             var v = m[col.k];
-                            var pct = v !== null ? (v * 100).toFixed(0) + '%' : '–';
+                            var pct2 = (v !== null && v !== undefined) ? (v * 100).toFixed(0) + '%' : '–';
                             var cc = _mkColor(v, col.obj);
-                            mkHtml += '<td style="text-align:right;font-weight:700;color:' + cc + '">' + pct + '</td>';
+                            mkHtml += '<td style="text-align:right;font-weight:700;color:' + cc + '">' + pct2 + '</td>';
                         });
                         mkHtml += '</tr>';
                     });
                     mkHtml += '</tbody></table></div>';
-                    mkHtml += '<p style="font-size:10px;color:#888;margin:5px 0 0"><em>Données Mashako Nord Kivu (' + mFlt.length + ' ZS). ' +
-                        '<span style="color:#16a34a">■ Atteint</span> · <span style="color:#d97706">■ Partiel</span> · <span style="color:#dc2626">■ Non atteint</span>.</em></p>';
+                    mkHtml += '<p style="font-size:10px;color:#888;margin:5px 0 0">' +
+                        '<em>Données Mashako (' + mFlt.length + ' ZS) — Source : Tableau Online. ' +
+                        '<span style="color:#16a34a">■ Atteint</span> · <span style="color:#d97706">■ Partiel</span> · <span style="color:#dc2626">■ Non atteint</span>.</em>' +
+                        ' <button onclick="_mashakoTableauPromise=null;_renderTableauCredUI(document.getElementById(\'_mashContent\'),_renderMashakoData)" style="font-size:10px;padding:2px 7px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;background:#f9fafb">⚙️ Reconfigurer</button></p>';
                     mc.innerHTML = mkHtml;
-                }).catch(function () {
-                    var mc2 = document.getElementById('_mashContent');
-                    if (mc2) mc2.innerHTML = '<div style="color:#888;font-size:12px;padding:8px">⚠️ Impossible de charger les données Mashako.</div>';
+                }
+                var mashBox = E('div', 'cb');
+                mashBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Indicateurs Mashako</h4><div id="_mashContent">⏳ Connexion Tableau Online…</div>';
+                c.appendChild(mashBox);
+                /* Tenter chargement auto depuis Tableau, sinon afficher formulaire de config */
+                _loadMashakoTableau().then(_renderMashakoData).catch(function (e) {
+                    var mc = document.getElementById('_mashContent');
+                    if (!mc) return;
+                    if (e.message === 'no_creds') {
+                        _renderTableauCredUI(mc, _renderMashakoData);
+                    } else {
+                        mc.innerHTML = '<div style="color:#dc2626;font-size:12px;padding:8px">❌ Échec Tableau (' + (e.message || e) + '). ' +
+                            '<button onclick="_mashakoTableauPromise=null;_renderTableauCredUI(document.getElementById(\'_mashContent\'),_renderMashakoData)" style="font-size:11px;padding:3px 8px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer">Reconfigurer</button></div>';
+                    }
                 });
 
                 /* ── Tableau principal ── */
