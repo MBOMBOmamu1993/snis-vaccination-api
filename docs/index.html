@@ -3855,6 +3855,43 @@
                     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px">' + grCanvases + '</div>';
                 c.appendChild(chartBox);
 
+                /* Plugin inline : trait d'objectif sur toute la largeur + étiquettes au-dessus des barres */
+                var thresholdAndLabelsPlugin = {
+                    id: 'thresholdAndLabels',
+                    afterDatasetsDraw: function (chart, args, opts) {
+                        var ctx = chart.ctx, area = chart.chartArea;
+                        if (!area) return;
+                        // Trait d'objectif horizontal pleine largeur
+                        if (opts && opts.threshold !== undefined && chart.scales && chart.scales.y) {
+                            var y = chart.scales.y.getPixelForValue(opts.threshold);
+                            if (y >= area.top && y <= area.bottom) {
+                                ctx.save();
+                                ctx.strokeStyle = opts.thresholdColor || '#dc2626';
+                                ctx.lineWidth = opts.thresholdWidth || 1.5;
+                                ctx.setLineDash(opts.thresholdDash || [5, 3]);
+                                ctx.beginPath(); ctx.moveTo(area.left, y); ctx.lineTo(area.right, y); ctx.stroke();
+                                ctx.restore();
+                            }
+                        }
+                        // Étiquettes de valeur au-dessus des barres (dataset 0)
+                        if (opts && opts.showLabels) {
+                            var meta = chart.getDatasetMeta(0);
+                            var data = chart.data.datasets[0].data;
+                            ctx.save();
+                            ctx.font = '600 ' + (opts.labelFontSize || 10) + 'px sans-serif';
+                            ctx.fillStyle = opts.labelColor || '#0b3a6f';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                            meta.data.forEach(function (bar, i) {
+                                var v = data[i]; if (v === null || v === undefined) return;
+                                var yTxt = bar.y - 4;
+                                if (yTxt < area.top + 10) yTxt = bar.y + 12; // si trop près du haut, on bascule en intérieur
+                                ctx.fillText(Math.round(v) + '%', bar.x, yTxt);
+                            });
+                            ctx.restore();
+                        }
+                    }
+                };
+
                 /* Graphiques rendus après le paint DOM */
                 setTimeout(function () {
                     /* 1. CV par antigène vs objectif 95% */
@@ -3871,11 +3908,19 @@
                             type: 'bar',
                             data: {
                                 labels: agKeys, datasets: [
-                                    { label: 'CV (%)', data: cvVals, backgroundColor: cvVals.map(function (v) { return _cvColor(v) || '#0b3a6f'; }), borderRadius: 3 },
-                                    { label: 'Objectif 95%', data: agKeys.map(function () { return 95; }), type: 'line', borderColor: '#dc2626', borderWidth: 2, borderDash: [5, 3], pointRadius: 0, fill: false }
+                                    { label: 'CV (%)', data: cvVals, backgroundColor: cvVals.map(function (v) { return _cvColor(v) || '#0b3a6f'; }), borderRadius: 3 }
                                 ]
                             },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'CV par antigène vs objectif 95%', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } } } }
+                            plugins: [thresholdAndLabelsPlugin],
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } },
+                                    title: { display: true, text: 'CV par antigène vs objectif 95%', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' },
+                                    thresholdAndLabels: { threshold: 95, thresholdColor: '#dc2626', thresholdDash: [5, 3], showLabels: true, labelColor: '#0b3a6f', labelFontSize: 10 }
+                                },
+                                scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } } }
+                            }
                         });
                     }
                     /* 2. Penta1 vs Penta3 par org unit (top 25) */
@@ -3957,16 +4002,17 @@
                             data: {
                                 labels: grLbls,
                                 datasets: [
-                                    { label: 'CV (%)', data: grVals, backgroundColor: grCols, borderRadius: 2 },
-                                    { label: 'Obj. 95%', data: grLbls.map(function () { return 95; }), type: 'line', borderColor: '#dc2626', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false }
+                                    { label: 'CV (%)', data: grVals, backgroundColor: grCols, borderRadius: 2 }
                                 ]
                             },
+                            plugins: [thresholdAndLabelsPlugin],
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 plugins: {
                                     legend: { position: 'top', labels: { font: { size: 11 }, usePointStyle: true } },
-                                    title: { display: true, text: gag.lbl + ' — CV vs Objectif 95%', font: { size: 13, weight: 'bold' }, color: gag.col }
+                                    title: { display: true, text: gag.lbl + ' — CV vs Objectif 95%', font: { size: 13, weight: 'bold' }, color: gag.col },
+                                    thresholdAndLabels: { threshold: 95, thresholdColor: '#dc2626', thresholdDash: [4, 3], showLabels: true, labelColor: '#0b3a6f', labelFontSize: 10 }
                                 },
                                 scales: { y: { beginAtZero: true, max: 130, ticks: { font: { size: 10 } }, title: { display: true, text: 'CV (%)' } }, x: { ticks: { font: { size: 9 }, maxRotation: 55 } } }
                             }
@@ -4029,6 +4075,19 @@
 
                 /* Mois courant (1-12) — pour limiter l'affichage si année active = année en cours */
                 var curMonth = (activeYear === curYr) ? (nowD.getMonth() + 1) : 12;
+
+                /* Coupure pour la courbe Couverture vaccinale :
+                   règle du 20 — si jour < 20 on s'arrête au mois N-2 (mois précédent
+                   le mois précédent), sinon au mois N-1 (mois précédent). */
+                var nowDay = nowD.getDate(), nowMo = nowD.getMonth() + 1, nowYr = nowD.getFullYear();
+                var _lag = (nowDay >= 20 ? 1 : 2);
+                var _cutMo = nowMo - _lag, _cutYr = nowYr;
+                while (_cutMo <= 0) { _cutMo += 12; _cutYr -= 1; }
+                var _ay = parseInt(activeYear, 10);
+                var cvCutoffIdx; // index 0..11 inclusif jusqu'auquel on affiche la couverture
+                if (_ay < _cutYr) cvCutoffIdx = 11;
+                else if (_ay > _cutYr) cvCutoffIdx = -1;
+                else cvCutoffIdx = _cutMo - 1;
 
                 /* Données limitées à l'année active.
                    _YM stocké au format 'YYYYMM' (ex: '202604'). */
@@ -4110,8 +4169,9 @@
                     /* Couvertures */
                     var ideal = months.map(function (_, i) { return +((i + 1) / 12 * 100).toFixed(1); });
                     var poursuivie = months.map(function (_, i) { return +((i + 1) / 12 * 95).toFixed(1); });
-                    var actual = cumulative.map(function (cv) {
+                    var actual = cumulative.map(function (cv, i) {
                         if (cv === null) return null;
+                        if (i > cvCutoffIdx) return null; // règle du 20 — pas de CV au-delà du cutoff
                         return annualTarget > 0 ? +(cv / annualTarget * 100).toFixed(1) : null;
                     });
 
