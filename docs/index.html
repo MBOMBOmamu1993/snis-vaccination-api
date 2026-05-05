@@ -894,9 +894,13 @@
         };
 
         /* ═══ HELPERS ═══ */
-        async function fetchGzip(url) {
+        async function fetchGzip(url, _attempt) {
+            _attempt = _attempt || 1;
+            var maxAttempts = 3;
+            var fetchUrl = _attempt > 1 ? (url + (url.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now()) : url;
+            var fetchOpts = _attempt > 1 ? { cache: 'no-store' } : {};
             try {
-                var response = await fetch(url);
+                var response = await fetch(fetchUrl, fetchOpts);
                 if (!response.ok) {
                     if (url.indexOf('.gz') !== -1) {
                         console.warn('Gzip non trouvé, tentative version non-compressée:', url);
@@ -911,6 +915,15 @@
                 }
                 return await response.json();
             } catch (e) {
+                /* Erreurs de transport (Content-Length truncation, network reset, gzip corrupt)
+                   → on retente jusqu'à maxAttempts avec cache-busting + cache:no-store. */
+                var msg = (e && e.message) ? e.message : String(e);
+                var retriable = /Content-Length|network|Failed to fetch|ERR_|incorrect header check|unexpected end/i.test(msg);
+                if (retriable && _attempt < maxAttempts) {
+                    console.warn('fetchGzip retry ' + (_attempt + 1) + '/' + maxAttempts + ' (' + url + '): ' + msg);
+                    await new Promise(function (r) { setTimeout(r, 400 * _attempt); });
+                    return await fetchGzip(url, _attempt + 1);
+                }
                 console.error('Erreur fetchGzip (' + url + '):', e);
                 throw e;
             }
