@@ -367,6 +367,135 @@
             background: #fafbfc
         }
 
+        .fd.pcal {
+            min-width: 280px;
+            padding: 10px 12px 12px;
+            max-height: 380px;
+            overflow: visible
+        }
+
+        .pcal-yr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 4px 10px;
+            gap: 6px;
+            border-bottom: 1px solid #eef0f4;
+            margin-bottom: 10px
+        }
+
+        .pcal-nav {
+            background: #fafbfc;
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px;
+            width: 32px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #0b3a6f;
+            font-weight: 700;
+            transition: .15s
+        }
+
+        .pcal-nav:hover:not(:disabled) {
+            background: #e3f2fd;
+            border-color: #1565c0
+        }
+
+        .pcal-yrlbl {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0b3a6f;
+            letter-spacing: .5px
+        }
+
+        .pcal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px
+        }
+
+        .pcal-mo {
+            padding: 10px 4px;
+            background: #fafbfc;
+            border: 1.5px solid #d1d5db;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: .12s
+        }
+
+        .pcal-mo:hover:not(.dis) {
+            background: #e3f2fd;
+            border-color: #1565c0
+        }
+
+        .pcal-mo.sel {
+            background: #0b3a6f;
+            color: #fff;
+            border-color: #0b3a6f
+        }
+
+        .pcal-mo.sel:hover {
+            background: #1565c0;
+            border-color: #1565c0
+        }
+
+        .pcal-mo.dis {
+            color: #c5c8cc;
+            background: #f5f5f5;
+            border-color: #eaeaea;
+            cursor: not-allowed;
+            opacity: .55
+        }
+
+        .pcal-ft {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-top: 10px;
+            margin-top: 10px;
+            border-top: 1px solid #eef0f4
+        }
+
+        .pcal-sum {
+            flex: 1;
+            font-size: 10.5px;
+            color: #555;
+            font-weight: 600;
+            line-height: 1.3
+        }
+
+        .pcal-act {
+            padding: 5px 10px;
+            border: 1.5px solid #0b3a6f;
+            border-radius: 6px;
+            background: #0b3a6f;
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .15s;
+            white-space: nowrap
+        }
+
+        .pcal-act:hover {
+            background: #1565c0;
+            border-color: #1565c0
+        }
+
+        .pcal-act-clr {
+            background: #fff;
+            color: #0b3a6f
+        }
+
+        .pcal-act-clr:hover {
+            background: #f0f4ff;
+            color: #0b3a6f
+        }
+
         .ct {
             padding: 18px 22px
         }
@@ -1356,9 +1485,9 @@
                 buildMultiFilter(c, info, avail, selArr, info.dim);
             });
 
-            /* 6) PÉRIODE - multichoix */
+            /* 6) PÉRIODE - calendrier multi-mois / multi-années */
             if (tab.fl.indexOf('period') >= 0) {
-                buildMultiFilter(c, { l: 'Période', k: 'period' }, S.vals.period, S.filters.period, 'period');
+                buildPeriodCalendarFilter(c, S.vals.period, S.filters.period);
             }
 
             /* 7) BOUTON RESET GLOBAL (Icône) */
@@ -1498,6 +1627,162 @@
             g.addEventListener('mouseleave', function () {
                 dd.classList.remove('sh');
             });
+            container.appendChild(g);
+        }
+
+        /* ═══ PÉRIODE — Filtre calendrier (années défilables + mois multi-sélection) ═══ */
+        function buildPeriodCalendarFilter(container, options, selected) {
+            var g = E('div', 'fg');
+
+            var lbl = document.createElement('label');
+            lbl.textContent = 'Période';
+            var rst = document.createElement('button');
+            rst.className = 'frst'; rst.innerHTML = '↺'; rst.title = 'Réinitialiser Période';
+            rst.onclick = function (e) {
+                e.stopPropagation();
+                S.filters.period = getDefaultPeriod(S.vals.period);
+                rFlt(); apFlt(); render();
+            };
+            lbl.appendChild(rst);
+            g.appendChild(lbl);
+
+            function btnLabelFor(sel, tot) {
+                var n = sel.length;
+                if (n === 0) return 'Aucune';
+                if (n === 1) return mL(sel[0]);
+                if (n === tot && tot > 0) return 'Tout (' + tot + ')';
+                var srt = sel.slice().sort();
+                return mL(srt[0]) + ' … ' + mL(srt[srt.length - 1]);
+            }
+
+            var bt = document.createElement('button'); bt.className = 'fbtn';
+            var nSel0 = selected.length, tot0 = options.length;
+            bt.innerHTML = '<span>' + btnLabelFor(selected, tot0) + '</span><span class="cn">' + nSel0 + '</span><span>▼</span>';
+            bt.onclick = function (e) {
+                e.stopPropagation();
+                document.querySelectorAll('.fd').forEach(function (el) { if (el.id !== 'fd-period') el.classList.remove('sh'); });
+                document.getElementById('fd-period').classList.toggle('sh');
+            };
+            g.appendChild(bt);
+
+            var dd = E('div', 'fd pcal'); dd.id = 'fd-period';
+
+            var availSet = {}; options.forEach(function (m) { availSet[m] = 1; });
+            var yrSet = {}; options.forEach(function (m) { yrSet[m.substr(0, 4)] = 1; });
+            var years = Object.keys(yrSet).sort();
+            if (!years.length) years = [String(new Date().getFullYear())];
+
+            /* Année affichée — persistée à travers les rebuilds */
+            if (!S._pcalYr || years.indexOf(S._pcalYr) < 0) {
+                if (selected.length) {
+                    var ssel = selected.slice().sort();
+                    S._pcalYr = ssel[ssel.length - 1].substr(0, 4);
+                } else {
+                    S._pcalYr = years[years.length - 1];
+                }
+                if (years.indexOf(S._pcalYr) < 0) S._pcalYr = years[years.length - 1];
+            }
+
+            var yrHdr = E('div', 'pcal-yr');
+            var prevBtn = document.createElement('button'); prevBtn.className = 'pcal-nav'; prevBtn.type = 'button'; prevBtn.innerHTML = '◄'; prevBtn.title = 'Année précédente';
+            var yrLbl = document.createElement('span'); yrLbl.className = 'pcal-yrlbl';
+            var nextBtn = document.createElement('button'); nextBtn.className = 'pcal-nav'; nextBtn.type = 'button'; nextBtn.innerHTML = '►'; nextBtn.title = 'Année suivante';
+            yrHdr.appendChild(prevBtn); yrHdr.appendChild(yrLbl); yrHdr.appendChild(nextBtn);
+            dd.appendChild(yrHdr);
+
+            var grid = E('div', 'pcal-grid');
+            dd.appendChild(grid);
+
+            var ft = E('div', 'pcal-ft');
+            var sumLbl = document.createElement('div'); sumLbl.className = 'pcal-sum';
+            var clrBtn = document.createElement('button'); clrBtn.className = 'pcal-act pcal-act-clr'; clrBtn.type = 'button'; clrBtn.textContent = 'Effacer';
+            var allBtn = document.createElement('button'); allBtn.className = 'pcal-act'; allBtn.type = 'button'; allBtn.textContent = 'Tout';
+            ft.appendChild(sumLbl); ft.appendChild(clrBtn); ft.appendChild(allBtn);
+            dd.appendChild(ft);
+
+            var moShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+            function keepOpen() {
+                requestAnimationFrame(function () {
+                    var dd2 = document.getElementById('fd-period');
+                    if (dd2) dd2.classList.add('sh');
+                });
+            }
+
+            function refreshGrid() {
+                grid.innerHTML = '';
+                yrLbl.textContent = S._pcalYr;
+                var idx = years.indexOf(S._pcalYr);
+                prevBtn.disabled = (idx <= 0);
+                nextBtn.disabled = (idx >= years.length - 1);
+                prevBtn.style.opacity = prevBtn.disabled ? '.25' : '1';
+                nextBtn.style.opacity = nextBtn.disabled ? '.25' : '1';
+                prevBtn.style.cursor = prevBtn.disabled ? 'not-allowed' : 'pointer';
+                nextBtn.style.cursor = nextBtn.disabled ? 'not-allowed' : 'pointer';
+
+                var selSet = {}; S.filters.period.forEach(function (m) { selSet[m] = 1; });
+                for (var i = 0; i < 12; i++) {
+                    var mm = ('0' + (i + 1)).slice(-2);
+                    var ym = S._pcalYr + mm;
+                    var avail = availSet[ym] === 1;
+                    var sel = selSet[ym] === 1;
+                    var cell = document.createElement('button');
+                    cell.type = 'button';
+                    cell.className = 'pcal-mo' + (sel ? ' sel' : '') + (avail ? '' : ' dis');
+                    cell.textContent = moShort[i];
+                    cell.title = mL(ym) + (avail ? '' : ' (non disponible)');
+                    cell.disabled = !avail;
+                    (function (ymCap, availCap) {
+                        cell.onclick = function (e) {
+                            e.stopPropagation();
+                            if (!availCap) return;
+                            var pos = S.filters.period.indexOf(ymCap);
+                            if (pos >= 0) S.filters.period.splice(pos, 1);
+                            else S.filters.period.push(ymCap);
+                            apFlt(); rFlt(); render();
+                            keepOpen();
+                        };
+                    })(ym, avail);
+                    grid.appendChild(cell);
+                }
+
+                var nS = S.filters.period.length;
+                if (nS === 0) sumLbl.textContent = 'Aucun mois sélectionné';
+                else if (nS === 1) sumLbl.textContent = '1 mois — ' + mL(S.filters.period[0]);
+                else {
+                    var srt = S.filters.period.slice().sort();
+                    sumLbl.textContent = nS + ' mois — ' + mL(srt[0]) + ' → ' + mL(srt[srt.length - 1]);
+                }
+                bt.innerHTML = '<span>' + btnLabelFor(S.filters.period, options.length) + '</span><span class="cn">' + nS + '</span><span>▼</span>';
+            }
+
+            prevBtn.onclick = function (e) {
+                e.stopPropagation();
+                var i = years.indexOf(S._pcalYr);
+                if (i > 0) { S._pcalYr = years[i - 1]; refreshGrid(); }
+            };
+            nextBtn.onclick = function (e) {
+                e.stopPropagation();
+                var i = years.indexOf(S._pcalYr);
+                if (i < years.length - 1) { S._pcalYr = years[i + 1]; refreshGrid(); }
+            };
+            allBtn.onclick = function (e) {
+                e.stopPropagation();
+                S.filters.period = options.slice();
+                apFlt(); rFlt(); render();
+                keepOpen();
+            };
+            clrBtn.onclick = function (e) {
+                e.stopPropagation();
+                S.filters.period = [];
+                apFlt(); rFlt(); render();
+                keepOpen();
+            };
+
+            refreshGrid();
+
+            g.appendChild(dd);
+            g.addEventListener('mouseleave', function () { dd.classList.remove('sh'); });
             container.appendChild(g);
         }
 
