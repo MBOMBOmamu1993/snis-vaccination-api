@@ -3839,8 +3839,10 @@
             if (hasAnt) {
                 /* Antenne sélectionnée : afficher les Zones de Santé enfants.
                    useAS=true pour charger les données AS et permettre la
-                   proportion AS-atteinte par ZS dans le tableau de performances. */
-                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Zone de Santé' };
+                   proportion AS-atteinte par ZS dans le tableau de performances.
+                   dedupKey='_AS' car la population cible doit sommer toutes les
+                   AS d'une ZS (et non se limiter à la première AS rencontrée). */
+                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Zone de Santé' };
             }
             if (hasProv) {
                 /* Province sélectionnée (sans antenne) : afficher les Antennes PEV */
