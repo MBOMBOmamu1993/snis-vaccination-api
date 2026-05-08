@@ -3872,7 +3872,7 @@
             if (v < 0) return '#7f1d1d';
             var p = v * 100;
             if (p <= 10) return '#16a34a';
-            if (p < 20) return '#d97706';
+            if (p < 20) return '#eab308';
             return '#ef4444';
         }
         function _catColor(cat) {
@@ -4064,7 +4064,7 @@
                     { v: cv3 !== null ? (cv3 * 100).toFixed(1) + '%' : '–', l: 'CV DTC3/Penta3', col: _cvColor(cv3 !== null ? cv3 * 100 : null) || '#0b3a6f' },
                     { v: abandon !== null ? (abandon * 100).toFixed(1) + '%' : '–', l: 'Abandon Penta1–3', col: _abandonColor(abandon) },
                     { v: Math.round(zdTotal).toLocaleString(), l: 'Enfants zéro-dose', col: '#7c3aed' },
-                    { v: Math.round(esvTotal).toLocaleString(), l: 'Enfants sous-vaccinés', col: '#d97706' },
+                    { v: Math.round(esvTotal).toLocaleString(), l: 'Enfants sous-vaccinés', col: '#eab308' },
                     { v: nBelow80 + '/' + orgNames.length, l: belowLabel, col: nBelow80 > 0 ? '#dc2626' : '#16a34a' }
                 ].forEach(function (k) {
                     var kc = E('div', 'kc');
@@ -4190,7 +4190,7 @@
                     '<span style="color:#dc2626;font-weight:700">■ &lt;60%</span>. ' +
                     'Couleurs abandon : ' +
                     '<span style="color:#16a34a;font-weight:700">■ 0–10%</span> · ' +
-                    '<span style="color:#d97706;font-weight:700">■ &gt;10–&lt;20%</span> · ' +
+                    '<span style="color:#eab308;font-weight:700">■ &gt;10–&lt;20%</span> · ' +
                     '<span style="color:#ef4444;font-weight:700">■ ≥20%</span> · ' +
                     '<span style="color:#7f1d1d;font-weight:700">■ &lt;0% (à vérifier)</span>. ' +
                     'Abandons négatifs ⚠️ = catégorie NA. ' +
@@ -4209,7 +4209,7 @@
                     if (!sessAvailable) return '<td style="text-align:center;color:#888;font-style:italic">Données non disponibles</td>';
                     if (!prevu || prevu <= 0) return '<td style="text-align:right;color:#bbb">NA</td>';
                     var p = realised / prevu * 100;
-                    var col = p >= 80 ? '#16a34a' : (p >= 50 ? '#d97706' : '#dc2626');
+                    var col = p >= 80 ? '#16a34a' : (p >= 50 ? '#eab308' : '#dc2626');
                     return '<td style="background:' + col + ';color:#fff;text-align:right;font-weight:700">' + p.toFixed(1) + '%</td>';
                 }
                 var popBox = E('div', 'cb');
@@ -4482,7 +4482,7 @@
                                 labels: zdsvLbls,
                                 datasets: [
                                     { label: 'ZD : enfants zéro-dose', data: zdVals, backgroundColor: '#7c3aed', borderRadius: 2 },
-                                    { label: 'SV : enfants sous-vaccinés', data: svVals, backgroundColor: '#d97706', borderRadius: 2 }
+                                    { label: 'SV : enfants sous-vaccinés', data: svVals, backgroundColor: '#eab308', borderRadius: 2 }
                                 ]
                             },
                             options: {
