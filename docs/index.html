@@ -3826,13 +3826,26 @@
                 S.cascaded && S.cascaded.as && f.as.length < S.cascaded.as.length);
             var scopeLevel = hasAS ? 'as' : (hasZS ? 'zs' : (hasAnt ? 'antenne' : (hasProv ? 'province' : 'national')));
             var scopeLabel = { as: 'Aire de Santé', zs: 'Zone de Santé', antenne: 'Antenne PEV', province: 'Province', national: 'National' }[scopeLevel];
+            /* Logique d'affichage des niveaux enfants. La page s'arrête au niveau
+               Aire de Santé (jamais FOSA — pas de population cible). */
+            if (hasAS) {
+                /* AS sélectionnée : on n'affiche que cette AS (pas de descente plus bas) */
+                return { groupKey: '_AS', label: 'Aire de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Aire de Santé' };
+            }
             if (hasZS) {
-                return { groupKey: '_AS', label: 'Aire de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel };
+                /* ZS sélectionnée : afficher les Aires de Santé enfants */
+                return { groupKey: '_AS', label: 'Aire de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Aire de Santé' };
+            }
+            if (hasAnt) {
+                /* Antenne sélectionnée : afficher les Zones de Santé enfants */
+                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Zone de Santé' };
             }
             if (hasProv) {
-                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel };
+                /* Province sélectionnée (sans antenne) : afficher les Antennes PEV */
+                return { groupKey: '_Antenne', label: 'Antenne PEV', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Antenne PEV' };
             }
-            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel };
+            /* National : afficher les Provinces */
+            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Province' };
         }
 
         /* ── Utilitaires CV ── */
@@ -3842,31 +3855,68 @@
             return (v * 100).toFixed(dec !== undefined ? dec : 1) + '%';
         }
         function _cvColor(pct) {
-            /* pct = valeur 0-100+ */
+            /* pct = valeur 0-100+
+               >100 : bleu | 90-100 : vert | 60-89 : jaune | <60 : rouge */
             if (pct === null || pct === undefined || !isFinite(pct)) return '';
-            if (pct > 120) return '#7c3aed';
-            if (pct >= 95) return '#16a34a';
-            if (pct >= 80) return '#2563eb';
-            if (pct >= 50) return '#d97706';
+            if (pct > 100) return '#2563eb';
+            if (pct >= 90) return '#16a34a';
+            if (pct >= 60) return '#d97706';
             return '#dc2626';
         }
+        /* v est une fraction (0.10 = 10%). Couleurs abandon :
+           <0 : rouge foncé | 0-10 : vert | >10 et <20 : jaune | >=20 : rouge clair */
         function _abandonColor(v) {
-            if (v === null || !isFinite(v)) return '#888';
-            if (v < 0) return '#6b7280';
-            if (v > 0.10) return '#dc2626';
-            return '#16a34a';
+            if (v === null || v === undefined || !isFinite(v)) return '#888';
+            if (v < 0) return '#7f1d1d';
+            var p = v * 100;
+            if (p <= 10) return '#16a34a';
+            if (p < 20) return '#d97706';
+            return '#ef4444';
         }
         function _catColor(cat) {
-            var m = { 'Cat. 1': '#16a34a', 'Cat. 2': '#d97706', 'Cat. 3': '#2563eb', 'Cat. 4': '#dc2626' };
+            var m = {
+                'Cat. 1': '#16a34a', /* vert */
+                'Cat. 2': '#2563eb', /* bleu */
+                'Cat. 3': '#d97706', /* jaune */
+                'Cat. 4': '#dc2626', /* rouge */
+                'NA':     '#7f1d1d'  /* rouge foncé discret */
+            };
             return m[cat] || '#94a3b8';
         }
+        /* Catégorisation : NA si abandon DTC1-DTC3 < 0 ou non calculable.
+           Cat 1 : CV DTC1 >= 90 et abandon entre 0 et 10
+           Cat 2 : CV DTC1 >= 90 et abandon > 10
+           Cat 3 : CV DTC1 < 90 et abandon entre 0 et 10
+           Cat 4 : CV DTC1 < 90 et abandon > 10 */
         function _categorize(cv1Pct, abanPct) {
-            if (cv1Pct === null || abanPct === null) return 'N/A';
+            if (cv1Pct === null || cv1Pct === undefined || !isFinite(cv1Pct)) return 'NA';
+            if (abanPct === null || abanPct === undefined || !isFinite(abanPct)) return 'NA';
+            if (abanPct < 0) return 'NA';
             var h = cv1Pct >= 90, l = abanPct <= 10;
             if (h && l) return 'Cat. 1';
             if (h && !l) return 'Cat. 2';
             if (!h && l) return 'Cat. 3';
             return 'Cat. 4';
+        }
+        /* Priorisation : Cat 4 = P1, Cat 3 = P2, Cat 2 = P3, Cat 1 = P4, NA = À vérifier */
+        function _priorityFromCat(cat) {
+            return ({ 'Cat. 4': 'Priorité 1', 'Cat. 3': 'Priorité 2', 'Cat. 2': 'Priorité 3', 'Cat. 1': 'Priorité 4' })[cat] || 'À vérifier';
+        }
+        function _priorityColor(prio) {
+            return ({
+                'Priorité 1': '#dc2626', /* rouge */
+                'Priorité 2': '#d97706', /* jaune */
+                'Priorité 3': '#2563eb', /* bleu */
+                'Priorité 4': '#16a34a', /* vert */
+                'À vérifier': '#7f1d1d'  /* rouge foncé discret */
+            })[prio] || '#94a3b8';
+        }
+        /* Couleur pour une "proportion atteignant un seuil" (0-100) */
+        function _propColor(pct) {
+            if (pct === null || pct === undefined || !isFinite(pct)) return '#888';
+            if (pct >= 90) return '#16a34a';
+            if (pct >= 60) return '#d97706';
+            return '#dc2626';
         }
 
         /* Population cible — déduplique par dedupKey (pop annuelle répétée par mois) */
@@ -3998,7 +4048,7 @@
                     ' — Période : <strong>' + perLbl + '</strong>' +
                     ' — Niveau affiché : <strong>' + gi.label + '</strong>' +
                     (isVAPprov ? ' &nbsp;<span style="background:#e65100;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700">Province VAP</span>' : '') +
-                    '</p><p style="font-size:10px;color:#888;margin:4px 0 0"><em>Niveaux : National → Province → Zone de Santé → Aire de Santé. FOSA exclus (pas de population cible).</em></p>';
+                    '</p><p style="font-size:10px;color:#888;margin:4px 0 0"><em>Niveaux : National → Province → Antenne PEV → Zone de Santé → Aire de Santé. FOSA exclus (pas de population cible).</em></p>';
                 c.appendChild(hdr);
 
                 /* ── KPI Cards ── */
@@ -4059,59 +4109,68 @@
                 calBox.innerHTML += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>BCG et Td : dénominateur = Cible NV. Tous autres antigènes : dénominateur = Cible NS. VAP uniquement pour provinces ayant introduit le vaccin.</em></p>';
                 c.appendChild(calBox);
 
-                /* ── Tableau principal ── */
+                /* ── Tableau principal des couvertures vaccinales ──
+                   Centré sur les CV, abandons, catégorisation et priorisation.
+                   Pop / cibles / séances → tableau séparé.  ZD / SV → KPI + graphique. */
                 var vapAgs = ['VAP1', 'VAP2', 'VAP3', 'VAP4'];
                 var tableAgs = ['BCG', 'VPO0', 'DTC1', 'VPO1', 'ROTA1', 'PCV13_1', 'DTC2', 'VPO2', 'ROTA2', 'PCV13_2',
                     'DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3', 'VAR1', 'VPI2', 'VAA', 'VAR2', 'TD'];
                 if (isVAPprov) tableAgs = tableAgs.concat(vapAgs);
 
-                var tblBox = E('div', 'cb');
-                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales par ' + gi.label + '</h4>';
-                var tH = '<div style="overflow-x:auto;max-height:580px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
-                    '<tr style="background:#0b3a6f;color:#fff">' +
-                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
-                    '<th style="text-align:right;min-width:70px">Pop. AS</th>' +
-                    '<th style="text-align:right;min-width:70px">Cible NV</th>' +
-                    '<th style="text-align:right;min-width:70px">Cible NS</th>';
-                tableAgs.forEach(function (ag) { tH += '<th style="text-align:right;min-width:55px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>'; });
-                tH += '<th style="text-align:right;min-width:65px">Zéro-dose</th>' +
-                    '<th style="text-align:right;min-width:65px">Sous-vacc.</th>' +
-                    '<th style="text-align:right;min-width:70px">Abandon</th>' +
-                    '<th style="text-align:center;min-width:60px">Catégorie</th></tr></thead><tbody>';
-
-                /* Ligne TOTAL */
-                function _rowCells(recs, tgt, ags, bg) {
+                /* Calcule les cellules CV + abandons + catégorie + priorisation pour une ligne */
+                function _rowCells(recs, tgt, ags) {
                     var cells = '';
-                    var ouD1 = 0, ouD3 = 0;
+                    var ouD1 = 0, ouD3 = 0, ouBCG = 0, ouV1 = 0, ouV2 = 0;
                     ags.forEach(function (ag) {
                         var field = AG_FIELD_MAP[ag];
                         var doses = field ? _cvSum(recs, field) : 0;
                         if (ag === 'DTC1') ouD1 = doses;
                         if (ag === 'DTC3') ouD3 = doses;
+                        if (ag === 'BCG') ouBCG = doses;
+                        if (ag === 'VAR1') ouV1 = doses;
+                        if (ag === 'VAR2') ouV2 = doses;
                         var useNV = (ag === 'BCG' || ag === 'TD');
                         var den = useNV ? tgt.nv : tgt.ns;
                         var cvPct = den > 0 ? doses / den * 100 : null;
                         var st = cvPct !== null ? 'background:' + _cvColor(cvPct) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
                         cells += '<td style="' + st + '">' + (cvPct !== null ? cvPct.toFixed(1) + '%' : '–') + '</td>';
                     });
-                    var ouZD = _cvZD(recs), ouESV = _cvESV(recs);
+                    /* Abandons : DTC1-DTC3, BCG-VAR1, BCG-VAR2 (fractions) */
                     var ouAb = _safeDiv(ouD1 - ouD3, ouD1);
+                    var ouAbV1 = _safeDiv(ouBCG - ouV1, ouBCG);
+                    var ouAbV2 = _safeDiv(ouBCG - ouV2, ouBCG);
                     var cv1Pct = tgt.ns > 0 ? ouD1 / tgt.ns * 100 : null;
                     var ouCat = _categorize(cv1Pct, ouAb !== null ? ouAb * 100 : null);
-                    cells += '<td style="text-align:right">' + Math.round(ouZD).toLocaleString() + '</td>';
-                    cells += '<td style="text-align:right">' + Math.round(ouESV).toLocaleString() + '</td>';
-                    var abCol = _abandonColor(ouAb);
-                    cells += '<td style="text-align:right;font-weight:700;color:' + abCol + '">' + (ouAb !== null ? (ouAb * 100).toFixed(1) + '%' : '–') + (ouAb !== null && ouAb < 0 ? ' ⚠️' : '') + '</td>';
+                    var ouPrio = _priorityFromCat(ouCat);
+                    function _abCell(v) {
+                        if (v === null) return '<td style="text-align:right;color:#bbb">NA</td>';
+                        var col = _abandonColor(v);
+                        var warn = v < 0 ? ' ⚠️' : '';
+                        return '<td style="background:' + col + ';color:#fff;text-align:right;font-weight:700">' + (v * 100).toFixed(1) + '%' + warn + '</td>';
+                    }
+                    cells += _abCell(ouAb);
+                    cells += _abCell(ouAbV1);
+                    cells += _abCell(ouAbV2);
                     cells += '<td style="text-align:center;background:' + _catColor(ouCat) + ';color:#fff;font-weight:700">' + ouCat + '</td>';
+                    cells += '<td style="text-align:center;background:' + _priorityColor(ouPrio) + ';color:#fff;font-weight:700">' + ouPrio + '</td>';
                     return cells;
                 }
 
+                var tblBox = E('div', 'cb');
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales par ' + gi.label + '</h4>';
+                var tH = '<div style="overflow-x:auto;max-height:580px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>';
+                tableAgs.forEach(function (ag) { tH += '<th style="text-align:right;min-width:55px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>'; });
+                tH += '<th style="text-align:right;min-width:90px">Abandon DTC1-DTC3</th>' +
+                    '<th style="text-align:right;min-width:90px">Abandon BCG-VAR1</th>' +
+                    '<th style="text-align:right;min-width:90px">Abandon BCG-VAR2</th>' +
+                    '<th style="text-align:center;min-width:60px">Catégorie</th>' +
+                    '<th style="text-align:center;min-width:80px">Priorisation</th></tr></thead><tbody>';
+
                 tH += '<tr style="background:#e8f0fe;font-weight:800">' +
                     '<td style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
-                    '<td style="text-align:right">' + (tgts.pop > 0 ? Math.round(tgts.pop).toLocaleString() : '–') + '</td>' +
-                    '<td style="text-align:right">' + Math.round(tgts.nv).toLocaleString() + '</td>' +
-                    '<td style="text-align:right">' + Math.round(tgts.ns).toLocaleString() + '</td>' +
-                    _rowCells(cvFlt, tgts, tableAgs, '#e8f0fe') + '</tr>';
+                    _rowCells(cvFlt, tgts, tableAgs) + '</tr>';
 
                 orgNames.forEach(function (ouName, idx) {
                     var recs = orgG[ouName];
@@ -4119,22 +4178,193 @@
                     var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                     tH += '<tr style="background:' + bg + '">' +
                         '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
-                        '<td style="text-align:right">' + (t2.pop > 0 ? Math.round(t2.pop).toLocaleString() : '–') + '</td>' +
-                        '<td style="text-align:right">' + Math.round(t2.nv).toLocaleString() + '</td>' +
-                        '<td style="text-align:right">' + Math.round(t2.ns).toLocaleString() + '</td>' +
-                        _rowCells(recs, t2, tableAgs, bg) + '</tr>';
+                        _rowCells(recs, t2, tableAgs) + '</tr>';
                 });
                 tH += '</tbody></table></div>';
                 tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Couleurs CV : ' +
-                    '<span style="color:#16a34a;font-weight:700">■ ≥95%</span> · ' +
-                    '<span style="color:#2563eb;font-weight:700">■ 80–94%</span> · ' +
-                    '<span style="color:#d97706;font-weight:700">■ 50–79%</span> · ' +
-                    '<span style="color:#dc2626;font-weight:700">■ &lt;50%</span> · ' +
-                    '<span style="color:#7c3aed;font-weight:700">■ &gt;120% (atypique)</span>. ' +
-                    'Abandon ⚠️ = valeur négative, à vérifier. ' +
+                    '<span style="color:#2563eb;font-weight:700">■ &gt;100% (à vérifier)</span> · ' +
+                    '<span style="color:#16a34a;font-weight:700">■ 90–100%</span> · ' +
+                    '<span style="color:#d97706;font-weight:700">■ 60–89%</span> · ' +
+                    '<span style="color:#dc2626;font-weight:700">■ &lt;60%</span>. ' +
+                    'Couleurs abandon : ' +
+                    '<span style="color:#16a34a;font-weight:700">■ 0–10%</span> · ' +
+                    '<span style="color:#d97706;font-weight:700">■ &gt;10–&lt;20%</span> · ' +
+                    '<span style="color:#ef4444;font-weight:700">■ ≥20%</span> · ' +
+                    '<span style="color:#7f1d1d;font-weight:700">■ &lt;0% (à vérifier)</span>. ' +
+                    'Abandons négatifs ⚠️ = catégorie NA. ' +
                     (isVAPprov ? '' : 'VAP non affiché (province non VAP).') + '</em></p>';
                 tblBox.innerHTML += tH;
                 c.appendChild(tblBox);
+
+                /* ── Tableau séparé : Population cible et réalisation des séances ── */
+                var sessKeys = ['seances_fixes_prevues', 'seances_fixes_realisees',
+                    'seances_avancees_prevues', 'seances_avancees_realisees',
+                    'seances_mobiles_prevues', 'seances_mobiles_realisees'];
+                var sessAvailable = cvFlt.some(function (r) {
+                    return sessKeys.some(function (k) { return Number(r[k]) > 0; });
+                });
+                function _sessCell(realised, prevu) {
+                    if (!sessAvailable) return '<td style="text-align:center;color:#888;font-style:italic">Données non disponibles</td>';
+                    if (!prevu || prevu <= 0) return '<td style="text-align:right;color:#bbb">NA</td>';
+                    var p = realised / prevu * 100;
+                    var col = p >= 80 ? '#16a34a' : (p >= 50 ? '#d97706' : '#dc2626');
+                    return '<td style="background:' + col + ';color:#fff;text-align:right;font-weight:700">' + p.toFixed(1) + '%</td>';
+                }
+                var popBox = E('div', 'cb');
+                popBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">👥 Population cible et réalisation des séances de vaccination — par ' + gi.label + '</h4>';
+                var pH = '<div style="overflow-x:auto;max-height:520px"><table class="dt" style="font-size:11px;white-space:nowrap"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:160px">' + gi.label + '</th>' +
+                    '<th style="text-align:right;min-width:90px">Population</th>' +
+                    '<th style="text-align:right;min-width:90px">Cible NV</th>' +
+                    '<th style="text-align:right;min-width:90px">Cible NS</th>' +
+                    '<th style="text-align:right;min-width:120px">% Séances fixes</th>' +
+                    '<th style="text-align:right;min-width:120px">% Séances avancées</th>' +
+                    '<th style="text-align:right;min-width:120px">% Séances mobiles</th>' +
+                    '</tr></thead><tbody>';
+                function _sessRow(recs, label, bg, sticky) {
+                    var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                    var sfp = _cvSum(recs, 'seances_fixes_prevues'), sfr = _cvSum(recs, 'seances_fixes_realisees');
+                    var sap = _cvSum(recs, 'seances_avancees_prevues'), sar = _cvSum(recs, 'seances_avancees_realisees');
+                    var smp = _cvSum(recs, 'seances_mobiles_prevues'), smr = _cvSum(recs, 'seances_mobiles_realisees');
+                    var stickySty = sticky ? ('position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:' + (sticky === 'total' ? '800' : '600')) : '';
+                    var row = '<tr style="background:' + bg + '">' +
+                        '<td style="' + stickySty + '">' + label + '</td>' +
+                        '<td style="text-align:right">' + (t.pop > 0 ? Math.round(t.pop).toLocaleString() : '–') + '</td>' +
+                        '<td style="text-align:right">' + (t.nv > 0 ? Math.round(t.nv).toLocaleString() : '–') + '</td>' +
+                        '<td style="text-align:right">' + (t.ns > 0 ? Math.round(t.ns).toLocaleString() : '–') + '</td>' +
+                        _sessCell(sfr, sfp) + _sessCell(sar, sap) + _sessCell(smr, smp) +
+                        '</tr>';
+                    return row;
+                }
+                pH += _sessRow(cvFlt, 'TOTAL', '#e8f0fe', 'total');
+                orgNames.forEach(function (ouName, idx) {
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    pH += _sessRow(orgG[ouName], tr(ouName, 30), bg, 'row');
+                });
+                pH += '</tbody></table></div>';
+                pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. ' +
+                    (sessAvailable ? 'Séances : seuils ≥80% vert, ≥50% jaune, &lt;50% rouge.' : 'Séances non disponibles dans les données chargées.') + '</em></p>';
+                popBox.innerHTML += pH;
+                c.appendChild(popBox);
+
+                /* ── Tableau "Proportion des org units ayant atteint les performances clés" ──
+                   Logique d'affichage :
+                   - National : rows = Antennes (par Province), enfants comparés = ZS
+                   - Province : rows = Antennes de la province, enfants comparés = ZS
+                   - Antenne  : rows = ZS de l'antenne, valeurs propres (pas de descente AS sans données chargées)
+                   - ZS       : rows = AS de la ZS, valeurs propres
+                   - AS       : tableau masqué (un seul niveau)
+                */
+                if (gi.scopeLevel !== 'as') {
+                    var rowKey, parentColKey, childKeyForProp, rowLabelHdr, parentColLabel;
+                    if (gi.scopeLevel === 'national' || gi.scopeLevel === 'province') {
+                        rowKey = '_Antenne'; parentColKey = '_Province'; childKeyForProp = '_ZS';
+                        rowLabelHdr = 'Antenne PEV'; parentColLabel = 'Province';
+                    } else if (gi.scopeLevel === 'antenne') {
+                        rowKey = '_ZS'; parentColKey = '_Antenne'; childKeyForProp = null; /* pas de descente AS */
+                        rowLabelHdr = 'Zone de Santé'; parentColLabel = 'Antenne PEV';
+                    } else { /* zs */
+                        rowKey = '_AS'; parentColKey = '_ZS'; childKeyForProp = null;
+                        rowLabelHdr = 'Aire de Santé'; parentColLabel = 'Zone de Santé';
+                    }
+
+                    /* Indicateurs : (label, fonction recs→pct, seuil, sens) */
+                    function _ind_DTC1(recs) { var t = _cvTargets(recs, n_periods, gi.dedupKey); return t.ns > 0 ? _cvSum(recs, 'DTC1_0_11') / t.ns * 100 : null; }
+                    function _ind_DTC3(recs) { var t = _cvTargets(recs, n_periods, gi.dedupKey); return t.ns > 0 ? _cvSum(recs, 'DTC3_0_11') / t.ns * 100 : null; }
+                    function _ind_VAR1(recs) { var t = _cvTargets(recs, n_periods, gi.dedupKey); return t.ns > 0 ? _cvSum(recs, 'VAR1_0_11') / t.ns * 100 : null; }
+                    function _ind_VAR2(recs) { var t = _cvTargets(recs, n_periods, gi.dedupKey); return t.ns > 0 ? _cvSum(recs, 'VAR2_12_23') / t.ns * 100 : null; }
+                    function _ind_AB13(recs) {
+                        var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                        var v = _safeDiv(d1 - d3, d1); return v === null ? null : v * 100;
+                    }
+                    var indicators = [
+                        { lbl: 'DTC1 ≥90%', fn: _ind_DTC1, ok: function (v) { return v !== null && v >= 90; } },
+                        { lbl: 'DTC3 ≥90%', fn: _ind_DTC3, ok: function (v) { return v !== null && v >= 90; } },
+                        { lbl: 'Abandon DTC1-DTC3 &lt;10%', fn: _ind_AB13, ok: function (v) { return v !== null && v >= 0 && v < 10; } },
+                        { lbl: 'VAR1 ≥90%', fn: _ind_VAR1, ok: function (v) { return v !== null && v >= 90; } },
+                        { lbl: 'VAR2 ≥90%', fn: _ind_VAR2, ok: function (v) { return v !== null && v >= 90; } }
+                    ];
+
+                    /* Regrouper cvFlt par rowKey, en gardant aussi le parent pour la colonne contexte */
+                    var rowG = {}, rowParent = {}, rowOrder = [];
+                    cvFlt.forEach(function (r) {
+                        var k = r[rowKey] || ''; if (!k) return;
+                        if (!rowG[k]) { rowG[k] = []; rowOrder.push(k); rowParent[k] = r[parentColKey] || ''; }
+                        rowG[k].push(r);
+                    });
+                    /* Tri : par parent puis par row */
+                    rowOrder.sort(function (a, b) {
+                        var pa = (rowParent[a] || '').localeCompare(rowParent[b] || '');
+                        return pa !== 0 ? pa : a.localeCompare(b);
+                    });
+
+                    var propBox = E('div', 'cb');
+                    propBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">🎯 Proportion des org units ayant atteint les performances clés par ' +
+                        (gi.scopeLevel === 'national' ? 'Province' : (gi.scopeLevel === 'province' ? 'Antenne PEV' : (gi.scopeLevel === 'antenne' ? 'Zone de Santé' : 'Aire de Santé'))) + '</h4>';
+                    var qH = '<div style="overflow-x:auto;max-height:560px"><table class="dt" style="font-size:11px;white-space:nowrap"><thead>' +
+                        '<tr style="background:#0b3a6f;color:#fff">' +
+                        '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:140px">' + parentColLabel + '</th>' +
+                        '<th style="background:#0b3a6f;min-width:160px">' + rowLabelHdr + '</th>';
+                    indicators.forEach(function (ind) {
+                        qH += '<th style="text-align:center;min-width:110px">' + ind.lbl + '</th>';
+                    });
+                    qH += '</tr></thead><tbody>';
+
+                    if (!rowOrder.length) {
+                        qH += '<tr><td colspan="' + (2 + indicators.length) + '" style="text-align:center;padding:18px;color:#888;font-style:italic">Aucune donnée pour ce niveau.</td></tr>';
+                    } else {
+                        rowOrder.forEach(function (k, idx) {
+                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                            qH += '<tr style="background:' + bg + '">' +
+                                '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(rowParent[k] || '–', 28) + '</td>' +
+                                '<td style="font-weight:600">' + tr(k, 32) + '</td>';
+                            indicators.forEach(function (ind) {
+                                var pct;
+                                if (childKeyForProp) {
+                                    /* Proportion d'enfants atteignant le seuil */
+                                    var childG = {};
+                                    rowG[k].forEach(function (r) {
+                                        var ck = r[childKeyForProp] || ''; if (!ck) return;
+                                        if (!childG[ck]) childG[ck] = [];
+                                        childG[ck].push(r);
+                                    });
+                                    var childKeys = Object.keys(childG);
+                                    if (!childKeys.length) { pct = null; }
+                                    else {
+                                        var nOk = 0, nValid = 0;
+                                        childKeys.forEach(function (ck) {
+                                            var v = ind.fn(childG[ck]);
+                                            if (v === null) return;
+                                            nValid += 1;
+                                            if (ind.ok(v)) nOk += 1;
+                                        });
+                                        pct = nValid > 0 ? (nOk / nValid * 100) : null;
+                                    }
+                                } else {
+                                    /* Pas de descente : binaire 100% si la ligne atteint le seuil, 0% sinon */
+                                    var v = ind.fn(rowG[k]);
+                                    pct = v === null ? null : (ind.ok(v) ? 100 : 0);
+                                }
+                                if (pct === null) {
+                                    qH += '<td style="text-align:center;color:#bbb">NA</td>';
+                                } else {
+                                    var col = _propColor(pct);
+                                    qH += '<td style="text-align:center;background:' + col + ';color:#fff;font-weight:700">' + (pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)) + '%</td>';
+                                }
+                            });
+                            qH += '</tr>';
+                        });
+                    }
+                    qH += '</tbody></table></div>';
+                    qH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>' +
+                        (childKeyForProp
+                            ? 'Pour chaque ' + rowLabelHdr.toLowerCase() + ', proportion des ' + (childKeyForProp === '_ZS' ? 'zones de santé' : 'aires de santé') + ' atteignant la performance.'
+                            : 'Niveau enfant non chargé pour ce scope : 100% si la ligne atteint le seuil, 0% sinon.') +
+                        ' Couleurs : ≥90% vert · 60–89% jaune · &lt;60% rouge.</em></p>';
+                    propBox.innerHTML += qH;
+                    c.appendChild(propBox);
+                }
 
                 /* ── Graphiques ── */
                 var chartBox = E('div', 'cb');
@@ -4142,13 +4372,16 @@
                 var grCanvases = grAntigens.map(function (ag) {
                     return '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="grChart_' + ag + '"></canvas></div>';
                 }).join('');
+                /* Hauteur dynamique pour le graphique ZD/SV : ~24 px par org unit, min 380, max 1400 */
+                var zdsvH = Math.max(380, Math.min(1400, 80 + Math.max(orgNames.length, 1) * 24));
                 chartBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📈 Graphiques de couverture vaccinale</h4>' +
                     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart1"></canvas></div>' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart2"></canvas></div>' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart3"></canvas></div>' +
-                    '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart4"></canvas></div>' +
                     '</div>' +
+                    '<h4 style="color:#0b3a6f;margin:0 0 10px">👶 Enfants zéro-dose et sous-vaccinés par ' + gi.label + '</h4>' +
+                    '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:' + zdsvH + 'px;position:relative;margin-bottom:20px"><canvas id="cvChart4"></canvas></div>' +
                     '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 CV par antigène — ' + gi.label + ' (style Graphiques_Routine)</h4>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px">' + grCanvases + '</div>';
                 c.appendChild(chartBox);
@@ -4237,7 +4470,7 @@
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 9 }, usePointStyle: true } }, title: { display: true, text: 'Penta1 vs Penta3 par ' + gi.label, font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { beginAtZero: true, max: 130 } } }
                         });
                     }
-                    /* 3. Taux d'abandon Penta1–3 */
+                    /* 3. Taux d'abandon Penta1–3 — couleurs : 0-10 vert, >10-<20 jaune, >=20 rouge clair, <0 rouge foncé */
                     var x3 = document.getElementById('cvChart3'); if (x3) {
                         var abVals = [], abLbls = [], abCols = [];
                         orgNames.slice(0, 25).forEach(function (ou) {
@@ -4245,22 +4478,41 @@
                             var ab = _safeDiv(d1 - d3, d1); if (ab === null) return;
                             abLbls.push(tr(ou, 18));
                             abVals.push(+(ab * 100).toFixed(1));
-                            abCols.push(ab > 0.10 ? '#dc2626' : ab < 0 ? '#6b7280' : '#16a34a');
+                            abCols.push(_abandonColor(ab));
                         });
                         S.charts.cvChart3 = new Chart(x3, {
                             type: 'bar',
                             data: { labels: abLbls, datasets: [{ label: 'Abandon P1–P3 (%)', data: abVals, backgroundColor: abCols, borderRadius: 2 }] },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Taux d\'abandon Penta1–Penta3 par ZS', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { title: { display: true, text: '%' } } } }
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Taux d\'abandon Penta1–Penta3 par ' + gi.label, font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { y: { title: { display: true, text: '%' } } } }
                         });
                     }
-                    /* 4. Top 15 zéro-dose */
+                    /* 4. Enfants ZD et SV par org unit (tous les org units, deux barres) */
                     var x4 = document.getElementById('cvChart4'); if (x4) {
-                        var zdData = orgNames.map(function (ou) { return { ou: ou, zd: _cvZD(orgG[ou]) }; })
-                            .sort(function (a, b) { return b.zd - a.zd; }).slice(0, 15);
+                        var zdsv = orgNames.map(function (ou) {
+                            return { ou: ou, zd: _cvZD(orgG[ou]), sv: _cvESV(orgG[ou]) };
+                        }).sort(function (a, b) { return b.zd - a.zd; });
+                        var zdsvLbls = zdsv.map(function (d) { return tr(d.ou, 22); });
+                        var zdVals = zdsv.map(function (d) { return Math.round(d.zd); });
+                        var svVals = zdsv.map(function (d) { return Math.round(d.sv); });
                         S.charts.cvChart4 = new Chart(x4, {
                             type: 'bar',
-                            data: { labels: zdData.map(function (d) { return tr(d.ou, 18); }), datasets: [{ label: 'Enfants zéro-dose', data: zdData.map(function (d) { return Math.round(d.zd); }), backgroundColor: '#7c3aed', borderRadius: 2 }] },
-                            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Top 15 ' + gi.label + ' — enfants zéro-dose', font: { size: 11, weight: 'bold' }, color: '#0b3a6f' } }, scales: { x: { beginAtZero: true } } }
+                            data: {
+                                labels: zdsvLbls,
+                                datasets: [
+                                    { label: 'ZD : enfants zéro-dose', data: zdVals, backgroundColor: '#7c3aed', borderRadius: 2 },
+                                    { label: 'SV : enfants sous-vaccinés', data: svVals, backgroundColor: '#d97706', borderRadius: 2 }
+                                ]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } },
+                                    title: { display: true, text: 'Enfants zéro-dose et sous-vaccinés par ' + gi.label, font: { size: 11, weight: 'bold' }, color: '#0b3a6f' }
+                                },
+                                scales: { x: { beginAtZero: true, title: { display: true, text: 'Nombre d\'enfants' } }, y: { ticks: { font: { size: zdsvLbls.length > 30 ? 8 : 9 } } } }
+                            }
                         });
                     }
 
