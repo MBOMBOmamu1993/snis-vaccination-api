@@ -3773,24 +3773,92 @@
          *    Province/ZS/National : data_as/dashboard/by_zs.json.gz
          *    Aire de Santé        : data_as/dashboard/by_as/{prov_file}
          *
-         *  IMPORTANT — Sémantique des cibles :
-         *    Pop_0_11m_nv et Pop_0_11m_survivants stockés = annuel × 11.77
-         *    (coefficient PEV de cohorte cumulée). Pour obtenir l'annuel
-         *    standard (pop × 4% NV ou pop × 3,49% NS), diviser par 11.77.
-         *    Pour la cible mensuelle = annuel / 12 = stored / (11.77 × 12).
-         *    Pour N mois = mensuelle × N = stored × N / (11.77 × 12).
+         *  IMPORTANT — Sémantique des cibles (v2, alignée Excel manuel) :
+         *    La cible se calcule directement à partir de Pop_par_AS (population AS) :
+         *      Cible NV annuelle      = Pop_par_AS × 4,00 %      (naissances vivantes)
+         *      Cible NS annuelle      = Pop_par_AS × 3,49 %      (nourrissons survivants)
+         *      Cible mensuelle        = annuelle / 12
+         *      Cible sur N mois       = mensuelle × N
+         *    Les numérateurs (BCG, DTC, …) proviennent de la somme niveau-FOSA
+         *    (data/dashboard/*) — la requête DHIS2 niveau-AS sous-évalue certaines
+         *    doses; la somme FOSA est cohérente avec « Données de vaccination ».
          * ═══════════════════════════════════════════════════════ */
-        var _PEV_COEF = 11.77; /* coefficient PEV de cohorte cumulée */
+        var _PEV_COEF = 11.77; /* coefficient PEV de cohorte cumulée (legacy, conservé pour compat) */
+        /* Taux annuels OMS / PEV-RDC appliqués à la population totale de l'AS pour calculer
+           la cible mensuelle (cohérent avec les calculs manuels DHIS2 dans Excel) :
+             Cible NV mensuelle = Pop × 4,00% / 12   (naissances vivantes — BCG, Td 2+)
+             Cible NS mensuelle = Pop × 3,49% / 12   (nourrissons survivants — DTC, VPO, …) */
+        var _PEV_NV_RATE = 0.04;
+        var _PEV_NS_RATE = 0.0349;
+
+        /* Champs « numérateurs » dont on prend la somme depuis les données niveau FOSA
+           (data/dashboard/*) — l'agrégation DHIS2 directe au niveau AS sous-estime
+           certaines doses; la somme FOSA est cohérente avec la page « Données de
+           vaccination » et le téléchargement manuel DHIS2. */
+        var _CV_NUM_FIELDS = [
+            'BCG_0_11', 'BCG_0_11_fixe',
+            'DTC1_0_11', 'DTC1_0_11_fixe', 'DTC2_0_11', 'DTC2_0_11_fixe', 'DTC3_0_11', 'DTC3_0_11_fixe',
+            'VPO0_0_11', 'VPO0_0_11_fixe', 'VPO1_0_11', 'VPO1_0_11_fixe',
+            'VPO2_0_11', 'VPO2_0_11_fixe', 'VPO3_0_11', 'VPO3_0_11_fixe',
+            'VPI1_0_11', 'VPI1_0_11_fixe', 'VPI2_0_11', 'VPI2_0_11_fixe',
+            'ROTA1_0_11', 'ROTA1_0_11_fixe', 'ROTA2_0_11', 'ROTA2_0_11_fixe', 'ROTA3_0_11', 'ROTA3_0_11_fixe',
+            'PCV13_1_0_11', 'PCV13_1_0_11_fixe', 'PCV13_2_0_11', 'PCV13_2_0_11_fixe', 'PCV13_3_0_11', 'PCV13_3_0_11_fixe',
+            'VAR1_0_11', 'VAR1_0_11_fixe', 'VAR2_0_11', 'VAR2_0_11_fixe', 'VAR2_12_23', 'VAR2_12_23_fixe',
+            'VAA_0_11', 'VAA_0_11_fixe',
+            'VAP1_0_11', 'VAP1_0_11_fixe', 'VAP2_0_11', 'VAP2_0_11_fixe', 'VAP3_0_11', 'VAP3_0_11_fixe',
+            'Td_2_plus', 'Td_total',
+            'seances_fixes_prevues', 'seances_fixes_realisees',
+            'seances_avancees_prevues', 'seances_avancees_realisees',
+            'seances_mobiles_prevues', 'seances_mobiles_realisees'
+        ];
+
         var _cvZSData = null, _cvZSPromise = null;
         var _cvASManifest = null, _cvASManifestPromise = null;
         var _cvASCache = {};
+        var _cvFosaManifest = null, _cvFosaManifestPromise = null;
+
+        /* Remplace les valeurs des champs « numérateurs » d'une liste d'enregistrements
+           par les sommes calculées au niveau FOSA, indexées par une clé composite
+           (Province|Antenne|ZS|[AS]|YM) pour éviter les collisions de noms d'AS
+           identiques dans des ZS différentes. */
+        function _applyFosaNumerators(asRecs, fosaRecs, joinKey) {
+            if (!asRecs || !fosaRecs || !fosaRecs.length) return asRecs;
+            function _key(r) {
+                return [r._Province || '', r._Antenne || '', r._ZS || '',
+                        joinKey === '_AS' ? (r._AS || '') : '', r._YM || ''].join('|');
+            }
+            var sums = {};
+            fosaRecs.forEach(function (r) {
+                var k = _key(r);
+                var s = sums[k] || (sums[k] = {});
+                _CV_NUM_FIELDS.forEach(function (f) {
+                    var v = Number(r[f]); if (isFinite(v)) s[f] = (s[f] || 0) + v;
+                });
+            });
+            asRecs.forEach(function (r) {
+                var k = _key(r);
+                var s = sums[k]; if (!s) return;
+                _CV_NUM_FIELDS.forEach(function (f) {
+                    if (s[f] !== undefined) r[f] = s[f];
+                });
+            });
+            return asRecs;
+        }
 
         function _loadCVZSData() {
             if (_cvZSData) return Promise.resolve(_cvZSData);
             if (_cvZSPromise) return _cvZSPromise;
-            _cvZSPromise = fetchGzip('./data_as/dashboard/by_zs.json.gz')
-                .then(function (d) { _cvZSData = d || []; return _cvZSData; })
-                .catch(function (e) { console.warn('CV ZS data unavailable:', e); _cvZSData = []; return []; });
+            /* Charge en parallèle la version niveau-AS (avec population) et la version
+               niveau-FOSA (avec numérateurs cohérents DHIS2) puis fusionne par (_ZS,_YM). */
+            _cvZSPromise = Promise.all([
+                fetchGzip('./data_as/dashboard/by_zs.json.gz').catch(function () { return []; }),
+                fetchGzip('./data/dashboard/by_zs.json.gz').catch(function () { return []; })
+            ]).then(function (rs) {
+                var asRecs = rs[0] || [], foRecs = rs[1] || [];
+                _applyFosaNumerators(asRecs, foRecs, '_ZS');
+                _cvZSData = asRecs;
+                return _cvZSData;
+            }).catch(function (e) { console.warn('CV ZS data unavailable:', e); _cvZSData = []; return []; });
             return _cvZSPromise;
         }
 
@@ -3803,14 +3871,30 @@
             return _cvASManifestPromise;
         }
 
+        function _loadCVFosaManifest() {
+            if (_cvFosaManifest) return Promise.resolve(_cvFosaManifest);
+            if (_cvFosaManifestPromise) return _cvFosaManifestPromise;
+            _cvFosaManifestPromise = fetchGzip('./data/dashboard/by_fosa/manifest.json.gz')
+                .then(function (d) { _cvFosaManifest = d || {}; return _cvFosaManifest; })
+                .catch(function () { _cvFosaManifest = {}; return {}; });
+            return _cvFosaManifestPromise;
+        }
+
         function _loadCVASData(prov) {
             if (_cvASCache[prov]) return Promise.resolve(_cvASCache[prov]);
-            return _loadCVASManifest().then(function (idx) {
-                var file = idx[prov];
-                if (!file) { _cvASCache[prov] = []; return []; }
-                return fetchGzip('./data_as/dashboard/by_as/' + file)
-                    .then(function (d) { _cvASCache[prov] = d || []; return _cvASCache[prov]; })
-                    .catch(function () { _cvASCache[prov] = []; return []; });
+            return Promise.all([_loadCVASManifest(), _loadCVFosaManifest()]).then(function (mfs) {
+                var asIdx = mfs[0] || {}, foIdx = mfs[1] || {};
+                var asFile = asIdx[prov], foFile = foIdx[prov];
+                if (!asFile) { _cvASCache[prov] = []; return []; }
+                return Promise.all([
+                    fetchGzip('./data_as/dashboard/by_as/' + asFile).catch(function () { return []; }),
+                    foFile ? fetchGzip('./data/dashboard/by_fosa/' + foFile).catch(function () { return []; }) : Promise.resolve([])
+                ]).then(function (rs) {
+                    var asRecs = rs[0] || [], foRecs = rs[1] || [];
+                    _applyFosaNumerators(asRecs, foRecs, '_AS');
+                    _cvASCache[prov] = asRecs;
+                    return asRecs;
+                });
             });
         }
 
@@ -3923,21 +4007,22 @@
             return '#dc2626';
         }
 
-        /* Population cible — déduplique par dedupKey (pop annuelle répétée par mois) */
+        /* Population cible — déduplique par dedupKey (pop annuelle répétée par mois).
+           Les cibles mensuelles sont calculées à partir de la population totale de l'AS
+           selon les taux PEV-RDC : NV = Pop × 4,00 % / 12, NS = Pop × 3,49 % / 12.
+           Cela garantit une équivalence stricte avec le calcul manuel sur Excel. */
         function _cvTargets(recs, n_periods, dedupKey) {
             var key = dedupKey || '_ZS';
-            var seen = {}, nv = 0, ns = 0, pop = 0;
+            var seen = {}, pop = 0;
             recs.forEach(function (r) {
                 var k = r[key] || '';
                 if (!seen[k]) {
                     seen[k] = 1;
-                    nv += Number(r.Pop_0_11m_nv) || 0;
-                    ns += Number(r.Pop_0_11m_survivants) || 0;
                     pop += Number(r.Pop_par_AS) || 0;
                 }
             });
-            var nv_ann = nv / _PEV_COEF;
-            var ns_ann = ns / _PEV_COEF;
+            var nv_ann = pop * _PEV_NV_RATE;
+            var ns_ann = pop * _PEV_NS_RATE;
             return { pop: pop, nv: nv_ann * n_periods / 12, ns: ns_ann * n_periods / 12, nv_ann: nv_ann, ns_ann: ns_ann };
         }
 
@@ -3946,16 +4031,17 @@
             return recs.reduce(function (s, r) { return s + (Number(r[field]) || 0); }, 0);
         }
 
-        /* Zéro-dose et enfants sous-vaccinés (calcul mensuel, somme sur la période) */
+        /* Zéro-dose et enfants sous-vaccinés (calcul mensuel, somme sur la période).
+           NS mensuelle par AS = Pop_par_AS × 3,49 % / 12. */
         function _cvZD(recs) {
             return recs.reduce(function (s, r) {
-                var ns_m = (Number(r.Pop_0_11m_survivants) || 0) / _PEV_COEF / 12;
+                var ns_m = (Number(r.Pop_par_AS) || 0) * _PEV_NS_RATE / 12;
                 return s + Math.max(0, ns_m - (Number(r.DTC1_0_11) || 0));
             }, 0);
         }
         function _cvESV(recs) {
             return recs.reduce(function (s, r) {
-                var ns_m = (Number(r.Pop_0_11m_survivants) || 0) / _PEV_COEF / 12;
+                var ns_m = (Number(r.Pop_par_AS) || 0) * _PEV_NS_RATE / 12;
                 return s + Math.max(0, ns_m - (Number(r.DTC3_0_11) || 0));
             }, 0);
         }
