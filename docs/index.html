@@ -4737,6 +4737,16 @@
                     c.appendChild(ajBox);
                 })();
 
+                /* ── Graphique catégorisation des org units (période courante) ── */
+                var catSingleBox = E('div', 'cb');
+                catSingleBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Catégorisation des ' + gi.label + ' à ' + perLbl + '</h4>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch">' +
+                    '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="catSingleChart"></canvas></div>' +
+                    '<div id="catSingleNamesBox" style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:14px"></div>' +
+                    '</div>' +
+                    '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Catégorisation : Cat 1 (CV DTC1 ≥90 et abandon ≤10) · Cat 2 (CV DTC1 ≥90 et abandon &gt;10) · Cat 3 (CV DTC1 &lt;90 et abandon ≤10) · Cat 4 (CV DTC1 &lt;90 et abandon &gt;10).</em></p>';
+                c.appendChild(catSingleBox);
+
                 /* ── Graphiques ── */
                 var chartBox = E('div', 'cb');
                 var grAntigens = ['BCG', 'DTC1', 'DTC3', 'VPO3', 'PCV13_3', 'ROTA3', 'VAR1', 'VAA', 'VPI1', 'VPI2', 'VAR2', 'TD'].filter(_agSel);
@@ -4940,6 +4950,67 @@
                             }
                         });
                     });
+
+                    /* Catégorisation des org units à la période — bar chart + Cat4 names */
+                    var xCatS = document.getElementById('catSingleChart');
+                    var nmBox = document.getElementById('catSingleNamesBox');
+                    if (xCatS) {
+                        var cnt = { 'Cat. 1': 0, 'Cat. 2': 0, 'Cat. 3': 0, 'Cat. 4': 0 };
+                        var cat4List = [];
+                        orgNames.forEach(function (ou) {
+                            var recs = orgG[ou];
+                            var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                            var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                            var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
+                            var ab = _safeDiv(d1 - d3, d1);
+                            var cat = _categorize(cv1, ab !== null ? ab * 100 : null);
+                            if (cnt.hasOwnProperty(cat)) cnt[cat]++;
+                            if (cat === 'Cat. 4') cat4List.push(ou);
+                        });
+                        var catKeys = ['Cat. 1', 'Cat. 2', 'Cat. 3', 'Cat. 4'];
+                        var catLbls = ['Cat1', 'Cat2', 'Cat3', 'Cat4'];
+                        var catCols = catKeys.map(function (k) { return _catColor(k); });
+                        if (S.charts.catSingleChart) { try { S.charts.catSingleChart.destroy(); } catch (e) { } }
+                        S.charts.catSingleChart = new Chart(xCatS, {
+                            type: 'bar',
+                            data: {
+                                labels: catLbls,
+                                datasets: [
+                                    { label: perLbl, data: catKeys.map(function (k) { return cnt[k] || 0; }), backgroundColor: catCols, borderRadius: 3 }
+                                ]
+                            },
+                            plugins: [thresholdAndLabelsPlugin],
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top', labels: { font: { size: 11 } } },
+                                    title: { display: true, text: 'Catégorisation des ' + gi.label + ' — ' + perLbl, font: { size: 12, weight: 'bold' }, color: '#0b3a6f' },
+                                    thresholdAndLabels: { showLabels: true, labelColor: '#0b3a6f', labelFontSize: 11 }
+                                },
+                                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Nombre de ' + gi.label } } }
+                            }
+                        });
+                    }
+                    if (nmBox) {
+                        var c4 = orgNames.filter(function (ou) {
+                            var recs = orgG[ou];
+                            var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                            var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                            var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
+                            var ab = _safeDiv(d1 - d3, d1);
+                            return _categorize(cv1, ab !== null ? ab * 100 : null) === 'Cat. 4';
+                        }).sort();
+                        var nmH = '<div style="background:#dc2626;color:#fff;padding:6px 12px;border-radius:4px;display:inline-block;font-weight:800;font-size:12px;margin-bottom:10px">Cat 4 ' + perLbl + ' (' + c4.length + ')</div>';
+                        if (!c4.length) {
+                            nmH += '<div style="font-size:12px;color:#16a34a;font-weight:700"><em>✅ Aucun ' + gi.label.toLowerCase() + ' Cat. 4</em></div>';
+                        } else {
+                            nmH += '<ul style="margin:0;padding-left:20px;font-size:12px;color:#222;line-height:1.7;font-weight:600">' +
+                                c4.map(function (n) { return '<li>' + tr(n, 50) + '</li>'; }).join('') +
+                                '</ul>';
+                        }
+                        nmH += '<p style="font-size:10px;color:#666;margin:10px 0 0"><em>Niveau affiché : ' + gi.label + '. Cat. 4 = CV DTC1 &lt; 90% et abandon DTC1-DTC3 &gt; 10%.</em></p>';
+                        nmBox.innerHTML = nmH;
+                    }
                 }, 120);
             });
         }
@@ -5055,25 +5126,57 @@
                     var v = _safeDiv(d1 - d3, d1); return v === null ? null : v * 100;
                 }
 
-                /* ── KPI cards : 5 indicateurs comparés ── */
+                /* ── KPI cards : 10 indicateurs comparés (comme la page d'analyses) ── */
+                var curT0 = _cvTargets(curFlt, n_periods, gi.dedupKey);
+                var prevT0 = _cvTargets(prevFlt, n_periods, gi.dedupKey);
+                var orgGCur = {}, orgGPrev0 = {};
+                curFlt.forEach(function (r) { var k = r[gi.groupKey] || ''; if (!k) return; (orgGCur[k] = orgGCur[k] || []).push(r); });
+                prevFlt.forEach(function (r) { var k = r[gi.groupKey] || ''; if (!k) return; (orgGPrev0[k] = orgGPrev0[k] || []).push(r); });
+                function _below80(orgGroup) {
+                    var keys = Object.keys(orgGroup);
+                    var n = keys.filter(function (ou) {
+                        var t2 = _cvTargets(orgGroup[ou], n_periods, gi.dedupKey);
+                        var d3 = _cvSum(orgGroup[ou], 'DTC3_0_11');
+                        var cv3ou = _safeDiv(d3, t2.ns);
+                        return cv3ou !== null && cv3ou * 100 < 80;
+                    }).length;
+                    return { n: n, total: keys.length };
+                }
+                var b80C = _below80(orgGCur), b80P = _below80(orgGPrev0);
+                var belowLabel = gi.label + ' avec DTC3 < 80%';
+
                 var kpiBox = E('div', 'kr'); kpiBox.style.marginBottom = '16px';
+                /* mode 'pct' (taux %), 'num' (nombre), 'frac' (n/total) */
                 var kpis = [
-                    { lbl: 'CV BCG', cur: _kpiCV(curFlt, 'BCG_0_11', true), prev: _kpiCV(prevFlt, 'BCG_0_11', true), col: '#0b3a6f', lower: false },
-                    { lbl: 'CV DTC1', cur: _kpiCV(curFlt, 'DTC1_0_11', false), prev: _kpiCV(prevFlt, 'DTC1_0_11', false), col: '#1565c0', lower: false },
-                    { lbl: 'CV DTC3', cur: _kpiCV(curFlt, 'DTC3_0_11', false), prev: _kpiCV(prevFlt, 'DTC3_0_11', false), col: '#2e7d32', lower: false },
-                    { lbl: 'Abandon DTC1-DTC3', cur: _kpiAban(curFlt), prev: _kpiAban(prevFlt), col: '#dc2626', lower: true },
-                    { lbl: 'CV VAR1', cur: _kpiCV(curFlt, 'VAR1_0_11', false), prev: _kpiCV(prevFlt, 'VAR1_0_11', false), col: '#c62828', lower: false },
-                    { lbl: 'CV VAR2', cur: _kpiCV(curFlt, 'VAR2_12_23', false), prev: _kpiCV(prevFlt, 'VAR2_12_23', false), col: '#880e4f', lower: false }
+                    { lbl: 'Population (AS)', cur: curT0.pop, prev: prevT0.pop, col: '#0b3a6f', mode: 'num', lower: false },
+                    { lbl: 'Cible NV période', cur: curT0.nv, prev: prevT0.nv, col: '#1565c0', mode: 'num', lower: false },
+                    { lbl: 'Cible NS période', cur: curT0.ns, prev: prevT0.ns, col: '#00838f', mode: 'num', lower: false },
+                    { lbl: 'CV BCG', cur: _kpiCV(curFlt, 'BCG_0_11', true), prev: _kpiCV(prevFlt, 'BCG_0_11', true), col: '#0b3a6f', mode: 'pct', lower: false },
+                    { lbl: 'CV DTC1/Penta1', cur: _kpiCV(curFlt, 'DTC1_0_11', false), prev: _kpiCV(prevFlt, 'DTC1_0_11', false), col: '#1565c0', mode: 'pct', lower: false },
+                    { lbl: 'CV DTC3/Penta3', cur: _kpiCV(curFlt, 'DTC3_0_11', false), prev: _kpiCV(prevFlt, 'DTC3_0_11', false), col: '#2e7d32', mode: 'pct', lower: false },
+                    { lbl: 'Abandon Penta1–3', cur: _kpiAban(curFlt), prev: _kpiAban(prevFlt), col: '#dc2626', mode: 'pct', lower: true },
+                    { lbl: 'Enfants zéro-dose', cur: _cvZD(curFlt), prev: _cvZD(prevFlt), col: '#7c3aed', mode: 'num', lower: true },
+                    { lbl: 'Enfants sous-vaccinés', cur: _cvESV(curFlt), prev: _cvESV(prevFlt), col: '#eab308', mode: 'num', lower: true },
+                    { lbl: belowLabel, cur: b80C.n, prev: b80P.n, curTotal: b80C.total, prevTotal: b80P.total, col: (b80C.n > 0 ? '#dc2626' : '#16a34a'), mode: 'frac', lower: true }
                 ];
                 kpis.forEach(function (k) {
                     var kc = E('div', 'kc');
                     kc.style.cssText = 'flex:1;min-width:160px;border-left:5px solid ' + k.col;
-                    var curTxt = (k.cur !== null && isFinite(k.cur)) ? k.cur.toFixed(2) : '–';
-                    var prevTxt = (k.prev !== null && isFinite(k.prev)) ? k.prev.toFixed(2) : '–';
+                    function _fmt(v, mode, total) {
+                        if (v === null || v === undefined || !isFinite(v)) return '–';
+                        if (mode === 'pct') return v.toFixed(2) + '%';
+                        if (mode === 'num') return Math.round(v).toLocaleString();
+                        if (mode === 'frac') return Math.round(v) + '/' + Math.round(total || 0);
+                        return String(v);
+                    }
+                    var curTxt = _fmt(k.cur, k.mode, k.curTotal);
+                    var prevTxt = _fmt(k.prev, k.mode, k.prevTotal);
+                    var arrow = (k.mode === 'pct' || k.mode === 'num') ? _trendArrow(k.cur, k.prev, k.lower) :
+                        ((k.cur !== null && k.prev !== null) ? _trendArrow(k.cur, k.prev, k.lower) : '');
                     kc.innerHTML =
                         '<div class="kl" style="font-size:11px;font-weight:700;color:#444">' + k.lbl + ' : ' + curLbl + '</div>' +
-                        '<div class="kv" style="font-size:24px;color:' + k.col + '">' + curTxt + (k.cur !== null ? '%' : '') + _trendArrow(k.cur, k.prev, k.lower) + '</div>' +
-                        '<div style="font-size:11px;color:#666;margin-top:4px">' + prevLbl + ' : <strong>' + prevTxt + (k.prev !== null ? '%' : '') + '</strong></div>';
+                        '<div class="kv" style="font-size:22px;color:' + k.col + '">' + curTxt + arrow + '</div>' +
+                        '<div style="font-size:11px;color:#666;margin-top:4px">' + prevLbl + ' : <strong>' + prevTxt + '</strong></div>';
                     kpiBox.appendChild(kc);
                 });
                 c.appendChild(kpiBox);
@@ -5171,30 +5274,113 @@
                 }
 
                 var tblBox = E('div', 'cb');
-                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales, Taux d\'abandon et Catégorisation ACZ par ' + gi.label + ' — ' + curLbl + '</h4>';
-                var tH = '<div style="overflow-x:auto;max-height:580px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales, Taux d\'abandon et Catégorisation ACZ par ' + gi.label + ' — ' + curLbl + ' vs ' + prevLbl + '</h4>';
+                var tH = '<div style="overflow-x:auto;max-height:620px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
                     '<tr style="background:#0b3a6f;color:#fff">' +
-                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>';
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
+                    '<th style="position:sticky;left:150px;background:#0b3a6f;z-index:2;min-width:90px">Période</th>';
                 tableAgs.forEach(function (ag) { tH += '<th style="text-align:right;min-width:55px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>'; });
                 tH += '<th style="text-align:right;min-width:90px">Abandon DTC1-DTC3</th>' +
                     '<th style="text-align:right;min-width:90px">Abandon BCG-VAR1</th>' +
                     '<th style="text-align:right;min-width:90px">Abandon BCG-VAR2</th>' +
                     '<th style="text-align:center;min-width:60px">Catégorie</th>' +
                     '<th style="text-align:center;min-width:80px">Priorisation</th></tr></thead><tbody>';
+
+                /* TOTAL — deux lignes (cur + prev) */
                 tH += '<tr style="background:#e8f0fe;font-weight:800">' +
-                    '<td style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
-                    _rowCells(curFlt, curT, tableAgs) + '</tr>';
-                orgNames.forEach(function (ouName, idx) {
-                    var recs = orgG[ouName];
-                    var t2 = _cvTargets(recs, n_periods, gi.dedupKey);
-                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                    tH += '<tr style="background:' + bg + '">' +
-                        '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
-                        _rowCells(recs, t2, tableAgs) + '</tr>';
+                    '<td rowspan="2" style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
+                    '<td style="position:sticky;left:150px;background:#e8f0fe;z-index:1;font-weight:700;color:#dc2626">' + curLbl + '</td>' +
+                    _rowCells(curFlt, curT, tableAgs) + '</tr>' +
+                    '<tr style="background:#dbe8fb;font-weight:700">' +
+                    '<td style="position:sticky;left:150px;background:#dbe8fb;z-index:1;font-weight:700;color:#1d4ed8">' + prevLbl + '</td>' +
+                    _rowCells(prevFlt, prevT, tableAgs) + '</tr>';
+
+                /* Union org names cur ∪ prev, triés */
+                var allOuKeys = {};
+                orgNames.forEach(function (k) { allOuKeys[k] = 1; });
+                Object.keys(orgGPrev).forEach(function (k) { allOuKeys[k] = 1; });
+                var allOuList = Object.keys(allOuKeys).sort();
+                allOuList.forEach(function (ouName, idx) {
+                    var recsC = orgG[ouName] || [];
+                    var recsP = orgGPrev[ouName] || [];
+                    var tC = _cvTargets(recsC, n_periods, gi.dedupKey);
+                    var tP = _cvTargets(recsP, n_periods, gi.dedupKey);
+                    var bgC = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    var bgP = idx % 2 === 0 ? '#fafaf5' : '#f1f5f9';
+                    tH += '<tr style="background:' + bgC + '">' +
+                        '<td rowspan="2" style="position:sticky;left:0;background:' + bgC + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
+                        '<td style="position:sticky;left:150px;background:' + bgC + ';z-index:1;font-weight:700;color:#dc2626">' + curLbl + '</td>' +
+                        _rowCells(recsC, tC, tableAgs) + '</tr>' +
+                        '<tr style="background:' + bgP + '">' +
+                        '<td style="position:sticky;left:150px;background:' + bgP + ';z-index:1;font-weight:700;color:#1d4ed8">' + prevLbl + '</td>' +
+                        _rowCells(recsP, tP, tableAgs) + '</tr>';
                 });
                 tH += '</tbody></table></div>';
+                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque ' + gi.label.toLowerCase() + ' affiche deux lignes : <strong style="color:#dc2626">' + curLbl + '</strong> et <strong style="color:#1d4ed8">' + prevLbl + '</strong>. ' +
+                    'Couleurs CV : ■ &gt;100% bleu · ■ 90–100% vert · ■ 60–89% jaune · ■ &lt;60% rouge.</em></p>';
                 tblBox.innerHTML += tH;
                 c.appendChild(tblBox);
+
+                /* ── Tableau Population cible et réalisation des séances — comparatif ── */
+                (function () {
+                    var sessKeys = ['seances_fixes_prevues', 'seances_fixes_realisees',
+                        'seances_avancees_prevues', 'seances_avancees_realisees',
+                        'seances_mobiles_prevues', 'seances_mobiles_realisees'];
+                    var sessAvailable = curFlt.concat(prevFlt).some(function (r) {
+                        return sessKeys.some(function (k) { return Number(r[k]) > 0; });
+                    });
+                    function _sessCell(realised, prevu) {
+                        if (!sessAvailable) return '<td style="text-align:center;color:#888;font-style:italic">–</td>';
+                        if (!prevu || prevu <= 0) return '<td style="text-align:right;color:#bbb">NA</td>';
+                        var p = realised / prevu * 100;
+                        var col = p >= 80 ? '#16a34a' : (p >= 50 ? '#eab308' : '#dc2626');
+                        return '<td style="background:' + col + ';color:#fff;text-align:right;font-weight:700">' + p.toFixed(1) + '%</td>';
+                    }
+                    function _sessRowCmp(recs, label, perLabel, bgOu, bgPer, ouRowSpan, ouSticky) {
+                        var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                        var sfp = _cvSum(recs, 'seances_fixes_prevues'), sfr = _cvSum(recs, 'seances_fixes_realisees');
+                        var sap = _cvSum(recs, 'seances_avancees_prevues'), sar = _cvSum(recs, 'seances_avancees_realisees');
+                        var smp = _cvSum(recs, 'seances_mobiles_prevues'), smr = _cvSum(recs, 'seances_mobiles_realisees');
+                        var perColor = perLabel === curLbl ? '#dc2626' : '#1d4ed8';
+                        var ouTd = ouSticky ? ('<td rowspan="' + ouRowSpan + '" style="position:sticky;left:0;background:' + bgOu + ';z-index:1;font-weight:' + (label === 'TOTAL' ? '800' : '600') + '">' + label + '</td>') : '';
+                        return '<tr style="background:' + bgPer + '">' + ouTd +
+                            '<td style="position:sticky;left:160px;background:' + bgPer + ';z-index:1;font-weight:700;color:' + perColor + '">' + perLabel + '</td>' +
+                            '<td style="text-align:right">' + (t.pop > 0 ? Math.round(t.pop).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (t.nv > 0 ? Math.round(t.nv).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (t.ns > 0 ? Math.round(t.ns).toLocaleString() : '–') + '</td>' +
+                            _sessCell(sfr, sfp) + _sessCell(sar, sap) + _sessCell(smr, smp) +
+                            '</tr>';
+                    }
+                    var popBox = E('div', 'cb');
+                    popBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">👥 Population cible et réalisation des séances de vaccination — par ' + gi.label + ' — ' + curLbl + ' vs ' + prevLbl + '</h4>';
+                    var pH = '<div style="overflow-x:auto;max-height:560px"><table class="dt" style="font-size:11px;white-space:nowrap"><thead>' +
+                        '<tr style="background:#0b3a6f;color:#fff">' +
+                        '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:160px">' + gi.label + '</th>' +
+                        '<th style="position:sticky;left:160px;background:#0b3a6f;z-index:2;min-width:90px">Période</th>' +
+                        '<th style="text-align:right;min-width:90px">Population</th>' +
+                        '<th style="text-align:right;min-width:90px">Cible NV</th>' +
+                        '<th style="text-align:right;min-width:90px">Cible NS</th>' +
+                        '<th style="text-align:right;min-width:120px">% Séances fixes</th>' +
+                        '<th style="text-align:right;min-width:120px">% Séances avancées</th>' +
+                        '<th style="text-align:right;min-width:120px">% Séances mobiles</th>' +
+                        '</tr></thead><tbody>';
+                    pH += _sessRowCmp(curFlt, 'TOTAL', curLbl, '#e8f0fe', '#e8f0fe', 2, true);
+                    pH += _sessRowCmp(prevFlt, 'TOTAL', prevLbl, '#e8f0fe', '#dbe8fb', 2, false);
+                    allOuList.forEach(function (ouName, idx) {
+                        var recsC = orgG[ouName] || [];
+                        var recsP = orgGPrev[ouName] || [];
+                        var bgOu = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                        var bgPer1 = bgOu;
+                        var bgPer2 = idx % 2 === 0 ? '#fafaf5' : '#f1f5f9';
+                        pH += _sessRowCmp(recsC, tr(ouName, 30), curLbl, bgOu, bgPer1, 2, true);
+                        pH += _sessRowCmp(recsP, tr(ouName, 30), prevLbl, bgOu, bgPer2, 2, false);
+                    });
+                    pH += '</tbody></table></div>';
+                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. ' +
+                        (sessAvailable ? 'Séances : seuils ≥80% vert, ≥50% jaune, &lt;50% rouge.' : 'Séances non disponibles dans les données chargées.') + '</em></p>';
+                    popBox.innerHTML += pH;
+                    c.appendChild(popBox);
+                })();
 
                 /* ── Tableau "Proportion des [enfants] ayant atteint les performances clés" ──
                    Comparatif : période courante vs même période N-1.
@@ -5403,6 +5589,26 @@
                     '<div style="height:420px;position:relative"><canvas id="cmpAbChart"></canvas></div>';
                 c.appendChild(abBox);
 
+                /* Plugin inline : trait d'objectif horizontal pleine largeur (95% / 10%) */
+                var thresholdLinePlugin = {
+                    id: 'thresholdLine',
+                    afterDatasetsDraw: function (chart, args, opts) {
+                        var ctx = chart.ctx, area = chart.chartArea;
+                        if (!area) return;
+                        if (opts && opts.threshold !== undefined && chart.scales && chart.scales.y) {
+                            var y = chart.scales.y.getPixelForValue(opts.threshold);
+                            if (y >= area.top && y <= area.bottom) {
+                                ctx.save();
+                                ctx.strokeStyle = opts.thresholdColor || '#dc2626';
+                                ctx.lineWidth = opts.thresholdWidth || 1.5;
+                                ctx.setLineDash(opts.thresholdDash || [5, 3]);
+                                ctx.beginPath(); ctx.moveTo(area.left, y); ctx.lineTo(area.right, y); ctx.stroke();
+                                ctx.restore();
+                            }
+                        }
+                    }
+                };
+
                 /* ── Render charts after DOM paint ── */
                 setTimeout(function () {
                     /* Catégorisation comparée */
@@ -5466,11 +5672,13 @@
                                     { label: curLbl, data: curVals, backgroundColor: 'rgba(255,152,0,0.85)', borderRadius: 2 }
                                 ]
                             },
+                            plugins: [thresholdLinePlugin],
                             options: {
                                 responsive: true, maintainAspectRatio: false,
                                 plugins: {
                                     legend: { position: 'top', labels: { font: { size: 11 }, usePointStyle: true } },
-                                    title: { display: true, text: 'CV ' + ag + ' — ' + curLbl + ' vs ' + prevLbl, font: { size: 12, weight: 'bold' }, color: '#0b3a6f' }
+                                    title: { display: true, text: 'CV ' + ag + ' — ' + curLbl + ' vs ' + prevLbl + ' (objectif 95%)', font: { size: 12, weight: 'bold' }, color: '#0b3a6f' },
+                                    thresholdLine: { threshold: 95, thresholdColor: '#dc2626', thresholdDash: [5, 3] }
                                 },
                                 scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } }, x: { ticks: { font: { size: 9 }, maxRotation: 55 } } }
                             }
@@ -5499,9 +5707,14 @@
                                     { label: 'Abandon ' + curLbl, data: curAb, backgroundColor: 'rgba(220,38,38,0.85)', borderRadius: 2 }
                                 ]
                             },
+                            plugins: [thresholdLinePlugin],
                             options: {
                                 responsive: true, maintainAspectRatio: false,
-                                plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, title: { display: false } },
+                                plugins: {
+                                    legend: { position: 'top', labels: { font: { size: 11 } } },
+                                    title: { display: true, text: 'Abandon Penta1–Penta3 (objectif &lt;10%)', font: { size: 12, weight: 'bold' }, color: '#0b3a6f' },
+                                    thresholdLine: { threshold: 10, thresholdColor: '#dc2626', thresholdDash: [5, 3] }
+                                },
                                 scales: { y: { title: { display: true, text: '%' } }, x: { ticks: { font: { size: 9 }, maxRotation: 55 } } }
                             }
                         });
