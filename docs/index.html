@@ -5240,83 +5240,116 @@
                 if (isVAPprov) tableAgs = tableAgs.concat(vapAgs);
                 tableAgs = tableAgs.filter(_agSel);
 
-                function _rowCells(recs, tgt, ags) {
+                function _rowCellsCmp(recsC, tgtC, recsP, tgtP, ags) {
                     var cells = '';
-                    var ouD1 = 0, ouD3 = 0, ouBCG = 0, ouV1 = 0, ouV2 = 0;
+                    var ouD1C = 0, ouD3C = 0, ouBCGC = 0, ouV1C = 0, ouV2C = 0;
+                    var ouD1P = 0, ouD3P = 0, ouBCGP = 0, ouV1P = 0, ouV2P = 0;
                     ags.forEach(function (ag) {
                         var field = AG_FIELD_MAP[ag];
-                        var doses = field ? _cvSum(recs, field) : 0;
-                        if (ag === 'DTC1') ouD1 = doses;
-                        if (ag === 'DTC3') ouD3 = doses;
-                        if (ag === 'BCG') ouBCG = doses;
-                        if (ag === 'VAR1') ouV1 = doses;
-                        if (ag === 'VAR2') ouV2 = doses;
+                        /* Période courante */
+                        var dosesC = field ? _cvSum(recsC, field) : 0;
+                        if (ag === 'DTC1') ouD1C = dosesC;
+                        if (ag === 'DTC3') ouD3C = dosesC;
+                        if (ag === 'BCG') ouBCGC = dosesC;
+                        if (ag === 'VAR1') ouV1C = dosesC;
+                        if (ag === 'VAR2') ouV2C = dosesC;
                         var useNV = (ag === 'BCG' || ag === 'TD');
-                        var den = useNV ? tgt.nv : tgt.ns;
-                        var cvPct = den > 0 ? doses / den * 100 : null;
-                        var st = cvPct !== null ? 'background:' + _cvColor(cvPct) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
-                        cells += '<td style="' + st + '">' + (cvPct !== null ? cvPct.toFixed(1) + '%' : '–') + '</td>';
+                        var denC = useNV ? tgtC.nv : tgtC.ns;
+                        var cvPctC = denC > 0 ? dosesC / denC * 100 : null;
+                        var stC = cvPctC !== null ? 'background:' + _cvColor(cvPctC) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
+                        cells += '<td style="' + stC + '">' + (cvPctC !== null ? cvPctC.toFixed(1) + '%' : '–') + '</td>';
+                        /* Période précédente */
+                        var dosesP = field ? _cvSum(recsP, field) : 0;
+                        if (ag === 'DTC1') ouD1P = dosesP;
+                        if (ag === 'DTC3') ouD3P = dosesP;
+                        if (ag === 'BCG') ouBCGP = dosesP;
+                        if (ag === 'VAR1') ouV1P = dosesP;
+                        if (ag === 'VAR2') ouV2P = dosesP;
+                        var denP = useNV ? tgtP.nv : tgtP.ns;
+                        var cvPctP = denP > 0 ? dosesP / denP * 100 : null;
+                        var stP = cvPctP !== null ? 'background:' + _cvColor(cvPctP) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
+                        cells += '<td style="' + stP + '">' + (cvPctP !== null ? cvPctP.toFixed(1) + '%' : '–') + '</td>';
                     });
-                    var ouAb = _safeDiv(ouD1 - ouD3, ouD1);
-                    var ouAbV1 = _safeDiv(ouBCG - ouV1, ouBCG);
-                    var ouAbV2 = _safeDiv(ouBCG - ouV2, ouBCG);
-                    var cv1Pct = tgt.ns > 0 ? ouD1 / tgt.ns * 100 : null;
-                    var ouCat = _categorize(cv1Pct, ouAb !== null ? ouAb * 100 : null);
-                    var ouPrio = _priorityFromCat(ouCat);
-                    function _abCell(v) {
+                    /* Abandons et catégories — période courante */
+                    var ouAbC = _safeDiv(ouD1C - ouD3C, ouD1C);
+                    var ouAbV1C = _safeDiv(ouBCGC - ouV1C, ouBCGC);
+                    var ouAbV2C = _safeDiv(ouBCGC - ouV2C, ouBCGC);
+                    var cv1PctC = tgtC.ns > 0 ? ouD1C / tgtC.ns * 100 : null;
+                    var ouCatC = _categorize(cv1PctC, ouAbC !== null ? ouAbC * 100 : null);
+                    var ouPrioC = _priorityFromCat(ouCatC);
+                    /* Abandons et catégories — période précédente */
+                    var ouAbP = _safeDiv(ouD1P - ouD3P, ouD1P);
+                    var ouAbV1P = _safeDiv(ouBCGP - ouV1P, ouBCGP);
+                    var ouAbV2P = _safeDiv(ouBCGP - ouV2P, ouBCGP);
+                    var cv1PctP = tgtP.ns > 0 ? ouD1P / tgtP.ns * 100 : null;
+                    var ouCatP = _categorize(cv1PctP, ouAbP !== null ? ouAbP * 100 : null);
+                    var ouPrioP = _priorityFromCat(ouCatP);
+                    function _abCell2(v) {
                         if (v === null) return '<td style="text-align:right;color:#bbb">NA</td>';
                         return '<td style="background:' + _abandonColor(v) + ';color:#fff;text-align:right;font-weight:700">' + (v * 100).toFixed(1) + '%' + (v < 0 ? ' ⚠️' : '') + '</td>';
                     }
-                    cells += _abCell(ouAb) + _abCell(ouAbV1) + _abCell(ouAbV2);
-                    cells += '<td style="text-align:center;background:' + _catColor(ouCat) + ';color:#fff;font-weight:700">' + ouCat + '</td>';
-                    cells += '<td style="text-align:center;background:' + _priorityColor(ouPrio) + ';color:#fff;font-weight:700">' + ouPrio + '</td>';
+                    cells += _abCell2(ouAbC) + _abCell2(ouAbP);
+                    cells += _abCell2(ouAbV1C) + _abCell2(ouAbV1P);
+                    cells += _abCell2(ouAbV2C) + _abCell2(ouAbV2P);
+                    cells += '<td style="text-align:center;background:' + _catColor(ouCatC) + ';color:#fff;font-weight:700">' + ouCatC + '</td>' +
+                        '<td style="text-align:center;background:' + _catColor(ouCatP) + ';color:#fff;font-weight:700">' + ouCatP + '</td>';
+                    cells += '<td style="text-align:center;background:' + _priorityColor(ouPrioC) + ';color:#fff;font-weight:700">' + ouPrioC + '</td>' +
+                        '<td style="text-align:center;background:' + _priorityColor(ouPrioP) + ';color:#fff;font-weight:700">' + ouPrioP + '</td>';
                     return cells;
                 }
-
-                var tblBox = E('div', 'cb');
-                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales, Taux d\'abandon et Catégorisation ACZ par ' + gi.label + ' — ' + curLbl + ' vs ' + prevLbl + '</h4>';
-                var tH = '<div style="overflow-x:auto;max-height:620px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
-                    '<tr style="background:#0b3a6f;color:#fff">' +
-                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
-                    '<th style="position:sticky;left:150px;background:#0b3a6f;z-index:2;min-width:90px">Période</th>';
-                tableAgs.forEach(function (ag) { tH += '<th style="text-align:right;min-width:55px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>'; });
-                tH += '<th style="text-align:right;min-width:90px">Abandon DTC1-DTC3</th>' +
-                    '<th style="text-align:right;min-width:90px">Abandon BCG-VAR1</th>' +
-                    '<th style="text-align:right;min-width:90px">Abandon BCG-VAR2</th>' +
-                    '<th style="text-align:center;min-width:60px">Catégorie</th>' +
-                    '<th style="text-align:center;min-width:80px">Priorisation</th></tr></thead><tbody>';
-
-                /* TOTAL — deux lignes (cur + prev) */
-                tH += '<tr style="background:#e8f0fe;font-weight:800">' +
-                    '<td rowspan="2" style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
-                    '<td style="position:sticky;left:150px;background:#e8f0fe;z-index:1;font-weight:700;color:#dc2626">' + curLbl + '</td>' +
-                    _rowCells(curFlt, curT, tableAgs) + '</tr>' +
-                    '<tr style="background:#dbe8fb;font-weight:700">' +
-                    '<td style="position:sticky;left:150px;background:#dbe8fb;z-index:1;font-weight:700;color:#1d4ed8">' + prevLbl + '</td>' +
-                    _rowCells(prevFlt, prevT, tableAgs) + '</tr>';
 
                 /* Union org names cur ∪ prev, triés */
                 var allOuKeys = {};
                 orgNames.forEach(function (k) { allOuKeys[k] = 1; });
                 Object.keys(orgGPrev).forEach(function (k) { allOuKeys[k] = 1; });
                 var allOuList = Object.keys(allOuKeys).sort();
+
+                var tblBox = E('div', 'cb');
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales, Taux d\'abandon et Catégorisation ACZ par ' + gi.label + ' — ' + curLbl + ' vs ' + prevLbl + '</h4>';
+                var tH = '<div style="overflow-x:auto;max-height:620px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th rowspan="2" style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>';
+                tableAgs.forEach(function (ag) {
+                    tH += '<th colspan="2" style="text-align:center;min-width:100px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>';
+                });
+                tH += '<th colspan="2" style="text-align:center;min-width:160px">Abandon DTC1-DTC3</th>' +
+                    '<th colspan="2" style="text-align:center;min-width:160px">Abandon BCG-VAR1</th>' +
+                    '<th colspan="2" style="text-align:center;min-width:160px">Abandon BCG-VAR2</th>' +
+                    '<th colspan="2" style="text-align:center;min-width:120px">Catégorie</th>' +
+                    '<th colspan="2" style="text-align:center;min-width:140px">Priorisation</th></tr>' +
+                    '<tr style="background:#0b3a6f;color:#fff">';
+                tableAgs.forEach(function (ag) {
+                    tH += '<th style="text-align:right;min-width:50px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                        '<th style="text-align:right;min-width:50px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>';
+                });
+                tH += '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                    '<th style="text-align:center;min-width:60px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:center;min-width:60px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                    '<th style="text-align:center;min-width:70px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:center;min-width:70px;font-size:8px;color:#93c5fd">' + prevLbl + '</th></tr></thead><tbody>';
+
+                /* TOTAL — une ligne (cur + prev côte à côte) */
+                tH += '<tr style="background:#e8f0fe;font-weight:800">' +
+                    '<td style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
+                    _rowCellsCmp(curFlt, curT, prevFlt, prevT, tableAgs) + '</tr>';
+
                 allOuList.forEach(function (ouName, idx) {
                     var recsC = orgG[ouName] || [];
                     var recsP = orgGPrev[ouName] || [];
                     var tC = _cvTargets(recsC, n_periods, gi.dedupKey);
                     var tP = _cvTargets(recsP, n_periods, gi.dedupKey);
-                    var bgC = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                    var bgP = idx % 2 === 0 ? '#fafaf5' : '#f1f5f9';
-                    tH += '<tr style="background:' + bgC + '">' +
-                        '<td rowspan="2" style="position:sticky;left:0;background:' + bgC + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
-                        '<td style="position:sticky;left:150px;background:' + bgC + ';z-index:1;font-weight:700;color:#dc2626">' + curLbl + '</td>' +
-                        _rowCells(recsC, tC, tableAgs) + '</tr>' +
-                        '<tr style="background:' + bgP + '">' +
-                        '<td style="position:sticky;left:150px;background:' + bgP + ';z-index:1;font-weight:700;color:#1d4ed8">' + prevLbl + '</td>' +
-                        _rowCells(recsP, tP, tableAgs) + '</tr>';
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    tH += '<tr style="background:' + bg + '">' +
+                        '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
+                        _rowCellsCmp(recsC, tC, recsP, tP, tableAgs) + '</tr>';
                 });
                 tH += '</tbody></table></div>';
-                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque ' + gi.label.toLowerCase() + ' affiche deux lignes : <strong style="color:#dc2626">' + curLbl + '</strong> et <strong style="color:#1d4ed8">' + prevLbl + '</strong>. ' +
+                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque colonne-antigène affiche deux sous-colonnes : <strong style="color:#dc2626">' + curLbl + '</strong> et <strong style="color:#1d4ed8">' + prevLbl + '</strong>. ' +
                     'Couleurs CV : ■ &gt;100% bleu · ■ 90–100% vert · ■ 60–89% jaune · ■ &lt;60% rouge.</em></p>';
                 tblBox.innerHTML += tH;
                 c.appendChild(tblBox);
@@ -5336,47 +5369,56 @@
                         var col = p >= 80 ? '#16a34a' : (p >= 50 ? '#eab308' : '#dc2626');
                         return '<td style="background:' + col + ';color:#fff;text-align:right;font-weight:700">' + p.toFixed(1) + '%</td>';
                     }
-                    function _sessRowCmp(recs, label, perLabel, bgOu, bgPer, ouRowSpan, ouSticky) {
-                        var t = _cvTargets(recs, n_periods, gi.dedupKey);
-                        var sfp = _cvSum(recs, 'seances_fixes_prevues'), sfr = _cvSum(recs, 'seances_fixes_realisees');
-                        var sap = _cvSum(recs, 'seances_avancees_prevues'), sar = _cvSum(recs, 'seances_avancees_realisees');
-                        var smp = _cvSum(recs, 'seances_mobiles_prevues'), smr = _cvSum(recs, 'seances_mobiles_realisees');
-                        var perColor = perLabel === curLbl ? '#dc2626' : '#1d4ed8';
-                        var ouTd = ouSticky ? ('<td rowspan="' + ouRowSpan + '" style="position:sticky;left:0;background:' + bgOu + ';z-index:1;font-weight:' + (label === 'TOTAL' ? '800' : '600') + '">' + label + '</td>') : '';
-                        return '<tr style="background:' + bgPer + '">' + ouTd +
-                            '<td style="position:sticky;left:160px;background:' + bgPer + ';z-index:1;font-weight:700;color:' + perColor + '">' + perLabel + '</td>' +
-                            '<td style="text-align:right">' + (t.pop > 0 ? Math.round(t.pop).toLocaleString() : '–') + '</td>' +
-                            '<td style="text-align:right">' + (t.nv > 0 ? Math.round(t.nv).toLocaleString() : '–') + '</td>' +
-                            '<td style="text-align:right">' + (t.ns > 0 ? Math.round(t.ns).toLocaleString() : '–') + '</td>' +
-                            _sessCell(sfr, sfp) + _sessCell(sar, sap) + _sessCell(smr, smp) +
+                    function _sessRowCmp(recsC, recsP, label, bg) {
+                        var tC = _cvTargets(recsC, n_periods, gi.dedupKey);
+                        var tP = _cvTargets(recsP, n_periods, gi.dedupKey);
+                        var sfpC = _cvSum(recsC, 'seances_fixes_prevues'), sfrC = _cvSum(recsC, 'seances_fixes_realisees');
+                        var sapC = _cvSum(recsC, 'seances_avancees_prevues'), sarC = _cvSum(recsC, 'seances_avancees_realisees');
+                        var smpC = _cvSum(recsC, 'seances_mobiles_prevues'), smrC = _cvSum(recsC, 'seances_mobiles_realisees');
+                        var sfpP = _cvSum(recsP, 'seances_fixes_prevues'), sfrP = _cvSum(recsP, 'seances_fixes_realisees');
+                        var sapP = _cvSum(recsP, 'seances_avancees_prevues'), sarP = _cvSum(recsP, 'seances_avancees_realisees');
+                        var smpP = _cvSum(recsP, 'seances_mobiles_prevues'), smrP = _cvSum(recsP, 'seances_mobiles_realisees');
+                        return '<tr style="background:' + bg + '">' +
+                            '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:' + (label === 'TOTAL' ? '800' : '600') + '">' + label + '</td>' +
+                            '<td style="text-align:right">' + (tC.pop > 0 ? Math.round(tC.pop).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tP.pop > 0 ? Math.round(tP.pop).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tC.nv > 0 ? Math.round(tC.nv).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tP.nv > 0 ? Math.round(tP.nv).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tC.ns > 0 ? Math.round(tC.ns).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tP.ns > 0 ? Math.round(tP.ns).toLocaleString() : '–') + '</td>' +
+                            _sessCell(sfrC, sfpC) + _sessCell(sfrP, sfpP) +
+                            _sessCell(sarC, sapC) + _sessCell(sarP, sapP) +
+                            _sessCell(smrC, smpC) + _sessCell(smrP, smpP) +
                             '</tr>';
                     }
                     var popBox = E('div', 'cb');
                     popBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">👥 Population cible et réalisation des séances de vaccination — par ' + gi.label + ' — ' + curLbl + ' vs ' + prevLbl + '</h4>';
                     var pH = '<div style="overflow-x:auto;max-height:560px"><table class="dt" style="font-size:11px;white-space:nowrap"><thead>' +
                         '<tr style="background:#0b3a6f;color:#fff">' +
-                        '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:160px">' + gi.label + '</th>' +
-                        '<th style="position:sticky;left:160px;background:#0b3a6f;z-index:2;min-width:90px">Période</th>' +
-                        '<th style="text-align:right;min-width:90px">Population</th>' +
-                        '<th style="text-align:right;min-width:90px">Cible NV</th>' +
-                        '<th style="text-align:right;min-width:90px">Cible NS</th>' +
-                        '<th style="text-align:right;min-width:120px">% Séances fixes</th>' +
-                        '<th style="text-align:right;min-width:120px">% Séances avancées</th>' +
-                        '<th style="text-align:right;min-width:120px">% Séances mobiles</th>' +
+                        '<th rowspan="2" style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:160px">' + gi.label + '</th>' +
+                        '<th colspan="2" style="text-align:center;min-width:160px">Population</th>' +
+                        '<th colspan="2" style="text-align:center;min-width:160px">Cible NV</th>' +
+                        '<th colspan="2" style="text-align:center;min-width:160px">Cible NS</th>' +
+                        '<th colspan="2" style="text-align:center;min-width:200px">% Séances fixes</th>' +
+                        '<th colspan="2" style="text-align:center;min-width:200px">% Séances avancées</th>' +
+                        '<th colspan="2" style="text-align:center;min-width:200px">% Séances mobiles</th>' +
+                        '</tr><tr style="background:#0b3a6f;color:#fff">' +
+                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
                         '</tr></thead><tbody>';
-                    pH += _sessRowCmp(curFlt, 'TOTAL', curLbl, '#e8f0fe', '#e8f0fe', 2, true);
-                    pH += _sessRowCmp(prevFlt, 'TOTAL', prevLbl, '#e8f0fe', '#dbe8fb', 2, false);
+                    pH += _sessRowCmp(curFlt, prevFlt, 'TOTAL', '#e8f0fe');
                     allOuList.forEach(function (ouName, idx) {
                         var recsC = orgG[ouName] || [];
                         var recsP = orgGPrev[ouName] || [];
-                        var bgOu = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                        var bgPer1 = bgOu;
-                        var bgPer2 = idx % 2 === 0 ? '#fafaf5' : '#f1f5f9';
-                        pH += _sessRowCmp(recsC, tr(ouName, 30), curLbl, bgOu, bgPer1, 2, true);
-                        pH += _sessRowCmp(recsP, tr(ouName, 30), prevLbl, bgOu, bgPer2, 2, false);
+                        var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                        pH += _sessRowCmp(recsC, recsP, tr(ouName, 30), bg);
                     });
                     pH += '</tbody></table></div>';
-                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. ' +
+                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. Chaque indicateur affiche deux sous-colonnes : <strong style="color:#dc2626">' + curLbl + '</strong> et <strong style="color:#1d4ed8">' + prevLbl + '</strong>. ' +
                         (sessAvailable ? 'Séances : seuils ≥80% vert, ≥50% jaune, &lt;50% rouge.' : 'Séances non disponibles dans les données chargées.') + '</em></p>';
                     popBox.innerHTML += pH;
                     c.appendChild(popBox);
