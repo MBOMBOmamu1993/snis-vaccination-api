@@ -4645,98 +4645,6 @@
                     c.appendChild(propBox);
                 }
 
-                /* ── Analyse des couvertures vaccinales sur base des Cibles ajustées ──
-                   Toujours affichée. Liste les org units Cat. 4 (cible brute OU ajustée)
-                   dans une "fenêtre" en haut du tableau. Le tableau lui-même n'affiche
-                   que les Cat. 4 (détection dynamique). */
-                (function () {
-                    var ajBox = E('div', 'cb');
-                    ajBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📐 Analyses CV (données administratives) — Cibles ajustées par la complétude de rapportage — ' + gi.label + ' Cat. 4 (dynamique)</h4>';
-                    function _ajRow(recs) {
-                        var t = _cvTargets(recs, n_periods, gi.dedupKey);
-                        var ta = _cvAdjustedTargets(recs, n_periods, gi.dedupKey);
-                        var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
-                        var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
-                        var cv1Aj = ta.ns > 0 ? d1 / ta.ns * 100 : null;
-                        var cv3 = t.ns > 0 ? d3 / t.ns * 100 : null;
-                        var cv3Aj = ta.ns > 0 ? d3 / ta.ns * 100 : null;
-                        var ab = _safeDiv(d1 - d3, d1);
-                        var abPct = ab !== null ? ab * 100 : null;
-                        var cat = _categorize(cv1, abPct);
-                        var catAj = _categorize(cv1Aj, abPct);
-                        return { d1: d1, d3: d3, cv1: cv1, cv1Aj: cv1Aj, cv3: cv3, cv3Aj: cv3Aj, ab: ab, abPct: abPct, cat: cat, catAj: catAj, comp: ta.comp };
-                    }
-                    var cat4Rows = [], cat4Names = [], cat4NamesAj = [];
-                    orgNames.forEach(function (ouName) {
-                        var rr = _ajRow(orgG[ouName]);
-                        if (rr.cat === 'Cat. 4' || rr.catAj === 'Cat. 4') {
-                            cat4Rows.push({ ou: ouName, r: rr });
-                            if (rr.cat === 'Cat. 4') cat4Names.push(ouName);
-                            if (rr.catAj === 'Cat. 4') cat4NamesAj.push(ouName);
-                        }
-                    });
-
-                    /* Fenêtre "Cat. 4" — toujours affichée */
-                    var winH = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px">' +
-                        '<div style="flex:1;min-width:240px;background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:10px">' +
-                            '<div style="background:#dc2626;color:#fff;padding:4px 10px;border-radius:4px;display:inline-block;font-weight:800;font-size:11px;margin-bottom:6px">Cat. 4 brute (' + cat4Names.length + ')</div>' +
-                            '<div style="font-size:11px;color:#333;font-weight:600;line-height:1.5">' +
-                                (cat4Names.length ? cat4Names.map(function (n) { return tr(n, 28); }).join(', ') : '<em style="color:#16a34a;font-weight:600">✅ Aucun ' + gi.label.toLowerCase() + ' Cat. 4</em>') +
-                            '</div></div>' +
-                        '<div style="flex:1;min-width:240px;background:#fef3c7;border:2px solid #d97706;border-radius:8px;padding:10px">' +
-                            '<div style="background:#d97706;color:#fff;padding:4px 10px;border-radius:4px;display:inline-block;font-weight:800;font-size:11px;margin-bottom:6px">Cat. 4 ajustée (' + cat4NamesAj.length + ')</div>' +
-                            '<div style="font-size:11px;color:#333;font-weight:600;line-height:1.5">' +
-                                (cat4NamesAj.length ? cat4NamesAj.map(function (n) { return tr(n, 28); }).join(', ') : '<em style="color:#16a34a;font-weight:600">✅ Aucun ' + gi.label.toLowerCase() + ' Cat. 4</em>') +
-                            '</div></div>' +
-                        '</div>';
-                    ajBox.innerHTML += winH;
-
-                    function _pctCell(v) {
-                        if (v === null || !isFinite(v)) return '<td style="text-align:right;color:#bbb">–</td>';
-                        return '<td style="background:' + (_cvColor(v) || '#888') + ';color:#fff;text-align:right;font-weight:700">' + v.toFixed(1) + '%</td>';
-                    }
-                    function _abCell(v) {
-                        if (v === null) return '<td style="text-align:right;color:#bbb">NA</td>';
-                        return '<td style="background:' + _abandonColor(v) + ';color:#fff;text-align:right;font-weight:700">' + (v * 100).toFixed(1) + '%</td>';
-                    }
-                    function _catCell(c2) {
-                        return '<td style="text-align:center;background:' + _catColor(c2) + ';color:#fff;font-weight:700">' + c2 + '</td>';
-                    }
-                    var aH = '<div style="overflow-x:auto;max-height:540px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
-                        '<tr style="background:#0b3a6f;color:#fff">' +
-                        '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
-                        '<th style="text-align:right">Complétude</th>' +
-                        '<th style="text-align:right">DTC1 brut</th>' +
-                        '<th style="text-align:right">DTC1 ajusté</th>' +
-                        '<th style="text-align:right">DTC3 brut</th>' +
-                        '<th style="text-align:right">DTC3 ajusté</th>' +
-                        '<th style="text-align:right">Abandon DTC1-DTC3</th>' +
-                        '<th style="text-align:center">Cat. brute</th>' +
-                        '<th style="text-align:center">Cat. ajustée</th>' +
-                        '</tr></thead><tbody>';
-                    if (!cat4Rows.length) {
-                        aH += '<tr><td colspan="9" style="text-align:center;padding:18px;color:#16a34a;background:#f0fdf4;font-style:italic">' +
-                            '✅ Aucun ' + gi.label.toLowerCase() + ' Cat. 4 (cible brute ou ajustée) pour cette période — voir fenêtres ci-dessus.</td></tr>';
-                    } else {
-                        cat4Rows.forEach(function (row, idx) {
-                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                            var rr = row.r;
-                            aH += '<tr style="background:' + bg + '">' +
-                                '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(row.ou, 30) + '</td>' +
-                                '<td style="text-align:right">' + (rr.comp * 100).toFixed(1) + '%</td>' +
-                                _pctCell(rr.cv1) + _pctCell(rr.cv1Aj) +
-                                _pctCell(rr.cv3) + _pctCell(rr.cv3Aj) +
-                                _abCell(rr.ab) + _catCell(rr.cat) + _catCell(rr.catAj) +
-                                '</tr>';
-                        });
-                    }
-                    aH += '</tbody></table></div>';
-                    aH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Cible ajustée = cible brute × complétude de rapportage (paires AS×mois rapportées / total attendu). ' +
-                        'Détection Cat. 4 dynamique sur cible brute (rouge) ou ajustée (orange).</em></p>';
-                    ajBox.innerHTML += aH;
-                    c.appendChild(ajBox);
-                })();
-
                 /* ── Graphique catégorisation des org units (période courante) ── */
                 var catSingleBox = E('div', 'cb');
                 catSingleBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Catégorisation des ' + gi.label + ' à ' + perLbl + '</h4>' +
@@ -5521,41 +5429,29 @@
                     c.appendChild(propBox);
                 }
 
-                /* ── Cibles ajustées Cat. 4 — comparaison année courante vs N-1 ── */
+                /* ── Cat. 4 (données administratives) — comparaison année courante vs N-1 ── */
                 (function () {
                     var ajBox = E('div', 'cb');
-                    ajBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📐 Analyses CV (données administratives) — Cibles ajustées par la complétude de rapportage — ' + gi.label + ' Cat. 4 (' + curLbl + ' vs ' + prevLbl + ')</h4>';
+                    ajBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📐 Analyses CV (données administratives) — ' + gi.label + ' Cat. 4 (' + curLbl + ' vs ' + prevLbl + ')</h4>';
                     function _ajRow(recs) {
                         var t = _cvTargets(recs, n_periods, gi.dedupKey);
-                        var ta = _cvAdjustedTargets(recs, n_periods, gi.dedupKey);
                         var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
                         var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
-                        var cv1Aj = ta.ns > 0 ? d1 / ta.ns * 100 : null;
-                        var cv3 = t.ns > 0 ? d3 / t.ns * 100 : null;
-                        var cv3Aj = ta.ns > 0 ? d3 / ta.ns * 100 : null;
                         var ab = _safeDiv(d1 - d3, d1);
                         var abPct = ab !== null ? ab * 100 : null;
-                        return { d1: d1, d3: d3, cv1: cv1, cv1Aj: cv1Aj, cv3: cv3, cv3Aj: cv3Aj, ab: ab, abPct: abPct,
-                            cat: _categorize(cv1, abPct), catAj: _categorize(cv1Aj, abPct), comp: ta.comp };
+                        return { cat: _categorize(cv1, abPct) };
                     }
-                    /* Détecte les Cat.4 sur l'union des deux périodes (brute ou ajustée). */
                     var allOus = {};
                     orgNames.forEach(function (o) { allOus[o] = 1; });
                     Object.keys(orgGPrev).forEach(function (o) { allOus[o] = 1; });
-                    var cat4Rows = [];
-                    var cur4 = [], curAj4 = [], prev4 = [], prevAj4 = [];
+                    var cur4 = [], prev4 = [];
                     Object.keys(allOus).forEach(function (ou) {
                         var rC = _ajRow(orgG[ou] || []);
                         var rP = _ajRow(orgGPrev[ou] || []);
-                        var any = (rC.cat === 'Cat. 4' || rC.catAj === 'Cat. 4' || rP.cat === 'Cat. 4' || rP.catAj === 'Cat. 4');
-                        if (any) cat4Rows.push({ ou: ou, c: rC, p: rP });
                         if (rC.cat === 'Cat. 4') cur4.push(ou);
-                        if (rC.catAj === 'Cat. 4') curAj4.push(ou);
                         if (rP.cat === 'Cat. 4') prev4.push(ou);
-                        if (rP.catAj === 'Cat. 4') prevAj4.push(ou);
                     });
 
-                    /* Fenêtre "Cat. 4" — toujours affichée, 2×2 (current/prev × brute/ajustée) */
                     function _winCard(title, color, list) {
                         return '<div style="flex:1;min-width:220px;background:' + color + '15;border:2px solid ' + color + ';border-radius:8px;padding:10px">' +
                             '<div style="background:' + color + ';color:#fff;padding:4px 10px;border-radius:4px;display:inline-block;font-weight:800;font-size:11px;margin-bottom:6px">' + title + ' (' + list.length + ')</div>' +
@@ -5564,48 +5460,10 @@
                             '</div></div>';
                     }
                     var winH = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px">' +
-                        _winCard('Cat. 4 brute ' + prevLbl, '#1d4ed8', prev4) +
-                        _winCard('Cat. 4 ajustée ' + prevLbl, '#7c3aed', prevAj4) +
-                        _winCard('Cat. 4 brute ' + curLbl, '#dc2626', cur4) +
-                        _winCard('Cat. 4 ajustée ' + curLbl, '#d97706', curAj4) +
+                        _winCard('Cat. 4 ' + prevLbl, '#1d4ed8', prev4) +
+                        _winCard('Cat. 4 ' + curLbl, '#dc2626', cur4) +
                         '</div>';
                     ajBox.innerHTML += winH;
-
-                    cat4Rows.sort(function (a, b) { return a.ou.localeCompare(b.ou); });
-                    function _pctCell(v) {
-                        if (v === null || !isFinite(v)) return '<td style="text-align:right;color:#bbb">–</td>';
-                        return '<td style="background:' + (_cvColor(v) || '#888') + ';color:#fff;text-align:right;font-weight:700">' + v.toFixed(1) + '%</td>';
-                    }
-                    function _catCell(c2) { return '<td style="text-align:center;background:' + _catColor(c2) + ';color:#fff;font-weight:700">' + c2 + '</td>'; }
-                    var aH = '<div style="overflow-x:auto;max-height:540px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
-                        '<tr style="background:#0b3a6f;color:#fff">' +
-                        '<th rowspan="2" style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
-                        '<th colspan="4" style="text-align:center">DTC1</th>' +
-                        '<th colspan="4" style="text-align:center">DTC3</th>' +
-                        '<th colspan="2" style="text-align:center">Catégorie ' + curLbl + '</th>' +
-                        '<th colspan="2" style="text-align:center">Catégorie ' + prevLbl + '</th>' +
-                        '</tr><tr style="background:#0b3a6f;color:#fff">' +
-                        '<th>' + curLbl + '</th><th>' + curLbl + ' AJ.</th><th>' + prevLbl + '</th><th>' + prevLbl + ' AJ.</th>' +
-                        '<th>' + curLbl + '</th><th>' + curLbl + ' AJ.</th><th>' + prevLbl + '</th><th>' + prevLbl + ' AJ.</th>' +
-                        '<th>brute</th><th>ajustée</th><th>brute</th><th>ajustée</th>' +
-                        '</tr></thead><tbody>';
-                    if (!cat4Rows.length) {
-                        aH += '<tr><td colspan="13" style="text-align:center;padding:18px;color:#16a34a;background:#f0fdf4;font-style:italic">' +
-                            '✅ Aucun ' + gi.label.toLowerCase() + ' Cat. 4 (cible brute ou ajustée) sur l\'une des deux périodes — voir fenêtres ci-dessus.</td></tr>';
-                    } else {
-                        cat4Rows.forEach(function (row, idx) {
-                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                            aH += '<tr style="background:' + bg + '">' +
-                                '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(row.ou, 30) + '</td>' +
-                                _pctCell(row.c.cv1) + _pctCell(row.c.cv1Aj) + _pctCell(row.p.cv1) + _pctCell(row.p.cv1Aj) +
-                                _pctCell(row.c.cv3) + _pctCell(row.c.cv3Aj) + _pctCell(row.p.cv3) + _pctCell(row.p.cv3Aj) +
-                                _catCell(row.c.cat) + _catCell(row.c.catAj) + _catCell(row.p.cat) + _catCell(row.p.catAj) +
-                                '</tr>';
-                        });
-                    }
-                    aH += '</tbody></table></div>';
-                    aH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Cible ajustée = cible brute × complétude de rapportage. Détection Cat. 4 dynamique sur cible brute ou ajustée, pour les deux périodes.</em></p>';
-                    ajBox.innerHTML += aH;
                     c.appendChild(ajBox);
                 })();
 
