@@ -996,7 +996,7 @@
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
-            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Courbe de suivi des CV', ic: '📈' }, { t: '4. Logistique', ic: '📦' }] },
+            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Courbe de suivi des CV', ic: '📈' }, { t: '5. Logistique', ic: '📦' }] },
             { id: 'as', lb: 'Aire de Santé', fl: ['province', 'antenne', 'zs', 'as', 'period'], pp: [{ t: 'Vaccination AS', ic: '📍' }, { t: 'Logistique AS', ic: '📦' }] },
             { id: 'zs', lb: 'Zone de Santé', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Vaccination ZS', ic: '🗺️' }, { t: 'Logistique ZS', ic: '📦' }] },
             { id: 'ant', lb: 'Antenne PEV', fl: ['province', 'antenne', 'period'], pp: [{ t: 'Tableau de bord Antenne', ic: '📡' }] },
@@ -1012,7 +1012,7 @@
         var BASE = './data' + (lvl ? '_' + lvl : '') + '/dashboard';
 
         var S = {
-            tab: 0, pg: 0, data: [], flt: [], charts: {}, filters: { province: '', antenne: [], zs: [], as: [], fosa: [], period: [] },
+            tab: 0, pg: 0, data: [], flt: [], charts: {}, filters: { province: '', antenne: [], zs: [], as: [], fosa: [], period: [], antigens: [] },
             vals: { province: [], antenne: [], zs: [], as: [], fosa: [], period: [] },
             cascaded: { antenne: [], zs: [], as: [], fosa: [] },
             loaded: false, meta: null,
@@ -1490,6 +1490,11 @@
                 buildPeriodCalendarFilter(c, S.vals.period, S.filters.period);
             }
 
+            /* 6bis) ANTIGÈNES - multi-sélection (par défaut tout sélectionné = []) */
+            if (tab.fl.indexOf('antigens') >= 0) {
+                buildAntigenFilter(c);
+            }
+
             /* 7) BOUTON RESET GLOBAL (Icône) */
             var rstGlob = document.createElement('div');
             rstGlob.innerHTML = '↺';
@@ -1693,6 +1698,25 @@
             var grid = E('div', 'pcal-grid');
             dd.appendChild(grid);
 
+            /* Quick-select rows : Trimestres (T1–T4) puis Semestres (S1–S2) */
+            var qrTri = E('div', 'pcal-qr');
+            qrTri.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px';
+            dd.appendChild(qrTri);
+            var qrSem = E('div', 'pcal-qr');
+            qrSem.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:6px';
+            dd.appendChild(qrSem);
+
+            var QUARTERS = [
+                { lbl: 'T1', mos: ['01','02','03'] },
+                { lbl: 'T2', mos: ['04','05','06'] },
+                { lbl: 'T3', mos: ['07','08','09'] },
+                { lbl: 'T4', mos: ['10','11','12'] }
+            ];
+            var SEMESTERS = [
+                { lbl: 'S1', mos: ['01','02','03','04','05','06'] },
+                { lbl: 'S2', mos: ['07','08','09','10','11','12'] }
+            ];
+
             var ft = E('div', 'pcal-ft');
             var sumLbl = document.createElement('div'); sumLbl.className = 'pcal-sum';
             var clrBtn = document.createElement('button'); clrBtn.className = 'pcal-act pcal-act-clr'; clrBtn.type = 'button'; clrBtn.textContent = 'Effacer';
@@ -1754,6 +1778,45 @@
                     sumLbl.textContent = nS + ' mois — ' + mL(srt[0]) + ' → ' + mL(srt[srt.length - 1]);
                 }
                 bt.innerHTML = '<span>' + btnLabelFor(S.filters.period, options.length) + '</span><span class="cn">' + nS + '</span><span>▼</span>';
+
+                /* Rangées Trimestres / Semestres */
+                function _renderQuickRow(container, defs) {
+                    container.innerHTML = '';
+                    defs.forEach(function (q) {
+                        var yms = q.mos.map(function (mm) { return S._pcalYr + mm; });
+                        var availYms = yms.filter(function (ym) { return availSet[ym] === 1; });
+                        var allSel = availYms.length > 0 && availYms.every(function (ym) { return selSet[ym] === 1; });
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'pcal-mo' + (allSel ? ' sel' : '') + (availYms.length === 0 ? ' dis' : '');
+                        btn.textContent = q.lbl;
+                        btn.title = q.lbl + ' ' + S._pcalYr + ' (' + availYms.length + '/' + yms.length + ' mois disponibles)';
+                        btn.disabled = availYms.length === 0;
+                        (function (yymsCap, allSelCap) {
+                            btn.onclick = function (e) {
+                                e.stopPropagation();
+                                if (!yymsCap.length) return;
+                                if (allSelCap) {
+                                    /* Désélectionner les mois du groupe */
+                                    yymsCap.forEach(function (ym) {
+                                        var pos = S.filters.period.indexOf(ym);
+                                        if (pos >= 0) S.filters.period.splice(pos, 1);
+                                    });
+                                } else {
+                                    /* Sélectionner tous les mois disponibles du groupe */
+                                    yymsCap.forEach(function (ym) {
+                                        if (S.filters.period.indexOf(ym) < 0) S.filters.period.push(ym);
+                                    });
+                                }
+                                apFlt(); rFlt(); render();
+                                keepOpen();
+                            };
+                        })(availYms, allSel);
+                        container.appendChild(btn);
+                    });
+                }
+                _renderQuickRow(qrTri, QUARTERS);
+                _renderQuickRow(qrSem, SEMESTERS);
             }
 
             prevBtn.onclick = function (e) {
@@ -1784,6 +1847,109 @@
             g.appendChild(dd);
             g.addEventListener('mouseleave', function () { dd.classList.remove('sh'); });
             container.appendChild(g);
+        }
+
+        /* ═══ ANTIGÈNES — Filtre multi-sélection global (vacc tab) ═══ */
+        function buildAntigenFilter(container) {
+            var f = S.filters;
+            /* Liste des antigènes disponibles : AG_ALL si province VAP, sinon AG */
+            var isVAPprov = _computeIsVAP(f.province || '');
+            var availAg = isVAPprov ? AG_ALL.slice() : AG.slice();
+            /* Si la sélection courante contient des antigènes hors liste (ex. on change de province), on nettoie */
+            f.antigens = (f.antigens || []).filter(function (ag) { return availAg.indexOf(ag) >= 0; });
+
+            var g = E('div', 'fg');
+            var lbl = document.createElement('label');
+            lbl.textContent = 'Antigènes';
+            var rst = document.createElement('button');
+            rst.className = 'frst'; rst.innerHTML = '↺'; rst.title = 'Réinitialiser Antigènes (tout)';
+            rst.onclick = function (e) {
+                e.stopPropagation();
+                S.filters.antigens = [];
+                rFlt(); render();
+            };
+            lbl.appendChild(rst);
+            g.appendChild(lbl);
+
+            function _btnLbl() {
+                var n = (S.filters.antigens || []).length;
+                if (n === 0 || n >= availAg.length) return 'Tout (' + availAg.length + ')';
+                if (n === 1) return S.filters.antigens[0];
+                return n + ' antigènes';
+            }
+            var bt = document.createElement('button'); bt.className = 'fbtn';
+            bt.innerHTML = '<span>' + _btnLbl() + '</span><span class="cn">' + ((S.filters.antigens.length === 0) ? availAg.length : S.filters.antigens.length) + '</span><span>▼</span>';
+            bt.onclick = function (e) {
+                e.stopPropagation();
+                document.querySelectorAll('.fd').forEach(function (el) { if (el.id !== 'fd-antigens') el.classList.remove('sh'); });
+                document.getElementById('fd-antigens').classList.toggle('sh');
+            };
+            g.appendChild(bt);
+
+            var dd = E('div', 'fd'); dd.id = 'fd-antigens';
+            dd.style.minWidth = '230px';
+
+            var sr = document.createElement('input');
+            sr.className = 'sr'; sr.type = 'text'; sr.placeholder = 'Rechercher...';
+            sr.oninput = function () {
+                var q = sr.value.toLowerCase();
+                dd.querySelectorAll('.fi:not(.fa)').forEach(function (it) {
+                    var t = it.textContent.toLowerCase();
+                    it.style.display = t.indexOf(q) >= 0 ? '' : 'none';
+                });
+            };
+            dd.appendChild(sr);
+
+            /* Tout / Aucun */
+            var allChecked = (S.filters.antigens.length === 0 || S.filters.antigens.length >= availAg.length);
+            var allRow = E('div', 'fi fa');
+            var allCb = document.createElement('input');
+            allCb.type = 'checkbox'; allCb.checked = allChecked;
+            allCb.onchange = function () {
+                if (allCb.checked) {
+                    S.filters.antigens = [];
+                    dd.querySelectorAll('.fi:not(.fa) input[type=checkbox]').forEach(function (cb) { cb.checked = true; });
+                } else {
+                    S.filters.antigens = []; /* Aucune sélection : interprété comme "aucun antigène" */
+                    dd.querySelectorAll('.fi:not(.fa) input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
+                }
+                render();
+            };
+            allRow.appendChild(allCb);
+            var allSp = document.createElement('span'); allSp.style.fontWeight = '700'; allSp.textContent = 'Tout sélectionner';
+            allRow.appendChild(allSp);
+            dd.appendChild(allRow);
+
+            availAg.forEach(function (ag) {
+                var it = E('div', 'fi');
+                var cb = document.createElement('input'); cb.type = 'checkbox';
+                cb.checked = (S.filters.antigens.length === 0) ? true : (S.filters.antigens.indexOf(ag) >= 0);
+                cb.onchange = function () {
+                    /* Reconstruire la liste depuis l'UI */
+                    var sel = [];
+                    dd.querySelectorAll('.fi:not(.fa) input[type=checkbox]').forEach(function (c2, i) {
+                        if (c2.checked) sel.push(availAg[i]);
+                    });
+                    /* Si tous cochés → tableau vide (= "tout") */
+                    S.filters.antigens = (sel.length === availAg.length) ? [] : sel;
+                    render();
+                };
+                it.appendChild(cb);
+                var sp2 = document.createElement('span'); sp2.textContent = (AG_LBL[ag] || ag);
+                it.appendChild(sp2);
+                dd.appendChild(it);
+            });
+
+            g.appendChild(dd);
+            g.addEventListener('mouseleave', function () { dd.classList.remove('sh'); });
+            container.appendChild(g);
+        }
+
+        /* Helper : retourne true si l'antigène doit être affiché selon le filtre courant */
+        function _agSel(ag) {
+            var sel = S.filters.antigens;
+            if (!sel || sel.length === 0) return true; /* vide = tout */
+            return sel.indexOf(ag) >= 0;
         }
 
         /* Fermer les dropdowns en cliquant ailleurs */
@@ -1866,7 +2032,7 @@
             db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
-            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rCourbesCV, rLog][S.pg](ct); }
+            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rCourbesCV, rLog][S.pg](ct); }
             else if (tab.id === 'as' || tab.id === 'zs') { [rVac, rLog][S.pg](ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
@@ -3508,7 +3674,11 @@
 
             var bh = '<div style="display:flex;flex-wrap:wrap;gap:14px">';
             VACCIN_CALENDAR.forEach(function (grp) {
-                var ags2 = grp.ags;
+                var ags2 = grp.ags.filter(function (ag) {
+                    if (!isVAPprov && ['VAP1','VAP2','VAP3','VAP4'].indexOf(ag) >= 0) return false;
+                    return _agSel(ag);
+                });
+                if (!ags2.length) return;
                 var col = calColors[grp.age] || '#0b3a6f';
 
                 bh += '<div style="background:#fff;border:2px solid ' + col + ';border-radius:10px;min-width:180px;flex:1;max-width:280px;overflow:hidden">';
@@ -3573,6 +3743,7 @@
                 VACCIN_CALENDAR.forEach(function (grp2) {
                     grp2.ags.forEach(function (ag) {
                         if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
+                        if (!_agSel(ag)) return;
                         h += '<th style="text-align:right;font-size:9px">' + (AG_LBL[ag] || ag) + '</th>';
                     });
                 });
@@ -3583,6 +3754,7 @@
                 VACCIN_CALENDAR.forEach(function (grp2) {
                     grp2.ags.forEach(function (ag) {
                         if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
+                        if (!_agSel(ag)) return;
                         var tv = 0; fltOrgs.forEach(function (o) { tv += sf(ogs[o] || [], ag); });
                         h += '<td style="text-align:right">' + tv.toLocaleString() + '</td>';
                     });
@@ -3596,6 +3768,7 @@
                     VACCIN_CALENDAR.forEach(function (grp2) {
                         grp2.ags.forEach(function (ag) {
                             if (!isVAPprov && ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) >= 0) return;
+                        if (!_agSel(ag)) return;
                             var val = sf(recs, ag);
                             h += '<td style="text-align:right">' + (val > 0 ? val.toLocaleString() : '<span style="color:#ccc">0</span>') + '</td>';
                         });
@@ -4046,6 +4219,37 @@
             }, 0);
         }
 
+        /* Calcule la complétude de rapportage d'un groupe d'enregistrements bruts (CV)
+           = (paires distinctes (_AS, _YM) avec au moins une dose) / (n_AS × n_periods)
+           Renvoie une valeur entre 0 et 1 (cap à 1). */
+        function _cvCompleteness(recs, n_periods) {
+            if (!recs || !recs.length || !n_periods) return 0;
+            var asSet = {}, pairSet = {};
+            recs.forEach(function (r) {
+                var as = r._AS || ''; if (!as) return;
+                asSet[as] = 1;
+                var hasDose = (Number(r.DTC1_0_11) || 0) > 0 || (Number(r.BCG_0_11) || 0) > 0 || (Number(r.DTC3_0_11) || 0) > 0;
+                if (hasDose) pairSet[as + '|' + (r._YM || '')] = 1;
+            });
+            var nAS = Object.keys(asSet).length;
+            if (!nAS) return 0;
+            var n_pairs = Object.keys(pairSet).length;
+            var c = n_pairs / (nAS * n_periods);
+            return c > 1 ? 1 : c;
+        }
+
+        /* Cibles ajustées : target × complétude. */
+        function _cvAdjustedTargets(recs, n_periods, dedupKey) {
+            var tgt = _cvTargets(recs, n_periods, dedupKey);
+            var comp = _cvCompleteness(recs, n_periods);
+            return {
+                pop: tgt.pop, comp: comp,
+                nv: tgt.nv * comp, ns: tgt.ns * comp,
+                nv_orig: tgt.nv, ns_orig: tgt.ns,
+                nv_ann: tgt.nv_ann, ns_ann: tgt.ns_ann
+            };
+        }
+
         /* Filtre les données selon les filtres courants + infos de niveau */
         function _cvFilterData(data, gi) {
             var f = S.filters;
@@ -4169,7 +4373,10 @@
                 var bh = '<div style="display:flex;flex-wrap:wrap;gap:12px">';
                 VACCIN_CALENDAR.forEach(function (grp2) {
                     var col = calColors[grp2.age] || '#0b3a6f';
-                    var ags3 = grp2.ags.filter(function (ag) { return isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) < 0; });
+                    var ags3 = grp2.ags.filter(function (ag) {
+                        if (!(isVAPprov || ['VAP1', 'VAP2', 'VAP3', 'VAP4'].indexOf(ag) < 0)) return false;
+                        return _agSel(ag);
+                    });
                     if (!ags3.length) return;
                     bh += '<div style="background:#fff;border:2px solid ' + col + ';border-radius:10px;min-width:180px;flex:1;max-width:260px">';
                     bh += '<div style="background:' + col + ';color:#fff;padding:7px 12px;font-weight:700;font-size:12px;text-align:center">' + grp2.age + '</div>';
@@ -4206,6 +4413,8 @@
                 var tableAgs = ['BCG', 'VPO0', 'DTC1', 'VPO1', 'ROTA1', 'PCV13_1', 'DTC2', 'VPO2', 'ROTA2', 'PCV13_2',
                     'DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3', 'VAR1', 'VPI2', 'VAA', 'VAR2', 'TD'];
                 if (isVAPprov) tableAgs = tableAgs.concat(vapAgs);
+                /* Filtre antigènes utilisateur */
+                tableAgs = tableAgs.filter(_agSel);
 
                 /* Calcule les cellules CV + abandons + catégorie + priorisation pour une ligne */
                 function _rowCells(recs, tgt, ags) {
@@ -4436,9 +4645,84 @@
                     c.appendChild(propBox);
                 }
 
+                /* ── Analyse des couvertures vaccinales sur base des Cibles ajustées (Cat. 4 uniquement) ──
+                   Comparaison CV brute vs CV sur cible ajustée par la complétude de rapportage.
+                   Affiche uniquement les org units classés Cat. 4 (CV DTC1 < 90% ET abandon > 10%)
+                   sur la cible BRUTE ou sur la cible AJUSTÉE — détection dynamique des Cat. 4. */
+                (function () {
+                    var ajBox = E('div', 'cb');
+                    ajBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📐 Analyse des couvertures vaccinales sur base des Cibles ajustées — ' + gi.label + ' Cat. 4 uniquement</h4>';
+                    function _ajRow(recs) {
+                        var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                        var ta = _cvAdjustedTargets(recs, n_periods, gi.dedupKey);
+                        var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                        var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
+                        var cv1Aj = ta.ns > 0 ? d1 / ta.ns * 100 : null;
+                        var cv3 = t.ns > 0 ? d3 / t.ns * 100 : null;
+                        var cv3Aj = ta.ns > 0 ? d3 / ta.ns * 100 : null;
+                        var ab = _safeDiv(d1 - d3, d1);
+                        var abPct = ab !== null ? ab * 100 : null;
+                        var cat = _categorize(cv1, abPct);
+                        var catAj = _categorize(cv1Aj, abPct);
+                        return { d1: d1, d3: d3, cv1: cv1, cv1Aj: cv1Aj, cv3: cv3, cv3Aj: cv3Aj, ab: ab, abPct: abPct, cat: cat, catAj: catAj, comp: ta.comp };
+                    }
+                    /* Identifier les org units Cat.4 (sur cible brute OU ajustée) */
+                    var cat4Rows = [];
+                    orgNames.forEach(function (ouName) {
+                        var rr = _ajRow(orgG[ouName]);
+                        if (rr.cat === 'Cat. 4' || rr.catAj === 'Cat. 4') cat4Rows.push({ ou: ouName, r: rr });
+                    });
+
+                    if (!cat4Rows.length) {
+                        ajBox.innerHTML += '<div style="padding:18px;color:#16a34a;background:#f0fdf4;border-radius:6px;border:1px solid #86efac;font-style:italic">' +
+                            '✅ Aucun ' + gi.label + ' classé Cat. 4 (cible brute ou ajustée) pour cette période.</div>';
+                    } else {
+                        function _pctCell(v) {
+                            if (v === null || !isFinite(v)) return '<td style="text-align:right;color:#bbb">–</td>';
+                            var col = _cvColor(v) || '#888';
+                            return '<td style="background:' + col + ';color:#fff;text-align:right;font-weight:700">' + v.toFixed(1) + '%</td>';
+                        }
+                        function _abCell(v) {
+                            if (v === null) return '<td style="text-align:right;color:#bbb">NA</td>';
+                            return '<td style="background:' + _abandonColor(v) + ';color:#fff;text-align:right;font-weight:700">' + (v * 100).toFixed(1) + '%</td>';
+                        }
+                        function _catCell(c2) {
+                            return '<td style="text-align:center;background:' + _catColor(c2) + ';color:#fff;font-weight:700">' + c2 + '</td>';
+                        }
+                        var aH = '<div style="overflow-x:auto;max-height:540px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                            '<tr style="background:#0b3a6f;color:#fff">' +
+                            '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
+                            '<th style="text-align:right">Complétude</th>' +
+                            '<th style="text-align:right">DTC1 brut</th>' +
+                            '<th style="text-align:right">DTC1 ajusté</th>' +
+                            '<th style="text-align:right">DTC3 brut</th>' +
+                            '<th style="text-align:right">DTC3 ajusté</th>' +
+                            '<th style="text-align:right">Abandon DTC1-DTC3</th>' +
+                            '<th style="text-align:center">Cat. brute</th>' +
+                            '<th style="text-align:center">Cat. ajustée</th>' +
+                            '</tr></thead><tbody>';
+                        cat4Rows.forEach(function (row, idx) {
+                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                            var rr = row.r;
+                            aH += '<tr style="background:' + bg + '">' +
+                                '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(row.ou, 30) + '</td>' +
+                                '<td style="text-align:right">' + (rr.comp * 100).toFixed(1) + '%</td>' +
+                                _pctCell(rr.cv1) + _pctCell(rr.cv1Aj) +
+                                _pctCell(rr.cv3) + _pctCell(rr.cv3Aj) +
+                                _abCell(rr.ab) + _catCell(rr.cat) + _catCell(rr.catAj) +
+                                '</tr>';
+                        });
+                        aH += '</tbody></table></div>';
+                        aH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Cible ajustée = cible brute × complétude de rapportage (paires AS×mois rapportées / total attendu). ' +
+                            cat4Rows.length + ' ' + gi.label.toLowerCase() + (cat4Rows.length > 1 ? 's' : '') + ' Cat. 4 dynamiquement détecté' + (cat4Rows.length > 1 ? 's' : '') + '.</em></p>';
+                        ajBox.innerHTML += aH;
+                    }
+                    c.appendChild(ajBox);
+                })();
+
                 /* ── Graphiques ── */
                 var chartBox = E('div', 'cb');
-                var grAntigens = ['BCG', 'DTC1', 'DTC3', 'VPO3', 'PCV13_3', 'ROTA3', 'VAR1', 'VAA', 'VPI1', 'VPI2', 'VAR2', 'TD'];
+                var grAntigens = ['BCG', 'DTC1', 'DTC3', 'VPO3', 'PCV13_3', 'ROTA3', 'VAR1', 'VAA', 'VPI1', 'VPI2', 'VAR2', 'TD'].filter(_agSel);
                 var grCanvases = grAntigens.map(function (ag) {
                     return '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="grChart_' + ag + '"></canvas></div>';
                 }).join('');
@@ -4499,6 +4783,7 @@
                     var x1 = document.getElementById('cvChart1'); if (x1) {
                         var agKeys = ['BCG', 'DTC1', 'DTC2', 'DTC3', 'VPO0', 'VPO3', 'PCV13_1', 'PCV13_3', 'ROTA1', 'ROTA3', 'VAR1', 'VAA', 'VPI1', 'VPI2'];
                         if (isVAPprov) agKeys = agKeys.concat(['VAP1', 'VAP3']);
+                        agKeys = agKeys.filter(_agSel);
                         var cvVals = agKeys.map(function (ag) {
                             var field = AG_FIELD_MAP[ag]; if (!field) return 0;
                             var useNV = (ag === 'BCG' || ag === 'TD');
@@ -4600,7 +4885,7 @@
                         { ag: 'VPI2', lbl: 'VPI 2', useNV: false, col: '#546e7a' },
                         { ag: 'VAR2', lbl: 'VAR 2 (12-23m)', useNV: false, col: '#880e4f' },
                         { ag: 'TD', lbl: 'Td 2+ (FAP)', useNV: true, col: '#bf360c' }
-                    ];
+                    ].filter(function (g) { return _agSel(g.ag); });
                     GR_AGS.forEach(function (gag, gi2) {
                         var cid = 'grChart_' + gag.ag;
                         var cx = document.getElementById(cid); if (!cx) return;
@@ -4638,6 +4923,456 @@
                             }
                         });
                     });
+                }, 120);
+            });
+        }
+
+        /* ═══ PAGE 2bis : ANALYSES COMPARATIVES DES CV vs ANNÉE PRÉCÉDENTE ═══ */
+        function rAnalysesCVCompare(c) {
+            var gi = _cvGroupInfo();
+            c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement données comparatives…</div>';
+            var dataPromise = gi.useAS ? _loadCVASData(S.filters.province) : _loadCVZSData();
+            dataPromise.then(function (data) {
+                c.innerHTML = '';
+                if (!data || !data.length) {
+                    c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;border:1px solid #fca5a5;color:#dc2626">' +
+                        '<strong>❌ Données comparatives non disponibles.</strong></div>';
+                    return;
+                }
+                var f = S.filters;
+                var isVAPprov = _computeIsVAP(f.province || '');
+                var n_periods = (f.period && f.period.length) ? f.period.length : 1;
+
+                /* Période courante et période N-1 (mêmes mois, année − 1) */
+                var curPer = (f.period && f.period.length) ? f.period.slice() : [];
+                var prevPer = curPer.map(function (p) {
+                    var y = parseInt(p.substr(0, 4), 10) - 1;
+                    return String(y) + p.substr(4);
+                });
+                if (!curPer.length) {
+                    c.innerHTML = '<div style="padding:18px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:8px">⚠️ Sélectionne au moins un mois (ou un trimestre / semestre) pour voir la comparaison avec l\'année précédente.</div>';
+                    return;
+                }
+
+                /* Détecte le label de période + trimestre/semestre intelligent */
+                function _perGroupLabel(per) {
+                    if (!per.length) return '–';
+                    var months = per.map(function (p) { return p.substr(4); }).sort();
+                    var year = per[0].substr(0, 4);
+                    var qDef = [['T1',['01','02','03']],['T2',['04','05','06']],['T3',['07','08','09']],['T4',['10','11','12']]];
+                    var sDef = [['S1',['01','02','03','04','05','06']],['S2',['07','08','09','10','11','12']]];
+                    function _eq(a, b) { return a.length === b.length && a.every(function (x, i) { return x === b[i]; }); }
+                    for (var i = 0; i < qDef.length; i++) if (_eq(months, qDef[i][1])) return qDef[i][0] + ' ' + year;
+                    for (var i2 = 0; i2 < sDef.length; i2++) if (_eq(months, sDef[i2][1])) return sDef[i2][0] + ' ' + year;
+                    if (per.length === 1) return mL(per[0]);
+                    if (months.length === 12) return 'Année ' + year;
+                    var srt = per.slice().sort();
+                    return mL(srt[0]) + ' – ' + mL(srt[srt.length - 1]);
+                }
+                var curLbl = _perGroupLabel(curPer);
+                var prevLbl = _perGroupLabel(prevPer);
+
+                /* Filtre data en respectant antenne/zs/as et la liste de mois donnée */
+                function _filtForPer(per) {
+                    var perSet = {}; per.forEach(function (p) { perSet[p] = 1; });
+                    var antSet = null;
+                    if (f.antenne && f.antenne.length && S.cascaded && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length) {
+                        antSet = {}; f.antenne.forEach(function (a) { antSet[a] = 1; });
+                    }
+                    var zsSet = null;
+                    if (gi && gi.useAS && f.zs && f.zs.length) {
+                        zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+                    } else if (f.zs && f.zs.length && S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length) {
+                        zsSet = {}; f.zs.forEach(function (z) { zsSet[z] = 1; });
+                    }
+                    var asSet = null;
+                    if (gi && gi.useAS && f.as && f.as.length && S.cascaded && S.cascaded.as && f.as.length < S.cascaded.as.length) {
+                        asSet = {}; f.as.forEach(function (a) { asSet[a] = 1; });
+                    }
+                    return data.filter(function (r) {
+                        if (f.province && r._Province !== f.province) return false;
+                        if (antSet && !antSet[r._Antenne]) return false;
+                        if (zsSet && !zsSet[r._ZS]) return false;
+                        if (asSet && !asSet[r._AS]) return false;
+                        if (!perSet[r._YM]) return false;
+                        return true;
+                    });
+                }
+                var curFlt = _filtForPer(curPer);
+                var prevFlt = _filtForPer(prevPer);
+
+                if (!curFlt.length) {
+                    c.innerHTML = '<div style="padding:18px;background:#fff;color:#888;border-radius:8px">Aucune donnée pour la période courante.</div>';
+                    return;
+                }
+
+                /* ── Header ── */
+                var scopeLbl = gi.useAS
+                    ? 'ZS : <strong>' + (f.zs && f.zs[0] ? f.zs[0] : '?') + '</strong>'
+                    : (f.province ? 'Province : <strong>' + f.province + '</strong>' : 'Niveau <strong>National</strong>');
+                var hdr = E('div', 'cb');
+                hdr.innerHTML = '<h3 style="color:#0b3a6f;margin:0 0 4px">🔁 Analyses comparatives des CV — ' + curLbl + ' vs ' + prevLbl + '</h3>' +
+                    '<p style="font-size:12px;color:#555;margin:0">' + scopeLbl + ' — Niveau affiché : <strong>' + gi.label + '</strong>' +
+                    (isVAPprov ? ' &nbsp;<span style="background:#e65100;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700">Province VAP</span>' : '') +
+                    '</p><p style="font-size:10px;color:#888;margin:4px 0 0"><em>Comparaison automatique avec les mêmes mois de l\'année précédente. Tendances ↑ vert (hausse) / ↓ rouge (baisse).</em></p>';
+                c.appendChild(hdr);
+
+                /* ── Helpers comparatifs ── */
+                function _trendArrow(curV, prevV, lowerBetter) {
+                    if (curV === null || prevV === null || !isFinite(curV) || !isFinite(prevV)) return '';
+                    var diff = curV - prevV;
+                    var up = diff > 0;
+                    var good = lowerBetter ? !up : up;
+                    if (Math.abs(diff) < 0.05) return '<span style="color:#888;font-size:11px;margin-left:4px">→</span>';
+                    var col = good ? '#16a34a' : '#dc2626';
+                    return '<span style="color:' + col + ';font-size:13px;font-weight:800;margin-left:4px">' + (up ? '↑' : '↓') + '</span>';
+                }
+                function _kpiCV(recs, field, useNV) {
+                    var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                    var d = _cvSum(recs, field);
+                    var den = useNV ? t.nv : t.ns;
+                    return den > 0 ? d / den * 100 : null;
+                }
+                function _kpiAban(recs) {
+                    var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                    var v = _safeDiv(d1 - d3, d1); return v === null ? null : v * 100;
+                }
+
+                /* ── KPI cards : 5 indicateurs comparés ── */
+                var kpiBox = E('div', 'kr'); kpiBox.style.marginBottom = '16px';
+                var kpis = [
+                    { lbl: 'CV BCG', cur: _kpiCV(curFlt, 'BCG_0_11', true), prev: _kpiCV(prevFlt, 'BCG_0_11', true), col: '#0b3a6f', lower: false },
+                    { lbl: 'CV DTC1', cur: _kpiCV(curFlt, 'DTC1_0_11', false), prev: _kpiCV(prevFlt, 'DTC1_0_11', false), col: '#1565c0', lower: false },
+                    { lbl: 'CV DTC3', cur: _kpiCV(curFlt, 'DTC3_0_11', false), prev: _kpiCV(prevFlt, 'DTC3_0_11', false), col: '#2e7d32', lower: false },
+                    { lbl: 'Abandon DTC1-DTC3', cur: _kpiAban(curFlt), prev: _kpiAban(prevFlt), col: '#dc2626', lower: true },
+                    { lbl: 'CV VAR1', cur: _kpiCV(curFlt, 'VAR1_0_11', false), prev: _kpiCV(prevFlt, 'VAR1_0_11', false), col: '#c62828', lower: false },
+                    { lbl: 'CV VAR2', cur: _kpiCV(curFlt, 'VAR2_12_23', false), prev: _kpiCV(prevFlt, 'VAR2_12_23', false), col: '#880e4f', lower: false }
+                ];
+                kpis.forEach(function (k) {
+                    var kc = E('div', 'kc');
+                    kc.style.cssText = 'flex:1;min-width:160px;border-left:5px solid ' + k.col;
+                    var curTxt = (k.cur !== null && isFinite(k.cur)) ? k.cur.toFixed(2) : '–';
+                    var prevTxt = (k.prev !== null && isFinite(k.prev)) ? k.prev.toFixed(2) : '–';
+                    kc.innerHTML =
+                        '<div class="kl" style="font-size:11px;font-weight:700;color:#444">' + k.lbl + ' : ' + curLbl + '</div>' +
+                        '<div class="kv" style="font-size:24px;color:' + k.col + '">' + curTxt + (k.cur !== null ? '%' : '') + _trendArrow(k.cur, k.prev, k.lower) + '</div>' +
+                        '<div style="font-size:11px;color:#666;margin-top:4px">' + prevLbl + ' : <strong>' + prevTxt + (k.prev !== null ? '%' : '') + '</strong></div>';
+                    kpiBox.appendChild(kc);
+                });
+                c.appendChild(kpiBox);
+
+                /* ── Calendrier vaccinal — comparaison par antigène ── */
+                var calColors = { 'Naissance': '#0b3a6f', '6 semaines': '#1565c0', '10 semaines': '#00838f', '14 semaines': '#2e7d32', '6 mois': '#6a1b9a', '7 mois': '#7b1fa2', '8 mois': '#8e24aa', '9 mois': '#e65100', '15 mois': '#c62828' };
+                var calBox = E('div', 'cb');
+                calBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">💉 Couvertures vaccinales — ' + curLbl + ' vs ' + prevLbl + '</h4>';
+                var bh = '<div style="display:flex;flex-wrap:wrap;gap:12px">';
+                var curT = _cvTargets(curFlt, n_periods, gi.dedupKey);
+                var prevT = _cvTargets(prevFlt, n_periods, gi.dedupKey);
+                VACCIN_CALENDAR.forEach(function (grp2) {
+                    var col = calColors[grp2.age] || '#0b3a6f';
+                    var ags3 = grp2.ags.filter(function (ag) {
+                        if (!(isVAPprov || ['VAP1','VAP2','VAP3','VAP4'].indexOf(ag) < 0)) return false;
+                        return _agSel(ag);
+                    });
+                    if (!ags3.length) return;
+                    bh += '<div style="background:#fff;border:2px solid ' + col + ';border-radius:10px;min-width:200px;flex:1;max-width:280px">';
+                    bh += '<div style="background:' + col + ';color:#fff;padding:7px 12px;font-weight:700;font-size:12px;text-align:center">' + grp2.age + '</div>';
+                    bh += '<div style="padding:8px 10px">';
+                    ags3.forEach(function (ag) {
+                        var field = AG_FIELD_MAP[ag]; if (!field) return;
+                        var useNV = (ag === 'BCG' || ag === 'TD');
+                        var dC = _cvSum(curFlt, field), dP = _cvSum(prevFlt, field);
+                        var tC = useNV ? curT.nv : curT.ns;
+                        var tP = useNV ? prevT.nv : prevT.ns;
+                        var cC = tC > 0 ? dC / tC * 100 : null;
+                        var cP = tP > 0 ? dP / tP * 100 : null;
+                        var col1 = _cvColor(cC) || '#888';
+                        bh += '<div style="border-bottom:1px solid #f0f0f0;padding:4px 0">' +
+                            '<div style="display:flex;justify-content:space-between;font-size:11px;color:#333"><span>' + (AG_LBL[ag] || ag) + '</span>' +
+                            '<span style="font-weight:700;color:' + col1 + '">' + (cC !== null ? cC.toFixed(1) + '%' : '–') + _trendArrow(cC, cP, false) + '</span></div>' +
+                            '<div style="font-size:10px;color:#888">' + prevLbl + ' : ' + (cP !== null ? cP.toFixed(1) + '%' : '–') + '</div>' +
+                            '</div>';
+                    });
+                    bh += '</div></div>';
+                });
+                bh += '</div>';
+                calBox.innerHTML += bh;
+                c.appendChild(calBox);
+
+                /* ── Tableau principal CV — uniquement période courante (le tableau ne compare pas) ── */
+                var orgG = {}, orgNames = [];
+                curFlt.forEach(function (r) {
+                    var k = r[gi.groupKey] || ''; if (!k) return;
+                    if (!orgG[k]) orgG[k] = [];
+                    orgG[k].push(r);
+                });
+                orgNames = Object.keys(orgG).filter(Boolean).sort();
+                var orgGPrev = {};
+                prevFlt.forEach(function (r) {
+                    var k = r[gi.groupKey] || ''; if (!k) return;
+                    if (!orgGPrev[k]) orgGPrev[k] = [];
+                    orgGPrev[k].push(r);
+                });
+
+                var vapAgs = ['VAP1', 'VAP2', 'VAP3', 'VAP4'];
+                var tableAgs = ['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2',
+                    'DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2','TD'];
+                if (isVAPprov) tableAgs = tableAgs.concat(vapAgs);
+                tableAgs = tableAgs.filter(_agSel);
+
+                function _rowCells(recs, tgt, ags) {
+                    var cells = '';
+                    var ouD1 = 0, ouD3 = 0, ouBCG = 0, ouV1 = 0, ouV2 = 0;
+                    ags.forEach(function (ag) {
+                        var field = AG_FIELD_MAP[ag];
+                        var doses = field ? _cvSum(recs, field) : 0;
+                        if (ag === 'DTC1') ouD1 = doses;
+                        if (ag === 'DTC3') ouD3 = doses;
+                        if (ag === 'BCG') ouBCG = doses;
+                        if (ag === 'VAR1') ouV1 = doses;
+                        if (ag === 'VAR2') ouV2 = doses;
+                        var useNV = (ag === 'BCG' || ag === 'TD');
+                        var den = useNV ? tgt.nv : tgt.ns;
+                        var cvPct = den > 0 ? doses / den * 100 : null;
+                        var st = cvPct !== null ? 'background:' + _cvColor(cvPct) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
+                        cells += '<td style="' + st + '">' + (cvPct !== null ? cvPct.toFixed(1) + '%' : '–') + '</td>';
+                    });
+                    var ouAb = _safeDiv(ouD1 - ouD3, ouD1);
+                    var ouAbV1 = _safeDiv(ouBCG - ouV1, ouBCG);
+                    var ouAbV2 = _safeDiv(ouBCG - ouV2, ouBCG);
+                    var cv1Pct = tgt.ns > 0 ? ouD1 / tgt.ns * 100 : null;
+                    var ouCat = _categorize(cv1Pct, ouAb !== null ? ouAb * 100 : null);
+                    var ouPrio = _priorityFromCat(ouCat);
+                    function _abCell(v) {
+                        if (v === null) return '<td style="text-align:right;color:#bbb">NA</td>';
+                        return '<td style="background:' + _abandonColor(v) + ';color:#fff;text-align:right;font-weight:700">' + (v * 100).toFixed(1) + '%' + (v < 0 ? ' ⚠️' : '') + '</td>';
+                    }
+                    cells += _abCell(ouAb) + _abCell(ouAbV1) + _abCell(ouAbV2);
+                    cells += '<td style="text-align:center;background:' + _catColor(ouCat) + ';color:#fff;font-weight:700">' + ouCat + '</td>';
+                    cells += '<td style="text-align:center;background:' + _priorityColor(ouPrio) + ';color:#fff;font-weight:700">' + ouPrio + '</td>';
+                    return cells;
+                }
+
+                var tblBox = E('div', 'cb');
+                tblBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Couvertures vaccinales, Taux d\'abandon et Catégorisation ACZ par ' + gi.label + ' — ' + curLbl + '</h4>';
+                var tH = '<div style="overflow-x:auto;max-height:580px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>';
+                tableAgs.forEach(function (ag) { tH += '<th style="text-align:right;min-width:55px;font-size:9px">' + ag.replace(/_/g, '-') + '</th>'; });
+                tH += '<th style="text-align:right;min-width:90px">Abandon DTC1-DTC3</th>' +
+                    '<th style="text-align:right;min-width:90px">Abandon BCG-VAR1</th>' +
+                    '<th style="text-align:right;min-width:90px">Abandon BCG-VAR2</th>' +
+                    '<th style="text-align:center;min-width:60px">Catégorie</th>' +
+                    '<th style="text-align:center;min-width:80px">Priorisation</th></tr></thead><tbody>';
+                tH += '<tr style="background:#e8f0fe;font-weight:800">' +
+                    '<td style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
+                    _rowCells(curFlt, curT, tableAgs) + '</tr>';
+                orgNames.forEach(function (ouName, idx) {
+                    var recs = orgG[ouName];
+                    var t2 = _cvTargets(recs, n_periods, gi.dedupKey);
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    tH += '<tr style="background:' + bg + '">' +
+                        '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
+                        _rowCells(recs, t2, tableAgs) + '</tr>';
+                });
+                tH += '</tbody></table></div>';
+                tblBox.innerHTML += tH;
+                c.appendChild(tblBox);
+
+                /* ── Cibles ajustées Cat. 4 — comparaison année courante vs N-1 ── */
+                (function () {
+                    var ajBox = E('div', 'cb');
+                    ajBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📐 Couvertures sur cibles ajustées (Cat. 4) — ' + curLbl + ' vs ' + prevLbl + '</h4>';
+                    function _ajRow(recs) {
+                        var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                        var ta = _cvAdjustedTargets(recs, n_periods, gi.dedupKey);
+                        var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                        var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
+                        var cv1Aj = ta.ns > 0 ? d1 / ta.ns * 100 : null;
+                        var cv3 = t.ns > 0 ? d3 / t.ns * 100 : null;
+                        var cv3Aj = ta.ns > 0 ? d3 / ta.ns * 100 : null;
+                        var ab = _safeDiv(d1 - d3, d1);
+                        var abPct = ab !== null ? ab * 100 : null;
+                        return { d1: d1, d3: d3, cv1: cv1, cv1Aj: cv1Aj, cv3: cv3, cv3Aj: cv3Aj, ab: ab, abPct: abPct,
+                            cat: _categorize(cv1, abPct), catAj: _categorize(cv1Aj, abPct), comp: ta.comp };
+                    }
+                    /* Détecte les Cat.4 sur l'union des deux périodes (brute ou ajustée). */
+                    var allOus = {};
+                    orgNames.forEach(function (o) { allOus[o] = 1; });
+                    Object.keys(orgGPrev).forEach(function (o) { allOus[o] = 1; });
+                    var cat4Rows = [];
+                    Object.keys(allOus).forEach(function (ou) {
+                        var rC = _ajRow(orgG[ou] || []);
+                        var rP = _ajRow(orgGPrev[ou] || []);
+                        if (rC.cat === 'Cat. 4' || rC.catAj === 'Cat. 4' || rP.cat === 'Cat. 4' || rP.catAj === 'Cat. 4') {
+                            cat4Rows.push({ ou: ou, c: rC, p: rP });
+                        }
+                    });
+
+                    if (!cat4Rows.length) {
+                        ajBox.innerHTML += '<div style="padding:18px;color:#16a34a;background:#f0fdf4;border-radius:6px;border:1px solid #86efac;font-style:italic">' +
+                            '✅ Aucun ' + gi.label + ' Cat. 4 (cible brute ou ajustée) sur l\'une des deux périodes.</div>';
+                    } else {
+                        cat4Rows.sort(function (a, b) { return a.ou.localeCompare(b.ou); });
+                        function _pctCell(v) {
+                            if (v === null || !isFinite(v)) return '<td style="text-align:right;color:#bbb">–</td>';
+                            return '<td style="background:' + _cvColor(v) + ';color:#fff;text-align:right;font-weight:700">' + v.toFixed(1) + '%</td>';
+                        }
+                        function _catCell(c2) { return '<td style="text-align:center;background:' + _catColor(c2) + ';color:#fff;font-weight:700">' + c2 + '</td>'; }
+                        var aH = '<div style="overflow-x:auto;max-height:540px"><table class="dt" style="font-size:10px;white-space:nowrap"><thead>' +
+                            '<tr style="background:#0b3a6f;color:#fff">' +
+                            '<th rowspan="2" style="position:sticky;left:0;background:#0b3a6f;z-index:2;min-width:150px">' + gi.label + '</th>' +
+                            '<th colspan="4" style="text-align:center">DTC1</th>' +
+                            '<th colspan="4" style="text-align:center">DTC3</th>' +
+                            '<th colspan="2" style="text-align:center">Catégorie ' + curLbl + '</th>' +
+                            '<th colspan="2" style="text-align:center">Catégorie ' + prevLbl + '</th>' +
+                            '</tr><tr style="background:#0b3a6f;color:#fff">' +
+                            '<th>' + curLbl + '</th><th>' + curLbl + ' AJ.</th><th>' + prevLbl + '</th><th>' + prevLbl + ' AJ.</th>' +
+                            '<th>' + curLbl + '</th><th>' + curLbl + ' AJ.</th><th>' + prevLbl + '</th><th>' + prevLbl + ' AJ.</th>' +
+                            '<th>brute</th><th>ajustée</th><th>brute</th><th>ajustée</th>' +
+                            '</tr></thead><tbody>';
+                        cat4Rows.forEach(function (row, idx) {
+                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                            aH += '<tr style="background:' + bg + '">' +
+                                '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(row.ou, 30) + '</td>' +
+                                _pctCell(row.c.cv1) + _pctCell(row.c.cv1Aj) + _pctCell(row.p.cv1) + _pctCell(row.p.cv1Aj) +
+                                _pctCell(row.c.cv3) + _pctCell(row.c.cv3Aj) + _pctCell(row.p.cv3) + _pctCell(row.p.cv3Aj) +
+                                _catCell(row.c.cat) + _catCell(row.c.catAj) + _catCell(row.p.cat) + _catCell(row.p.catAj) +
+                                '</tr>';
+                        });
+                        aH += '</tbody></table></div>';
+                        aH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Cible ajustée = cible brute × complétude de rapportage. ' +
+                            cat4Rows.length + ' ' + gi.label.toLowerCase() + (cat4Rows.length > 1 ? 's' : '') + ' Cat. 4 dynamiquement détecté' + (cat4Rows.length > 1 ? 's' : '') + '.</em></p>';
+                        ajBox.innerHTML += aH;
+                    }
+                    c.appendChild(ajBox);
+                })();
+
+                /* ── Graphique catégorisation des org units (curr vs prev) ── */
+                var catCmpBox = E('div', 'cb');
+                catCmpBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Catégorisation des ' + gi.label + ' au ' + curLbl + ' vs ' + prevLbl + '</h4>' +
+                    '<div style="height:380px;position:relative"><canvas id="cmpCatChart"></canvas></div>';
+                c.appendChild(catCmpBox);
+
+                /* ── Graphiques par antigène (curr vs prev, top 25) ── */
+                var grAntigens2 = ['BCG','DTC1','DTC3','VPO3','PCV13_3','ROTA3','VAR1','VAA','VPI1','VPI2','VAR2','TD'].filter(_agSel);
+                var grHTML = grAntigens2.map(function (ag) {
+                    return '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cmpGr_' + ag + '"></canvas></div>';
+                }).join('');
+                var grBox = E('div', 'cb');
+                grBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 CV par antigène — ' + gi.label + ' : ' + curLbl + ' vs ' + prevLbl + '</h4>' +
+                    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px">' + grHTML + '</div>';
+                c.appendChild(grBox);
+
+                /* ── Taux d'abandon Penta1-Penta3 par org unit (curr vs prev) ── */
+                var abBox = E('div', 'cb');
+                abBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📉 Taux d\'abandon Penta1–Penta3 par ' + gi.label + ' — ' + curLbl + ' vs ' + prevLbl + '</h4>' +
+                    '<div style="height:420px;position:relative"><canvas id="cmpAbChart"></canvas></div>';
+                c.appendChild(abBox);
+
+                /* ── Render charts after DOM paint ── */
+                setTimeout(function () {
+                    /* Catégorisation comparée */
+                    var xCat = document.getElementById('cmpCatChart');
+                    if (xCat) {
+                        function _catCount(orgGroup) {
+                            var cnt = { 'Cat. 1': 0, 'Cat. 2': 0, 'Cat. 3': 0, 'Cat. 4': 0 };
+                            Object.keys(orgGroup).forEach(function (ou) {
+                                var recs = orgGroup[ou];
+                                var t = _cvTargets(recs, n_periods, gi.dedupKey);
+                                var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                                var cv1 = t.ns > 0 ? d1 / t.ns * 100 : null;
+                                var ab = _safeDiv(d1 - d3, d1);
+                                var cat = _categorize(cv1, ab !== null ? ab * 100 : null);
+                                if (cnt.hasOwnProperty(cat)) cnt[cat]++;
+                            });
+                            return cnt;
+                        }
+                        var cntC = _catCount(orgG), cntP = _catCount(orgGPrev);
+                        S.charts.cmpCatChart = new Chart(xCat, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Cat1', 'Cat2', 'Cat3', 'Cat4'],
+                                datasets: [
+                                    { label: prevLbl, data: ['Cat. 1','Cat. 2','Cat. 3','Cat. 4'].map(function (k) { return cntP[k] || 0; }), backgroundColor: 'rgba(33,150,243,0.8)', borderRadius: 3 },
+                                    { label: curLbl, data: ['Cat. 1','Cat. 2','Cat. 3','Cat. 4'].map(function (k) { return cntC[k] || 0; }), backgroundColor: 'rgba(255,152,0,0.85)', borderRadius: 3 }
+                                ]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { position: 'top', labels: { font: { size: 12 } } }, title: { display: false } },
+                                scales: { y: { beginAtZero: true, title: { display: true, text: 'Nombre de ' + gi.label } } }
+                            }
+                        });
+                    }
+
+                    /* Charts par antigène */
+                    grAntigens2.forEach(function (ag) {
+                        var x = document.getElementById('cmpGr_' + ag);
+                        if (!x) return;
+                        var field = AG_FIELD_MAP[ag]; if (!field) return;
+                        var useNV = (ag === 'BCG' || ag === 'TD');
+                        var lbls = [], curVals = [], prevVals = [];
+                        orgNames.slice(0, 25).forEach(function (ou) {
+                            var rC = orgG[ou] || [], rP = orgGPrev[ou] || [];
+                            var tC = _cvTargets(rC, n_periods, gi.dedupKey);
+                            var tP = _cvTargets(rP, n_periods, gi.dedupKey);
+                            var dC = _cvSum(rC, field), dP = _cvSum(rP, field);
+                            var denC = useNV ? tC.nv : tC.ns;
+                            var denP = useNV ? tP.nv : tP.ns;
+                            lbls.push(tr(ou, 18));
+                            curVals.push(denC > 0 ? +(dC / denC * 100).toFixed(1) : 0);
+                            prevVals.push(denP > 0 ? +(dP / denP * 100).toFixed(1) : 0);
+                        });
+                        S.charts['cmpGr_' + ag] = new Chart(x, {
+                            type: 'bar',
+                            data: {
+                                labels: lbls,
+                                datasets: [
+                                    { label: prevLbl, data: prevVals, backgroundColor: 'rgba(33,150,243,0.8)', borderRadius: 2 },
+                                    { label: curLbl, data: curVals, backgroundColor: 'rgba(255,152,0,0.85)', borderRadius: 2 }
+                                ]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top', labels: { font: { size: 11 }, usePointStyle: true } },
+                                    title: { display: true, text: 'CV ' + ag + ' — ' + curLbl + ' vs ' + prevLbl, font: { size: 12, weight: 'bold' }, color: '#0b3a6f' }
+                                },
+                                scales: { y: { beginAtZero: true, max: 130, title: { display: true, text: 'CV (%)' } }, x: { ticks: { font: { size: 9 }, maxRotation: 55 } } }
+                            }
+                        });
+                    });
+
+                    /* Abandon comparé (top 25) */
+                    var xAb = document.getElementById('cmpAbChart');
+                    if (xAb) {
+                        var lbls = [], curAb = [], prevAb = [];
+                        orgNames.slice(0, 25).forEach(function (ou) {
+                            var rC = orgG[ou] || [], rP = orgGPrev[ou] || [];
+                            var d1C = _cvSum(rC, 'DTC1_0_11'), d3C = _cvSum(rC, 'DTC3_0_11');
+                            var d1P = _cvSum(rP, 'DTC1_0_11'), d3P = _cvSum(rP, 'DTC3_0_11');
+                            var aC = _safeDiv(d1C - d3C, d1C), aP = _safeDiv(d1P - d3P, d1P);
+                            lbls.push(tr(ou, 18));
+                            curAb.push(aC !== null ? +(aC * 100).toFixed(1) : 0);
+                            prevAb.push(aP !== null ? +(aP * 100).toFixed(1) : 0);
+                        });
+                        S.charts.cmpAbChart = new Chart(xAb, {
+                            type: 'bar',
+                            data: {
+                                labels: lbls,
+                                datasets: [
+                                    { label: 'Abandon ' + prevLbl, data: prevAb, backgroundColor: 'rgba(33,150,243,0.8)', borderRadius: 2 },
+                                    { label: 'Abandon ' + curLbl, data: curAb, backgroundColor: 'rgba(220,38,38,0.85)', borderRadius: 2 }
+                                ]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, title: { display: false } },
+                                scales: { y: { title: { display: true, text: '%' } }, x: { ticks: { font: { size: 9 }, maxRotation: 55 } } }
+                            }
+                        });
+                    }
                 }, 120);
             });
         }
@@ -4743,6 +5478,8 @@
                     { ag: 'VAP3', lbl: 'VAP 3', useNV: false },
                     { ag: 'VAP4', lbl: 'VAP 4 (12-23m)', useNV: false }
                 ]);
+                /* Filtre antigènes utilisateur */
+                ALL_AGS = ALL_AGS.filter(function (a) { return _agSel(a.ag); });
 
                 var months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
                 var monthLabels = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
