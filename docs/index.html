@@ -3820,11 +3820,11 @@
 
         /* ═══ DONNÉES LOGISTIQUES ═══ */
         function _userLvl() {
-            var f = S.filters, c = S.cascaded || {};
-            if (f.fosa && f.fosa.length === 1 && c.fosa && c.fosa.length > 1) return 'fosa';
-            if (f.as && f.as.length === 1 && c.as && c.as.length > 1) return 'as';
-            if (f.zs && f.zs.length === 1 && c.zs && c.zs.length > 1) return 'zs';
-            if (f.antenne && f.antenne.length === 1 && c.antenne && c.antenne.length > 1) return 'antenne';
+            var f = S.filters;
+            if (f.fosa && f.fosa.length === 1) return 'fosa';
+            if (f.as && f.as.length === 1) return 'as';
+            if (f.zs && f.zs.length === 1) return 'zs';
+            if (f.antenne && f.antenne.length === 1) return 'antenne';
             if (f.province) return 'province';
             return 'national';
         }
@@ -4361,7 +4361,7 @@
                         var d = _hmData[ou] && _hmData[ou][it.pfx];
                         if (!d) return;
                         if (d.hasRup) rupCount[it.pfx]++;
-                        if (d.ts !== null && d.ts < 50) satCount[it.pfx]++;
+                        if (d.ts !== null && d.ts < LOGIST_NORMS.satisf) satCount[it.pfx]++;
                         if (d.td !== null && d.td < LOGIST_NORMS.dispo) disCount[it.pfx]++;
                     });
                 });
@@ -4398,11 +4398,11 @@
                 });
                 ph += '</tr>';
 
-                /* Row 3: Nb satisf <50% */
-                ph += '<tr><td style="' + thR + '">Nb satisfaction &lt;50%</td>';
+                /* Row 3: Nb satisf <norm */
+                ph += '<tr><td style="' + thR + '">Nb satisfaction &lt;' + LOGIST_NORMS.satisf + '%</td>';
                 LOGIST_FIELDS.forEach(function(it) {
                     var v = satCount[it.pfx];
-                    ph += '<td style="' + tdS + ';background:' + _bg(v, total) + '" title="' + v + '/' + total + ' ' + ol.l + 's avec satisfaction &lt;50% pour ' + (abbr[it.pfx] || it.pfx) + '">' + v + '</td>';
+                    ph += '<td style="' + tdS + ';background:' + _bg(v, total) + '" title="' + v + '/' + total + ' ' + ol.l + 's avec satisfaction &lt;' + LOGIST_NORMS.satisf + '% pour ' + (abbr[it.pfx] || it.pfx) + '">' + v + '</td>';
                 });
                 ph += '</tr>';
 
