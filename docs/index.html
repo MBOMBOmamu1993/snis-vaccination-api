@@ -1181,13 +1181,15 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
+                var [mR, pR, zR, hmR, fosaR, asR, zsLogR, asLogIdx] = await Promise.all([
                     fetchGzip(BASE + '/meta.json'),
                     fetchGzip(BASE + '/by_province.json.gz'),
                     fetchGzip(BASE + '/by_zs.json.gz'),
                     fetchGzip(BASE + '/heatmap/manifest.json.gz').catch(function () { return {}; }),
                     fetchGzip(BASE + '/by_fosa/manifest.json.gz').catch(function () { return {}; }),
-                    fetchGzip(BASE + '/by_as/manifest.json.gz').catch(function () { return {}; })
+                    fetchGzip(BASE + '/by_as/manifest.json.gz').catch(function () { return {}; }),
+                    fetchGzip('./data_zs/dashboard/by_zs.json.gz').catch(function () { return []; }),
+                    fetchGzip('./data_as/dashboard/by_as/manifest.json.gz').catch(function () { return {}; })
                 ]);
                                 sp(40, 'Parsing...');
                 S.meta = mR;
@@ -1203,6 +1205,11 @@
                 sp(55, 'Transformation ZS...');
                 S.zsData = byZS.map(transformRecord);
                 S.data = S.zsData;
+
+                /* Données logistiques agrégées ZS */
+                S.zsLogData = (zsLogR || []).map(transformRecord);
+                S.asLogIndex = asLogIdx || {};
+                S.asLogCache = {}; S.asLogTCache = {};
 
                 if (byZS.length > 0) {
                     console.log('=== PREMIER ENREGISTREMENT by_zs ===');
@@ -1352,6 +1359,20 @@
 
             S.fosaData = S.fosaTCache[prov];
             S.asData = S.asTCache[prov];
+
+            /* Charger données logistiques AS (agrégation indépendante data_as) */
+            if (!S.asLogTCache[prov]) {
+                var asLogFile = S.asLogIndex[prov];
+                if (asLogFile && !S.asLogCache[prov]) {
+                    try {
+                        var asLogRaw = await fetchGzip('./data_as/dashboard/by_as/' + asLogFile);
+                        S.asLogCache[prov] = asLogRaw || [];
+                    } catch (e) { S.asLogCache[prov] = []; }
+                }
+                var ald = S.asLogCache[prov];
+                S.asLogTCache[prov] = (ald && ald.length) ? ald.map(transformRecord) : [];
+            }
+            S.asLogData = S.asLogTCache[prov] || [];
 
             /* Utiliser le niveau le plus fin disponible */
             if (S.fosaData.length) S.data = S.fosaData;
@@ -3800,29 +3821,51 @@
         }
 
         /* ═══ DONNÉES LOGISTIQUES ═══ */
+        function _userLvl() {
+            var f = S.filters, c = S.cascaded || {};
+            if (f.fosa && f.fosa.length === 1 && c.fosa && c.fosa.length > 1) return 'fosa';
+            if (f.as && f.as.length === 1 && c.as && c.as.length > 1) return 'as';
+            if (f.zs && f.zs.length === 1 && c.zs && c.zs.length > 1) return 'zs';
+            if (f.antenne && f.antenne.length === 1 && c.antenne && c.antenne.length > 1) return 'antenne';
+            if (f.province) return 'province';
+            return 'national';
+        }
         function rLog(c) {
             var D = S.flt, AD = S.data;
             var f = S.filters;
             var ol = getOrgLevel(D);
 
-            /* ── Données logistiques au niveau approprié (évite cumul FOSA→ZS) ──
-               FOSA level (f.as.length===1) : données FOSA filtrées (D/S.flt)
-               AS level   (f.zs.length===1) : données agrégées par AS (S.asData)
-               ZS level   (province/national): données agrégées par ZS (S.zsData) */
+            /* ── Données logistiques au niveau approprié (multi-base) ──
+               Chaque niveau utilise sa propre base d'agrégation pour éviter
+               les incohérences entre graphiques et rapport logistique.
+               ol = niveau de détail (getOrgLevel via D)  |  LD = résumé. */
+            var ul = _userLvl();
             var LD;
-            if (ol.k === 'org5') {
+            if (ul === 'fosa') {
                 LD = D;
-            } else if (ol.k === 'org4') {
-                LD = (S.asData || []).filter(function (r) {
+            } else if (ul === 'as') {
+                LD = (S.asLogData || []).filter(function (r) {
                     if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
+                    if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
+                    if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                    if (f.as && f.as.length && f.as.indexOf(r.org4) < 0) return false;
+                    return true;
+                });
+            } else if (ul === 'zs') {
+                var _zsLogBase = (S.zsLogData || []);
+                LD = _zsLogBase.filter(function (r) {
+                    if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
+                    if (f.province && r.org2 !== f.province) return false;
                     if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
                     if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
                     return true;
                 });
             } else {
-                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
-                LD = _zsBase.filter(function (r) {
+                /* Province / Antenne / National */
+                var _zsLogBase = (S.zsLogData || []);
+                LD = _zsLogBase.filter(function (r) {
                     if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
+                    if (f.province && r.org2 !== f.province) return false;
                     if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
                     return true;
                 });
@@ -4009,10 +4052,10 @@
                 var kpiPerte = (_kpiAdminTot + _kpiPerduTot) > 0 ? _kpiPerduTot / (_kpiAdminTot + _kpiPerduTot) * 100 : null;
 
                 // Heatmap : stats par OU × antigène/intrant
-                _ouKeys = Object.keys(grp(LD, function(r) { return r[ol.k]; })).filter(Boolean).sort();
+                _ouKeys = Object.keys(grp(D, function(r) { return r[ol.k]; })).filter(Boolean).sort();
                 _ouKeys.forEach(function(ou) {
                     _hmData[ou] = {};
-                    var ouRecs = LD.filter(function(r) { return r[ol.k] === ou; });
+                    var ouRecs = D.filter(function(r) { return r[ol.k] === ou; });
                     LOGIST_FIELDS.forEach(function(it) {
                         var totRup = 0, totDays = 0, totRcv = 0, totCmd = 0, totAdm = 0, totPerd = 0, n = 0;
                         ouRecs.forEach(function(r) {
@@ -4431,10 +4474,10 @@
 
             /* ── Rapport logistique — tableau plat ── */
             var niv = '';
-            if (f.fosa && f.fosa.length === 1) niv = f.fosa[0];
-            else if (f.as && f.as.length === 1) niv = f.as[0];
-            else if (f.zs && f.zs.length === 1) niv = f.zs[0];
-            else if (f.antenne && f.antenne.length === 1) niv = f.antenne[0];
+            if (ul === 'fosa') niv = f.fosa[0];
+            else if (ul === 'as') niv = f.as[0];
+            else if (ul === 'zs') niv = f.zs[0];
+            else if (ul === 'antenne') niv = f.antenne[0];
             else if (f.province) niv = f.province;
             else niv = 'National';
             var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
@@ -4465,25 +4508,24 @@
 
             LOGIST_FIELDS.forEach(function (item, idx) {
                 var p = item.pfx;
-                var stk = sf(D, p + '_stock_d_but');
-                var rcv = sf(D, p + '_re_ues');
-                var used = sf(D, p + '_utilis_es');
-                var admin = sf(D, p + '_administr_es'); // Fixed: use standardized logistical administr_es key
-                var perdu = sf(D, p + '_pertes');
-                // Perdue vide mais utilisée & administrée existent → Perdue = Utilisée − Administrée
+                var stk = sf(LD, p + '_stock_d_but');
+                var rcv = sf(LD, p + '_re_ues');
+                var used = sf(LD, p + '_utilis_es');
+                var admin = sf(LD, p + '_administr_es');
+                var perdu = sf(LD, p + '_pertes');
                 if ((!perdu || perdu <= 0) && used > 0 && admin > 0 && used > admin) {
                     perdu = used - admin;
                 }
                 var denom = (admin || 0) + (perdu || 0);
                 var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
 
-                var jrs = sf(D, p + '_jours_rupture');
-                var sdu = sf(D, p + '_stock_fin'); // SDU = Stock Fin
-                var smax = sf(D, p + '_stock_max');
-                var qcmd = sf(D, p + '_qte_a_commander');
-                var cmm = sf(D, p + '_cmm');
-                var aj = sf(D, p + '_ajustement');
-                var msd = sf(D, p + '_msd');
+                var jrs = sf(LD, p + '_jours_rupture');
+                var sdu = sf(LD, p + '_stock_fin');
+                var smax = sf(LD, p + '_stock_max');
+                var qcmd = sf(LD, p + '_qte_a_commander');
+                var cmm = sf(LD, p + '_cmm');
+                var aj = sf(LD, p + '_ajustement');
+                var msd = sf(LD, p + '_msd');
 
                 var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 h += '<tr style="background:' + bg + '">';
