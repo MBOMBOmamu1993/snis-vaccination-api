@@ -3813,19 +3813,23 @@
             if (ol.k === 'org5') {
                 LD = D;
             } else if (ol.k === 'org4') {
-                LD = (S.asData || []).filter(function (r) {
+                var _asSrc = (S.asData && S.asData.length) ? S.asData.filter(function (r) {
+                    if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
+                    if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
+                    if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                    return true;
+                }) : [];
+                LD = _asSrc.length ? _asSrc : D;
+            } else {
+                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
+                var _zsSrc = _zsBase.filter(function (r) {
+                    if (f.province && r.org2 !== f.province) return false;
                     if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
                     if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
                     if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
                     return true;
                 });
-            } else {
-                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
-                LD = _zsBase.filter(function (r) {
-                    if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
-                    if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
-                    return true;
-                });
+                LD = _zsSrc.length ? _zsSrc : D;
             }
 
             /* ── Cards complétude logistique ── */
@@ -3876,6 +3880,10 @@
             var klBox; /* déclaré ici pour être accessible hors de l'IIFE */
             var _hmData = {}; /* données heatmap — accessibles hors de l'IIFE */
             var _ouKeys = []; /* clés d'org units pour la heatmap */
+            var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
+                (f.period && f.period.length > 1
+                    ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
+                    : 'Toutes périodes');
             (function () {
                 var KL_VAC = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') === 0; });
                 var KL_CON = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') !== 0; });
@@ -4043,11 +4051,6 @@
                         };
                     });
                 });
-
-                var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
-                    (f.period && f.period.length > 1
-                        ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
-                        : 'Toutes périodes');
 
                 var _fmtKpi = function (v, sfx) { return v !== null ? v.toFixed(1) + sfx : '—'; };
                 var _kpiDispoCol = kpiDispo !== null ? (kpiDispo >= 80 ? '#27ae60' : kpiDispo >= 50 ? '#f39c12' : '#e74c3c') : '#888';
