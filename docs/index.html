@@ -3875,14 +3875,18 @@
                     });
                 }
 
-                /* Jours de disponibilité — moyenne par FOSA dans le scope.
-                   30 j / mois : rupture (_jours_rupture), reste classé via MSD :
-                   <0,5 mois → <Réserve ; >Smaxi → >Smaxi (Smaxi = stock_max/CMM, défaut 3 mois) ; sinon adéquat. */
+                /* Jours de disponibilité — somme cumulée sur tous les couples
+                   (FOSA × mois) du scope, pour rester cohérent avec le tableau
+                   de rapport logistique plus bas (qui somme également).
+                   Pour chaque enregistrement (1 mois pour 1 FOSA) :
+                     • rupture = _jours_rupture (somme directe, pas de clamp)
+                     • le reste de mois (30 j − rupture, planché à 0) classé
+                       via le MSD : <0,5 mois → <Réserve ; >Smaxi → >Smaxi
+                       (Smaxi = stock_max/CMM, défaut 3 mois) ; sinon adéquat. */
                 function _daysByItem(items) {
                     return items.map(function (it) {
-                        var byOu = {};
+                        var sumRup = 0, sumRes = 0, sumSmx = 0, sumAdq = 0;
                         D.forEach(function (r) {
-                            var ou = r.org5 || r[ol.k]; if (!ou) return;
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var sf = Number(r[it.pfx + '_stock_fin']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
@@ -3893,23 +3897,15 @@
                             var smaxMo = (smax > 0 && cmm > 0) ? smax / cmm : 3;
                             var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
                             if (!hasItem) return;
-                            rup = Math.max(0, Math.min(30, rup));
-                            var nonRup = 30 - rup;
-                            var b = byOu[ou] || (byOu[ou] = { rup: 0, res: 0, smx: 0, adq: 0, n: 0 });
-                            b.rup += rup; b.n++;
-                            if (msd < 0.5) b.res += nonRup;
-                            else if (msd > smaxMo) b.smx += nonRup;
-                            else b.adq += nonRup;
+                            sumRup += rup;
+                            var nonRup = Math.max(0, 30 - Math.min(30, rup));
+                            if (msd < 0.5) sumRes += nonRup;
+                            else if (msd > smaxMo) sumSmx += nonRup;
+                            else sumAdq += nonRup;
                         });
-                        var keys = Object.keys(byOu);
-                        var n = keys.length || 1;
-                        var s = keys.reduce(function (a, k) {
-                            a.rup += byOu[k].rup; a.res += byOu[k].res; a.smx += byOu[k].smx; a.adq += byOu[k].adq;
-                            return a;
-                        }, { rup: 0, res: 0, smx: 0, adq: 0 });
                         return {
                             lbl: it.lbl.replace(/^Vaccin\s+/, ''),
-                            rup: s.rup / n, res: s.res / n, smx: s.smx / n, adq: s.adq / n
+                            rup: sumRup, res: sumRes, smx: sumSmx, adq: sumAdq
                         };
                     });
                 }
@@ -3930,7 +3926,8 @@
                     '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé par FOSA puis sommé sur le scope. ' +
                     'Couverture annuelle = Σ reçues / Σ (CMM_FOSA × 12). ' +
                     'Disponibilité « reçues par programme » = Σ reçues / Σ (CMM_FOSA × ' + _nPeriods + ' mois sélectionnés). ' +
-                    'Jours de disponibilité : moyenne par FOSA, rupture = jours de rupture déclarés, reste classé via le MSD ' +
+                    'Jours de disponibilité : somme cumulée sur les FOSA × mois du scope (cohérente avec le rapport logistique). ' +
+                    'Rupture = Σ jours de rupture déclarés ; reste de chaque mois (30 j − rupture) classé via le MSD ' +
                     '(&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
