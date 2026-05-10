@@ -3945,7 +3945,8 @@
                         });
                         return {
                             lbl: it.lbl.replace(/^Vaccin\s+/, ''),
-                            rup: sumRup, res: sumRes, smx: sumSmx, adq: sumAdq
+                            rup: sumRup, res: sumRes, smx: sumSmx, adq: sumAdq,
+                            dispoRate: (sumRup + sumRes + sumSmx + sumAdq) > 0 ? ((sumRes + sumSmx + sumAdq) / (sumRup + sumRes + sumSmx + sumAdq) * 100) : null
                         };
                     });
                 }
@@ -4068,14 +4069,20 @@
                     'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
                     'Jours de disponibilité : rupture plafonnée à 30 j/mois par unité, classée via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de satisfaction des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de satisfaction des besoins en intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de disponibilité des intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de perte des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de perte des intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
+                    /* ═══ 6 GRAPHIQUES ORIGINAUX ═══ */
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en matériels d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité du matériel d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité vaccins : doses reçues par dose programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité consommables : unités reçues par unité programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
+                    /* ═══ 6 NOUVEAUX GRAPHIQUES INDICATEURS (Taux %) ═══ */
+                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de disponibilité des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de disponibilité des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de satisfaction des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de satisfaction des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de perte des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de perte des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
                     '</div>';
 
                 var klDataLabels = {
@@ -4197,12 +4204,53 @@
                             }
                         });
                     }
+                    /* Bar % avec seuil — couleurs selon norme (vert ≥ norme, jaune limite, rouge < norme) */
+                    function _drawPctBar(canvasId, data, key, label, isHigherBetter, norm) {
+                        var x = document.getElementById(canvasId); if (!x) return;
+                        var sorted = data.slice().filter(function (d) { return d[key] !== null && d[key] !== undefined && isFinite(d[key]); })
+                            .sort(function (a, b) { return isHigherBetter ? b[key] - a[key] : a[key] - b[key]; });
+                        if (!sorted.length) return;
+                        S.charts[canvasId] = new Chart(x, {
+                            type: 'bar',
+                            data: {
+                                labels: sorted.map(function (d) { return d.lbl; }),
+                                datasets: [{
+                                    label: label,
+                                    data: sorted.map(function (d) { return +d[key].toFixed(1); }),
+                                    backgroundColor: sorted.map(function (d) {
+                                        var v = d[key];
+                                        if (isHigherBetter) {
+                                            return v >= norm ? '#27ae60' : v >= norm * 0.75 ? '#f4a800' : '#dc2626';
+                                        } else {
+                                            return v <= norm ? '#27ae60' : v <= norm * 1.5 ? '#f4a800' : '#dc2626';
+                                        }
+                                    }),
+                                    borderRadius: 2
+                                }]
+                            },
+                            plugins: [klDataLabels],
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    klDataLabels: { show: true, fmt: function (v) { return v.toFixed(1) + '%'; } }
+                                },
+                                scales: { y: { beginAtZero: true, max: 100, ticks: { callback: function (v) { return v + '%'; } } }, x: { ticks: { font: { size: 9 }, maxRotation: 45 } } }
+                            }
+                        });
+                    }
+                    /* 6 graphiques originaux */
                     _drawCov('klCovVac', covVac, '#1d4ed8');
                     _drawCov('klCovCon', covCon, '#dc2626');
                     _drawDays('klDayVac', dayVac);
                     _drawDays('klDayCon', dayCon);
                     _drawRatio('klRatVac', covVac, '#1d4ed8');
                     _drawRatio('klRatCon', covCon, '#dc2626');
+                    /* 6 nouveaux graphiques de taux (%) */
+                    _drawPctBar('klDispoVac', dayVac, 'dispoRate', 'Taux de disponibilité %', true, LOGIST_NORMS.dispo);
+                    _drawPctBar('klDispoCon', dayCon, 'dispoRate', 'Taux de disponibilité %', true, LOGIST_NORMS.dispo);
+                    _drawPctBar('klSatisfVac', covVac, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
+                    _drawPctBar('klSatisfCon', covCon, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
                     _drawLoss('klLossVac', lossVac);
                     _drawLoss('klLossCon', lossCon);
                     // Heatmap rendering
