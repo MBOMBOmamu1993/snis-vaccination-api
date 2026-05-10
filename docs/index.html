@@ -1181,14 +1181,13 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                var [mR, pR, zR, hmR, fosaR, asR, zsLogR, asLogIdx] = await Promise.all([
+                var [mR, pR, zR, hmR, fosaR, asR, asLogIdx] = await Promise.all([
                     fetchGzip(BASE + '/meta.json'),
                     fetchGzip(BASE + '/by_province.json.gz'),
                     fetchGzip(BASE + '/by_zs.json.gz'),
                     fetchGzip(BASE + '/heatmap/manifest.json.gz').catch(function () { return {}; }),
                     fetchGzip(BASE + '/by_fosa/manifest.json.gz').catch(function () { return {}; }),
                     fetchGzip(BASE + '/by_as/manifest.json.gz').catch(function () { return {}; }),
-                    fetchGzip('./data_zs/dashboard/by_zs.json.gz').catch(function () { return []; }),
                     fetchGzip('./data_as/dashboard/by_as/manifest.json.gz').catch(function () { return {}; })
                 ]);
                                 sp(40, 'Parsing...');
@@ -1206,8 +1205,7 @@
                 S.zsData = byZS.map(transformRecord);
                 S.data = S.zsData;
 
-                /* Données logistiques agrégées ZS */
-                S.zsLogData = (zsLogR || []).map(transformRecord);
+                /* Index pour données logistiques AS (agrégation indépendante) */
                 S.asLogIndex = asLogIdx || {};
                 S.asLogCache = {}; S.asLogTCache = {};
 
@@ -3852,8 +3850,8 @@
                     return true;
                 });
             } else if (ul === 'zs') {
-                var _zsLogBase = (S.zsLogData || []);
-                LD = _zsLogBase.filter(function (r) {
+                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
+                LD = _zsBase.filter(function (r) {
                     if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
                     if (f.province && r.org2 !== f.province) return false;
                     if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
@@ -3862,14 +3860,20 @@
                 });
             } else {
                 /* Province / Antenne / National */
-                var _zsLogBase = (S.zsLogData || []);
-                LD = _zsLogBase.filter(function (r) {
+                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
+                LD = _zsBase.filter(function (r) {
                     if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
                     if (f.province && r.org2 !== f.province) return false;
                     if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
                     return true;
                 });
             }
+
+            /* Label période commun (utilisé aussi par synthèse pivot) */
+            var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
+                (f.period && f.period.length > 1
+                    ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
+                    : 'Toutes périodes');
 
             /* ── Cards complétude logistique ── */
             var cardBox = E('div', 'cb');
@@ -4086,11 +4090,6 @@
                         };
                     });
                 });
-
-                var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
-                    (f.period && f.period.length > 1
-                        ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
-                        : 'Toutes périodes');
 
                 var _fmtKpi = function (v, sfx) { return v !== null ? v.toFixed(1) + sfx : '—'; };
                 var _kpiDispoCol = kpiDispo !== null ? (kpiDispo >= 80 ? '#27ae60' : kpiDispo >= 50 ? '#f39c12' : '#e74c3c') : '#888';
