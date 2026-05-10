@@ -3842,13 +3842,16 @@
                 D.forEach(function (r) { if (r.period) _periodsInD[r.period] = 1; });
                 var _nPeriods = Math.max(1, Object.keys(_periodsInD).length);
 
-                /* Pour chaque item : groupe les records par OU, calcule la CMM
-                   moyenne par OU puis agrège. */
+                /* Pour chaque item : on groupe TOUJOURS au niveau FOSA (org5)
+                   pour éviter de mélanger des CMM/reçues d'unités hétérogènes.
+                   La CMM moyenne se calcule par FOSA, puis on somme les besoins
+                   annuels (CMM × 12) et de période (CMM × n_periodes) à travers
+                   les FOSA du scope. */
                 function _coverageByItem(items) {
                     return items.map(function (it) {
                         var byOu = {};
                         D.forEach(function (r) {
-                            var ou = r[ol.k]; if (!ou) return;
+                            var ou = r.org5 || r[ol.k]; if (!ou) return;
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
                             var b = byOu[ou] || (byOu[ou] = { recu: 0, cmmSum: 0, cmmN: 0 });
@@ -3872,14 +3875,14 @@
                     });
                 }
 
-                /* Jours de disponibilité — moyenne par AS dans le scope.
+                /* Jours de disponibilité — moyenne par FOSA dans le scope.
                    30 j / mois : rupture (_jours_rupture), reste classé via MSD :
                    <0,5 mois → <Réserve ; >Smaxi → >Smaxi (Smaxi = stock_max/CMM, défaut 3 mois) ; sinon adéquat. */
                 function _daysByItem(items) {
                     return items.map(function (it) {
                         var byOu = {};
                         D.forEach(function (r) {
-                            var ou = r[ol.k]; if (!ou) return;
+                            var ou = r.org5 || r[ol.k]; if (!ou) return;
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var sf = Number(r[it.pfx + '_stock_fin']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
@@ -3924,9 +3927,10 @@
                 var klBox = E('div', 'cb');
                 klBox.innerHTML =
                     '<h4 style="color:#0b3a6f;margin:0 0 6px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
-                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Couverture annuelle = Σ reçues / (CMM moyen × 12). ' +
-                    'Disponibilité « reçues par programme » = Σ reçues / (CMM moyen × ' + _nPeriods + ' mois sélectionnés). ' +
-                    'Jours de disponibilité : moyenne par ' + ol.l + ', rupture = jours de rupture déclarés, reste classé via le MSD ' +
+                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé par FOSA puis sommé sur le scope. ' +
+                    'Couverture annuelle = Σ reçues / Σ (CMM_FOSA × 12). ' +
+                    'Disponibilité « reçues par programme » = Σ reçues / Σ (CMM_FOSA × ' + _nPeriods + ' mois sélectionnés). ' +
+                    'Jours de disponibilité : moyenne par FOSA, rupture = jours de rupture déclarés, reste classé via le MSD ' +
                     '(&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
