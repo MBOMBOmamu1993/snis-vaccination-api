@@ -3788,6 +3788,29 @@
             var f = S.filters;
             var ol = getOrgLevel(D);
 
+            /* ── Données logistiques au niveau approprié (évite cumul FOSA→ZS) ──
+               FOSA level (f.as.length===1) : données FOSA filtrées (D/S.flt)
+               AS level   (f.zs.length===1) : données agrégées par AS (S.asData)
+               ZS level   (province/national): données agrégées par ZS (S.zsData) */
+            var LD;
+            if (ol.k === 'org5') {
+                LD = D;
+            } else if (ol.k === 'org4') {
+                LD = (S.asData || []).filter(function (r) {
+                    if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
+                    if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
+                    if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                    return true;
+                });
+            } else {
+                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
+                LD = _zsBase.filter(function (r) {
+                    if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
+                    if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
+                    return true;
+                });
+            }
+
             /* ── Cards complétude logistique ── */
             var cardBox = E('div', 'cb');
             cardBox.innerHTML = '<h4 style="color:#0b3a6f;margin-bottom:12px">📋 Complétude de rapportage des données logistiques</h4>';
@@ -3833,60 +3856,57 @@
                    • rupture = _jours_rupture
                    • <Réserve = MSD < 0,5 mois ; >Smaxi = MSD > stock_max/CMM
                      (défaut 3 mois) ; sinon adéquat. */
+            var klBox; /* déclaré ici pour être accessible hors de l'IIFE */
             (function () {
                 var KL_VAC = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') === 0; });
                 var KL_CON = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') !== 0; });
 
-                /* Périodes distinctes présentes dans les données filtrées */
-                var _periodsInD = {};
-                D.forEach(function (r) { if (r.period) _periodsInD[r.period] = 1; });
-                var _nPeriods = Math.max(1, Object.keys(_periodsInD).length);
+                /* Périodes distinctes dans les données au niveau approprié */
+                var _periodsInLD = {};
+                LD.forEach(function (r) { if (r.period) _periodsInLD[r.period] = 1; });
+                var _nPeriods = Math.max(1, Object.keys(_periodsInLD).length);
 
-                /* Pour chaque item : on groupe TOUJOURS au niveau FOSA (org5)
-                   pour éviter de mélanger des CMM/reçues d'unités hétérogènes.
-                   La CMM moyenne se calcule par FOSA, puis on somme les besoins
-                   annuels (CMM × 12) et de période (CMM × n_periodes) à travers
-                   les FOSA du scope. */
+                /* Couverture / satisfaction — groupé par unité org du niveau courant
+                   pour calculer la CMM moyenne par unité avant d'agréger. */
                 function _coverageByItem(items) {
                     return items.map(function (it) {
                         var byOu = {};
-                        D.forEach(function (r) {
-                            var ou = r.org5 || r[ol.k]; if (!ou) return;
+                        LD.forEach(function (r) {
+                            var ou = r[ol.k]; if (!ou) return;
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
-                            var b = byOu[ou] || (byOu[ou] = { recu: 0, cmmSum: 0, cmmN: 0 });
+                            var cmd = Number(r[it.pfx + '_qte_a_commander']) || 0;
+                            var b = byOu[ou] || (byOu[ou] = { recu: 0, cmmSum: 0, cmmN: 0, cmd: 0 });
                             b.recu += rcv;
+                            b.cmd += cmd;
                             if (cmm > 0) { b.cmmSum += cmm; b.cmmN++; }
                         });
-                        var totRecu = 0, totCmmAnn = 0, totCmmPer = 0;
+                        var totRecu = 0, totCmmAnn = 0, totCmmPer = 0, totCmd = 0;
                         Object.keys(byOu).forEach(function (k) {
                             var b = byOu[k];
                             var avgCmm = b.cmmN > 0 ? b.cmmSum / b.cmmN : 0;
                             totRecu += b.recu;
                             totCmmAnn += avgCmm * 12;
                             totCmmPer += avgCmm * _nPeriods;
+                            totCmd += b.cmd;
                         });
                         return {
                             lbl: it.lbl.replace(/^Vaccin\s+/, ''),
                             recu: totRecu,
                             covAnnual: totCmmAnn > 0 ? totRecu / totCmmAnn : null,
-                            dispoPer: totCmmPer > 0 ? totRecu / totCmmPer : null
+                            dispoPer: totCmmPer > 0 ? totRecu / totCmmPer : null,
+                            satisf: totCmd > 0 ? (totRecu / totCmd * 100) : null
                         };
                     });
                 }
 
-                /* Jours de disponibilité — somme cumulée sur tous les couples
-                   (FOSA × mois) du scope, pour rester cohérent avec le tableau
-                   de rapport logistique plus bas (qui somme également).
-                   Pour chaque enregistrement (1 mois pour 1 FOSA) :
-                     • rupture = _jours_rupture (somme directe, pas de clamp)
-                     • le reste de mois (30 j − rupture, planché à 0) classé
-                       via le MSD : <0,5 mois → <Réserve ; >Smaxi → >Smaxi
-                       (Smaxi = stock_max/CMM, défaut 3 mois) ; sinon adéquat. */
+                /* Jours de disponibilité — calculé sur les données du niveau courant.
+                   Chaque enregistrement représente 1 unité (FOSA/AS/ZS) × 1 mois.
+                   La rupture est plafonnée à 30 j pour éviter les dépassements. */
                 function _daysByItem(items) {
                     return items.map(function (it) {
                         var sumRup = 0, sumRes = 0, sumSmx = 0, sumAdq = 0;
-                        D.forEach(function (r) {
+                        LD.forEach(function (r) {
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var sf = Number(r[it.pfx + '_stock_fin']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
@@ -3897,8 +3917,9 @@
                             var smaxMo = (smax > 0 && cmm > 0) ? smax / cmm : 3;
                             var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
                             if (!hasItem) return;
+                            rup = Math.min(30, Math.max(0, rup));
                             sumRup += rup;
-                            var nonRup = Math.max(0, 30 - Math.min(30, rup));
+                            var nonRup = 30 - rup;
                             if (msd < 0.5) sumRes += nonRup;
                             else if (msd > smaxMo) sumSmx += nonRup;
                             else sumAdq += nonRup;
@@ -3910,34 +3931,94 @@
                     });
                 }
 
+                /* Taux de perte = pertes / (administrées + pertes) × 100 */
+                function _lossRateByItem(items) {
+                    return items.map(function (it) {
+                        var totPerdu = 0, totAdmin = 0;
+                        LD.forEach(function (r) {
+                            var admin = Number(r[it.pfx + '_administr_es']) || 0;
+                            var util = Number(r[it.pfx + '_utilis_es']) || 0;
+                            var perdu = Number(r[it.pfx + '_pertes']) || 0;
+                            if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin;
+                            totAdmin += admin;
+                            totPerdu += perdu;
+                        });
+                        var denom = totAdmin + totPerdu;
+                        return {
+                            lbl: it.lbl.replace(/^Vaccin\s+/, ''),
+                            perdu: totPerdu, admin: totAdmin,
+                            lossRate: denom > 0 ? (totPerdu / denom * 100) : null
+                        };
+                    });
+                }
+
                 var covVac = _coverageByItem(KL_VAC);
                 var covCon = _coverageByItem(KL_CON);
                 var dayVac = _daysByItem(KL_VAC);
                 var dayCon = _daysByItem(KL_CON);
+                var lossVac = _lossRateByItem(KL_VAC);
+                var lossCon = _lossRateByItem(KL_CON);
+
+                /* KPI globaux — Taux de disponibilité, satisfaction, perte */
+                var _kpiRupTot = 0, _kpiDaysTot = 0, _kpiRcvTot = 0, _kpiCmdTot = 0, _kpiPerduTot = 0, _kpiAdminTot = 0;
+                KL_VAC.concat(KL_CON).forEach(function (it) {
+                    LD.forEach(function (r) {
+                        var rup = Math.min(30, Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0));
+                        var rcv = Number(r[it.pfx + '_re_ues']) || 0;
+                        var sf = Number(r[it.pfx + '_stock_fin']) || 0;
+                        var cmm = Number(r[it.pfx + '_cmm']) || 0;
+                        var cmd = Number(r[it.pfx + '_qte_a_commander']) || 0;
+                        var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
+                        if (hasItem) { _kpiRupTot += rup; _kpiDaysTot += 30; }
+                        _kpiRcvTot += rcv;
+                        _kpiCmdTot += cmd;
+                    });
+                });
+                KL_VAC.forEach(function (it) {
+                    LD.forEach(function (r) {
+                        var admin = Number(r[it.pfx + '_administr_es']) || 0;
+                        var util = Number(r[it.pfx + '_utilis_es']) || 0;
+                        var perdu = Number(r[it.pfx + '_pertes']) || 0;
+                        if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin;
+                        _kpiAdminTot += admin;
+                        _kpiPerduTot += perdu;
+                    });
+                });
+                var kpiDispo = _kpiDaysTot > 0 ? (_kpiDaysTot - _kpiRupTot) / _kpiDaysTot * 100 : null;
+                var kpiSatisf = _kpiCmdTot > 0 ? _kpiRcvTot / _kpiCmdTot * 100 : null;
+                var kpiPerte = (_kpiAdminTot + _kpiPerduTot) > 0 ? _kpiPerduTot / (_kpiAdminTot + _kpiPerduTot) * 100 : null;
 
                 var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
                     (f.period && f.period.length > 1
                         ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
                         : 'Toutes périodes');
 
-                var klBox = E('div', 'cb');
+                var _fmtKpi = function (v, sfx) { return v !== null ? v.toFixed(1) + sfx : '—'; };
+                var _kpiDispoCol = kpiDispo !== null ? (kpiDispo >= 80 ? '#27ae60' : kpiDispo >= 50 ? '#f39c12' : '#e74c3c') : '#888';
+                var _kpiSatisfCol = kpiSatisf !== null ? (kpiSatisf >= 80 ? '#27ae60' : kpiSatisf >= 50 ? '#f39c12' : '#e74c3c') : '#888';
+                var _kpiPerteCol = kpiPerte !== null ? (kpiPerte <= 5 ? '#27ae60' : kpiPerte <= 10 ? '#f39c12' : '#e74c3c') : '#888';
+
+                klBox = E('div', 'cb');
                 klBox.innerHTML =
-                    '<h4 style="color:#0b3a6f;margin:0 0 6px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
-                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé par FOSA puis sommé sur le scope. ' +
-                    'Couverture annuelle = Σ reçues / Σ (CMM_FOSA × 12). ' +
-                    'Disponibilité « reçues par programme » = Σ reçues / Σ (CMM_FOSA × ' + _nPeriods + ' mois sélectionnés). ' +
-                    'Jours de disponibilité : somme cumulée sur les FOSA × mois du scope (cohérente avec le rapport logistique). ' +
-                    'Rupture = Σ jours de rupture déclarés ; reste de chaque mois (30 j − rupture) classé via le MSD ' +
-                    '(&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
+                    '<h4 style="color:#0b3a6f;margin:0 0 10px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px">' +
+                    '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid ' + _kpiDispoCol + '"><div class="kv" style="color:' + _kpiDispoCol + '">' + _fmtKpi(kpiDispo, '%') + '</div><div class="kl">Taux de disponibilité</div><div style="font-size:10px;color:#888">(jours sans rupture / jours du mois)</div></div>' +
+                    '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid ' + _kpiSatisfCol + '"><div class="kv" style="color:' + _kpiSatisfCol + '">' + _fmtKpi(kpiSatisf, '%') + '</div><div class="kl">Taux de satisfaction</div><div style="font-size:10px;color:#888">(reçues / quantité commandée)</div></div>' +
+                    '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid ' + _kpiPerteCol + '"><div class="kv" style="color:' + _kpiPerteCol + '">' + _fmtKpi(kpiPerte, '%') + '</div><div class="kl">Taux de perte (vaccins)</div><div style="font-size:10px;color:#888">(pertes / (administrées + pertes))</div></div>' +
+                    '</div>' +
+                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé au niveau ' + ol.l + ' (données agrégées au bon niveau, pas de cumul depuis FOSA). ' +
+                    'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
+                    'Jours de disponibilité : rupture plafonnée à 30 j/mois par unité, classée via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en matériels d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité du matériel d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité vaccins : doses reçues par dose programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité consommables : unités reçues par unité programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de satisfaction des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de satisfaction des besoins en intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de disponibilité des intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de perte des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Taux de perte des intrants secs — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
                     '</div>';
-                c.appendChild(klBox);
 
                 var klDataLabels = {
                     id: 'klDataLabels',
@@ -4031,12 +4112,41 @@
                             }
                         });
                     }
+                    function _drawLoss(canvasId, data) {
+                        var x = document.getElementById(canvasId); if (!x) return;
+                        var sorted = data.slice().filter(function (d) { return d.lossRate !== null && d.lossRate >= 0; })
+                            .sort(function (a, b) { return b.lossRate - a.lossRate; });
+                        if (!sorted.length) return;
+                        S.charts[canvasId] = new Chart(x, {
+                            type: 'bar',
+                            data: {
+                                labels: sorted.map(function (d) { return d.lbl; }),
+                                datasets: [{
+                                    label: 'Taux de perte %',
+                                    data: sorted.map(function (d) { return +d.lossRate.toFixed(1); }),
+                                    backgroundColor: sorted.map(function (d) { return d.lossRate > 10 ? '#dc2626' : d.lossRate > 5 ? '#f4a800' : '#27ae60'; }),
+                                    borderRadius: 2
+                                }]
+                            },
+                            plugins: [klDataLabels],
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    klDataLabels: { show: true, fmt: function (v) { return v.toFixed(1) + '%'; } }
+                                },
+                                scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return v + '%'; } } }, x: { ticks: { font: { size: 9 }, maxRotation: 45 } } }
+                            }
+                        });
+                    }
                     _drawCov('klCovVac', covVac, '#1d4ed8');
                     _drawCov('klCovCon', covCon, '#dc2626');
                     _drawDays('klDayVac', dayVac);
                     _drawDays('klDayCon', dayCon);
                     _drawRatio('klRatVac', covVac, '#1d4ed8');
                     _drawRatio('klRatCon', covCon, '#dc2626');
+                    _drawLoss('klLossVac', lossVac);
+                    _drawLoss('klLossCon', lossCon);
                 }, 100);
             })();
 
@@ -4074,6 +4184,9 @@
                 });
                 S.charts.logEvo = new Chart(x, { type: 'line', data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: ed, borderColor: '#0b3a6f', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 200);
+
+            /* ── Indicateurs clés (déplacé ici, après l'évolution de rapportage) ── */
+            c.appendChild(klBox);
 
             /* ── Rapport logistique — tableau plat ── */
             var niv = '';
