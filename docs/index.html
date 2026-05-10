@@ -4108,9 +4108,6 @@
                 klBox = E('div', 'cb');
                 klBox.innerHTML =
                     '<h4 style="color:#0b3a6f;margin:0 0 10px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
-                    '<h5 style="color:#0b3a6f;margin:0 0 8px">🗺️ Heatmap des indicateurs logistiques par ' + ol.l + '</h5>' +
-                    '<p style="font-size:10px;color:#666;margin:0 0 8px">Tp = Taux de perte · Td = Taux de disponibilité · Ts = Taux de satisfaction<br>🔴 Hors norme / ⚠️ Limite · 🟢 Dans la norme · — = Pas de données</p>' +
-                    '<div style="overflow-x:auto;max-height:400px;overflow-y:auto" id="klHmContainer"><div id="klHm" style="font-size:9px"></div></div>' +
                     '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé au niveau ' + ol.l + ' (données agrégées au bon niveau, pas de cumul depuis FOSA). ' +
                     'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
                     'Jours de disponibilité : rupture plafonnée à 30 j/mois par unité, classée via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
@@ -4299,73 +4296,6 @@
                     _drawPctBar('klSatisfCon', covCon, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
                     _drawLoss('klLossVac', lossVac);
                     _drawLoss('klLossCon', lossCon);
-                    // Heatmap rendering
-                    (function() {
-                        var hm = document.getElementById('klHm'); if (!hm) return;
-                        var abbr = { BCG:'BCG', VPO:'VPO', DTC:'Penta', VPI:'VPI', PCV13:'PCV', ROTA:'Rota',
-                                     VAR:'VAR', VAA:'VAA', Td:'Td', VAP:'VAP', HPV:'HPV',
-                                     Diluant_BCG:'dBCG', Diluant_VAR:'dVAR', Diluant_VAA:'dVAA',
-                                     SAB_005ml:'S05', SAB_05ml:'S5', SAB_auto_bloquante:'SAB',
-                                     Ser_dilution_2ml:'sd2', Ser_dilution_5ml:'sd5', Ser_dilution_6ml:'sd6',
-                                     Adaptateurs:'Adp', Compte_goutte:'Cgt', R_ceptacles:'Rec' };
-                        var cols = LOGIST_FIELDS;
-                        var tdStyle = 'border:1px solid #e2e8f0;padding:2px 4px;text-align:center;white-space:nowrap';
-                        var thStyle = 'background:#0b3a6f;color:#fff;padding:2px 4px;border:1px solid #1d4ed8;font-weight:600;text-align:center;position:sticky;top:0;z-index:2';
-                        var thOU = 'background:#0b3a6f;color:#fff;padding:2px 6px;border:1px solid #1d4ed8;font-weight:600;text-align:left;position:sticky;left:0;top:0;z-index:3';
-
-                        var h = '<table style="border-collapse:collapse;font-size:9px">';
-                        h += '<thead><tr><th style="' + thOU + '" rowspan="2">' + ol.l + '</th>';
-                        cols.forEach(function(it) {
-                            var a = abbr[it.pfx] || it.pfx;
-                            h += '<th style="' + thStyle + '" colspan="3">' + a + '</th>';
-                        });
-                        h += '</tr><tr>';
-                        cols.forEach(function() {
-                            ['Tp','Td','Ts'].forEach(function(sub) {
-                                h += '<th style="' + thStyle + ';font-size:8px">' + sub + '</th>';
-                            });
-                        });
-                        h += '</tr></thead><tbody>';
-
-                        function _cellColor(val, type, normLoss) {
-                            if (val === null || val === undefined || !isFinite(val)) return '#f8fafc';
-                            if (type === 'tp') {
-                                if (val <= normLoss) return '#dcfce7';
-                                if (val <= normLoss * 1.5) return '#fef9c3';
-                                return '#fee2e2';
-                            } else {
-                                if (val >= LOGIST_NORMS.dispo) return '#dcfce7';
-                                if (val >= LOGIST_NORMS.dispo * 0.75) return '#fef9c3';
-                                return '#fee2e2';
-                            }
-                        }
-                        function _cellText(val) {
-                            return (val === null || val === undefined || !isFinite(val)) ? '—' : val.toFixed(0) + '%';
-                        }
-
-                        _ouKeys.forEach(function(ou, idx) {
-                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                            var ouSticky = 'position:sticky;left:0;background:' + bg + ';z-index:1;border:1px solid #e2e8f0;padding:2px 6px;font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis';
-                            h += '<tr style="background:' + bg + '"><td style="' + ouSticky + '" title="' + ou + '">' + tr(ou, 22) + '</td>';
-                            cols.forEach(function(it) {
-                                var d = _hmData[ou][it.pfx];
-                                if (!d) {
-                                    h += '<td style="' + tdStyle + ';background:#f8fafc;color:#bbb" colspan="3">—</td>';
-                                    return;
-                                }
-                                var tpC = _cellColor(d.tp, 'tp', d.normLoss);
-                                var tdC = _cellColor(d.td, 'td', d.normLoss);
-                                var tsC = _cellColor(d.ts, 'ts', d.normLoss);
-                                h += '<td style="' + tdStyle + ';background:' + tpC + '" title="Tx Perte: ' + _cellText(d.tp) + ' (norme ≤' + d.normLoss + '%)">' + _cellText(d.tp) + '</td>';
-                                h += '<td style="' + tdStyle + ';background:' + tdC + '" title="Tx Dispo: ' + _cellText(d.td) + '">' + _cellText(d.td) + '</td>';
-                                h += '<td style="' + tdStyle + ';background:' + tsC + '" title="Tx Satisf: ' + _cellText(d.ts) + '">' + _cellText(d.ts) + '</td>';
-                            });
-                            h += '</tr>';
-                        });
-
-                        h += '</tbody></table>';
-                        hm.innerHTML = h;
-                    })();
                 }, 100);
             })();
 
