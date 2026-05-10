@@ -1031,7 +1031,10 @@
             hmIndex: {}, hmCache: {}, heatmap: {},
             fosaIndex: {}, fosaCache: {}, fosaTCache: {}, fosaData: [],
             asIndex: {}, asCache: {}, asTCache: {}, asData: [],
-            zsFiltCache: {}, zsData: []
+            zsFiltCache: {}, zsData: [],
+            /* Bases logistiques indépendantes par niveau (dépôts distincts) */
+            zsLogData: [],                                  /* agrégation ZS (data_zs) */
+            asLogIndex: {}, asLogCache: {}, asLogTCache: {}, asLogData: [] /* agrégation AS (data_as) */
         };
 
         /* ═══ HELPERS ═══ */
@@ -1181,13 +1184,16 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                var [mR, pR, zR, hmR, fosaR, asR] = await Promise.all([
+                var [mR, pR, zR, hmR, fosaR, asR, zsLogR, asLogR] = await Promise.all([
                     fetchGzip(BASE + '/meta.json'),
                     fetchGzip(BASE + '/by_province.json.gz'),
                     fetchGzip(BASE + '/by_zs.json.gz'),
                     fetchGzip(BASE + '/heatmap/manifest.json.gz').catch(function () { return {}; }),
                     fetchGzip(BASE + '/by_fosa/manifest.json.gz').catch(function () { return {}; }),
-                    fetchGzip(BASE + '/by_as/manifest.json.gz').catch(function () { return {}; })
+                    fetchGzip(BASE + '/by_as/manifest.json.gz').catch(function () { return {}; }),
+                    /* Bases logistiques indépendantes — chemins fixes quel que soit lvl */
+                    fetchGzip('./data_zs/dashboard/by_zs.json.gz').catch(function () { return []; }),
+                    fetchGzip('./data_as/dashboard/by_as/manifest.json.gz').catch(function () { return {}; })
                 ]);
                                 sp(40, 'Parsing...');
                 S.meta = mR;
@@ -1199,10 +1205,14 @@
                 S.asIndex = asR;
                 S.hmCache = {}; S.fosaCache = {}; S.asCache = {};
                 S.fosaTCache = {}; S.asTCache = {}; S.zsFiltCache = {};
+                S.asLogIndex = asLogR || {};
+                S.asLogCache = {}; S.asLogTCache = {};
 
                 sp(55, 'Transformation ZS...');
                 S.zsData = byZS.map(transformRecord);
                 S.data = S.zsData;
+                /* Base logistique ZS indépendante (data_zs) */
+                S.zsLogData = Array.isArray(zsLogR) ? zsLogR.map(transformRecord) : [];
 
                 if (byZS.length > 0) {
                     console.log('=== PREMIER ENREGISTREMENT by_zs ===');
@@ -1334,6 +1344,10 @@
                                                                 if (!S.asTCache[prov] && S.asIndex[prov] && !S.asCache[prov]) {
                                                                     promises.push(fetchGzip(BASE + '/by_as/' + S.asIndex[prov]).then(function (d) { S.asCache[prov] = d; }).catch(function () { }));
                                                                 }
+                                                                /* Base logistique AS indépendante (data_as/by_as) */
+                                                                if (!S.asLogTCache[prov] && S.asLogIndex[prov] && !S.asLogCache[prov]) {
+                                                                    promises.push(fetchGzip('./data_as/dashboard/by_as/' + S.asLogIndex[prov]).then(function (d) { S.asLogCache[prov] = d; }).catch(function () { }));
+                                                                }
                                                                 if (promises.length) await Promise.all(promises);
 
                                                                 /* 3) Transform + persister dans IDB (prochains refresh = instantanés) */
@@ -1348,10 +1362,14 @@
                                                                     S.asTCache[prov] = (ad && ad.length) ? ad.map(transformRecord) : [];
                                                                     if (S.asTCache[prov].length) _idbPut(kA, S.asTCache[prov]);
                                                                 }
-
+                                                                if (!S.asLogTCache[prov]) {
+                                                                    var ald = S.asLogCache[prov];
+                                                                    S.asLogTCache[prov] = (ald && ald.length) ? ald.map(transformRecord) : [];
+                                                                }
 
             S.fosaData = S.fosaTCache[prov];
             S.asData = S.asTCache[prov];
+            S.asLogData = S.asLogTCache[prov] || [];
 
             /* Utiliser le niveau le plus fin disponible */
             if (S.fosaData.length) S.data = S.fosaData;
@@ -3803,33 +3821,74 @@
         function rLog(c) {
             var D = S.flt, AD = S.data;
             var f = S.filters;
-            var ol = getOrgLevel(D);
+            var cas = S.cascaded || {};
 
-            /* ── Données logistiques au niveau approprié (évite cumul FOSA→ZS) ──
-               FOSA level (f.as.length===1) : données FOSA filtrées (D/S.flt)
-               AS level   (f.zs.length===1) : données agrégées par AS (S.asData)
-               ZS level   (province/national): données agrégées par ZS (S.zsData) */
-            var LD;
-            if (ol.k === 'org5') {
-                LD = D;
-            } else if (ol.k === 'org4') {
-                var _asSrc = (S.asData && S.asData.length) ? S.asData.filter(function (r) {
-                    if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
-                    if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
-                    if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
-                    return true;
-                }) : [];
-                LD = _asSrc.length ? _asSrc : D;
-            } else {
-                var _zsBase = (S.zsFiltCache && f.province && S.zsFiltCache[f.province]) || S.zsData || [];
-                var _zsSrc = _zsBase.filter(function (r) {
+            /* ── Déterminer le niveau réellement choisi par l'utilisateur ──
+               Chaque niveau a sa propre base d'agrégation logistique :
+               FOSA  → data/dashboard/by_fosa   (D = S.flt)
+               AS    → data_as/dashboard/by_as  (S.asLogData)
+               ZS    → data_zs/dashboard/by_zs  (S.zsLogData)
+               Antenne / Province → data_zs (agrégation ZS)             */
+            function _userLvl() {
+                /* Un niveau est "choisi" si le filtre = 1 valeur ET moins que toutes les valeurs disponibles */
+                if (f.fosa && f.fosa.length === 1 && cas.fosa && cas.fosa.length !== 1) return 'fosa';
+                if (f.as && f.as.length === 1 && cas.as && cas.as.length !== 1) return 'as';
+                if (f.zs && f.zs.length === 1) return 'zs';
+                if (f.antenne && f.antenne.length === 1 && cas.antenne && cas.antenne.length !== 1) return 'antenne';
+                return 'province';
+            }
+            function _filtLog(src, inclZS, inclAS) {
+                return (src || []).filter(function (r) {
                     if (f.province && r.org2 !== f.province) return false;
                     if (f.period && f.period.length && f.period.indexOf(r.period) < 0) return false;
                     if (f.antenne && f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return false;
-                    if (f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                    if (inclZS && f.zs && f.zs.length && f.zs.indexOf(r.org3) < 0) return false;
+                    if (inclAS && f.as && f.as.length && f.as.indexOf(r.org4) < 0) return false;
                     return true;
                 });
-                LD = _zsSrc.length ? _zsSrc : D;
+            }
+
+            var _lvl = _userLvl();
+            var LD;    /* données pour les 12 graphiques indicateurs (base résumé) */
+            var LD_D;  /* données pour la heatmap / tableau pivot (base détail)    */
+            var ol;    /* niveau des lignes de détail (heatmap, bars, pivot)        */
+            var ol_sk; /* clé de groupement qui EXISTE dans les enregistrements LD  */
+
+            if (_lvl === 'fosa') {
+                LD = D; LD_D = D;
+                ol = { k: 'org5', l: 'FOSA' };
+                ol_sk = 'org5';
+            } else if (_lvl === 'as') {
+                /* Résumé = AS (base AS), détail = FOSA (base FOSA) */
+                var _asSum = _filtLog(S.asLogData, true, true);
+                LD = _asSum.length ? _asSum : D;
+                LD_D = D;
+                ol = { k: 'org5', l: 'FOSA' };
+                ol_sk = _asSum.length ? 'org4' : 'org5';
+            } else if (_lvl === 'zs') {
+                /* Résumé = ZS (base ZS), détail = AS (base AS) */
+                var _zsSum = _filtLog(S.zsLogData, true, false);
+                var _asDet = _filtLog(S.asLogData, true, false);
+                LD = _zsSum.length ? _zsSum : D;
+                LD_D = _asDet.length ? _asDet : D;
+                ol = { k: 'org4', l: 'Aire de Santé' };
+                /* Les enregistrements ZS ont org3, pas org4 → grouper par org3 dans LD */
+                ol_sk = _zsSum.length ? 'org3' : 'org4';
+            } else if (_lvl === 'antenne') {
+                /* Résumé = antenne, détail = ZS (base ZS) */
+                var _zsAnt = _filtLog(S.zsLogData, false, false);
+                LD = _zsAnt.length ? _zsAnt : D;
+                LD_D = LD;
+                ol = { k: 'org3', l: 'Zone de Santé' };
+                ol_sk = 'org3';
+            } else {
+                /* Province par défaut — résumé et détail depuis base ZS */
+                var _zsAll = _filtLog(S.zsLogData, false, false);
+                LD = _zsAll.length ? _zsAll : D;
+                LD_D = LD;
+                var _nbAnt = uv(LD, function (r) { return r.antenne; }).length;
+                ol = _nbAnt > 1 ? { k: 'antenne', l: 'Antenne PEV' } : { k: 'org3', l: 'Zone de Santé' };
+                ol_sk = _nbAnt > 1 ? 'antenne' : 'org3';
             }
 
             /* ── Cards complétude logistique ── */
@@ -3899,7 +3958,7 @@
                     return items.map(function (it) {
                         var byOu = {};
                         LD.forEach(function (r) {
-                            var ou = r[ol.k]; if (!ou) return;
+                            var ou = r[ol_sk]; if (!ou) return;
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
                             var cmd = Number(r[it.pfx + '_qte_a_commander']) || 0;
@@ -4016,11 +4075,11 @@
                 var kpiSatisf = _kpiCmdTot > 0 ? _kpiRcvTot / _kpiCmdTot * 100 : null;
                 var kpiPerte = (_kpiAdminTot + _kpiPerduTot) > 0 ? _kpiPerduTot / (_kpiAdminTot + _kpiPerduTot) * 100 : null;
 
-                // Heatmap : stats par OU × antigène/intrant
-                _ouKeys = Object.keys(grp(LD, function(r) { return r[ol.k]; })).filter(Boolean).sort();
+                // Heatmap : stats par OU × antigène/intrant — utilise LD_D (niveau détail)
+                _ouKeys = Object.keys(grp(LD_D, function(r) { return r[ol.k]; })).filter(Boolean).sort();
                 _ouKeys.forEach(function(ou) {
                     _hmData[ou] = {};
-                    var ouRecs = LD.filter(function(r) { return r[ol.k] === ou; });
+                    var ouRecs = LD_D.filter(function(r) { return r[ol.k] === ou; });
                     LOGIST_FIELDS.forEach(function(it) {
                         var totRup = 0, totDays = 0, totRcv = 0, totCmd = 0, totAdm = 0, totPerd = 0, n = 0;
                         ouRecs.forEach(function(r) {
@@ -4434,10 +4493,10 @@
 
             /* ── Rapport logistique — tableau plat ── */
             var niv = '';
-            if (f.fosa && f.fosa.length === 1) niv = f.fosa[0];
-            else if (f.as && f.as.length === 1) niv = f.as[0];
-            else if (f.zs && f.zs.length === 1) niv = f.zs[0];
-            else if (f.antenne && f.antenne.length === 1) niv = f.antenne[0];
+            if (_lvl === 'fosa') niv = f.fosa[0];
+            else if (_lvl === 'as') niv = f.as[0];
+            else if (_lvl === 'zs') niv = f.zs[0];
+            else if (_lvl === 'antenne') niv = f.antenne[0];
             else if (f.province) niv = f.province;
             else niv = 'National';
             var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
@@ -4468,25 +4527,25 @@
 
             LOGIST_FIELDS.forEach(function (item, idx) {
                 var p = item.pfx;
-                var stk = sf(D, p + '_stock_d_but');
-                var rcv = sf(D, p + '_re_ues');
-                var used = sf(D, p + '_utilis_es');
-                var admin = sf(D, p + '_administr_es'); // Fixed: use standardized logistical administr_es key
-                var perdu = sf(D, p + '_pertes');
-                // Perdue vide mais utilisée & administrée existent → Perdue = Utilisée − Administrée
+                /* Rapport : utilise la même base d'agrégation que les indicateurs (LD) */
+                var stk = sf(LD, p + '_stock_d_but');
+                var rcv = sf(LD, p + '_re_ues');
+                var used = sf(LD, p + '_utilis_es');
+                var admin = sf(LD, p + '_administr_es');
+                var perdu = sf(LD, p + '_pertes');
                 if ((!perdu || perdu <= 0) && used > 0 && admin > 0 && used > admin) {
                     perdu = used - admin;
                 }
                 var denom = (admin || 0) + (perdu || 0);
                 var txPerte = denom > 0 ? (perdu / denom * 100) : 0;
 
-                var jrs = sf(D, p + '_jours_rupture');
-                var sdu = sf(D, p + '_stock_fin'); // SDU = Stock Fin
-                var smax = sf(D, p + '_stock_max');
-                var qcmd = sf(D, p + '_qte_a_commander');
-                var cmm = sf(D, p + '_cmm');
-                var aj = sf(D, p + '_ajustement');
-                var msd = sf(D, p + '_msd');
+                var jrs = sf(LD, p + '_jours_rupture');
+                var sdu = sf(LD, p + '_stock_fin');
+                var smax = sf(LD, p + '_stock_max');
+                var qcmd = sf(LD, p + '_qte_a_commander');
+                var cmm = sf(LD, p + '_cmm');
+                var aj = sf(LD, p + '_ajustement');
+                var msd = sf(LD, p + '_msd');
 
                 var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 h += '<tr style="background:' + bg + '">';
