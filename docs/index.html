@@ -3977,7 +3977,8 @@
 
                 /* Jours de disponibilité — calculé sur les données du niveau courant.
                    Chaque enregistrement représente 1 unité (FOSA/AS/ZS) × 1 mois.
-                   La rupture est plafonnée à 30 j pour éviter les dépassements. */
+                   Les jours de rupture sont conservés tels que rapportés par
+                   DHIS2 (peuvent dépasser 30 j/mois aux niveaux agrégés). */
                 function _daysByItem(items) {
                     return items.map(function (it) {
                         var sumRup = 0, sumRes = 0, sumSmx = 0, sumAdq = 0;
@@ -3992,9 +3993,9 @@
                             var smaxMo = (smax > 0 && cmm > 0) ? smax / cmm : 3;
                             var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
                             if (!hasItem) return;
-                            rup = Math.min(30, Math.max(0, rup));
+                            rup = Math.max(0, rup);
                             sumRup += rup;
-                            var nonRup = 30 - rup;
+                            var nonRup = Math.max(0, 30 - rup);
                             if (msd < 0.5) sumRes += nonRup;
                             else if (msd > smaxMo) sumSmx += nonRup;
                             else sumAdq += nonRup;
@@ -4039,7 +4040,7 @@
                 var _kpiRupTot = 0, _kpiDaysTot = 0, _kpiRcvTot = 0, _kpiCmdTot = 0, _kpiPerduTot = 0, _kpiAdminTot = 0;
                 KL_VAC.concat(KL_CON).forEach(function (it) {
                     LD.forEach(function (r) {
-                        var rup = Math.min(30, Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0));
+                        var rup = Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0);
                         var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                         var sf = Number(r[it.pfx + '_stock_fin']) || 0;
                         var cmm = Number(r[it.pfx + '_cmm']) || 0;
@@ -4072,7 +4073,7 @@
                     LOGIST_FIELDS.forEach(function(it) {
                         var totRup = 0, totDays = 0, totRcv = 0, totCmd = 0, totAdm = 0, totPerd = 0, n = 0;
                         ouRecs.forEach(function(r) {
-                            var rup = Math.min(30, Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0));
+                            var rup = Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0);
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var sf = Number(r[it.pfx + '_stock_fin']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
@@ -4110,7 +4111,7 @@
                     '<h4 style="color:#0b3a6f;margin:0 0 10px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
                     '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé au niveau ' + ol.l + ' (données agrégées au bon niveau, pas de cumul depuis FOSA). ' +
                     'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
-                    'Jours de disponibilité : rupture plafonnée à 30 j/mois par unité, classée via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
+                    'Jours de disponibilité : jours de rupture conservés tels que rapportés par DHIS2 (peuvent dépasser 30 j/mois en agrégation), classés via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
                     /* ═══ 6 GRAPHIQUES ORIGINAUX ═══ */
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
