@@ -3822,6 +3822,223 @@
                 '<div class="kc gn" style="flex:1;min-width:180px"><div class="kv">' + (nGe80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage ≥80%</div><div style="font-size:11px;color:#888">' + nGe80 + '/' + nTot + '</div></div></div>';
             c.appendChild(cardBox);
 
+            /* ── Indicateurs clés de la logistique : 6 graphiques ──
+               Formules adaptées du SMT WHO (feuille Grf_available) — données
+               mensuelles DHIS2 :
+                 Couverture annuelle des besoins (charts 1, 2)
+                   = Σ reçues sur la période / (CMM_moyen × 12)  → en %
+                 Disponibilité (charts 5, 6) « reçues par programme »
+                   = Σ reçues sur la période / (CMM_moyen × n_periodes)
+                 Jours de disponibilité (charts 3, 4) — moyenne par OU :
+                   • rupture = _jours_rupture
+                   • <Réserve = MSD < 0,5 mois ; >Smaxi = MSD > stock_max/CMM
+                     (défaut 3 mois) ; sinon adéquat. */
+            (function () {
+                var KL_VAC = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') === 0; });
+                var KL_CON = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') !== 0; });
+
+                /* Périodes distinctes présentes dans les données filtrées */
+                var _periodsInD = {};
+                D.forEach(function (r) { if (r.period) _periodsInD[r.period] = 1; });
+                var _nPeriods = Math.max(1, Object.keys(_periodsInD).length);
+
+                /* Pour chaque item : groupe les records par OU, calcule la CMM
+                   moyenne par OU puis agrège. */
+                function _coverageByItem(items) {
+                    return items.map(function (it) {
+                        var byOu = {};
+                        D.forEach(function (r) {
+                            var ou = r[ol.k]; if (!ou) return;
+                            var rcv = Number(r[it.pfx + '_re_ues']) || 0;
+                            var cmm = Number(r[it.pfx + '_cmm']) || 0;
+                            var b = byOu[ou] || (byOu[ou] = { recu: 0, cmmSum: 0, cmmN: 0 });
+                            b.recu += rcv;
+                            if (cmm > 0) { b.cmmSum += cmm; b.cmmN++; }
+                        });
+                        var totRecu = 0, totCmmAnn = 0, totCmmPer = 0;
+                        Object.keys(byOu).forEach(function (k) {
+                            var b = byOu[k];
+                            var avgCmm = b.cmmN > 0 ? b.cmmSum / b.cmmN : 0;
+                            totRecu += b.recu;
+                            totCmmAnn += avgCmm * 12;
+                            totCmmPer += avgCmm * _nPeriods;
+                        });
+                        return {
+                            lbl: it.lbl.replace(/^Vaccin\s+/, ''),
+                            recu: totRecu,
+                            covAnnual: totCmmAnn > 0 ? totRecu / totCmmAnn : null,
+                            dispoPer: totCmmPer > 0 ? totRecu / totCmmPer : null
+                        };
+                    });
+                }
+
+                /* Jours de disponibilité — moyenne par AS dans le scope.
+                   30 j / mois : rupture (_jours_rupture), reste classé via MSD :
+                   <0,5 mois → <Réserve ; >Smaxi → >Smaxi (Smaxi = stock_max/CMM, défaut 3 mois) ; sinon adéquat. */
+                function _daysByItem(items) {
+                    return items.map(function (it) {
+                        var byOu = {};
+                        D.forEach(function (r) {
+                            var ou = r[ol.k]; if (!ou) return;
+                            var rcv = Number(r[it.pfx + '_re_ues']) || 0;
+                            var sf = Number(r[it.pfx + '_stock_fin']) || 0;
+                            var cmm = Number(r[it.pfx + '_cmm']) || 0;
+                            var rup = Number(r[it.pfx + '_jours_rupture']) || 0;
+                            var msd = Number(r[it.pfx + '_msd']) || 0;
+                            if (msd <= 0 && cmm > 0) msd = sf / cmm;
+                            var smax = Number(r[it.pfx + '_stock_max']) || 0;
+                            var smaxMo = (smax > 0 && cmm > 0) ? smax / cmm : 3;
+                            var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
+                            if (!hasItem) return;
+                            rup = Math.max(0, Math.min(30, rup));
+                            var nonRup = 30 - rup;
+                            var b = byOu[ou] || (byOu[ou] = { rup: 0, res: 0, smx: 0, adq: 0, n: 0 });
+                            b.rup += rup; b.n++;
+                            if (msd < 0.5) b.res += nonRup;
+                            else if (msd > smaxMo) b.smx += nonRup;
+                            else b.adq += nonRup;
+                        });
+                        var keys = Object.keys(byOu);
+                        var n = keys.length || 1;
+                        var s = keys.reduce(function (a, k) {
+                            a.rup += byOu[k].rup; a.res += byOu[k].res; a.smx += byOu[k].smx; a.adq += byOu[k].adq;
+                            return a;
+                        }, { rup: 0, res: 0, smx: 0, adq: 0 });
+                        return {
+                            lbl: it.lbl.replace(/^Vaccin\s+/, ''),
+                            rup: s.rup / n, res: s.res / n, smx: s.smx / n, adq: s.adq / n
+                        };
+                    });
+                }
+
+                var covVac = _coverageByItem(KL_VAC);
+                var covCon = _coverageByItem(KL_CON);
+                var dayVac = _daysByItem(KL_VAC);
+                var dayCon = _daysByItem(KL_CON);
+
+                var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
+                    (f.period && f.period.length > 1
+                        ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
+                        : 'Toutes périodes');
+
+                var klBox = E('div', 'cb');
+                klBox.innerHTML =
+                    '<h4 style="color:#0b3a6f;margin:0 0 6px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
+                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Couverture annuelle = Σ reçues / (CMM moyen × 12). ' +
+                    'Disponibilité « reçues par programme » = Σ reçues / (CMM moyen × ' + _nPeriods + ' mois sélectionnés). ' +
+                    'Jours de disponibilité : moyenne par ' + ol.l + ', rupture = jours de rupture déclarés, reste classé via le MSD ' +
+                    '(&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
+                    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en matériels d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité du matériel d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité vaccins : doses reçues par dose programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité consommables : unités reçues par unité programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
+                    '</div>';
+                c.appendChild(klBox);
+
+                var klDataLabels = {
+                    id: 'klDataLabels',
+                    afterDatasetsDraw: function (chart, args, opts) {
+                        if (!opts || !opts.show) return;
+                        var ctx = chart.ctx;
+                        chart.data.datasets.forEach(function (ds, i) {
+                            var meta = chart.getDatasetMeta(i);
+                            if (meta.hidden) return;
+                            meta.data.forEach(function (bar, idx) {
+                                var v = ds.data[idx];
+                                if (v === null || v === undefined || !isFinite(v)) return;
+                                var lbl = opts.fmt ? opts.fmt(v) : String(v);
+                                ctx.save();
+                                ctx.fillStyle = '#0b3a6f';
+                                ctx.font = 'bold 10px sans-serif';
+                                if (chart.options.indexAxis === 'y') {
+                                    ctx.textAlign = 'left';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(lbl, bar.x + 3, bar.y);
+                                } else {
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(lbl, bar.x, bar.y - 2);
+                                }
+                                ctx.restore();
+                            });
+                        });
+                    }
+                };
+
+                setTimeout(function () {
+                    function _drawCov(canvasId, data, color) {
+                        var x = document.getElementById(canvasId); if (!x) return;
+                        var sorted = data.slice().filter(function (d) { return d.covAnnual !== null; }).sort(function (a, b) { return b.covAnnual - a.covAnnual; });
+                        S.charts[canvasId] = new Chart(x, {
+                            type: 'bar',
+                            data: {
+                                labels: sorted.map(function (d) { return d.lbl; }),
+                                datasets: [{ label: '% besoins annuels', data: sorted.map(function (d) { return +(d.covAnnual * 100).toFixed(1); }), backgroundColor: color, borderRadius: 2 }]
+                            },
+                            plugins: [klDataLabels],
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    klDataLabels: { show: true, fmt: function (v) { return v.toFixed(0) + '%'; } }
+                                },
+                                scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return v + '%'; } } }, x: { ticks: { font: { size: 9 }, maxRotation: 45 } } }
+                            }
+                        });
+                    }
+                    function _drawDays(canvasId, data) {
+                        var x = document.getElementById(canvasId); if (!x) return;
+                        var arr = data.slice().filter(function (d) { return (d.rup + d.res + d.smx + d.adq) > 0; });
+                        S.charts[canvasId] = new Chart(x, {
+                            type: 'bar',
+                            data: {
+                                labels: arr.map(function (d) { return d.lbl; }),
+                                datasets: [
+                                    { label: 'Jours de rupture (stock = 0)', data: arr.map(function (d) { return +d.rup.toFixed(1); }), backgroundColor: '#dc2626' },
+                                    { label: 'Jours de stock < Réserve', data: arr.map(function (d) { return +d.res.toFixed(1); }), backgroundColor: '#f4a8a8' },
+                                    { label: 'Jours de stock > Smaxi', data: arr.map(function (d) { return +d.smx.toFixed(1); }), backgroundColor: '#9bb8e0' },
+                                    { label: 'Jours de stock adéquat', data: arr.map(function (d) { return +d.adq.toFixed(1); }), backgroundColor: '#0d6064' }
+                                ]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { position: 'bottom', labels: { font: { size: 9 }, boxWidth: 10 } } },
+                                scales: { x: { stacked: true, ticks: { font: { size: 9 }, maxRotation: 45 } }, y: { stacked: true, beginAtZero: true } }
+                            }
+                        });
+                    }
+                    function _drawRatio(canvasId, data, color) {
+                        var x = document.getElementById(canvasId); if (!x) return;
+                        var sorted = data.slice().filter(function (d) { return d.dispoPer !== null; }).sort(function (a, b) { return b.dispoPer - a.dispoPer; });
+                        S.charts[canvasId] = new Chart(x, {
+                            type: 'bar',
+                            data: {
+                                labels: sorted.map(function (d) { return d.lbl; }),
+                                datasets: [{ label: 'Reçues / programme', data: sorted.map(function (d) { return +d.dispoPer.toFixed(2); }), backgroundColor: color, borderRadius: 2 }]
+                            },
+                            plugins: [klDataLabels],
+                            options: {
+                                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    klDataLabels: { show: true, fmt: function (v) { return v.toFixed(1); } }
+                                },
+                                scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 9 } } } }
+                            }
+                        });
+                    }
+                    _drawCov('klCovVac', covVac, '#1d4ed8');
+                    _drawCov('klCovCon', covCon, '#dc2626');
+                    _drawDays('klDayVac', dayVac);
+                    _drawDays('klDayCon', dayCon);
+                    _drawRatio('klRatVac', covVac, '#1d4ed8');
+                    _drawRatio('klRatCon', covCon, '#dc2626');
+                }, 100);
+            })();
+
             /* ── Graphique barre rapportage ── */
             var barBox = E('div', 'cb');
             barBox.innerHTML = '<h4>📊 Rapportage des données logistiques par ' + ol.l + '</h4><canvas id="logBar" height="' + Math.max(50, orgNames.length * 3) + '"></canvas>';
