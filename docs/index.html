@@ -3822,44 +3822,53 @@
                 '<div class="kc gn" style="flex:1;min-width:180px"><div class="kv">' + (nGe80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage ≥80%</div><div style="font-size:11px;color:#888">' + nGe80 + '/' + nTot + '</div></div></div>';
             c.appendChild(cardBox);
 
-            /* ── Indicateurs clés de la logistique : 6 graphiques ── */
+            /* ── Indicateurs clés de la logistique : 6 graphiques ──
+               Formules adaptées du SMT WHO (feuille Grf_available) — données
+               mensuelles DHIS2 :
+                 Couverture annuelle des besoins (charts 1, 2)
+                   = Σ reçues sur la période / (CMM_moyen × 12)  → en %
+                 Disponibilité (charts 5, 6) « reçues par programme »
+                   = Σ reçues sur la période / (CMM_moyen × n_periodes)
+                 Jours de disponibilité (charts 3, 4) — moyenne par OU :
+                   • rupture = _jours_rupture
+                   • <Réserve = MSD < 0,5 mois ; >Smaxi = MSD > stock_max/CMM
+                     (défaut 3 mois) ; sinon adéquat. */
             (function () {
                 var KL_VAC = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') === 0; });
                 var KL_CON = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') !== 0; });
 
-                function _prevYM(ym) {
-                    if (!ym || ym.length < 6) return null;
-                    var y = parseInt(ym.substr(0, 4), 10), m = parseInt(ym.substr(4, 2), 10);
-                    m -= 1; if (m < 1) { m = 12; y -= 1; }
-                    return String(y) + (m < 10 ? '0' + m : String(m));
-                }
+                /* Périodes distinctes présentes dans les données filtrées */
+                var _periodsInD = {};
+                D.forEach(function (r) { if (r.period) _periodsInD[r.period] = 1; });
+                var _nPeriods = Math.max(1, Object.keys(_periodsInD).length);
 
-                /* Index des records (toutes périodes) filtrés par org-level — sert
-                   à retrouver la qté à commander de la période précédente. */
-                var _byKeyYM = {};
-                AD.forEach(function (r) {
-                    if (f.antenne.length && f.antenne.indexOf(r.antenne) < 0) return;
-                    if (f.zs.length && f.zs.indexOf(r.org3) < 0) return;
-                    if (f.as.length && f.as.indexOf(r.org4) < 0) return;
-                    if (f.fosa.length && f.fosa.indexOf(r.org5) < 0) return;
-                    var ouK = r[ol.k]; if (!ouK || !r.period) return;
-                    var k = ouK + '|' + r.period;
-                    (_byKeyYM[k] = _byKeyYM[k] || []).push(r);
-                });
-
+                /* Pour chaque item : groupe les records par OU, calcule la CMM
+                   moyenne par OU puis agrège. */
                 function _coverageByItem(items) {
                     return items.map(function (it) {
-                        var sumRecu = 0, sumProg = 0;
+                        var byOu = {};
                         D.forEach(function (r) {
-                            var ouK = r[ol.k]; if (!ouK || !r.period) return;
-                            sumRecu += Number(r[it.pfx + '_re_ues']) || 0;
-                            var prevRecs = _byKeyYM[ouK + '|' + _prevYM(r.period)];
-                            if (prevRecs) prevRecs.forEach(function (pr) {
-                                sumProg += Number(pr[it.pfx + '_qte_a_commander']) || 0;
-                            });
+                            var ou = r[ol.k]; if (!ou) return;
+                            var rcv = Number(r[it.pfx + '_re_ues']) || 0;
+                            var cmm = Number(r[it.pfx + '_cmm']) || 0;
+                            var b = byOu[ou] || (byOu[ou] = { recu: 0, cmmSum: 0, cmmN: 0 });
+                            b.recu += rcv;
+                            if (cmm > 0) { b.cmmSum += cmm; b.cmmN++; }
                         });
-                        var ratio = sumProg > 0 ? sumRecu / sumProg : null;
-                        return { lbl: it.lbl.replace(/^Vaccin\s+/, ''), recu: sumRecu, prog: sumProg, ratio: ratio };
+                        var totRecu = 0, totCmmAnn = 0, totCmmPer = 0;
+                        Object.keys(byOu).forEach(function (k) {
+                            var b = byOu[k];
+                            var avgCmm = b.cmmN > 0 ? b.cmmSum / b.cmmN : 0;
+                            totRecu += b.recu;
+                            totCmmAnn += avgCmm * 12;
+                            totCmmPer += avgCmm * _nPeriods;
+                        });
+                        return {
+                            lbl: it.lbl.replace(/^Vaccin\s+/, ''),
+                            recu: totRecu,
+                            covAnnual: totCmmAnn > 0 ? totRecu / totCmmAnn : null,
+                            dispoPer: totCmmPer > 0 ? totRecu / totCmmPer : null
+                        };
                     });
                 }
 
@@ -3915,7 +3924,8 @@
                 var klBox = E('div', 'cb');
                 klBox.innerHTML =
                     '<h4 style="color:#0b3a6f;margin:0 0 6px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
-                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Couverture / Disponibilité = Σ reçues sur la période / Σ quantité à commander de la période précédente. ' +
+                    '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Couverture annuelle = Σ reçues / (CMM moyen × 12). ' +
+                    'Disponibilité « reçues par programme » = Σ reçues / (CMM moyen × ' + _nPeriods + ' mois sélectionnés). ' +
                     'Jours de disponibilité : moyenne par ' + ol.l + ', rupture = jours de rupture déclarés, reste classé via le MSD ' +
                     '(&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
@@ -3961,12 +3971,12 @@
                 setTimeout(function () {
                     function _drawCov(canvasId, data, color) {
                         var x = document.getElementById(canvasId); if (!x) return;
-                        var sorted = data.slice().filter(function (d) { return d.ratio !== null; }).sort(function (a, b) { return b.ratio - a.ratio; });
+                        var sorted = data.slice().filter(function (d) { return d.covAnnual !== null; }).sort(function (a, b) { return b.covAnnual - a.covAnnual; });
                         S.charts[canvasId] = new Chart(x, {
                             type: 'bar',
                             data: {
                                 labels: sorted.map(function (d) { return d.lbl; }),
-                                datasets: [{ label: '% besoins', data: sorted.map(function (d) { return +(d.ratio * 100).toFixed(1); }), backgroundColor: color, borderRadius: 2 }]
+                                datasets: [{ label: '% besoins annuels', data: sorted.map(function (d) { return +(d.covAnnual * 100).toFixed(1); }), backgroundColor: color, borderRadius: 2 }]
                             },
                             plugins: [klDataLabels],
                             options: {
@@ -4002,12 +4012,12 @@
                     }
                     function _drawRatio(canvasId, data, color) {
                         var x = document.getElementById(canvasId); if (!x) return;
-                        var sorted = data.slice().filter(function (d) { return d.ratio !== null; }).sort(function (a, b) { return b.ratio - a.ratio; });
+                        var sorted = data.slice().filter(function (d) { return d.dispoPer !== null; }).sort(function (a, b) { return b.dispoPer - a.dispoPer; });
                         S.charts[canvasId] = new Chart(x, {
                             type: 'bar',
                             data: {
                                 labels: sorted.map(function (d) { return d.lbl; }),
-                                datasets: [{ label: 'Reçues / programme', data: sorted.map(function (d) { return +d.ratio.toFixed(2); }), backgroundColor: color, borderRadius: 2 }]
+                                datasets: [{ label: 'Reçues / programme', data: sorted.map(function (d) { return +d.dispoPer.toFixed(2); }), backgroundColor: color, borderRadius: 2 }]
                             },
                             plugins: [klDataLabels],
                             options: {
