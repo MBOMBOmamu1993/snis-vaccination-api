@@ -144,41 +144,41 @@ DX_LIST = """
           "jJUIodWQH0T.WZwmzIuRvwV;jJUIodWQH0T.GSCwhT2SCCr;jJUIodWQH0T.pdKyvaYRqCj;"
           "K8Yt0p1z21M.dxDQKDcTn6Z;K8Yt0p1z21M.XEN3ucCGa07;K8Yt0p1z21M.J8mw9rFkY4v;"
           "K8Yt0p1z21M.WZwmzIuRvwV;K8Yt0p1z21M.GSCwhT2SCCr;K8Yt0p1z21M.pdKyvaYRqCj;"
-          "uAWIVDnGPGH.Lpu56KTyGvy;uAWIVDnGPGH.ddJmZUacsvQ;uAWIVDnGPGH.t5L9ODSuYOG;uAWIVDnGPGH.pGSfKOKL9s0;uAWIVDnGPGH.jpmZl19SSta;"
-          "l1bhrYUPsde.Lpu56KTyGvy;l1bhrYUPsde.ddJmZUacsvQ;l1bhrYUPsde.t5L9ODSuYOG;l1bhrYUPsde.pGSfKOKL9s0;l1bhrYUPsde.jpmZl19SSta;"
-          "Hjlw6DpooIo.Lpu56KTyGvy;Hjlw6DpooIo.ddJmZUacsvQ;Hjlw6DpooIo.t5L9ODSuYOG;Hjlw6DpooIo.pGSfKOKL9s0;Hjlw6DpooIo.jpmZl19SSta;"
-          "BCXcLiQNI8M.Lpu56KTyGvy;BCXcLiQNI8M.ddJmZUacsvQ;BCXcLiQNI8M.t5L9ODSuYOG;BCXcLiQNI8M.pGSfKOKL9s0;BCXcLiQNI8M.jpmZl19SSta;"
-          "IisI6JudbS8.Lpu56KTyGvy;IisI6JudbS8.ddJmZUacsvQ;IisI6JudbS8.t5L9ODSuYOG;IisI6JudbS8.pGSfKOKL9s0;IisI6JudbS8.jpmZl19SSta;"
-          "vrTdwvAQSUc.Lpu56KTyGvy;vrTdwvAQSUc.ddJmZUacsvQ;vrTdwvAQSUc.t5L9ODSuYOG;vrTdwvAQSUc.pGSfKOKL9s0;vrTdwvAQSUc.jpmZl19SSta;"
-          "iFMn6ceqdIN.Lpu56KTyGvy;iFMn6ceqdIN.ddJmZUacsvQ;iFMn6ceqdIN.t5L9ODSuYOG;iFMn6ceqdIN.pGSfKOKL9s0;iFMn6ceqdIN.jpmZl19SSta;"
-          "hqqlXMmY95c.Lpu56KTyGvy;hqqlXMmY95c.ddJmZUacsvQ;hqqlXMmY95c.t5L9ODSuYOG;hqqlXMmY95c.pGSfKOKL9s0;hqqlXMmY95c.jpmZl19SSta;"
-          "MJrLCya7qzt.Lpu56KTyGvy;MJrLCya7qzt.ddJmZUacsvQ;MJrLCya7qzt.t5L9ODSuYOG;MJrLCya7qzt.pGSfKOKL9s0;MJrLCya7qzt.jpmZl19SSta;"
-          "RYaAzE1eqya.Lpu56KTyGvy;RYaAzE1eqya.ddJmZUacsvQ;RYaAzE1eqya.t5L9ODSuYOG;RYaAzE1eqya.pGSfKOKL9s0;RYaAzE1eqya.jpmZl19SSta;"
-          "BfoCv6bUeBk.Lpu56KTyGvy;BfoCv6bUeBk.ddJmZUacsvQ;BfoCv6bUeBk.t5L9ODSuYOG;BfoCv6bUeBk.pGSfKOKL9s0;BfoCv6bUeBk.jpmZl19SSta;"
+          "uAWIVDnGPGH.Lpu56KTyGvy;uAWIVDnGPGH.ddJmZUacsvQ;uAWIVDnGPGH.t5L9ODSuYOG;kd0elH7N75k.pGSfKOKL9s0;kpvY4GzEsOv.jpmZl19SSta;"
+          "l1bhrYUPsde.Lpu56KTyGvy;l1bhrYUPsde.ddJmZUacsvQ;l1bhrYUPsde.t5L9ODSuYOG;VcI6UxYSqb7.pGSfKOKL9s0;bJD8kwm6xz8.jpmZl19SSta;"
+          "Hjlw6DpooIo.Lpu56KTyGvy;Hjlw6DpooIo.ddJmZUacsvQ;Hjlw6DpooIo.t5L9ODSuYOG;DYoKTCw2Oqi.pGSfKOKL9s0;fJvcsDrhScZ.jpmZl19SSta;"
+          "BCXcLiQNI8M.Lpu56KTyGvy;BCXcLiQNI8M.ddJmZUacsvQ;BCXcLiQNI8M.t5L9ODSuYOG;KCfG0FCgGWU.pGSfKOKL9s0;iEbT3SCQStG.jpmZl19SSta;"
+          "IisI6JudbS8.Lpu56KTyGvy;IisI6JudbS8.ddJmZUacsvQ;IisI6JudbS8.t5L9ODSuYOG;EhguMRWyJjV.pGSfKOKL9s0;UgMNX4AWqj1.jpmZl19SSta;"
+          "vrTdwvAQSUc.Lpu56KTyGvy;vrTdwvAQSUc.ddJmZUacsvQ;vrTdwvAQSUc.t5L9ODSuYOG;pho7jci1XYc.pGSfKOKL9s0;AVhKGbmEA9G.jpmZl19SSta;"
+          "iFMn6ceqdIN.Lpu56KTyGvy;iFMn6ceqdIN.ddJmZUacsvQ;iFMn6ceqdIN.t5L9ODSuYOG;BhgOrHZVgdT.pGSfKOKL9s0;aRkYMm4tHvX.jpmZl19SSta;"
+          "hqqlXMmY95c.Lpu56KTyGvy;hqqlXMmY95c.ddJmZUacsvQ;hqqlXMmY95c.t5L9ODSuYOG;llBBZ1VxhaY.pGSfKOKL9s0;CDc5q7ornpu.jpmZl19SSta;"
+          "MJrLCya7qzt.Lpu56KTyGvy;MJrLCya7qzt.ddJmZUacsvQ;MJrLCya7qzt.t5L9ODSuYOG;qr4nc6wQ0nK.pGSfKOKL9s0;JrGE0PSspn3.jpmZl19SSta;"
+          "RYaAzE1eqya.Lpu56KTyGvy;RYaAzE1eqya.ddJmZUacsvQ;RYaAzE1eqya.t5L9ODSuYOG;ADvotRbZQxB.pGSfKOKL9s0;kYGW0DcBwWe.jpmZl19SSta;"
+          "BfoCv6bUeBk.Lpu56KTyGvy;BfoCv6bUeBk.ddJmZUacsvQ;BfoCv6bUeBk.t5L9ODSuYOG;VsoGWlC8T9Q.pGSfKOKL9s0;JdrnZD4dPKl.jpmZl19SSta;"
           "laQa8YfpVrp.kOWsLrtvrhn;"
-          "laQa8YfpVrp.Lpu56KTyGvy;laQa8YfpVrp.ddJmZUacsvQ;laQa8YfpVrp.t5L9ODSuYOG;laQa8YfpVrp.pGSfKOKL9s0;laQa8YfpVrp.jpmZl19SSta;"
+          "laQa8YfpVrp.Lpu56KTyGvy;laQa8YfpVrp.ddJmZUacsvQ;laQa8YfpVrp.t5L9ODSuYOG;ln32rKUhVog.pGSfKOKL9s0;x2wBx3s2SLQ.jpmZl19SSta;"
           "nnSKbBscmxH.kOWsLrtvrhn;"
-          "nnSKbBscmxH.Lpu56KTyGvy;nnSKbBscmxH.ddJmZUacsvQ;nnSKbBscmxH.t5L9ODSuYOG;nnSKbBscmxH.pGSfKOKL9s0;nnSKbBscmxH.jpmZl19SSta;"
+          "nnSKbBscmxH.Lpu56KTyGvy;nnSKbBscmxH.ddJmZUacsvQ;nnSKbBscmxH.t5L9ODSuYOG;XQLOXoInd3R.pGSfKOKL9s0;UX65tnTXUBr.jpmZl19SSta;"
           "fQfJhi742vt.kOWsLrtvrhn;"
-          "fQfJhi742vt.Lpu56KTyGvy;fQfJhi742vt.ddJmZUacsvQ;fQfJhi742vt.t5L9ODSuYOG;fQfJhi742vt.pGSfKOKL9s0;fQfJhi742vt.jpmZl19SSta;"
+          "fQfJhi742vt.Lpu56KTyGvy;fQfJhi742vt.ddJmZUacsvQ;fQfJhi742vt.t5L9ODSuYOG;GqgVvEI7JaC.pGSfKOKL9s0;DZZLXF2N7Kw.jpmZl19SSta;"
           "bwUoJJgDst9.kOWsLrtvrhn;"
-          "bwUoJJgDst9.Lpu56KTyGvy;bwUoJJgDst9.ddJmZUacsvQ;bwUoJJgDst9.t5L9ODSuYOG;bwUoJJgDst9.pGSfKOKL9s0;bwUoJJgDst9.jpmZl19SSta;"
+          "bwUoJJgDst9.Lpu56KTyGvy;bwUoJJgDst9.ddJmZUacsvQ;bwUoJJgDst9.t5L9ODSuYOG;esgalSEQ9hA.pGSfKOKL9s0;SJ1EAubhzIR.jpmZl19SSta;"
           "blfdHcia9nP.kOWsLrtvrhn;"
-          "blfdHcia9nP.Lpu56KTyGvy;blfdHcia9nP.ddJmZUacsvQ;blfdHcia9nP.t5L9ODSuYOG;blfdHcia9nP.pGSfKOKL9s0;blfdHcia9nP.jpmZl19SSta;"
+          "blfdHcia9nP.Lpu56KTyGvy;blfdHcia9nP.ddJmZUacsvQ;blfdHcia9nP.t5L9ODSuYOG;e3k4D2zCCgo.pGSfKOKL9s0;Qstq45EG8DV.jpmZl19SSta;"
           "bqJvWJtJwtK.kOWsLrtvrhn;"
-          "bqJvWJtJwtK.Lpu56KTyGvy;bqJvWJtJwtK.ddJmZUacsvQ;bqJvWJtJwtK.t5L9ODSuYOG;bqJvWJtJwtK.pGSfKOKL9s0;bqJvWJtJwtK.jpmZl19SSta;"
+          "bqJvWJtJwtK.Lpu56KTyGvy;bqJvWJtJwtK.ddJmZUacsvQ;bqJvWJtJwtK.t5L9ODSuYOG;JRwL4KKN7Nk.pGSfKOKL9s0;AdtKSkta4bh.jpmZl19SSta;"
           "DNZEo533IMh.kOWsLrtvrhn;"
-          "DNZEo533IMh.Lpu56KTyGvy;DNZEo533IMh.ddJmZUacsvQ;DNZEo533IMh.t5L9ODSuYOG;DNZEo533IMh.pGSfKOKL9s0;DNZEo533IMh.jpmZl19SSta;"
+          "DNZEo533IMh.Lpu56KTyGvy;DNZEo533IMh.ddJmZUacsvQ;DNZEo533IMh.t5L9ODSuYOG;HrYG9MrHUdg.pGSfKOKL9s0;cmjf7VquiXH.jpmZl19SSta;"
           "ZMcyV45XAkW.kOWsLrtvrhn;"
-          "ZMcyV45XAkW.Lpu56KTyGvy;ZMcyV45XAkW.ddJmZUacsvQ;ZMcyV45XAkW.t5L9ODSuYOG;ZMcyV45XAkW.pGSfKOKL9s0;ZMcyV45XAkW.jpmZl19SSta;"
+          "ZMcyV45XAkW.Lpu56KTyGvy;ZMcyV45XAkW.ddJmZUacsvQ;ZMcyV45XAkW.t5L9ODSuYOG;NesfIHNd9xd.pGSfKOKL9s0;rJgmuGc4ynC.jpmZl19SSta;"
           "gzPW3f2ijo5.kOWsLrtvrhn;"
-          "gzPW3f2ijo5.Lpu56KTyGvy;gzPW3f2ijo5.ddJmZUacsvQ;gzPW3f2ijo5.t5L9ODSuYOG;gzPW3f2ijo5.pGSfKOKL9s0;gzPW3f2ijo5.jpmZl19SSta;"
+          "gzPW3f2ijo5.Lpu56KTyGvy;gzPW3f2ijo5.ddJmZUacsvQ;gzPW3f2ijo5.t5L9ODSuYOG;gN8mcPpAiiI.pGSfKOKL9s0;pZdQli2zn4y.jpmZl19SSta;"
           "tmp1zLSXw0Q.kOWsLrtvrhn;"
-          "tmp1zLSXw0Q.Lpu56KTyGvy;tmp1zLSXw0Q.ddJmZUacsvQ;tmp1zLSXw0Q.t5L9ODSuYOG;tmp1zLSXw0Q.pGSfKOKL9s0;tmp1zLSXw0Q.jpmZl19SSta;"
+          "tmp1zLSXw0Q.Lpu56KTyGvy;tmp1zLSXw0Q.ddJmZUacsvQ;tmp1zLSXw0Q.t5L9ODSuYOG;OoDet9UWItm.pGSfKOKL9s0;cOhDoR0ddSp.jpmZl19SSta;"
           "jJUIodWQH0T.kOWsLrtvrhn;"
-          "jJUIodWQH0T.Lpu56KTyGvy;jJUIodWQH0T.ddJmZUacsvQ;jJUIodWQH0T.t5L9ODSuYOG;jJUIodWQH0T.pGSfKOKL9s0;jJUIodWQH0T.jpmZl19SSta;"
+          "jJUIodWQH0T.Lpu56KTyGvy;jJUIodWQH0T.ddJmZUacsvQ;jJUIodWQH0T.t5L9ODSuYOG;MAyhe30b20R.pGSfKOKL9s0;WYiF7sbZ5cV.jpmZl19SSta;"
           "K8Yt0p1z21M.kOWsLrtvrhn;"
-          "K8Yt0p1z21M.Lpu56KTyGvy;K8Yt0p1z21M.ddJmZUacsvQ;K8Yt0p1z21M.t5L9ODSuYOG;K8Yt0p1z21M.pGSfKOKL9s0;K8Yt0p1z21M.jpmZl19SSta;"
+          "K8Yt0p1z21M.Lpu56KTyGvy;K8Yt0p1z21M.ddJmZUacsvQ;K8Yt0p1z21M.t5L9ODSuYOG;hllO2kXSuwM.pGSfKOKL9s0;xOlmaXSPviM.jpmZl19SSta;"
           "W25tOXS0rxS.g6mIyKoGIh2;W25tOXS0rxS.QRyK6yxKBU3;W25tOXS0rxS.Rby9Jdri29F;"
           "W25tOXS0rxS.FCXzheCQXtr;W25tOXS0rxS.VrEj0UVVGr4;"
           "uNdFg1eymsa.g6mIyKoGIh2;uNdFg1eymsa.QRyK6yxKBU3;uNdFg1eymsa.Rby9Jdri29F;"
@@ -501,8 +501,8 @@ RENAME_MAP: Dict[str, str] = {
     "uAWIVDnGPGH.Lpu56KTyGvy": "DTC Stock Max",
     "uAWIVDnGPGH.ddJmZUacsvQ": "DTC Qté à commander",
     "uAWIVDnGPGH.t5L9ODSuYOG": "DTC CMM",
-    "uAWIVDnGPGH.pGSfKOKL9s0": "DTC Adjustment",
-    "uAWIVDnGPGH.jpmZl19SSta": "DTC MSD",
+    "kd0elH7N75k.pGSfKOKL9s0": "DTC Adjustment",
+    "kpvY4GzEsOv.jpmZl19SSta": "DTC MSD",
 
     "l1bhrYUPsde.dxDQKDcTn6Z": "BCG dose-administree",
     "l1bhrYUPsde.XEN3ucCGa07": "BCG dose-jour rupture stock",
@@ -515,8 +515,8 @@ RENAME_MAP: Dict[str, str] = {
     "l1bhrYUPsde.Lpu56KTyGvy": "BCG Stock Max",
     "l1bhrYUPsde.ddJmZUacsvQ": "BCG Qté à commander",
     "l1bhrYUPsde.t5L9ODSuYOG": "BCG CMM",
-    "l1bhrYUPsde.pGSfKOKL9s0": "BCG Adjustment",
-    "l1bhrYUPsde.jpmZl19SSta": "BCG MSD",
+    "VcI6UxYSqb7.pGSfKOKL9s0": "BCG Adjustment",
+    "bJD8kwm6xz8.jpmZl19SSta": "BCG MSD",
 
     "Hjlw6DpooIo.dxDQKDcTn6Z": "VAR dose-administree",
     "Hjlw6DpooIo.XEN3ucCGa07": "VAR dose-jour rupture stock",
@@ -529,8 +529,8 @@ RENAME_MAP: Dict[str, str] = {
     "Hjlw6DpooIo.Lpu56KTyGvy": "VAR Stock Max",
     "Hjlw6DpooIo.ddJmZUacsvQ": "VAR Qté à commander",
     "Hjlw6DpooIo.t5L9ODSuYOG": "VAR CMM",
-    "Hjlw6DpooIo.pGSfKOKL9s0": "VAR Adjustment",
-    "Hjlw6DpooIo.jpmZl19SSta": "VAR MSD",
+    "DYoKTCw2Oqi.pGSfKOKL9s0": "VAR Adjustment",
+    "fJvcsDrhScZ.jpmZl19SSta": "VAR MSD",
 
     "BCXcLiQNI8M.dxDQKDcTn6Z": "VPO dose-administree",
     "BCXcLiQNI8M.XEN3ucCGa07": "VPO dose-jour rupture stock",
@@ -543,8 +543,8 @@ RENAME_MAP: Dict[str, str] = {
     "BCXcLiQNI8M.Lpu56KTyGvy": "VPO Stock Max",
     "BCXcLiQNI8M.ddJmZUacsvQ": "VPO Qté à commander",
     "BCXcLiQNI8M.t5L9ODSuYOG": "VPO CMM",
-    "BCXcLiQNI8M.pGSfKOKL9s0": "VPO Adjustment",
-    "BCXcLiQNI8M.jpmZl19SSta": "VPO MSD",
+    "KCfG0FCgGWU.pGSfKOKL9s0": "VPO Adjustment",
+    "iEbT3SCQStG.jpmZl19SSta": "VPO MSD",
 
     "IisI6JudbS8.dxDQKDcTn6Z": "VPI dose-administree",
     "IisI6JudbS8.XEN3ucCGa07": "VPI dose-jour rupture stock",
@@ -557,8 +557,8 @@ RENAME_MAP: Dict[str, str] = {
     "IisI6JudbS8.Lpu56KTyGvy": "VPI Stock Max",
     "IisI6JudbS8.ddJmZUacsvQ": "VPI Qté à commander",
     "IisI6JudbS8.t5L9ODSuYOG": "VPI CMM",
-    "IisI6JudbS8.pGSfKOKL9s0": "VPI Adjustment",
-    "IisI6JudbS8.jpmZl19SSta": "VPI MSD",
+    "EhguMRWyJjV.pGSfKOKL9s0": "VPI Adjustment",
+    "UgMNX4AWqj1.jpmZl19SSta": "VPI MSD",
 
     "vrTdwvAQSUc.dxDQKDcTn6Z": "VAA dose-administree",
     "vrTdwvAQSUc.XEN3ucCGa07": "VAA dose-jour rupture stock",
@@ -571,8 +571,8 @@ RENAME_MAP: Dict[str, str] = {
     "vrTdwvAQSUc.Lpu56KTyGvy": "VAA Stock Max",
     "vrTdwvAQSUc.ddJmZUacsvQ": "VAA Qté à commander",
     "vrTdwvAQSUc.t5L9ODSuYOG": "VAA CMM",
-    "vrTdwvAQSUc.pGSfKOKL9s0": "VAA Adjustment",
-    "vrTdwvAQSUc.jpmZl19SSta": "VAA MSD",
+    "pho7jci1XYc.pGSfKOKL9s0": "VAA Adjustment",
+    "AVhKGbmEA9G.jpmZl19SSta": "VAA MSD",
 
     "iFMn6ceqdIN.dxDQKDcTn6Z": "VAT dose-administree",
     "iFMn6ceqdIN.XEN3ucCGa07": "VAT dose-jour rupture stock",
@@ -585,8 +585,8 @@ RENAME_MAP: Dict[str, str] = {
     "iFMn6ceqdIN.Lpu56KTyGvy": "VAT Stock Max",
     "iFMn6ceqdIN.ddJmZUacsvQ": "VAT Qté à commander",
     "iFMn6ceqdIN.t5L9ODSuYOG": "VAT CMM",
-    "iFMn6ceqdIN.pGSfKOKL9s0": "VAT Adjustment",
-    "iFMn6ceqdIN.jpmZl19SSta": "VAT MSD",
+    "BhgOrHZVgdT.pGSfKOKL9s0": "VAT Adjustment",
+    "aRkYMm4tHvX.jpmZl19SSta": "VAT MSD",
 
     "hqqlXMmY95c.dxDQKDcTn6Z": "PCV13 dose-administree",
     "hqqlXMmY95c.XEN3ucCGa07": "PCV13 dose-jour rupture stock",
@@ -598,8 +598,8 @@ RENAME_MAP: Dict[str, str] = {
     "hqqlXMmY95c.Lpu56KTyGvy": "PCV13 Stock Max",
     "hqqlXMmY95c.ddJmZUacsvQ": "PCV13 Qté à commander",
     "hqqlXMmY95c.t5L9ODSuYOG": "PCV13 CMM",
-    "hqqlXMmY95c.pGSfKOKL9s0": "PCV13 Adjustment",
-    "hqqlXMmY95c.jpmZl19SSta": "PCV13 MSD",
+    "llBBZ1VxhaY.pGSfKOKL9s0": "PCV13 Adjustment",
+    "CDc5q7ornpu.jpmZl19SSta": "PCV13 MSD",
 
     "MJrLCya7qzt.dxDQKDcTn6Z": "ROTA dose-administree",
     "MJrLCya7qzt.XEN3ucCGa07": "ROTA dose-jour rupture stock",
@@ -611,8 +611,8 @@ RENAME_MAP: Dict[str, str] = {
     "MJrLCya7qzt.Lpu56KTyGvy": "ROTA Stock Max",
     "MJrLCya7qzt.ddJmZUacsvQ": "ROTA Qté à commander",
     "MJrLCya7qzt.t5L9ODSuYOG": "ROTA CMM",
-    "MJrLCya7qzt.pGSfKOKL9s0": "ROTA Adjustment",
-    "MJrLCya7qzt.jpmZl19SSta": "ROTA MSD",
+    "qr4nc6wQ0nK.pGSfKOKL9s0": "ROTA Adjustment",
+    "JrGE0PSspn3.jpmZl19SSta": "ROTA MSD",
 
     "RYaAzE1eqya.dxDQKDcTn6Z": "VAP dose-administree",
     "RYaAzE1eqya.XEN3ucCGa07": "VAP dose-jour rupture stock",
@@ -624,8 +624,8 @@ RENAME_MAP: Dict[str, str] = {
     "RYaAzE1eqya.Lpu56KTyGvy": "VAP Stock Max",
     "RYaAzE1eqya.ddJmZUacsvQ": "VAP Qté à commander",
     "RYaAzE1eqya.t5L9ODSuYOG": "VAP CMM",
-    "RYaAzE1eqya.pGSfKOKL9s0": "VAP Adjustment",
-    "RYaAzE1eqya.jpmZl19SSta": "VAP MSD",
+    "ADvotRbZQxB.pGSfKOKL9s0": "VAP Adjustment",
+    "kYGW0DcBwWe.jpmZl19SSta": "VAP MSD",
 
     "BfoCv6bUeBk.dxDQKDcTn6Z": "HPV dose-administree",
     "BfoCv6bUeBk.XEN3ucCGa07": "HPV dose-jour rupture stock",
@@ -637,8 +637,8 @@ RENAME_MAP: Dict[str, str] = {
     "BfoCv6bUeBk.Lpu56KTyGvy": "HPV Stock Max",
     "BfoCv6bUeBk.ddJmZUacsvQ": "HPV Qté à commander",
     "BfoCv6bUeBk.t5L9ODSuYOG": "HPV CMM",
-    "BfoCv6bUeBk.pGSfKOKL9s0": "HPV Adjustment",
-    "BfoCv6bUeBk.jpmZl19SSta": "HPV MSD",
+    "VsoGWlC8T9Q.pGSfKOKL9s0": "HPV Adjustment",
+    "JdrnZD4dPKl.jpmZl19SSta": "HPV MSD",
 
     "laQa8YfpVrp.dxDQKDcTn6Z": "Diluant_BCG dose-administree",
     "laQa8YfpVrp.XEN3ucCGa07": "Diluant_BCG dose-jour rupture stock",
@@ -650,8 +650,8 @@ RENAME_MAP: Dict[str, str] = {
     "laQa8YfpVrp.Lpu56KTyGvy": "Diluant_BCG Stock Max",
     "laQa8YfpVrp.ddJmZUacsvQ": "Diluant_BCG qte a commander",
     "laQa8YfpVrp.t5L9ODSuYOG": "Diluant_BCG cmm",
-    "laQa8YfpVrp.pGSfKOKL9s0": "Diluant_BCG ajustement",
-    "laQa8YfpVrp.jpmZl19SSta": "Diluant_BCG msd",
+    "ln32rKUhVog.pGSfKOKL9s0": "Diluant_BCG ajustement",
+    "x2wBx3s2SLQ.jpmZl19SSta": "Diluant_BCG msd",
 
     "nnSKbBscmxH.dxDQKDcTn6Z": "Diluant_VAR dose-administree",
     "nnSKbBscmxH.XEN3ucCGa07": "Diluant_VAR dose-jour rupture stock",
@@ -663,8 +663,8 @@ RENAME_MAP: Dict[str, str] = {
     "nnSKbBscmxH.Lpu56KTyGvy": "Diluant_VAR Stock Max",
     "nnSKbBscmxH.ddJmZUacsvQ": "Diluant_VAR qte a commander",
     "nnSKbBscmxH.t5L9ODSuYOG": "Diluant_VAR cmm",
-    "nnSKbBscmxH.pGSfKOKL9s0": "Diluant_VAR ajustement",
-    "nnSKbBscmxH.jpmZl19SSta": "Diluant_VAR msd",
+    "XQLOXoInd3R.pGSfKOKL9s0": "Diluant_VAR ajustement",
+    "UX65tnTXUBr.jpmZl19SSta": "Diluant_VAR msd",
 
     "fQfJhi742vt.dxDQKDcTn6Z": "Diluant_VAA dose-administree",
     "fQfJhi742vt.XEN3ucCGa07": "Diluant_VAA dose-jour rupture stock",
@@ -676,8 +676,8 @@ RENAME_MAP: Dict[str, str] = {
     "fQfJhi742vt.Lpu56KTyGvy": "Diluant_VAA Stock Max",
     "fQfJhi742vt.ddJmZUacsvQ": "Diluant_VAA qte a commander",
     "fQfJhi742vt.t5L9ODSuYOG": "Diluant_VAA cmm",
-    "fQfJhi742vt.pGSfKOKL9s0": "Diluant_VAA ajustement",
-    "fQfJhi742vt.jpmZl19SSta": "Diluant_VAA msd",
+    "GqgVvEI7JaC.pGSfKOKL9s0": "Diluant_VAA ajustement",
+    "DZZLXF2N7Kw.jpmZl19SSta": "Diluant_VAA msd",
 
     "bwUoJJgDst9.dxDQKDcTn6Z": "SAB_005ml dose-administree",
     "bwUoJJgDst9.XEN3ucCGa07": "SAB_005ml dose-jour rupture stock",
@@ -689,8 +689,8 @@ RENAME_MAP: Dict[str, str] = {
     "bwUoJJgDst9.Lpu56KTyGvy": "SAB_005ml Stock Max",
     "bwUoJJgDst9.ddJmZUacsvQ": "SAB_005ml qte a commander",
     "bwUoJJgDst9.t5L9ODSuYOG": "SAB_005ml cmm",
-    "bwUoJJgDst9.pGSfKOKL9s0": "SAB_005ml ajustement",
-    "bwUoJJgDst9.jpmZl19SSta": "SAB_005ml msd",
+    "esgalSEQ9hA.pGSfKOKL9s0": "SAB_005ml ajustement",
+    "SJ1EAubhzIR.jpmZl19SSta": "SAB_005ml msd",
 
     "blfdHcia9nP.dxDQKDcTn6Z": "SAB_05ml dose-administree",
     "blfdHcia9nP.XEN3ucCGa07": "SAB_05ml dose-jour rupture stock",
@@ -702,8 +702,8 @@ RENAME_MAP: Dict[str, str] = {
     "blfdHcia9nP.Lpu56KTyGvy": "SAB_05ml Stock Max",
     "blfdHcia9nP.ddJmZUacsvQ": "SAB_05ml qte a commander",
     "blfdHcia9nP.t5L9ODSuYOG": "SAB_05ml cmm",
-    "blfdHcia9nP.pGSfKOKL9s0": "SAB_05ml ajustement",
-    "blfdHcia9nP.jpmZl19SSta": "SAB_05ml msd",
+    "e3k4D2zCCgo.pGSfKOKL9s0": "SAB_05ml ajustement",
+    "Qstq45EG8DV.jpmZl19SSta": "SAB_05ml msd",
 
     "bqJvWJtJwtK.dxDQKDcTn6Z": "Ser_dilution_2ml dose-administree",
     "bqJvWJtJwtK.XEN3ucCGa07": "Ser_dilution_2ml dose-jour rupture stock",
@@ -715,8 +715,8 @@ RENAME_MAP: Dict[str, str] = {
     "bqJvWJtJwtK.Lpu56KTyGvy": "Ser_dilution_2ml Stock Max",
     "bqJvWJtJwtK.ddJmZUacsvQ": "Ser_dilution_2ml qte a commander",
     "bqJvWJtJwtK.t5L9ODSuYOG": "Ser_dilution_2ml cmm",
-    "bqJvWJtJwtK.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
-    "bqJvWJtJwtK.jpmZl19SSta": "Ser_dilution_2ml msd",
+    "JRwL4KKN7Nk.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
+    "AdtKSkta4bh.jpmZl19SSta": "Ser_dilution_2ml msd",
 
     "DNZEo533IMh.dxDQKDcTn6Z": "Ser_dilution_5ml dose-administree",
     "DNZEo533IMh.XEN3ucCGa07": "Ser_dilution_5ml dose-jour rupture stock",
@@ -728,8 +728,8 @@ RENAME_MAP: Dict[str, str] = {
     "DNZEo533IMh.Lpu56KTyGvy": "Ser_dilution_5ml Stock Max",
     "DNZEo533IMh.ddJmZUacsvQ": "Ser_dilution_5ml qte a commander",
     "DNZEo533IMh.t5L9ODSuYOG": "Ser_dilution_5ml cmm",
-    "DNZEo533IMh.pGSfKOKL9s0": "Ser_dilution_5ml ajustement",
-    "DNZEo533IMh.jpmZl19SSta": "Ser_dilution_5ml msd",
+    "HrYG9MrHUdg.pGSfKOKL9s0": "Ser_dilution_5ml ajustement",
+    "cmjf7VquiXH.jpmZl19SSta": "Ser_dilution_5ml msd",
 
     "ZMcyV45XAkW.dxDQKDcTn6Z": "SAB_auto_bloquante dose-administree",
     "ZMcyV45XAkW.XEN3ucCGa07": "SAB_auto_bloquante dose-jour rupture stock",
@@ -741,8 +741,8 @@ RENAME_MAP: Dict[str, str] = {
     "ZMcyV45XAkW.Lpu56KTyGvy": "SAB_auto_bloquante Stock Max",
     "ZMcyV45XAkW.ddJmZUacsvQ": "SAB_auto_bloquante qte a commander",
     "ZMcyV45XAkW.t5L9ODSuYOG": "SAB_auto_bloquante cmm",
-    "ZMcyV45XAkW.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
-    "ZMcyV45XAkW.jpmZl19SSta": "SAB_auto_bloquante msd",
+    "NesfIHNd9xd.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
+    "rJgmuGc4ynC.jpmZl19SSta": "SAB_auto_bloquante msd",
 
     "gzPW3f2ijo5.dxDQKDcTn6Z": "Ser_dilution_6ml dose-administree",
     "gzPW3f2ijo5.XEN3ucCGa07": "Ser_dilution_6ml dose-jour rupture stock",
@@ -754,8 +754,8 @@ RENAME_MAP: Dict[str, str] = {
     "gzPW3f2ijo5.Lpu56KTyGvy": "Ser_dilution_6ml Stock Max",
     "gzPW3f2ijo5.ddJmZUacsvQ": "Ser_dilution_6ml qte a commander",
     "gzPW3f2ijo5.t5L9ODSuYOG": "Ser_dilution_6ml cmm",
-    "gzPW3f2ijo5.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
-    "gzPW3f2ijo5.jpmZl19SSta": "Ser_dilution_6ml msd",
+    "gN8mcPpAiiI.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
+    "pZdQli2zn4y.jpmZl19SSta": "Ser_dilution_6ml msd",
 
     "tmp1zLSXw0Q.dxDQKDcTn6Z": "Adaptateurs dose-administree",
     "tmp1zLSXw0Q.XEN3ucCGa07": "Adaptateurs dose-jour rupture stock",
@@ -767,8 +767,8 @@ RENAME_MAP: Dict[str, str] = {
     "tmp1zLSXw0Q.Lpu56KTyGvy": "Adaptateurs Stock Max",
     "tmp1zLSXw0Q.ddJmZUacsvQ": "Adaptateurs qte a commander",
     "tmp1zLSXw0Q.t5L9ODSuYOG": "Adaptateurs cmm",
-    "tmp1zLSXw0Q.pGSfKOKL9s0": "Adaptateurs ajustement",
-    "tmp1zLSXw0Q.jpmZl19SSta": "Adaptateurs msd",
+    "OoDet9UWItm.pGSfKOKL9s0": "Adaptateurs ajustement",
+    "cOhDoR0ddSp.jpmZl19SSta": "Adaptateurs msd",
 
     "jJUIodWQH0T.dxDQKDcTn6Z": "Compte_goutte dose-administree",
     "jJUIodWQH0T.XEN3ucCGa07": "Compte_goutte dose-jour rupture stock",
@@ -780,8 +780,8 @@ RENAME_MAP: Dict[str, str] = {
     "jJUIodWQH0T.Lpu56KTyGvy": "Compte_goutte Stock Max",
     "jJUIodWQH0T.ddJmZUacsvQ": "Compte_goutte qte a commander",
     "jJUIodWQH0T.t5L9ODSuYOG": "Compte_goutte cmm",
-    "jJUIodWQH0T.pGSfKOKL9s0": "Compte_goutte ajustement",
-    "jJUIodWQH0T.jpmZl19SSta": "Compte_goutte msd",
+    "MAyhe30b20R.pGSfKOKL9s0": "Compte_goutte ajustement",
+    "WYiF7sbZ5cV.jpmZl19SSta": "Compte_goutte msd",
 
     "K8Yt0p1z21M.dxDQKDcTn6Z": "R_ceptacles dose-administree",
     "K8Yt0p1z21M.XEN3ucCGa07": "R_ceptacles dose-jour rupture stock",
@@ -793,8 +793,8 @@ RENAME_MAP: Dict[str, str] = {
     "K8Yt0p1z21M.Lpu56KTyGvy": "R_ceptacles Stock Max",
     "K8Yt0p1z21M.ddJmZUacsvQ": "R_ceptacles qte a commander",
     "K8Yt0p1z21M.t5L9ODSuYOG": "R_ceptacles cmm",
-    "K8Yt0p1z21M.pGSfKOKL9s0": "R_ceptacles ajustement",
-    "K8Yt0p1z21M.jpmZl19SSta": "R_ceptacles msd",
+    "hllO2kXSuwM.pGSfKOKL9s0": "R_ceptacles ajustement",
+    "xOlmaXSPviM.jpmZl19SSta": "R_ceptacles msd",
 
     "W25tOXS0rxS.g6mIyKoGIh2": "BCG 12-23 mois fixe1",
     "W25tOXS0rxS.QRyK6yxKBU3": "BCG 12-23 mois fixe2",

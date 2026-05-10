@@ -144,41 +144,41 @@ DX_LIST = """
           "jJUIodWQH0T.WZwmzIuRvwV;jJUIodWQH0T.GSCwhT2SCCr;jJUIodWQH0T.pdKyvaYRqCj;"
           "K8Yt0p1z21M.dxDQKDcTn6Z;K8Yt0p1z21M.XEN3ucCGa07;K8Yt0p1z21M.J8mw9rFkY4v;"
           "K8Yt0p1z21M.WZwmzIuRvwV;K8Yt0p1z21M.GSCwhT2SCCr;K8Yt0p1z21M.pdKyvaYRqCj;"
-          "uAWIVDnGPGH.Lpu56KTyGvy;uAWIVDnGPGH.ddJmZUacsvQ;uAWIVDnGPGH.t5L9ODSuYOG;uAWIVDnGPGH.pGSfKOKL9s0;uAWIVDnGPGH.jpmZl19SSta;"
-          "l1bhrYUPsde.Lpu56KTyGvy;l1bhrYUPsde.ddJmZUacsvQ;l1bhrYUPsde.t5L9ODSuYOG;l1bhrYUPsde.pGSfKOKL9s0;l1bhrYUPsde.jpmZl19SSta;"
-          "Hjlw6DpooIo.Lpu56KTyGvy;Hjlw6DpooIo.ddJmZUacsvQ;Hjlw6DpooIo.t5L9ODSuYOG;Hjlw6DpooIo.pGSfKOKL9s0;Hjlw6DpooIo.jpmZl19SSta;"
-          "BCXcLiQNI8M.Lpu56KTyGvy;BCXcLiQNI8M.ddJmZUacsvQ;BCXcLiQNI8M.t5L9ODSuYOG;BCXcLiQNI8M.pGSfKOKL9s0;BCXcLiQNI8M.jpmZl19SSta;"
-          "IisI6JudbS8.Lpu56KTyGvy;IisI6JudbS8.ddJmZUacsvQ;IisI6JudbS8.t5L9ODSuYOG;IisI6JudbS8.pGSfKOKL9s0;IisI6JudbS8.jpmZl19SSta;"
-          "vrTdwvAQSUc.Lpu56KTyGvy;vrTdwvAQSUc.ddJmZUacsvQ;vrTdwvAQSUc.t5L9ODSuYOG;vrTdwvAQSUc.pGSfKOKL9s0;vrTdwvAQSUc.jpmZl19SSta;"
-          "iFMn6ceqdIN.Lpu56KTyGvy;iFMn6ceqdIN.ddJmZUacsvQ;iFMn6ceqdIN.t5L9ODSuYOG;iFMn6ceqdIN.pGSfKOKL9s0;iFMn6ceqdIN.jpmZl19SSta;"
-          "hqqlXMmY95c.Lpu56KTyGvy;hqqlXMmY95c.ddJmZUacsvQ;hqqlXMmY95c.t5L9ODSuYOG;hqqlXMmY95c.pGSfKOKL9s0;hqqlXMmY95c.jpmZl19SSta;"
-          "MJrLCya7qzt.Lpu56KTyGvy;MJrLCya7qzt.ddJmZUacsvQ;MJrLCya7qzt.t5L9ODSuYOG;MJrLCya7qzt.pGSfKOKL9s0;MJrLCya7qzt.jpmZl19SSta;"
-          "RYaAzE1eqya.Lpu56KTyGvy;RYaAzE1eqya.ddJmZUacsvQ;RYaAzE1eqya.t5L9ODSuYOG;RYaAzE1eqya.pGSfKOKL9s0;RYaAzE1eqya.jpmZl19SSta;"
-          "BfoCv6bUeBk.Lpu56KTyGvy;BfoCv6bUeBk.ddJmZUacsvQ;BfoCv6bUeBk.t5L9ODSuYOG;BfoCv6bUeBk.pGSfKOKL9s0;BfoCv6bUeBk.jpmZl19SSta;"
+          "uAWIVDnGPGH.Lpu56KTyGvy;uAWIVDnGPGH.ddJmZUacsvQ;uAWIVDnGPGH.t5L9ODSuYOG;kd0elH7N75k.pGSfKOKL9s0;kpvY4GzEsOv.jpmZl19SSta;"
+          "l1bhrYUPsde.Lpu56KTyGvy;l1bhrYUPsde.ddJmZUacsvQ;l1bhrYUPsde.t5L9ODSuYOG;VcI6UxYSqb7.pGSfKOKL9s0;bJD8kwm6xz8.jpmZl19SSta;"
+          "Hjlw6DpooIo.Lpu56KTyGvy;Hjlw6DpooIo.ddJmZUacsvQ;Hjlw6DpooIo.t5L9ODSuYOG;DYoKTCw2Oqi.pGSfKOKL9s0;fJvcsDrhScZ.jpmZl19SSta;"
+          "BCXcLiQNI8M.Lpu56KTyGvy;BCXcLiQNI8M.ddJmZUacsvQ;BCXcLiQNI8M.t5L9ODSuYOG;KCfG0FCgGWU.pGSfKOKL9s0;iEbT3SCQStG.jpmZl19SSta;"
+          "IisI6JudbS8.Lpu56KTyGvy;IisI6JudbS8.ddJmZUacsvQ;IisI6JudbS8.t5L9ODSuYOG;EhguMRWyJjV.pGSfKOKL9s0;UgMNX4AWqj1.jpmZl19SSta;"
+          "vrTdwvAQSUc.Lpu56KTyGvy;vrTdwvAQSUc.ddJmZUacsvQ;vrTdwvAQSUc.t5L9ODSuYOG;pho7jci1XYc.pGSfKOKL9s0;AVhKGbmEA9G.jpmZl19SSta;"
+          "iFMn6ceqdIN.Lpu56KTyGvy;iFMn6ceqdIN.ddJmZUacsvQ;iFMn6ceqdIN.t5L9ODSuYOG;BhgOrHZVgdT.pGSfKOKL9s0;aRkYMm4tHvX.jpmZl19SSta;"
+          "hqqlXMmY95c.Lpu56KTyGvy;hqqlXMmY95c.ddJmZUacsvQ;hqqlXMmY95c.t5L9ODSuYOG;llBBZ1VxhaY.pGSfKOKL9s0;CDc5q7ornpu.jpmZl19SSta;"
+          "MJrLCya7qzt.Lpu56KTyGvy;MJrLCya7qzt.ddJmZUacsvQ;MJrLCya7qzt.t5L9ODSuYOG;qr4nc6wQ0nK.pGSfKOKL9s0;JrGE0PSspn3.jpmZl19SSta;"
+          "RYaAzE1eqya.Lpu56KTyGvy;RYaAzE1eqya.ddJmZUacsvQ;RYaAzE1eqya.t5L9ODSuYOG;ADvotRbZQxB.pGSfKOKL9s0;kYGW0DcBwWe.jpmZl19SSta;"
+          "BfoCv6bUeBk.Lpu56KTyGvy;BfoCv6bUeBk.ddJmZUacsvQ;BfoCv6bUeBk.t5L9ODSuYOG;VsoGWlC8T9Q.pGSfKOKL9s0;JdrnZD4dPKl.jpmZl19SSta;"
           "laQa8YfpVrp.kOWsLrtvrhn;"
-          "laQa8YfpVrp.Lpu56KTyGvy;laQa8YfpVrp.ddJmZUacsvQ;laQa8YfpVrp.t5L9ODSuYOG;laQa8YfpVrp.pGSfKOKL9s0;laQa8YfpVrp.jpmZl19SSta;"
+          "laQa8YfpVrp.Lpu56KTyGvy;laQa8YfpVrp.ddJmZUacsvQ;laQa8YfpVrp.t5L9ODSuYOG;ln32rKUhVog.pGSfKOKL9s0;x2wBx3s2SLQ.jpmZl19SSta;"
           "nnSKbBscmxH.kOWsLrtvrhn;"
-          "nnSKbBscmxH.Lpu56KTyGvy;nnSKbBscmxH.ddJmZUacsvQ;nnSKbBscmxH.t5L9ODSuYOG;nnSKbBscmxH.pGSfKOKL9s0;nnSKbBscmxH.jpmZl19SSta;"
+          "nnSKbBscmxH.Lpu56KTyGvy;nnSKbBscmxH.ddJmZUacsvQ;nnSKbBscmxH.t5L9ODSuYOG;XQLOXoInd3R.pGSfKOKL9s0;UX65tnTXUBr.jpmZl19SSta;"
           "fQfJhi742vt.kOWsLrtvrhn;"
-          "fQfJhi742vt.Lpu56KTyGvy;fQfJhi742vt.ddJmZUacsvQ;fQfJhi742vt.t5L9ODSuYOG;fQfJhi742vt.pGSfKOKL9s0;fQfJhi742vt.jpmZl19SSta;"
+          "fQfJhi742vt.Lpu56KTyGvy;fQfJhi742vt.ddJmZUacsvQ;fQfJhi742vt.t5L9ODSuYOG;GqgVvEI7JaC.pGSfKOKL9s0;DZZLXF2N7Kw.jpmZl19SSta;"
           "bwUoJJgDst9.kOWsLrtvrhn;"
-          "bwUoJJgDst9.Lpu56KTyGvy;bwUoJJgDst9.ddJmZUacsvQ;bwUoJJgDst9.t5L9ODSuYOG;bwUoJJgDst9.pGSfKOKL9s0;bwUoJJgDst9.jpmZl19SSta;"
+          "bwUoJJgDst9.Lpu56KTyGvy;bwUoJJgDst9.ddJmZUacsvQ;bwUoJJgDst9.t5L9ODSuYOG;esgalSEQ9hA.pGSfKOKL9s0;SJ1EAubhzIR.jpmZl19SSta;"
           "blfdHcia9nP.kOWsLrtvrhn;"
-          "blfdHcia9nP.Lpu56KTyGvy;blfdHcia9nP.ddJmZUacsvQ;blfdHcia9nP.t5L9ODSuYOG;blfdHcia9nP.pGSfKOKL9s0;blfdHcia9nP.jpmZl19SSta;"
+          "blfdHcia9nP.Lpu56KTyGvy;blfdHcia9nP.ddJmZUacsvQ;blfdHcia9nP.t5L9ODSuYOG;e3k4D2zCCgo.pGSfKOKL9s0;Qstq45EG8DV.jpmZl19SSta;"
           "bqJvWJtJwtK.kOWsLrtvrhn;"
-          "bqJvWJtJwtK.Lpu56KTyGvy;bqJvWJtJwtK.ddJmZUacsvQ;bqJvWJtJwtK.t5L9ODSuYOG;bqJvWJtJwtK.pGSfKOKL9s0;bqJvWJtJwtK.jpmZl19SSta;"
+          "bqJvWJtJwtK.Lpu56KTyGvy;bqJvWJtJwtK.ddJmZUacsvQ;bqJvWJtJwtK.t5L9ODSuYOG;JRwL4KKN7Nk.pGSfKOKL9s0;AdtKSkta4bh.jpmZl19SSta;"
           "DNZEo533IMh.kOWsLrtvrhn;"
-          "DNZEo533IMh.Lpu56KTyGvy;DNZEo533IMh.ddJmZUacsvQ;DNZEo533IMh.t5L9ODSuYOG;DNZEo533IMh.pGSfKOKL9s0;DNZEo533IMh.jpmZl19SSta;"
+          "DNZEo533IMh.Lpu56KTyGvy;DNZEo533IMh.ddJmZUacsvQ;DNZEo533IMh.t5L9ODSuYOG;HrYG9MrHUdg.pGSfKOKL9s0;cmjf7VquiXH.jpmZl19SSta;"
           "ZMcyV45XAkW.kOWsLrtvrhn;"
-          "ZMcyV45XAkW.Lpu56KTyGvy;ZMcyV45XAkW.ddJmZUacsvQ;ZMcyV45XAkW.t5L9ODSuYOG;ZMcyV45XAkW.pGSfKOKL9s0;ZMcyV45XAkW.jpmZl19SSta;"
+          "ZMcyV45XAkW.Lpu56KTyGvy;ZMcyV45XAkW.ddJmZUacsvQ;ZMcyV45XAkW.t5L9ODSuYOG;NesfIHNd9xd.pGSfKOKL9s0;rJgmuGc4ynC.jpmZl19SSta;"
           "gzPW3f2ijo5.kOWsLrtvrhn;"
-          "gzPW3f2ijo5.Lpu56KTyGvy;gzPW3f2ijo5.ddJmZUacsvQ;gzPW3f2ijo5.t5L9ODSuYOG;gzPW3f2ijo5.pGSfKOKL9s0;gzPW3f2ijo5.jpmZl19SSta;"
+          "gzPW3f2ijo5.Lpu56KTyGvy;gzPW3f2ijo5.ddJmZUacsvQ;gzPW3f2ijo5.t5L9ODSuYOG;gN8mcPpAiiI.pGSfKOKL9s0;pZdQli2zn4y.jpmZl19SSta;"
           "tmp1zLSXw0Q.kOWsLrtvrhn;"
-          "tmp1zLSXw0Q.Lpu56KTyGvy;tmp1zLSXw0Q.ddJmZUacsvQ;tmp1zLSXw0Q.t5L9ODSuYOG;tmp1zLSXw0Q.pGSfKOKL9s0;tmp1zLSXw0Q.jpmZl19SSta;"
+          "tmp1zLSXw0Q.Lpu56KTyGvy;tmp1zLSXw0Q.ddJmZUacsvQ;tmp1zLSXw0Q.t5L9ODSuYOG;OoDet9UWItm.pGSfKOKL9s0;cOhDoR0ddSp.jpmZl19SSta;"
           "jJUIodWQH0T.kOWsLrtvrhn;"
-          "jJUIodWQH0T.Lpu56KTyGvy;jJUIodWQH0T.ddJmZUacsvQ;jJUIodWQH0T.t5L9ODSuYOG;jJUIodWQH0T.pGSfKOKL9s0;jJUIodWQH0T.jpmZl19SSta;"
+          "jJUIodWQH0T.Lpu56KTyGvy;jJUIodWQH0T.ddJmZUacsvQ;jJUIodWQH0T.t5L9ODSuYOG;MAyhe30b20R.pGSfKOKL9s0;WYiF7sbZ5cV.jpmZl19SSta;"
           "K8Yt0p1z21M.kOWsLrtvrhn;"
-          "K8Yt0p1z21M.Lpu56KTyGvy;K8Yt0p1z21M.ddJmZUacsvQ;K8Yt0p1z21M.t5L9ODSuYOG;K8Yt0p1z21M.pGSfKOKL9s0;K8Yt0p1z21M.jpmZl19SSta;"
+          "K8Yt0p1z21M.Lpu56KTyGvy;K8Yt0p1z21M.ddJmZUacsvQ;K8Yt0p1z21M.t5L9ODSuYOG;hllO2kXSuwM.pGSfKOKL9s0;xOlmaXSPviM.jpmZl19SSta;"
           "W25tOXS0rxS.g6mIyKoGIh2;W25tOXS0rxS.QRyK6yxKBU3;W25tOXS0rxS.Rby9Jdri29F;"
           "W25tOXS0rxS.FCXzheCQXtr;W25tOXS0rxS.VrEj0UVVGr4;"
           "uNdFg1eymsa.g6mIyKoGIh2;uNdFg1eymsa.QRyK6yxKBU3;uNdFg1eymsa.Rby9Jdri29F;"
@@ -501,8 +501,8 @@ RENAME_MAP: Dict[str, str] = {
     "uAWIVDnGPGH.Lpu56KTyGvy": "DTC Stock Max",
     "uAWIVDnGPGH.ddJmZUacsvQ": "DTC Qté à commander",
     "uAWIVDnGPGH.t5L9ODSuYOG": "DTC CMM",
-    "uAWIVDnGPGH.pGSfKOKL9s0": "DTC Adjustment",
-    "uAWIVDnGPGH.jpmZl19SSta": "DTC MSD",
+    "kd0elH7N75k.pGSfKOKL9s0": "DTC Adjustment",
+    "kpvY4GzEsOv.jpmZl19SSta": "DTC MSD",
 
     "l1bhrYUPsde.dxDQKDcTn6Z": "BCG dose-administree",
     "l1bhrYUPsde.XEN3ucCGa07": "BCG dose-jour rupture stock",
@@ -515,8 +515,8 @@ RENAME_MAP: Dict[str, str] = {
     "l1bhrYUPsde.Lpu56KTyGvy": "BCG Stock Max",
     "l1bhrYUPsde.ddJmZUacsvQ": "BCG Qté à commander",
     "l1bhrYUPsde.t5L9ODSuYOG": "BCG CMM",
-    "l1bhrYUPsde.pGSfKOKL9s0": "BCG Adjustment",
-    "l1bhrYUPsde.jpmZl19SSta": "BCG MSD",
+    "VcI6UxYSqb7.pGSfKOKL9s0": "BCG Adjustment",
+    "bJD8kwm6xz8.jpmZl19SSta": "BCG MSD",
 
     "Hjlw6DpooIo.dxDQKDcTn6Z": "VAR dose-administree",
     "Hjlw6DpooIo.XEN3ucCGa07": "VAR dose-jour rupture stock",
@@ -529,8 +529,8 @@ RENAME_MAP: Dict[str, str] = {
     "Hjlw6DpooIo.Lpu56KTyGvy": "VAR Stock Max",
     "Hjlw6DpooIo.ddJmZUacsvQ": "VAR Qté à commander",
     "Hjlw6DpooIo.t5L9ODSuYOG": "VAR CMM",
-    "Hjlw6DpooIo.pGSfKOKL9s0": "VAR Adjustment",
-    "Hjlw6DpooIo.jpmZl19SSta": "VAR MSD",
+    "DYoKTCw2Oqi.pGSfKOKL9s0": "VAR Adjustment",
+    "fJvcsDrhScZ.jpmZl19SSta": "VAR MSD",
 
     "BCXcLiQNI8M.dxDQKDcTn6Z": "VPO dose-administree",
     "BCXcLiQNI8M.XEN3ucCGa07": "VPO dose-jour rupture stock",
@@ -543,8 +543,8 @@ RENAME_MAP: Dict[str, str] = {
     "BCXcLiQNI8M.Lpu56KTyGvy": "VPO Stock Max",
     "BCXcLiQNI8M.ddJmZUacsvQ": "VPO Qté à commander",
     "BCXcLiQNI8M.t5L9ODSuYOG": "VPO CMM",
-    "BCXcLiQNI8M.pGSfKOKL9s0": "VPO Adjustment",
-    "BCXcLiQNI8M.jpmZl19SSta": "VPO MSD",
+    "KCfG0FCgGWU.pGSfKOKL9s0": "VPO Adjustment",
+    "iEbT3SCQStG.jpmZl19SSta": "VPO MSD",
 
     "IisI6JudbS8.dxDQKDcTn6Z": "VPI dose-administree",
     "IisI6JudbS8.XEN3ucCGa07": "VPI dose-jour rupture stock",
@@ -557,8 +557,8 @@ RENAME_MAP: Dict[str, str] = {
     "IisI6JudbS8.Lpu56KTyGvy": "VPI Stock Max",
     "IisI6JudbS8.ddJmZUacsvQ": "VPI Qté à commander",
     "IisI6JudbS8.t5L9ODSuYOG": "VPI CMM",
-    "IisI6JudbS8.pGSfKOKL9s0": "VPI Adjustment",
-    "IisI6JudbS8.jpmZl19SSta": "VPI MSD",
+    "EhguMRWyJjV.pGSfKOKL9s0": "VPI Adjustment",
+    "UgMNX4AWqj1.jpmZl19SSta": "VPI MSD",
 
     "vrTdwvAQSUc.dxDQKDcTn6Z": "VAA dose-administree",
     "vrTdwvAQSUc.XEN3ucCGa07": "VAA dose-jour rupture stock",
@@ -571,8 +571,8 @@ RENAME_MAP: Dict[str, str] = {
     "vrTdwvAQSUc.Lpu56KTyGvy": "VAA Stock Max",
     "vrTdwvAQSUc.ddJmZUacsvQ": "VAA Qté à commander",
     "vrTdwvAQSUc.t5L9ODSuYOG": "VAA CMM",
-    "vrTdwvAQSUc.pGSfKOKL9s0": "VAA Adjustment",
-    "vrTdwvAQSUc.jpmZl19SSta": "VAA MSD",
+    "pho7jci1XYc.pGSfKOKL9s0": "VAA Adjustment",
+    "AVhKGbmEA9G.jpmZl19SSta": "VAA MSD",
 
     "iFMn6ceqdIN.dxDQKDcTn6Z": "VAT dose-administree",
     "iFMn6ceqdIN.XEN3ucCGa07": "VAT dose-jour rupture stock",
@@ -585,8 +585,8 @@ RENAME_MAP: Dict[str, str] = {
     "iFMn6ceqdIN.Lpu56KTyGvy": "VAT Stock Max",
     "iFMn6ceqdIN.ddJmZUacsvQ": "VAT Qté à commander",
     "iFMn6ceqdIN.t5L9ODSuYOG": "VAT CMM",
-    "iFMn6ceqdIN.pGSfKOKL9s0": "VAT Adjustment",
-    "iFMn6ceqdIN.jpmZl19SSta": "VAT MSD",
+    "BhgOrHZVgdT.pGSfKOKL9s0": "VAT Adjustment",
+    "aRkYMm4tHvX.jpmZl19SSta": "VAT MSD",
 
     "hqqlXMmY95c.dxDQKDcTn6Z": "PCV13 dose-administree",
     "hqqlXMmY95c.XEN3ucCGa07": "PCV13 dose-jour rupture stock",
@@ -598,8 +598,8 @@ RENAME_MAP: Dict[str, str] = {
     "hqqlXMmY95c.Lpu56KTyGvy": "PCV13 Stock Max",
     "hqqlXMmY95c.ddJmZUacsvQ": "PCV13 Qté à commander",
     "hqqlXMmY95c.t5L9ODSuYOG": "PCV13 CMM",
-    "hqqlXMmY95c.pGSfKOKL9s0": "PCV13 Adjustment",
-    "hqqlXMmY95c.jpmZl19SSta": "PCV13 MSD",
+    "llBBZ1VxhaY.pGSfKOKL9s0": "PCV13 Adjustment",
+    "CDc5q7ornpu.jpmZl19SSta": "PCV13 MSD",
 
     "MJrLCya7qzt.dxDQKDcTn6Z": "ROTA dose-administree",
     "MJrLCya7qzt.XEN3ucCGa07": "ROTA dose-jour rupture stock",
@@ -611,8 +611,8 @@ RENAME_MAP: Dict[str, str] = {
     "MJrLCya7qzt.Lpu56KTyGvy": "ROTA Stock Max",
     "MJrLCya7qzt.ddJmZUacsvQ": "ROTA Qté à commander",
     "MJrLCya7qzt.t5L9ODSuYOG": "ROTA CMM",
-    "MJrLCya7qzt.pGSfKOKL9s0": "ROTA Adjustment",
-    "MJrLCya7qzt.jpmZl19SSta": "ROTA MSD",
+    "qr4nc6wQ0nK.pGSfKOKL9s0": "ROTA Adjustment",
+    "JrGE0PSspn3.jpmZl19SSta": "ROTA MSD",
 
     "RYaAzE1eqya.dxDQKDcTn6Z": "VAP dose-administree",
     "RYaAzE1eqya.XEN3ucCGa07": "VAP dose-jour rupture stock",
@@ -624,8 +624,8 @@ RENAME_MAP: Dict[str, str] = {
     "RYaAzE1eqya.Lpu56KTyGvy": "VAP Stock Max",
     "RYaAzE1eqya.ddJmZUacsvQ": "VAP Qté à commander",
     "RYaAzE1eqya.t5L9ODSuYOG": "VAP CMM",
-    "RYaAzE1eqya.pGSfKOKL9s0": "VAP Adjustment",
-    "RYaAzE1eqya.jpmZl19SSta": "VAP MSD",
+    "ADvotRbZQxB.pGSfKOKL9s0": "VAP Adjustment",
+    "kYGW0DcBwWe.jpmZl19SSta": "VAP MSD",
 
     "BfoCv6bUeBk.dxDQKDcTn6Z": "HPV dose-administree",
     "BfoCv6bUeBk.XEN3ucCGa07": "HPV dose-jour rupture stock",
@@ -637,8 +637,8 @@ RENAME_MAP: Dict[str, str] = {
     "BfoCv6bUeBk.Lpu56KTyGvy": "HPV Stock Max",
     "BfoCv6bUeBk.ddJmZUacsvQ": "HPV Qté à commander",
     "BfoCv6bUeBk.t5L9ODSuYOG": "HPV CMM",
-    "BfoCv6bUeBk.pGSfKOKL9s0": "HPV Adjustment",
-    "BfoCv6bUeBk.jpmZl19SSta": "HPV MSD",
+    "VsoGWlC8T9Q.pGSfKOKL9s0": "HPV Adjustment",
+    "JdrnZD4dPKl.jpmZl19SSta": "HPV MSD",
 
     "laQa8YfpVrp.dxDQKDcTn6Z": "Diluant_BCG dose-administree",
     "laQa8YfpVrp.XEN3ucCGa07": "Diluant_BCG dose-jour rupture stock",
@@ -650,8 +650,8 @@ RENAME_MAP: Dict[str, str] = {
     "laQa8YfpVrp.Lpu56KTyGvy": "Diluant_BCG Stock Max",
     "laQa8YfpVrp.ddJmZUacsvQ": "Diluant_BCG qte a commander",
     "laQa8YfpVrp.t5L9ODSuYOG": "Diluant_BCG cmm",
-    "laQa8YfpVrp.pGSfKOKL9s0": "Diluant_BCG ajustement",
-    "laQa8YfpVrp.jpmZl19SSta": "Diluant_BCG msd",
+    "ln32rKUhVog.pGSfKOKL9s0": "Diluant_BCG ajustement",
+    "x2wBx3s2SLQ.jpmZl19SSta": "Diluant_BCG msd",
 
     "nnSKbBscmxH.dxDQKDcTn6Z": "Diluant_VAR dose-administree",
     "nnSKbBscmxH.XEN3ucCGa07": "Diluant_VAR dose-jour rupture stock",
@@ -663,8 +663,8 @@ RENAME_MAP: Dict[str, str] = {
     "nnSKbBscmxH.Lpu56KTyGvy": "Diluant_VAR Stock Max",
     "nnSKbBscmxH.ddJmZUacsvQ": "Diluant_VAR qte a commander",
     "nnSKbBscmxH.t5L9ODSuYOG": "Diluant_VAR cmm",
-    "nnSKbBscmxH.pGSfKOKL9s0": "Diluant_VAR ajustement",
-    "nnSKbBscmxH.jpmZl19SSta": "Diluant_VAR msd",
+    "XQLOXoInd3R.pGSfKOKL9s0": "Diluant_VAR ajustement",
+    "UX65tnTXUBr.jpmZl19SSta": "Diluant_VAR msd",
 
     "fQfJhi742vt.dxDQKDcTn6Z": "Diluant_VAA dose-administree",
     "fQfJhi742vt.XEN3ucCGa07": "Diluant_VAA dose-jour rupture stock",
@@ -676,8 +676,8 @@ RENAME_MAP: Dict[str, str] = {
     "fQfJhi742vt.Lpu56KTyGvy": "Diluant_VAA Stock Max",
     "fQfJhi742vt.ddJmZUacsvQ": "Diluant_VAA qte a commander",
     "fQfJhi742vt.t5L9ODSuYOG": "Diluant_VAA cmm",
-    "fQfJhi742vt.pGSfKOKL9s0": "Diluant_VAA ajustement",
-    "fQfJhi742vt.jpmZl19SSta": "Diluant_VAA msd",
+    "GqgVvEI7JaC.pGSfKOKL9s0": "Diluant_VAA ajustement",
+    "DZZLXF2N7Kw.jpmZl19SSta": "Diluant_VAA msd",
 
     "bwUoJJgDst9.dxDQKDcTn6Z": "SAB_005ml dose-administree",
     "bwUoJJgDst9.XEN3ucCGa07": "SAB_005ml dose-jour rupture stock",
@@ -689,8 +689,8 @@ RENAME_MAP: Dict[str, str] = {
     "bwUoJJgDst9.Lpu56KTyGvy": "SAB_005ml Stock Max",
     "bwUoJJgDst9.ddJmZUacsvQ": "SAB_005ml qte a commander",
     "bwUoJJgDst9.t5L9ODSuYOG": "SAB_005ml cmm",
-    "bwUoJJgDst9.pGSfKOKL9s0": "SAB_005ml ajustement",
-    "bwUoJJgDst9.jpmZl19SSta": "SAB_005ml msd",
+    "esgalSEQ9hA.pGSfKOKL9s0": "SAB_005ml ajustement",
+    "SJ1EAubhzIR.jpmZl19SSta": "SAB_005ml msd",
 
     "blfdHcia9nP.dxDQKDcTn6Z": "SAB_05ml dose-administree",
     "blfdHcia9nP.XEN3ucCGa07": "SAB_05ml dose-jour rupture stock",
@@ -702,8 +702,8 @@ RENAME_MAP: Dict[str, str] = {
     "blfdHcia9nP.Lpu56KTyGvy": "SAB_05ml Stock Max",
     "blfdHcia9nP.ddJmZUacsvQ": "SAB_05ml qte a commander",
     "blfdHcia9nP.t5L9ODSuYOG": "SAB_05ml cmm",
-    "blfdHcia9nP.pGSfKOKL9s0": "SAB_05ml ajustement",
-    "blfdHcia9nP.jpmZl19SSta": "SAB_05ml msd",
+    "e3k4D2zCCgo.pGSfKOKL9s0": "SAB_05ml ajustement",
+    "Qstq45EG8DV.jpmZl19SSta": "SAB_05ml msd",
 
     "bqJvWJtJwtK.dxDQKDcTn6Z": "Ser_dilution_2ml dose-administree",
     "bqJvWJtJwtK.XEN3ucCGa07": "Ser_dilution_2ml dose-jour rupture stock",
@@ -715,8 +715,8 @@ RENAME_MAP: Dict[str, str] = {
     "bqJvWJtJwtK.Lpu56KTyGvy": "Ser_dilution_2ml Stock Max",
     "bqJvWJtJwtK.ddJmZUacsvQ": "Ser_dilution_2ml qte a commander",
     "bqJvWJtJwtK.t5L9ODSuYOG": "Ser_dilution_2ml cmm",
-    "bqJvWJtJwtK.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
-    "bqJvWJtJwtK.jpmZl19SSta": "Ser_dilution_2ml msd",
+    "JRwL4KKN7Nk.pGSfKOKL9s0": "Ser_dilution_2ml ajustement",
+    "AdtKSkta4bh.jpmZl19SSta": "Ser_dilution_2ml msd",
 
     "DNZEo533IMh.dxDQKDcTn6Z": "Ser_dilution_5ml dose-administree",
     "DNZEo533IMh.XEN3ucCGa07": "Ser_dilution_5ml dose-jour rupture stock",
@@ -728,8 +728,8 @@ RENAME_MAP: Dict[str, str] = {
     "DNZEo533IMh.Lpu56KTyGvy": "Ser_dilution_5ml Stock Max",
     "DNZEo533IMh.ddJmZUacsvQ": "Ser_dilution_5ml qte a commander",
     "DNZEo533IMh.t5L9ODSuYOG": "Ser_dilution_5ml cmm",
-    "DNZEo533IMh.pGSfKOKL9s0": "Ser_dilution_5ml ajustement",
-    "DNZEo533IMh.jpmZl19SSta": "Ser_dilution_5ml msd",
+    "HrYG9MrHUdg.pGSfKOKL9s0": "Ser_dilution_5ml ajustement",
+    "cmjf7VquiXH.jpmZl19SSta": "Ser_dilution_5ml msd",
 
     "ZMcyV45XAkW.dxDQKDcTn6Z": "SAB_auto_bloquante dose-administree",
     "ZMcyV45XAkW.XEN3ucCGa07": "SAB_auto_bloquante dose-jour rupture stock",
@@ -741,8 +741,8 @@ RENAME_MAP: Dict[str, str] = {
     "ZMcyV45XAkW.Lpu56KTyGvy": "SAB_auto_bloquante Stock Max",
     "ZMcyV45XAkW.ddJmZUacsvQ": "SAB_auto_bloquante qte a commander",
     "ZMcyV45XAkW.t5L9ODSuYOG": "SAB_auto_bloquante cmm",
-    "ZMcyV45XAkW.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
-    "ZMcyV45XAkW.jpmZl19SSta": "SAB_auto_bloquante msd",
+    "NesfIHNd9xd.pGSfKOKL9s0": "SAB_auto_bloquante ajustement",
+    "rJgmuGc4ynC.jpmZl19SSta": "SAB_auto_bloquante msd",
 
     "gzPW3f2ijo5.dxDQKDcTn6Z": "Ser_dilution_6ml dose-administree",
     "gzPW3f2ijo5.XEN3ucCGa07": "Ser_dilution_6ml dose-jour rupture stock",
@@ -754,8 +754,8 @@ RENAME_MAP: Dict[str, str] = {
     "gzPW3f2ijo5.Lpu56KTyGvy": "Ser_dilution_6ml Stock Max",
     "gzPW3f2ijo5.ddJmZUacsvQ": "Ser_dilution_6ml qte a commander",
     "gzPW3f2ijo5.t5L9ODSuYOG": "Ser_dilution_6ml cmm",
-    "gzPW3f2ijo5.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
-    "gzPW3f2ijo5.jpmZl19SSta": "Ser_dilution_6ml msd",
+    "gN8mcPpAiiI.pGSfKOKL9s0": "Ser_dilution_6ml ajustement",
+    "pZdQli2zn4y.jpmZl19SSta": "Ser_dilution_6ml msd",
 
     "tmp1zLSXw0Q.dxDQKDcTn6Z": "Adaptateurs dose-administree",
     "tmp1zLSXw0Q.XEN3ucCGa07": "Adaptateurs dose-jour rupture stock",
@@ -767,8 +767,8 @@ RENAME_MAP: Dict[str, str] = {
     "tmp1zLSXw0Q.Lpu56KTyGvy": "Adaptateurs Stock Max",
     "tmp1zLSXw0Q.ddJmZUacsvQ": "Adaptateurs qte a commander",
     "tmp1zLSXw0Q.t5L9ODSuYOG": "Adaptateurs cmm",
-    "tmp1zLSXw0Q.pGSfKOKL9s0": "Adaptateurs ajustement",
-    "tmp1zLSXw0Q.jpmZl19SSta": "Adaptateurs msd",
+    "OoDet9UWItm.pGSfKOKL9s0": "Adaptateurs ajustement",
+    "cOhDoR0ddSp.jpmZl19SSta": "Adaptateurs msd",
 
     "jJUIodWQH0T.dxDQKDcTn6Z": "Compte_goutte dose-administree",
     "jJUIodWQH0T.XEN3ucCGa07": "Compte_goutte dose-jour rupture stock",
@@ -780,8 +780,8 @@ RENAME_MAP: Dict[str, str] = {
     "jJUIodWQH0T.Lpu56KTyGvy": "Compte_goutte Stock Max",
     "jJUIodWQH0T.ddJmZUacsvQ": "Compte_goutte qte a commander",
     "jJUIodWQH0T.t5L9ODSuYOG": "Compte_goutte cmm",
-    "jJUIodWQH0T.pGSfKOKL9s0": "Compte_goutte ajustement",
-    "jJUIodWQH0T.jpmZl19SSta": "Compte_goutte msd",
+    "MAyhe30b20R.pGSfKOKL9s0": "Compte_goutte ajustement",
+    "WYiF7sbZ5cV.jpmZl19SSta": "Compte_goutte msd",
 
     "K8Yt0p1z21M.dxDQKDcTn6Z": "R_ceptacles dose-administree",
     "K8Yt0p1z21M.XEN3ucCGa07": "R_ceptacles dose-jour rupture stock",
@@ -793,8 +793,8 @@ RENAME_MAP: Dict[str, str] = {
     "K8Yt0p1z21M.Lpu56KTyGvy": "R_ceptacles Stock Max",
     "K8Yt0p1z21M.ddJmZUacsvQ": "R_ceptacles qte a commander",
     "K8Yt0p1z21M.t5L9ODSuYOG": "R_ceptacles cmm",
-    "K8Yt0p1z21M.pGSfKOKL9s0": "R_ceptacles ajustement",
-    "K8Yt0p1z21M.jpmZl19SSta": "R_ceptacles msd",
+    "hllO2kXSuwM.pGSfKOKL9s0": "R_ceptacles ajustement",
+    "xOlmaXSPviM.jpmZl19SSta": "R_ceptacles msd",
     "W25tOXS0rxS.g6mIyKoGIh2": "BCG 12-23 mois fixe1",
     "W25tOXS0rxS.QRyK6yxKBU3": "BCG 12-23 mois fixe2",
     "W25tOXS0rxS.Rby9Jdri29F": "BCG 12-23 mois avance",
@@ -988,3 +988,522 @@ RENAME_MAP: Dict[str, str] = {
 
     "tjcH6RS9mXd": "Td 1"
 }
+
+# ============================================================
+# 2) HELPERS
+# ============================================================
+
+MMM = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def current_yyyymm(today: Optional[date] = None) -> str:
+    d = today or date.today()
+    return f"{d.year:04d}{d.month:02d}"
+
+
+def month_range(start_yyyymm: str, end_yyyymm: str) -> List[str]:
+    sy, sm = int(start_yyyymm[:4]), int(start_yyyymm[4:6])
+    ey, em = int(end_yyyymm[:4]), int(end_yyyymm[4:6])
+    months: List[str] = []
+    y, m = sy, sm
+    while (y, m) <= (ey, em):
+        months.append(f"{y:04d}{m:02d}")
+        m += 1
+        if m == 13:
+            y += 1
+            m = 1
+    return months
+
+
+def chunk_list(items: List[str], max_chars: int = 6500) -> List[List[str]]:
+    chunks: List[List[str]] = []
+    cur: List[str] = []
+    cur_len = 0
+    for it in items:
+        add = len(it) + (1 if cur else 0)
+        if cur and cur_len + add > max_chars:
+            chunks.append(cur)
+            cur = [it]
+            cur_len = len(it)
+        else:
+            cur.append(it)
+            cur_len += add
+    if cur:
+        chunks.append(cur)
+    return chunks
+
+
+def load_zoho_rename_map(path: Path) -> Dict[str, str]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def period_iso_to_zoho(period_iso: str) -> str:
+    s = (period_iso or "").strip()
+    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+        y = int(s[0:4])
+        m = int(s[5:7])
+        d = int(s[8:10])
+        if 1 <= m <= 12:
+            return f"{d:02d}-{MMM[m - 1]}-{y:04d}"
+    return s
+
+
+def normalize_number(v: Any) -> Any:
+    if v is None:
+        return 0
+
+    if isinstance(v, bool):
+        return int(v)
+
+    if isinstance(v, int):
+        return v
+
+    if isinstance(v, float):
+        return int(v) if v.is_integer() else v
+
+    if isinstance(v, str):
+        s = v.strip()
+        if s == "" or s.lower() == "null":
+            return 0
+        s2 = s.replace(",", ".")
+        try:
+            f = float(s2)
+            return int(f) if f.is_integer() else f
+        except Exception:
+            return v
+
+    return v
+
+
+# ============================================================
+# 3) DHIS2 CLIENT (AS = ORG LEVEL 4)
+# ============================================================
+
+@dataclass
+class Dhis2Client:
+    base_url: str
+    username: str
+    password: str
+    timeout_s: int = 1200
+
+    def __post_init__(self) -> None:
+        retry = Retry(
+            total=6,
+            connect=6,
+            read=6,
+            status=6,
+            backoff_factor=3,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"],
+            raise_on_status=False,
+        )
+        self.session = requests.Session()
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
+    def _get(self, path: str, params: Dict[str, object]) -> dict:
+        url = self.base_url.rstrip("/") + "/" + path.lstrip("/")
+        last_err = ""
+
+        for attempt in range(1, 8):
+            r = self.session.get(
+                url,
+                params=params,
+                auth=(self.username, self.password),
+                headers={"Accept": "application/json"},
+                timeout=self.timeout_s,
+            )
+
+            if 200 <= r.status_code < 300:
+                return r.json()
+
+            if r.status_code in (429, 500, 502, 503, 504):
+                last_err = f"{r.status_code} {r.text[:200]}"
+                sleep_s = min(90.0, 5.0 * attempt)
+                print(
+                    f"WARN: DHIS2 {r.status_code} attempt={attempt}/7 "
+                    f"sleep={sleep_s}s url={path}",
+                    flush=True,
+                )
+                time.sleep(sleep_s)
+                continue
+
+            r.raise_for_status()
+
+        raise requests.exceptions.HTTPError(
+            f"DHIS2 API failed after retries: {url} last={last_err}"
+        )
+
+    def analytics(self, dx_items: List[str], pe: str, ou: str = "LEVEL-4") -> dict:
+        params = {
+            "dimension": [f"dx:{';'.join(dx_items)}", f"pe:{pe}", f"ou:{ou}"],
+            "displayProperty": "NAME",
+            "outputIdScheme": "UID",
+            "skipMeta": "true",
+            "paging": "false",
+        }
+        return self._get("api/analytics.json", params)
+
+
+def _analytics_with_split(
+    client: Dhis2Client,
+    pe: str,
+    dx_items: List[str],
+    *,
+    max_split_depth: int = 4,
+    depth: int = 0,
+) -> dict:
+    try:
+        return client.analytics(dx_items=dx_items, pe=pe, ou="LEVEL-4")
+    except Exception as e:
+        msg = str(e)
+        is_timeoutish = (
+            "504" in msg
+            or "Gateway" in msg
+            or "Read timed out" in msg
+            or "timeout" in msg.lower()
+            or "Max retries exceeded" in msg
+        )
+
+        if (not is_timeoutish) or (depth >= max_split_depth) or (len(dx_items) <= 20):
+            raise
+
+        mid = len(dx_items) // 2
+        left = dx_items[:mid]
+        right = dx_items[mid:]
+
+        print(
+            f"WARN: analytics failed depth={depth} dx={len(dx_items)} "
+            f"-> split {len(left)}+{len(right)} reason={msg[:140]}",
+            flush=True,
+        )
+
+        out = {"rows": []}
+        a = _analytics_with_split(
+            client,
+            pe,
+            left,
+            max_split_depth=max_split_depth,
+            depth=depth + 1,
+        )
+        b = _analytics_with_split(
+            client,
+            pe,
+            right,
+            max_split_depth=max_split_depth,
+            depth=depth + 1,
+        )
+        out["rows"].extend(a.get("rows") or [])
+        out["rows"].extend(b.get("rows") or [])
+        return out
+
+
+# ============================================================
+# 4) TRANSFORM
+# ============================================================
+
+def rows_to_records(analytics_json: dict) -> List[dict]:
+    rows = analytics_json.get("rows") or []
+    recs: List[dict] = []
+    for r in rows:
+        try:
+            dx, pe, ou, val = r[0], r[1], r[2], r[3]
+        except Exception:
+            continue
+        try:
+            v = float(val)
+        except Exception:
+            v = None
+        recs.append({"dx": dx, "pe": pe, "ou": ou, "value": v})
+    return recs
+
+
+def pivot_records(
+    long_recs: List[dict],
+    dx_expected: List[str],
+    rename_map_dx_to_label: Dict[str, str],
+    zoho_map_label_to_link: Dict[str, str],
+) -> List[dict]:
+    idx: Dict[Tuple[str, str], dict] = {}
+
+    for r in long_recs:
+        key = (r["ou"], r["pe"])
+        row = idx.get(key)
+        if row is None:
+            row = {"ou": r["ou"], "pe": r["pe"]}
+            idx[key] = row
+
+        old = row.get(r["dx"])
+        val = r["value"]
+        if old is None:
+            row[r["dx"]] = val
+        else:
+            row[r["dx"]] = (old or 0) + (val or 0)
+
+    for row in idx.values():
+        for dx in dx_expected:
+            row.setdefault(dx, None)
+
+    out: List[dict] = []
+    for row in idx.values():
+        pe = str(row["pe"])
+        period_iso = f"{pe[:4]}-{pe[4:6]}-01"
+        period_zoho = period_iso_to_zoho(period_iso)
+
+        out_row: dict = {
+            "OrgUnit": row.get("ou"),
+            "Period": period_zoho,
+        }
+
+        for dx in dx_expected:
+            label = rename_map_dx_to_label.get(dx, dx)
+            zoho_link = zoho_map_label_to_link.get(label, label)
+            out_row[zoho_link] = normalize_number(row.get(dx))
+
+        out.append(out_row)
+
+    out.sort(key=lambda x: (x.get("OrgUnit") or "", x.get("Period") or ""))
+    return out
+
+
+def fetch_period(
+    client: Dhis2Client,
+    pe: str,
+    dx_expected: List[str],
+    rename_map_dx_to_label: Dict[str, str],
+    zoho_map_label_to_link: Dict[str, str],
+    dx_chunk_chars: int,
+    sleep_s: float,
+) -> List[dict]:
+    chunks = chunk_list(dx_expected, max_chars=dx_chunk_chars)
+    long_all: List[dict] = []
+
+    for i, ch in enumerate(chunks, start=1):
+        print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
+        data = _analytics_with_split(client, pe, ch)
+        long_all.extend(rows_to_records(data))
+        if sleep_s and sleep_s > 0:
+            time.sleep(sleep_s)
+
+    return pivot_records(long_all, dx_expected, rename_map_dx_to_label, zoho_map_label_to_link)
+
+
+# ============================================================
+# 5) OUTPUT
+# ============================================================
+
+def write_ndjson_parts_dual(
+    folder: Path,
+    records: List[dict],
+    max_plain_bytes: int = 800_000,
+) -> List[dict]:
+    folder.mkdir(parents=True, exist_ok=True)
+
+    parts_meta: List[dict] = []
+    part_idx = 1
+    rows_in_part = 0
+    plain_bytes_in_part = 0
+
+    def paths(i: int) -> Tuple[Path, Path]:
+        plain = folder / f"part-{i:04d}.ndjson"
+        gz = folder / f"part-{i:04d}.ndjson.gz"
+        return plain, gz
+
+    plain_path, gz_path = paths(part_idx)
+    plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
+    gz_f = gzip.open(gz_path, "wb")
+
+    def close_part() -> None:
+        nonlocal plain_f, gz_f, rows_in_part, plain_path, gz_path
+        plain_f.close()
+        gz_f.close()
+        parts_meta.append(
+            {
+                "file": gz_path.name,
+                "plain": plain_path.name,
+                "rows": rows_in_part,
+                "bytes_plain": plain_path.stat().st_size if plain_path.exists() else 0,
+                "bytes_gz": gz_path.stat().st_size if gz_path.exists() else 0,
+            }
+        )
+
+    for rec in records:
+        line_str = json.dumps(rec, ensure_ascii=False) + "\n"
+        line_b = line_str.encode("utf-8")
+        line_len = len(line_b)
+
+        if rows_in_part > 0 and (plain_bytes_in_part + line_len) > max_plain_bytes:
+            close_part()
+            part_idx += 1
+            rows_in_part = 0
+            plain_bytes_in_part = 0
+            plain_path, gz_path = paths(part_idx)
+            plain_f = plain_path.open("w", encoding="utf-8", newline="\n")
+            gz_f = gzip.open(gz_path, "wb")
+
+        plain_f.write(line_str)
+        gz_f.write(line_b)
+        rows_in_part += 1
+        plain_bytes_in_part += line_len
+
+    close_part()
+
+    if not records and not parts_meta:
+        plain_path, gz_path = paths(1)
+        plain_path.write_text("", encoding="utf-8")
+        with gzip.open(gz_path, "wb") as f:
+            f.write(b"")
+        parts_meta.append(
+            {
+                "file": gz_path.name,
+                "plain": plain_path.name,
+                "rows": 0,
+                "bytes_plain": plain_path.stat().st_size,
+                "bytes_gz": gz_path.stat().st_size,
+            }
+        )
+
+    return parts_meta
+
+
+# ============================================================
+# 6) MAIN
+# ============================================================
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--start", default="202501", help="YYYYMM")
+    ap.add_argument("--end", default=None, help="YYYYMM (optional)")
+    ap.add_argument("--months", type=int, default=3, help="Refresh last N months")
+    ap.add_argument("--backfill", action="store_true", help="Fetch ALL months from --start to --end/current")
+    ap.add_argument("--out", default="docs/data_as", help="Output folder")
+    ap.add_argument("--dx_chunk_chars", type=int, default=6500)
+    ap.add_argument("--sleep", type=float, default=0.2, help="Sleep between DHIS2 calls")
+    ap.add_argument("--max_plain_bytes", type=int, default=800_000)
+    ap.add_argument("--retry_failed", action="store_true")
+    ap.add_argument("--retry_limit", type=int, default=2)
+
+    args = ap.parse_args()
+
+    base_url = os.environ.get("DHIS2_BASE_URL")
+    username = os.environ.get("DHIS2_USERNAME")
+    password = os.environ.get("DHIS2_PASSWORD")
+    if not (base_url and username and password):
+        print("Missing secrets: DHIS2_BASE_URL, DHIS2_USERNAME, DHIS2_PASSWORD", file=sys.stderr)
+        return 2
+
+    if not DX_LIST.strip():
+        print("DX_LIST is empty. Paste your dx list in section (A).", file=sys.stderr)
+        return 2
+
+    if not RENAME_MAP:
+        print("RENAME_MAP is empty. Paste your dx->label map in section (B).", file=sys.stderr)
+        return 2
+
+    zoho_rename_path = Path("docs/config/rename_map.json")
+    zoho_map = load_zoho_rename_map(zoho_rename_path)
+    if not zoho_map:
+        print(f"Missing/invalid docs/config/rename_map.json at {zoho_rename_path}", file=sys.stderr)
+        return 2
+
+    dx_expected = [x.strip() for x in DX_LIST.split(";") if x.strip()]
+    client = Dhis2Client(base_url=base_url, username=username, password=password)
+
+    end = args.end or current_yyyymm()
+    all_months = month_range(args.start, end)
+
+    out_dir = Path(args.out)
+    monthly_root = out_dir / "monthly"
+    index_path = out_dir / "index.json"
+
+    index: Dict[str, Any] = {"generated_at": None, "months": {}, "retry_queue": []}
+    if index_path.exists():
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            if "months" not in index or index["months"] is None:
+                index["months"] = {}
+            if "retry_queue" not in index or index["retry_queue"] is None:
+                index["retry_queue"] = []
+        except Exception:
+            index = {"generated_at": None, "months": {}, "retry_queue": []}
+
+    if args.backfill:
+        periods = all_months
+    else:
+        periods = all_months[-max(1, args.months):]
+        if args.retry_failed:
+            rq = [m for m in (index.get("retry_queue") or []) if isinstance(m, str)]
+            extra = [m for m in rq if m not in periods]
+            periods = periods + extra[:max(0, int(args.retry_limit))]
+
+    ok_months: List[str] = []
+    failed_months: List[str] = []
+
+    seen = set()
+    periods = [m for m in periods if not (m in seen or seen.add(m))]
+
+    print(f"Planned periods: {periods}", flush=True)
+
+    for pe in periods:
+        try:
+            records = fetch_period(
+                client=client,
+                pe=pe,
+                dx_expected=dx_expected,
+                rename_map_dx_to_label=RENAME_MAP,
+                zoho_map_label_to_link=zoho_map,
+                dx_chunk_chars=args.dx_chunk_chars,
+                sleep_s=args.sleep,
+            )
+        except Exception as e:
+            print(f"ERROR: fetch_period failed for {pe}: {e}", flush=True)
+            print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)
+            failed_months.append(pe)
+
+            rq = index.get("retry_queue") or []
+            if pe not in rq:
+                rq.append(pe)
+            index["retry_queue"] = rq
+            continue
+
+        month_folder = monthly_root / pe
+        month_folder.mkdir(parents=True, exist_ok=True)
+
+        for p in month_folder.glob("*"):
+            try:
+                p.unlink()
+            except Exception:
+                pass
+
+        parts = write_ndjson_parts_dual(
+            month_folder,
+            records,
+            max_plain_bytes=args.max_plain_bytes,
+        )
+
+        index["months"][pe] = {"parts": parts, "rows": len(records)}
+        ok_months.append(pe)
+
+        rq = index.get("retry_queue") or []
+        if pe in rq:
+            rq = [m for m in rq if m != pe]
+        index["retry_queue"] = rq
+
+    index["generated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+
+    print(f"OK months: {ok_months}", flush=True)
+    if failed_months:
+        print(f"FAILED months (added to retry_queue): {failed_months}", flush=True)
+    print(f"Index months={len(index.get('months') or {})} | retry_queue={index.get('retry_queue')}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
