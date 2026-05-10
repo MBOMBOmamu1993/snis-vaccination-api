@@ -991,6 +991,18 @@
                 p + '_stock_max', p + '_qte_a_commander', p + '_cmm', p + '_ajustement', p + '_msd'
             );
         });
+        var LOGIST_NORMS = {
+            loss: {
+                BCG: 50, VPO: 25, DTC: 10, VPI: 10, PCV13: 10, ROTA: 10,
+                VAR: 50, VAA: 50, Td: 25, VAP: 10, HPV: 10,
+                Diluant_BCG: 50, Diluant_VAR: 50, Diluant_VAA: 50,
+                SAB_005ml: 5, SAB_05ml: 5, SAB_auto_bloquante: 5,
+                Ser_dilution_2ml: 5, Ser_dilution_5ml: 5, Ser_dilution_6ml: 5,
+                Adaptateurs: 5, Compte_goutte: 5, R_ceptacles: 5, _default: 10
+            },
+            dispo: 80,
+            satisf: 80
+        };
         var TABS = [
             {
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
@@ -1379,6 +1391,11 @@
                         var _sAnt = _toSet(avAnt);
                         S.filters.antenne = S.filters.antenne.filter(function (a) { return _sAnt[a]; });
                         if (chIdx < 0 && !S.filters.antenne.length) S.filters.antenne = avAnt.slice();
+                        /* Pour les provinces avec 1 seule antenne, l'antenne est implicitement sélectionnée
+                           → le niveau affiché est directement ZS (pas le niveau "Antenne") */
+                        if (avAnt.length === 1 && S.filters.antenne.length !== 1) {
+                            S.filters.antenne = avAnt.slice();
+                        }
 
                         var srcAnt = _fastSub(src, function (r) { return r.antenne; }, S.filters.antenne, avAnt.length);
                         var avZS = uv(srcAnt, function (r) { return r.org3; });
@@ -3857,6 +3874,8 @@
                    • <Réserve = MSD < 0,5 mois ; >Smaxi = MSD > stock_max/CMM
                      (défaut 3 mois) ; sinon adéquat. */
             var klBox; /* déclaré ici pour être accessible hors de l'IIFE */
+            var _hmData = {}; /* données heatmap — accessibles hors de l'IIFE */
+            var _ouKeys = []; /* clés d'org units pour la heatmap */
             (function () {
                 var KL_VAC = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') === 0; });
                 var KL_CON = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') !== 0; });
@@ -3988,6 +4007,42 @@
                 var kpiSatisf = _kpiCmdTot > 0 ? _kpiRcvTot / _kpiCmdTot * 100 : null;
                 var kpiPerte = (_kpiAdminTot + _kpiPerduTot) > 0 ? _kpiPerduTot / (_kpiAdminTot + _kpiPerduTot) * 100 : null;
 
+                // Heatmap : stats par OU × antigène/intrant
+                _ouKeys = Object.keys(grp(LD, function(r) { return r[ol.k]; })).filter(Boolean).sort();
+                _ouKeys.forEach(function(ou) {
+                    _hmData[ou] = {};
+                    var ouRecs = LD.filter(function(r) { return r[ol.k] === ou; });
+                    LOGIST_FIELDS.forEach(function(it) {
+                        var totRup = 0, totDays = 0, totRcv = 0, totCmd = 0, totAdm = 0, totPerd = 0, n = 0;
+                        ouRecs.forEach(function(r) {
+                            var rup = Math.min(30, Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0));
+                            var rcv = Number(r[it.pfx + '_re_ues']) || 0;
+                            var sf = Number(r[it.pfx + '_stock_fin']) || 0;
+                            var cmm = Number(r[it.pfx + '_cmm']) || 0;
+                            var cmd = Number(r[it.pfx + '_qte_a_commander']) || 0;
+                            var adm = Number(r[it.pfx + '_administr_es']) || 0;
+                            var util = Number(r[it.pfx + '_utilis_es']) || 0;
+                            var perd = Number(r[it.pfx + '_pertes']) || 0;
+                            if (perd <= 0 && util > 0 && adm > 0 && util > adm) perd = util - adm;
+                            var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
+                            if (!hasItem) return;
+                            totRup += rup; totDays += 30;
+                            totRcv += rcv; totCmd += cmd;
+                            totAdm += adm; totPerd += perd;
+                            n++;
+                        });
+                        if (!n) { _hmData[ou][it.pfx] = null; return; }
+                        var normLoss = LOGIST_NORMS.loss[it.pfx] !== undefined ? LOGIST_NORMS.loss[it.pfx] : LOGIST_NORMS.loss._default;
+                        _hmData[ou][it.pfx] = {
+                            td: totDays > 0 ? (totDays - totRup) / totDays * 100 : null,
+                            ts: totCmd > 0 ? totRcv / totCmd * 100 : null,
+                            tp: (totAdm + totPerd) > 0 ? totPerd / (totAdm + totPerd) * 100 : null,
+                            hasRup: totRup > 0,
+                            normLoss: normLoss
+                        };
+                    });
+                });
+
                 var perLblKL = (f.period && f.period.length === 1) ? mL(f.period[0]) :
                     (f.period && f.period.length > 1
                         ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
@@ -4006,6 +4061,9 @@
                     '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid ' + _kpiSatisfCol + '"><div class="kv" style="color:' + _kpiSatisfCol + '">' + _fmtKpi(kpiSatisf, '%') + '</div><div class="kl">Taux de satisfaction</div><div style="font-size:10px;color:#888">(reçues / quantité commandée)</div></div>' +
                     '<div class="kc" style="flex:1;min-width:200px;border-left:5px solid ' + _kpiPerteCol + '"><div class="kv" style="color:' + _kpiPerteCol + '">' + _fmtKpi(kpiPerte, '%') + '</div><div class="kl">Taux de perte (vaccins)</div><div style="font-size:10px;color:#888">(pertes / (administrées + pertes))</div></div>' +
                     '</div>' +
+                    '<h5 style="color:#0b3a6f;margin:16px 0 8px">🗺️ Heatmap des indicateurs logistiques par ' + ol.l + '</h5>' +
+                    '<p style="font-size:10px;color:#666;margin:0 0 8px">Tp = Taux de perte · Td = Taux de disponibilité · Ts = Taux de satisfaction<br>🔴 Hors norme / ⚠️ Limite · 🟢 Dans la norme · — = Pas de données</p>' +
+                    '<div style="overflow-x:auto;max-height:400px;overflow-y:auto" id="klHmContainer"><div id="klHm" style="font-size:9px"></div></div>' +
                     '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé au niveau ' + ol.l + ' (données agrégées au bon niveau, pas de cumul depuis FOSA). ' +
                     'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
                     'Jours de disponibilité : rupture plafonnée à 30 j/mois par unité, classée via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
@@ -4147,6 +4205,88 @@
                     _drawRatio('klRatCon', covCon, '#dc2626');
                     _drawLoss('klLossVac', lossVac);
                     _drawLoss('klLossCon', lossCon);
+                    // Heatmap rendering
+                    (function() {
+                        var hm = document.getElementById('klHm'); if (!hm) return;
+                        var abbr = { BCG:'BCG', VPO:'VPO', DTC:'Penta', VPI:'VPI', PCV13:'PCV', ROTA:'Rota',
+                                     VAR:'VAR', VAA:'VAA', Td:'Td', VAP:'VAP', HPV:'HPV',
+                                     Diluant_BCG:'dBCG', Diluant_VAR:'dVAR', Diluant_VAA:'dVAA',
+                                     SAB_005ml:'S05', SAB_05ml:'S5', SAB_auto_bloquante:'SAB',
+                                     Ser_dilution_2ml:'sd2', Ser_dilution_5ml:'sd5', Ser_dilution_6ml:'sd6',
+                                     Adaptateurs:'Adp', Compte_goutte:'Cgt', R_ceptacles:'Rec' };
+                        var cols = LOGIST_FIELDS;
+                        var tdStyle = 'border:1px solid #e2e8f0;padding:2px 4px;text-align:center;white-space:nowrap';
+                        var thStyle = 'background:#0b3a6f;color:#fff;padding:2px 4px;border:1px solid #1d4ed8;font-weight:600;text-align:center;position:sticky;top:0;z-index:2';
+                        var thOU = 'background:#0b3a6f;color:#fff;padding:2px 6px;border:1px solid #1d4ed8;font-weight:600;text-align:left;position:sticky;left:0;top:0;z-index:3';
+
+                        var h = '<table style="border-collapse:collapse;font-size:9px">';
+                        h += '<thead><tr><th style="' + thOU + '" rowspan="2">' + ol.l + '</th>';
+                        cols.forEach(function(it) {
+                            var a = abbr[it.pfx] || it.pfx;
+                            h += '<th style="' + thStyle + '" colspan="3">' + a + '</th>';
+                        });
+                        h += '</tr><tr>';
+                        cols.forEach(function() {
+                            ['Tp','Td','Ts'].forEach(function(sub) {
+                                h += '<th style="' + thStyle + ';font-size:8px">' + sub + '</th>';
+                            });
+                        });
+                        h += '</tr></thead><tbody>';
+
+                        function _cellColor(val, type, normLoss) {
+                            if (val === null || val === undefined || !isFinite(val)) return '#f8fafc';
+                            if (type === 'tp') {
+                                if (val <= normLoss) return '#dcfce7';
+                                if (val <= normLoss * 1.5) return '#fef9c3';
+                                return '#fee2e2';
+                            } else {
+                                if (val >= LOGIST_NORMS.dispo) return '#dcfce7';
+                                if (val >= LOGIST_NORMS.dispo * 0.75) return '#fef9c3';
+                                return '#fee2e2';
+                            }
+                        }
+                        function _cellText(val) {
+                            return (val === null || val === undefined || !isFinite(val)) ? '—' : val.toFixed(0) + '%';
+                        }
+
+                        var rupCount = {}, satCount = {}, disCount = {};
+                        cols.forEach(function(it) { rupCount[it.pfx] = 0; satCount[it.pfx] = 0; disCount[it.pfx] = 0; });
+
+                        _ouKeys.forEach(function(ou, idx) {
+                            var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                            var ouSticky = 'position:sticky;left:0;background:' + bg + ';z-index:1;border:1px solid #e2e8f0;padding:2px 6px;font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis';
+                            h += '<tr style="background:' + bg + '"><td style="' + ouSticky + '" title="' + ou + '">' + tr(ou, 22) + '</td>';
+                            cols.forEach(function(it) {
+                                var d = _hmData[ou][it.pfx];
+                                if (!d) {
+                                    h += '<td style="' + tdStyle + ';background:#f8fafc;color:#bbb" colspan="3">—</td>';
+                                    return;
+                                }
+                                if (d.hasRup) rupCount[it.pfx]++;
+                                if (d.ts !== null && d.ts < 50) satCount[it.pfx]++;
+                                if (d.td !== null && d.td < LOGIST_NORMS.dispo) disCount[it.pfx]++;
+                                var tpC = _cellColor(d.tp, 'tp', d.normLoss);
+                                var tdC = _cellColor(d.td, 'td', d.normLoss);
+                                var tsC = _cellColor(d.ts, 'ts', d.normLoss);
+                                h += '<td style="' + tdStyle + ';background:' + tpC + '" title="Tx Perte: ' + _cellText(d.tp) + ' (norme ≤' + d.normLoss + '%)">' + _cellText(d.tp) + '</td>';
+                                h += '<td style="' + tdStyle + ';background:' + tdC + '" title="Tx Dispo: ' + _cellText(d.td) + '">' + _cellText(d.td) + '</td>';
+                                h += '<td style="' + tdStyle + ';background:' + tsC + '" title="Tx Satisf: ' + _cellText(d.ts) + '">' + _cellText(d.ts) + '</td>';
+                            });
+                            h += '</tr>';
+                        });
+
+                        // Summary row
+                        h += '<tr style="background:#e8f0fe;font-weight:600"><td style="position:sticky;left:0;background:#e8f0fe;z-index:1;border:1px solid #e2e8f0;padding:2px 6px">Résumé (' + _ouKeys.length + ' ' + ol.l + ')</td>';
+                        cols.forEach(function(it) {
+                            h += '<td style="' + tdStyle + ';background:#ffeedd;font-size:8px;color:#c05" colspan="1" title="' + rupCount[it.pfx] + ' ' + ol.l + ' en rupture">' + rupCount[it.pfx] + ' rup</td>';
+                            h += '<td style="' + tdStyle + ';background:#ffe8f0;font-size:8px;color:#c05" colspan="1" title="' + disCount[it.pfx] + ' ' + ol.l + ' dispo &lt;' + LOGIST_NORMS.dispo + '%">' + disCount[it.pfx] + ' &lt;nrm</td>';
+                            h += '<td style="' + tdStyle + ';background:#fff0e0;font-size:8px;color:#c05" colspan="1" title="' + satCount[it.pfx] + ' ' + ol.l + ' satisfaction &lt;50%">' + satCount[it.pfx] + ' &lt;50%</td>';
+                        });
+                        h += '</tr>';
+
+                        h += '</tbody></table>';
+                        hm.innerHTML = h;
+                    })();
                 }, 100);
             })();
 
@@ -4269,6 +4409,77 @@
 
             h += '</tbody></table></div>';
             repBox.innerHTML += h;
+
+            /* ── Tableau pivot synthèse logistique par OU × antigène ── */
+            var pivBox = E('div', 'cb');
+            (function() {
+                var abbr = { BCG:'BCG', VPO:'VPO', DTC:'Penta', VPI:'VPI', PCV13:'PCV', ROTA:'Rota',
+                             VAR:'VAR', VAA:'VAA', Td:'Td', VAP:'VAP', HPV:'HPV',
+                             Diluant_BCG:'dBCG', Diluant_VAR:'dVAR', Diluant_VAA:'dVAA',
+                             SAB_005ml:'S05', SAB_05ml:'S5', SAB_auto_bloquante:'SAB',
+                             Ser_dilution_2ml:'sd2', Ser_dilution_5ml:'sd5', Ser_dilution_6ml:'sd6',
+                             Adaptateurs:'Adp', Compte_goutte:'Cgt', R_ceptacles:'Rec' };
+                var cols = LOGIST_FIELDS;
+                var thS = 'background:#0b3a6f;color:#fff;padding:3px 5px;border:1px solid #1d4ed8;font-weight:600;text-align:center;white-space:nowrap';
+                var thOU = 'background:#0b3a6f;color:#fff;padding:3px 7px;border:1px solid #1d4ed8;font-weight:600;text-align:left;position:sticky;left:0;z-index:2';
+                var tdS = 'border:1px solid #e2e8f0;padding:3px 5px;text-align:center;white-space:nowrap;font-size:10px';
+
+                function _cc(val, type, normLoss) {
+                    if (val === null || val === undefined || !isFinite(val)) return '#f8fafc';
+                    if (type === 'tp') {
+                        if (val <= normLoss) return '#dcfce7';
+                        if (val <= normLoss * 1.5) return '#fef9c3';
+                        return '#fee2e2';
+                    } else {
+                        if (val >= LOGIST_NORMS.dispo) return '#dcfce7';
+                        if (val >= LOGIST_NORMS.dispo * 0.75) return '#fef9c3';
+                        return '#fee2e2';
+                    }
+                }
+                function _ct(val) {
+                    return (val === null || val === undefined || !isFinite(val)) ? '—' : val.toFixed(0) + '%';
+                }
+
+                var ph = '<h4 style="color:#0b3a6f;margin:0 0 8px">📊 Synthèse pivot logistique par ' + ol.l + ' — ' + perLblKL + '</h4>';
+                ph += '<p style="font-size:10px;color:#666;margin:0 0 8px">Tp = Taux de perte · Td = Taux de disponibilité · Ts = Taux de satisfaction — couleurs par rapport aux normes WHO/PEV</p>';
+                ph += '<div style="overflow-x:auto;overflow-y:auto;max-height:500px"><table style="border-collapse:collapse;font-size:10px">';
+                ph += '<thead><tr><th style="' + thOU + '" rowspan="2">' + ol.l + '</th>';
+                cols.forEach(function(it) {
+                    ph += '<th style="' + thS + '" colspan="3">' + (abbr[it.pfx] || it.pfx) + '</th>';
+                });
+                ph += '</tr><tr>';
+                cols.forEach(function() {
+                    ['Tp','Td','Ts'].forEach(function(sub) {
+                        ph += '<th style="' + thS + ';font-size:9px">' + sub + '</th>';
+                    });
+                });
+                ph += '</tr></thead><tbody>';
+
+                _ouKeys.forEach(function(ou, idx) {
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    var ouCell = 'position:sticky;left:0;background:' + bg + ';z-index:1;border:1px solid #e2e8f0;padding:3px 7px;font-weight:600;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis';
+                    ph += '<tr style="background:' + bg + '"><td style="' + ouCell + '" title="' + ou + '">' + tr(ou, 25) + '</td>';
+                    cols.forEach(function(it) {
+                        var d = _hmData[ou] && _hmData[ou][it.pfx];
+                        if (!d) {
+                            ph += '<td style="' + tdS + ';background:#f8fafc;color:#bbb" colspan="3">—</td>';
+                            return;
+                        }
+                        var tpC = _cc(d.tp, 'tp', d.normLoss);
+                        var tdC = _cc(d.td, 'td', d.normLoss);
+                        var tsC = _cc(d.ts, 'ts', d.normLoss);
+                        ph += '<td style="' + tdS + ';background:' + tpC + '" title="Tx Perte (norme ≤' + d.normLoss + '%)">' + _ct(d.tp) + '</td>';
+                        ph += '<td style="' + tdS + ';background:' + tdC + '">' + _ct(d.td) + '</td>';
+                        ph += '<td style="' + tdS + ';background:' + tsC + '">' + _ct(d.ts) + '</td>';
+                    });
+                    ph += '</tr>';
+                });
+
+                ph += '</tbody></table></div>';
+                pivBox.innerHTML = ph;
+            })();
+            c.appendChild(pivBox);
+
             c.appendChild(repBox);
         }
         /* ═══════════════════════════════════════════════════════
