@@ -3932,13 +3932,22 @@
                 LD.forEach(function (r) { if (r.period) _periodsInLD[r.period] = 1; });
                 var _nPeriods = Math.max(1, Object.keys(_periodsInLD).length);
 
+                /* Clé de regroupement adaptée au niveau de LD : ol.k peut pointer
+                   plus bas que le niveau d'agrégation de LD (ex. ZS sélectionnée
+                   → ol.k=org4 mais LD=zsData ne contient pas org4). On retombe
+                   sur la granularité naturelle de LD pour éviter de tout filtrer. */
+                var _ldKey = (ul === 'fosa') ? 'org5'
+                           : (ul === 'as')   ? 'org4'
+                           : (ul === 'zs')   ? 'org3'
+                           : ol.k;
+
                 /* Couverture / satisfaction — groupé par unité org du niveau courant
                    pour calculer la CMM moyenne par unité avant d'agréger. */
                 function _coverageByItem(items) {
                     return items.map(function (it) {
                         var byOu = {};
                         LD.forEach(function (r) {
-                            var ou = r[ol.k]; if (!ou) return;
+                            var ou = r[_ldKey]; if (!ou) return;
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
                             var cmd = Number(r[it.pfx + '_qte_a_commander']) || 0;
