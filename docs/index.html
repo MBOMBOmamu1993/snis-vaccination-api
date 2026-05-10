@@ -5154,19 +5154,8 @@
                     var ouD1P = 0, ouD3P = 0, ouBCGP = 0, ouV1P = 0, ouV2P = 0;
                     ags.forEach(function (ag) {
                         var field = AG_FIELD_MAP[ag];
-                        /* Période courante */
-                        var dosesC = field ? _cvSum(recsC, field) : 0;
-                        if (ag === 'DTC1') ouD1C = dosesC;
-                        if (ag === 'DTC3') ouD3C = dosesC;
-                        if (ag === 'BCG') ouBCGC = dosesC;
-                        if (ag === 'VAR1') ouV1C = dosesC;
-                        if (ag === 'VAR2') ouV2C = dosesC;
                         var useNV = (ag === 'BCG' || ag === 'TD');
-                        var denC = useNV ? tgtC.nv : tgtC.ns;
-                        var cvPctC = denC > 0 ? dosesC / denC * 100 : null;
-                        var stC = cvPctC !== null ? 'background:' + _cvColor(cvPctC) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
-                        cells += '<td style="' + stC + '">' + (cvPctC !== null ? cvPctC.toFixed(1) + '%' : '–') + '</td>';
-                        /* Période précédente */
+                        /* Période précédente (gauche) */
                         var dosesP = field ? _cvSum(recsP, field) : 0;
                         if (ag === 'DTC1') ouD1P = dosesP;
                         if (ag === 'DTC3') ouD3P = dosesP;
@@ -5177,6 +5166,17 @@
                         var cvPctP = denP > 0 ? dosesP / denP * 100 : null;
                         var stP = cvPctP !== null ? 'background:' + _cvColor(cvPctP) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
                         cells += '<td style="' + stP + '">' + (cvPctP !== null ? cvPctP.toFixed(1) + '%' : '–') + '</td>';
+                        /* Période courante (droite) */
+                        var dosesC = field ? _cvSum(recsC, field) : 0;
+                        if (ag === 'DTC1') ouD1C = dosesC;
+                        if (ag === 'DTC3') ouD3C = dosesC;
+                        if (ag === 'BCG') ouBCGC = dosesC;
+                        if (ag === 'VAR1') ouV1C = dosesC;
+                        if (ag === 'VAR2') ouV2C = dosesC;
+                        var denC = useNV ? tgtC.nv : tgtC.ns;
+                        var cvPctC = denC > 0 ? dosesC / denC * 100 : null;
+                        var stC = cvPctC !== null ? 'background:' + _cvColor(cvPctC) + ';color:#fff;text-align:right' : 'text-align:right;color:#bbb';
+                        cells += '<td style="' + stC + '">' + (cvPctC !== null ? cvPctC.toFixed(1) + '%' : '–') + '</td>';
                     });
                     /* Abandons et catégories — période courante */
                     var ouAbC = _safeDiv(ouD1C - ouD3C, ouD1C);
@@ -5196,13 +5196,13 @@
                         if (v === null) return '<td style="text-align:right;color:#bbb">NA</td>';
                         return '<td style="background:' + _abandonColor(v) + ';color:#fff;text-align:right;font-weight:700">' + (v * 100).toFixed(1) + '%' + (v < 0 ? ' ⚠️' : '') + '</td>';
                     }
-                    cells += _abCell2(ouAbC) + _abCell2(ouAbP);
-                    cells += _abCell2(ouAbV1C) + _abCell2(ouAbV1P);
-                    cells += _abCell2(ouAbV2C) + _abCell2(ouAbV2P);
-                    cells += '<td style="text-align:center;background:' + _catColor(ouCatC) + ';color:#fff;font-weight:700">' + ouCatC + '</td>' +
-                        '<td style="text-align:center;background:' + _catColor(ouCatP) + ';color:#fff;font-weight:700">' + ouCatP + '</td>';
-                    cells += '<td style="text-align:center;background:' + _priorityColor(ouPrioC) + ';color:#fff;font-weight:700">' + ouPrioC + '</td>' +
-                        '<td style="text-align:center;background:' + _priorityColor(ouPrioP) + ';color:#fff;font-weight:700">' + ouPrioP + '</td>';
+                    cells += _abCell2(ouAbP) + _abCell2(ouAbC);
+                    cells += _abCell2(ouAbV1P) + _abCell2(ouAbV1C);
+                    cells += _abCell2(ouAbV2P) + _abCell2(ouAbV2C);
+                    cells += '<td style="text-align:center;background:' + _catColor(ouCatP) + ';color:#fff;font-weight:700">' + ouCatP + '</td>' +
+                        '<td style="text-align:center;background:' + _catColor(ouCatC) + ';color:#fff;font-weight:700">' + ouCatC + '</td>';
+                    cells += '<td style="text-align:center;background:' + _priorityColor(ouPrioP) + ';color:#fff;font-weight:700">' + ouPrioP + '</td>' +
+                        '<td style="text-align:center;background:' + _priorityColor(ouPrioC) + ';color:#fff;font-weight:700">' + ouPrioC + '</td>';
                     return cells;
                 }
 
@@ -5227,19 +5227,19 @@
                     '<th colspan="2" style="text-align:center;min-width:140px">Priorisation</th></tr>' +
                     '<tr style="background:#0b3a6f;color:#fff">';
                 tableAgs.forEach(function (ag) {
-                    tH += '<th style="text-align:right;min-width:50px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
-                        '<th style="text-align:right;min-width:50px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>';
+                    tH += '<th style="text-align:right;min-width:50px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;min-width:50px;font-size:8px;color:#fca5a5">' + curLbl + '</th>';
                 });
-                tH += '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
-                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                tH += '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
                     '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
                     '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
                     '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
                     '<th style="text-align:right;min-width:80px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
-                    '<th style="text-align:center;min-width:60px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:right;min-width:80px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
                     '<th style="text-align:center;min-width:60px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
-                    '<th style="text-align:center;min-width:70px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
-                    '<th style="text-align:center;min-width:70px;font-size:8px;color:#93c5fd">' + prevLbl + '</th></tr></thead><tbody>';
+                    '<th style="text-align:center;min-width:60px;font-size:8px;color:#fca5a5">' + curLbl + '</th>' +
+                    '<th style="text-align:center;min-width:70px;font-size:8px;color:#93c5fd">' + prevLbl + '</th>' +
+                    '<th style="text-align:center;min-width:70px;font-size:8px;color:#fca5a5">' + curLbl + '</th></tr></thead><tbody>';
 
                 /* TOTAL — une ligne (cur + prev côte à côte) */
                 tH += '<tr style="background:#e8f0fe;font-weight:800">' +
@@ -5257,7 +5257,7 @@
                         _rowCellsCmp(recsC, tC, recsP, tP, tableAgs) + '</tr>';
                 });
                 tH += '</tbody></table></div>';
-                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque colonne-antigène affiche deux sous-colonnes : <strong style="color:#dc2626">' + curLbl + '</strong> et <strong style="color:#1d4ed8">' + prevLbl + '</strong>. ' +
+                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque colonne-antigène affiche deux sous-colonnes : <strong style="color:#1d4ed8">' + prevLbl + '</strong> et <strong style="color:#dc2626">' + curLbl + '</strong>. ' +
                     'Couleurs CV : ■ &gt;100% bleu · ■ 90–100% vert · ■ 60–89% jaune · ■ &lt;60% rouge.</em></p>';
                 tblBox.innerHTML += tH;
                 c.appendChild(tblBox);
@@ -5288,15 +5288,15 @@
                         var smpP = _cvSum(recsP, 'seances_mobiles_prevues'), smrP = _cvSum(recsP, 'seances_mobiles_realisees');
                         return '<tr style="background:' + bg + '">' +
                             '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:' + (label === 'TOTAL' ? '800' : '600') + '">' + label + '</td>' +
-                            '<td style="text-align:right">' + (tC.pop > 0 ? Math.round(tC.pop).toLocaleString() : '–') + '</td>' +
                             '<td style="text-align:right">' + (tP.pop > 0 ? Math.round(tP.pop).toLocaleString() : '–') + '</td>' +
-                            '<td style="text-align:right">' + (tC.nv > 0 ? Math.round(tC.nv).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tC.pop > 0 ? Math.round(tC.pop).toLocaleString() : '–') + '</td>' +
                             '<td style="text-align:right">' + (tP.nv > 0 ? Math.round(tP.nv).toLocaleString() : '–') + '</td>' +
-                            '<td style="text-align:right">' + (tC.ns > 0 ? Math.round(tC.ns).toLocaleString() : '–') + '</td>' +
+                            '<td style="text-align:right">' + (tC.nv > 0 ? Math.round(tC.nv).toLocaleString() : '–') + '</td>' +
                             '<td style="text-align:right">' + (tP.ns > 0 ? Math.round(tP.ns).toLocaleString() : '–') + '</td>' +
-                            _sessCell(sfrC, sfpC) + _sessCell(sfrP, sfpP) +
-                            _sessCell(sarC, sapC) + _sessCell(sarP, sapP) +
-                            _sessCell(smrC, smpC) + _sessCell(smrP, smpP) +
+                            '<td style="text-align:right">' + (tC.ns > 0 ? Math.round(tC.ns).toLocaleString() : '–') + '</td>' +
+                            _sessCell(sfrP, sfpP) + _sessCell(sfrC, sfpC) +
+                            _sessCell(sarP, sapP) + _sessCell(sarC, sapC) +
+                            _sessCell(smrP, smpP) + _sessCell(smrC, smpC) +
                             '</tr>';
                     }
                     var popBox = E('div', 'cb');
@@ -5311,12 +5311,12 @@
                         '<th colspan="2" style="text-align:center;min-width:200px">% Séances avancées</th>' +
                         '<th colspan="2" style="text-align:center;min-width:200px">% Séances mobiles</th>' +
                         '</tr><tr style="background:#0b3a6f;color:#fff">' +
-                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
-                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
-                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
-                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
-                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
-                        '<th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th><th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th><th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th><th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th><th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th><th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th><th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th>' +
+                        '<th style="text-align:right;font-size:9px;color:#93c5fd">' + prevLbl + '</th><th style="text-align:right;font-size:9px;color:#fca5a5">' + curLbl + '</th>' +
                         '</tr></thead><tbody>';
                     pH += _sessRowCmp(curFlt, prevFlt, 'TOTAL', '#e8f0fe');
                     allOuList.forEach(function (ouName, idx) {
@@ -5326,7 +5326,7 @@
                         pH += _sessRowCmp(recsC, recsP, tr(ouName, 30), bg);
                     });
                     pH += '</tbody></table></div>';
-                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. Chaque indicateur affiche deux sous-colonnes : <strong style="color:#dc2626">' + curLbl + '</strong> et <strong style="color:#1d4ed8">' + prevLbl + '</strong>. ' +
+                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. Chaque indicateur affiche deux sous-colonnes : <strong style="color:#1d4ed8">' + prevLbl + '</strong> et <strong style="color:#dc2626">' + curLbl + '</strong>. ' +
                         (sessAvailable ? 'Séances : seuils ≥80% vert, ≥50% jaune, &lt;50% rouge.' : 'Séances non disponibles dans les données chargées.') + '</em></p>';
                     popBox.innerHTML += pH;
                     c.appendChild(popBox);
@@ -5402,7 +5402,7 @@
                     });
                     qH += '</tr><tr style="background:#0b3a6f;color:#fff">';
                     indicatorsC.forEach(function () {
-                        qH += '<th style="text-align:center">' + curLbl + '</th><th style="text-align:center">' + prevLbl + '</th>';
+                        qH += '<th style="text-align:center">' + prevLbl + '</th><th style="text-align:center">' + curLbl + '</th>';
                     });
                     qH += '</tr></thead><tbody>';
                     function _propCell(v) {
@@ -5417,8 +5417,8 @@
                             qH += '<tr style="background:' + bg + '">' +
                                 '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(k, 32) + '</td>';
                             indicatorsC.forEach(function (ind) {
-                                qH += _propCell(_propPct(rowsC.rg, k, ind));
                                 qH += _propCell(_propPct(rowsP.rg, k, ind));
+                                qH += _propCell(_propPct(rowsC.rg, k, ind));
                             });
                             qH += '</tr>';
                         });
