@@ -4036,15 +4036,13 @@
                 /* Taux de perte = pertes / (administrées + pertes) × 100 */
                 function _lossRateByItem(items) {
                     return items.map(function (it) {
-                        var totPerdu = 0, totAdmin = 0;
+                        var totPerdu = 0, totAdmin = 0, totUtil = 0;
                         LD.forEach(function (r) {
-                            var admin = Number(r[it.pfx + '_administr_es']) || 0;
-                            var util = Number(r[it.pfx + '_utilis_es']) || 0;
-                            var perdu = Number(r[it.pfx + '_pertes']) || 0;
-                            if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin;
-                            totAdmin += admin;
-                            totPerdu += perdu;
+                            totAdmin += Number(r[it.pfx + '_administr_es']) || 0;
+                            totUtil  += Number(r[it.pfx + '_utilis_es'])   || 0;
+                            totPerdu += Number(r[it.pfx + '_pertes'])      || 0;
                         });
+                        if (totPerdu <= 0 && totUtil > 0 && totAdmin > 0 && totUtil > totAdmin) totPerdu = totUtil - totAdmin;
                         var denom = totAdmin + totPerdu;
                         return {
                             lbl: it.lbl.replace(/^Vaccin\s+/, ''),
@@ -4079,14 +4077,15 @@
                     });
                 });
                 KL_VAC.forEach(function (it) {
+                    var _itAdmin = 0, _itUtil = 0, _itPerdu = 0;
                     LD.forEach(function (r) {
-                        var admin = Number(r[it.pfx + '_administr_es']) || 0;
-                        var util = Number(r[it.pfx + '_utilis_es']) || 0;
-                        var perdu = Number(r[it.pfx + '_pertes']) || 0;
-                        if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin;
-                        _kpiAdminTot += admin;
-                        _kpiPerduTot += perdu;
+                        _itAdmin += Number(r[it.pfx + '_administr_es']) || 0;
+                        _itUtil  += Number(r[it.pfx + '_utilis_es'])   || 0;
+                        _itPerdu += Number(r[it.pfx + '_pertes'])      || 0;
                     });
+                    if (_itPerdu <= 0 && _itUtil > 0 && _itAdmin > 0 && _itUtil > _itAdmin) _itPerdu = _itUtil - _itAdmin;
+                    _kpiAdminTot += _itAdmin;
+                    _kpiPerduTot += _itPerdu;
                 });
                 var kpiDispo = _kpiDaysTot > 0 ? (_kpiDaysTot - _kpiRupTot) / _kpiDaysTot * 100 : null;
                 var kpiSatisf = _kpiCmdTot > 0 ? _kpiRcvTot / _kpiCmdTot * 100 : null;
@@ -4098,7 +4097,7 @@
                     _hmData[ou] = {};
                     var ouRecs = D.filter(function(r) { return r[ol.k] === ou; });
                     LOGIST_FIELDS.forEach(function(it) {
-                        var totRup = 0, totDays = 0, totRcv = 0, totCmd = 0, totAdm = 0, totPerd = 0, n = 0;
+                        var totRup = 0, totDays = 0, totRcv = 0, totCmd = 0, totAdm = 0, totPerd = 0, totUtil = 0, n = 0;
                         ouRecs.forEach(function(r) {
                             var rup = Math.max(0, Number(r[it.pfx + '_jours_rupture']) || 0);
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
@@ -4108,15 +4107,15 @@
                             var adm = Number(r[it.pfx + '_administr_es']) || 0;
                             var util = Number(r[it.pfx + '_utilis_es']) || 0;
                             var perd = Number(r[it.pfx + '_pertes']) || 0;
-                            if (perd <= 0 && util > 0 && adm > 0 && util > adm) perd = util - adm;
                             var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0;
                             if (!hasItem) return;
                             totRup += rup; totDays += 30;
                             totRcv += rcv; totCmd += cmd;
-                            totAdm += adm; totPerd += perd;
+                            totAdm += adm; totUtil += util; totPerd += perd;
                             n++;
                         });
                         if (!n) { _hmData[ou][it.pfx] = null; return; }
+                        if (totPerd <= 0 && totUtil > 0 && totAdm > 0 && totUtil > totAdm) totPerd = totUtil - totAdm;
                         var normLoss = LOGIST_NORMS.loss[it.pfx] !== undefined ? LOGIST_NORMS.loss[it.pfx] : LOGIST_NORMS.loss._default;
                         _hmData[ou][it.pfx] = {
                             td: totDays > 0 ? (totDays - totRup) / totDays * 100 : null,
