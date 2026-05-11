@@ -3975,29 +3975,26 @@
                     });
                 }
 
-                /* MSD moyen — moyenne arithmétique des valeurs MSD (mois de stock disponible)
-                   sur les lignes où l'item a une activité réelle (reçues, stock, CMM, rupture ou MSD > 0).
-                   msdDays = msdMo × 30 → couverture théorique en jours d'après le stock courant. */
-                function _msdMeanByItem(items) {
+                /* MSD agrégé (somme) — cohérent avec DHIS2 (qui somme les valeurs).
+                   msdDays = somme MSD × 30 → couverture théorique en jours. */
+                function _msdSumByItem(items) {
                     return items.map(function (it) {
-                        var sum = 0, count = 0;
+                        var sumMsd = 0, count = 0;
                         LD.forEach(function (r) {
                             var rcv = Number(r[it.pfx + '_re_ues']) || 0;
                             var sf  = Number(r[it.pfx + '_stock_fin']) || 0;
                             var cmm = Number(r[it.pfx + '_cmm']) || 0;
                             var rup = Number(r[it.pfx + '_jours_rupture']) || 0;
                             var msd = Number(r[it.pfx + '_msd']) || 0;
-                            if (msd <= 0 && cmm > 0 && sf > 0) msd = sf / cmm;
                             var hasItem = rcv > 0 || sf > 0 || cmm > 0 || rup > 0 || msd > 0;
                             if (!hasItem) return;
-                            sum += msd;
+                            sumMsd += msd;
                             count += 1;
                         });
-                        var avg = count > 0 ? sum / count : 0;
                         return {
                             lbl: it.lbl.replace(/^Vaccin\s+/, ''),
-                            msdMo: avg,
-                            msdDays: avg * 30,
+                            msdMo: sumMsd,
+                            msdDays: sumMsd * 30,
                             n: count
                         };
                     });
@@ -4061,8 +4058,8 @@
                 var covCon = _coverageByItem(KL_CON);
                 var dayVac = _daysByItem(KL_VAC);
                 var dayCon = _daysByItem(KL_CON);
-                var msdVac = _msdMeanByItem(KL_VAC);
-                var msdCon = _msdMeanByItem(KL_CON);
+                var msdVac = _msdSumByItem(KL_VAC);
+                var msdCon = _msdSumByItem(KL_CON);
                 var lossVac = _lossRateByItem(KL_VAC);
                 var lossCon = _lossRateByItem(KL_CON);
 
@@ -4142,15 +4139,15 @@
                     '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé au niveau ' + ol.l + ' (données agrégées au bon niveau, pas de cumul depuis FOSA). ' +
                     'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
                     'Jours de disponibilité (graphiques empilés) : jours de rupture rapportés par DHIS2, classés via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat). ' +
-                    'Couverture théorique (jours) = MSD moyen × 30 — combien de jours le stock courant peut couvrir au rythme de consommation CMM.</em></p>' +
+                    'Couverture théorique (jours) = Σ MSD × 30 — somme des MSD sur le périmètre filtré × 30 (cohérent avec l\'agrégation DHIS2).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
                     /* ═══ 6 GRAPHIQUES ORIGINAUX ═══ */
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Couverture annuelle des besoins en matériels d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Nbre de jours de disponibilité du matériel d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #0891b2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0e7490;text-align:center">Couverture théorique des vaccins (jours) — MSD moyen × 30 — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klMsdDaysVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #0891b2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0e7490;text-align:center">Couverture théorique du matériel d\'injection (jours) — MSD moyen × 30 — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klMsdDaysCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #0891b2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0e7490;text-align:center">Couverture théorique des vaccins (jours) — Σ MSD × 30 — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klMsdDaysVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #0891b2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0e7490;text-align:center">Couverture théorique du matériel d\'injection (jours) — Σ MSD × 30 — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klMsdDaysCon"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité vaccins : doses reçues par dose programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0b3a6f;text-align:center">Disponibilité consommables : unités reçues par unité programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
                     /* ═══ 6 NOUVEAUX GRAPHIQUES INDICATEURS (Taux %) ═══ */
@@ -4281,7 +4278,7 @@
                             }
                         });
                     }
-                    /* Couverture théorique en jours = MSD moyen × 30 (cohérent avec la colonne MSD du tableau) */
+                    /* Couverture théorique en jours = Σ MSD × 30 (cohérent avec la colonne MSD du tableau et l'agrégation DHIS2). */
                     function _drawMsdDays(canvasId, data, color) {
                         var x = document.getElementById(canvasId); if (!x) return;
                         var sorted = data.slice().filter(function (d) { return d.msdDays > 0; })
@@ -4294,13 +4291,7 @@
                                 datasets: [{
                                     label: 'Couverture théorique (jours)',
                                     data: sorted.map(function (d) { return +d.msdDays.toFixed(1); }),
-                                    backgroundColor: sorted.map(function (d) {
-                                        var mo = d.msdMo;
-                                        if (mo < 0.5) return '#dc2626';
-                                        if (mo < 1)   return '#f4a800';
-                                        if (mo <= 3)  return '#27ae60';
-                                        return '#9bb8e0';
-                                    }),
+                                    backgroundColor: color,
                                     borderRadius: 2
                                 }]
                             },
@@ -4314,7 +4305,7 @@
                                         callbacks: {
                                             label: function (ctx) {
                                                 var d = sorted[ctx.dataIndex];
-                                                return ctx.dataset.label + ': ' + d.msdDays.toFixed(1) + ' j  (MSD moyen = ' + d.msdMo.toFixed(2) + ' mois, n=' + d.n + ')';
+                                                return ctx.dataset.label + ': ' + d.msdDays.toFixed(0) + ' j  (Σ MSD = ' + d.msdMo.toFixed(1) + ' mois, n=' + d.n + ')';
                                             }
                                         }
                                     }
@@ -4522,7 +4513,7 @@
             h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Qté à cmd</th>';
             h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">CMM</th>';
             h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">Ajustement</th>';
-            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:90px" title="Mois de stock disponible — moyenne arithmétique sur la période et le périmètre filtrés">MSD moyen (mois)</th>';
+            h += '<th style="background:#0b3a6f;color:#fff;text-align:center;min-width:80px">MSD</th>';
             h += '</tr></thead><tbody>';
 
             LOGIST_FIELDS.forEach(function (item, idx) {
@@ -4544,22 +4535,7 @@
                 var qcmd = sf(LD, p + '_qte_a_commander');
                 var cmm = sf(LD, p + '_cmm');
                 var aj = sf(LD, p + '_ajustement');
-                /* MSD : moyenne arithmétique sur les lignes où l'item est actif
-                   (cohérent avec le graphique "Couverture théorique" plus haut). */
-                var _msdSum = 0, _msdCount = 0;
-                LD.forEach(function (r) {
-                    var _rcv = Number(r[p + '_re_ues']) || 0;
-                    var _sf  = Number(r[p + '_stock_fin']) || 0;
-                    var _cmm = Number(r[p + '_cmm']) || 0;
-                    var _rup = Number(r[p + '_jours_rupture']) || 0;
-                    var _msd = Number(r[p + '_msd']) || 0;
-                    if (_msd <= 0 && _cmm > 0 && _sf > 0) _msd = _sf / _cmm;
-                    var _has = _rcv > 0 || _sf > 0 || _cmm > 0 || _rup > 0 || _msd > 0;
-                    if (!_has) return;
-                    _msdSum += _msd;
-                    _msdCount += 1;
-                });
-                var msd = _msdCount > 0 ? (_msdSum / _msdCount) : 0;
+                var msd = sf(LD, p + '_msd');
 
                 var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 h += '<tr style="background:' + bg + '">';
@@ -4580,7 +4556,7 @@
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (qcmd ? qcmd.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (cmm ? cmm.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (aj ? aj.toLocaleString() : '\u2014') + '</td>';
-                h += '<td style="text-align:right;font-variant-numeric:tabular-nums" title="MSD moyen sur ' + _msdCount + ' ligne(s) actives ; couverture th\u00e9orique \u2248 ' + (msd * 30).toFixed(0) + ' jours">' + (msd ? msd.toFixed(2) : '\u2014') + '</td>';
+                h += '<td style="text-align:right;font-variant-numeric:tabular-nums" title="Couverture th\u00e9orique \u2248 ' + (msd * 30).toFixed(0) + ' jours">' + (msd ? msd.toLocaleString() : '\u2014') + '</td>';
                 h += '</tr>';
             });
 
