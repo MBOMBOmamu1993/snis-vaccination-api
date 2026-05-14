@@ -3245,7 +3245,7 @@
                             return cnt ? sum / cnt : null;
                         }
 
-                        var _allAGs = S.filters.province && C.VAP_PROV.indexOf(S.filters.province) >= 0 ? AG.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']) : AG;
+                        var _allAGs = _computeIsVAP(S.filters.province || '') ? AG.concat(['VAP1', 'VAP2', 'VAP3', 'VAP4']) : AG;
 
                         var td = mosAt.map(function (m) {
                             var mD = _adByPer[m] || []; var t = 0, a = 0;
@@ -3665,7 +3665,7 @@
             var ol = getOrgLevel(D);
             var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
             var levelLbl = ol.l;
-            var isVAPprov = C.VAP_PROV.indexOf(f.province) >= 0;
+            var isVAPprov = _computeIsVAP(f.province || '');
 
             /* ── a) Cards indicateurs clés ── */
             var nF = uv(D, function (r) { return r.org5; }).length;
