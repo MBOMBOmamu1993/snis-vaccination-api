@@ -3591,7 +3591,7 @@
                     _mpAgs.forEach(function (ag, idx) {
                         var lx = LM + 75 + idx * 145;
                         s.push('<circle cx="' + (lx + 5) + '" cy="' + (legY - 4) + '" r="5" fill="' + _mpColors[ag] + '"/>');
-                        s.push('<text x="' + (lx + 13) + '" y="' + legY + '" fill="#333" font-size="10" font-family="sans-serif">%FOSA avec ' + ag + '=0</text>');
+                        s.push('<text x="' + (lx + 13) + '" y="' + legY + '" fill="#333" font-size="10" font-family="sans-serif">%' + _mpCL + ' avec ' + ag + '=0</text>');
                     });
 
                     /* Titre axe Y */
