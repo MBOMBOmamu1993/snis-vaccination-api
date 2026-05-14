@@ -3526,7 +3526,7 @@
                     if (_mpPage >= nPg) _mpPage = nPg - 1;
                     var slice = _mpRows.slice(_mpPage * PAGE, _mpPage * PAGE + PAGE);
 
-                    var LM = 200, RM = 20, TM = 46, RH = 22, BM = 70;
+                    var LM = 200, RM = 20, TM = 22, RH = 22, BM = 70;
                     var W  = Math.max(600, (wrap.clientWidth || 900) - 2);
                     var PW = W - LM - RM;
                     var H  = TM + slice.length * RH + BM;
@@ -3537,11 +3537,6 @@
 
                     var s = [];
                     s.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" id="mpSvg">');
-
-                    /* Bandeau titre */
-                    s.push('<rect x="0" y="0" width="' + W + '" height="34" fill="#00008B"/>');
-                    s.push('<text x="' + (W/2) + '" y="21" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="sans-serif">'
-                        + 'Proportion des FOSA avec données manquantes en BCG, DTC1, DTC3, VAR1 et VAR2 (0–11 mois)</text>');
 
                     /* Grille verticale + étiquettes X */
                     [0,10,20,30,40,50,60,70,80,90,100].forEach(function (v) {
@@ -3666,15 +3661,20 @@
                     h += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
                     h += '<thead><tr style="background:#00008B;color:white;position:sticky;top:0">';
                     h += '<th style="padding:6px 8px;text-align:left">' + lvl.cl + '</th>';
-                    h += '<th style="padding:6px 8px;text-align:center">Séances fixes<br>réalisées</th>';
-                    h += '<th style="padding:6px 8px;text-align:center">Séances avancées<br>réalisées</th>';
-                    h += '<th style="padding:6px 8px;text-align:center">Séances mobiles<br>réalisées</th>';
-                    h += '<th style="padding:6px 8px;text-align:center">Doses dispo.<br>(' + ag + ')</th>';
+                    h += '<th style="padding:6px 8px;text-align:center">% Séances fixes<br>réalisées</th>';
+                    h += '<th style="padding:6px 8px;text-align:center">% Séances avancées<br>réalisées</th>';
+                    h += '<th style="padding:6px 8px;text-align:center">% Séances mobiles<br>réalisées</th>';
+                    h += '<th style="padding:6px 8px;text-align:center">Doses dispo.<br>(' + stockPfx + ')</th>';
                     h += '<th style="padding:6px 8px;text-align:center;color:#ffd">Vaccinés<br>(' + ag + ')</th>';
                     h += '</tr></thead><tbody>';
 
-                    kids.forEach(function (ch, idx) {
+                    function pct2(r, p) { return p > 0 ? (r / p * 100).toFixed(0) + '%' : (r > 0 ? '—' : '0%'); }
+
+                    var rowIdx2 = 0;
+                    kids.forEach(function (ch) {
                         var recs = cGrp[ch];
+                        var vac  = sum(recs, ag + '_f');
+                        if (vac !== 0) return; /* afficher seulement vaccinés = 0 */
                         var sfr  = sum(recs,'seances_fixes_realisees');
                         var sfp  = sum(recs,'seances_fixes_prevues');
                         var sar  = sum(recs,'seances_avancees_realisees');
@@ -3682,18 +3682,18 @@
                         var smr  = sum(recs,'seances_mobiles_realisees');
                         var smp  = sum(recs,'seances_mobiles_prevues');
                         var dsp  = sum(recs,stockKey) + sum(recs,recvKey);
-                        var vac  = sum(recs, ag + '_f');
-                        var bg   = idx % 2 === 0 ? '#f8fafc' : '#fff';
-                        var rowColor = vac === 0 ? 'color:#c0392b;font-weight:600' : '';
-                        h += '<tr style="background:' + bg + ';' + rowColor + '">';
+                        var bg   = rowIdx2 % 2 === 0 ? '#f8fafc' : '#fff';
+                        rowIdx2++;
+                        h += '<tr style="background:' + bg + ';color:#c0392b;font-weight:600">';
                         h += '<td style="padding:5px 8px">' + ch + '</td>';
-                        h += '<td style="padding:5px 8px;text-align:center">' + sfr + (sfp > 0 ? ' / ' + sfp : '') + '</td>';
-                        h += '<td style="padding:5px 8px;text-align:center">' + sar + (sap > 0 ? ' / ' + sap : '') + '</td>';
-                        h += '<td style="padding:5px 8px;text-align:center">' + smr + (smp > 0 ? ' / ' + smp : '') + '</td>';
+                        h += '<td style="padding:5px 8px;text-align:center">' + pct2(sfr, sfp) + '</td>';
+                        h += '<td style="padding:5px 8px;text-align:center">' + pct2(sar, sap) + '</td>';
+                        h += '<td style="padding:5px 8px;text-align:center">' + pct2(smr, smp) + '</td>';
                         h += '<td style="padding:5px 8px;text-align:center">' + dsp + '</td>';
-                        h += '<td style="padding:5px 8px;text-align:center;font-weight:bold">' + vac + '</td>';
+                        h += '<td style="padding:5px 8px;text-align:center;font-weight:bold">0</td>';
                         h += '</tr>';
                     });
+                    if (rowIdx2 === 0) h += '<tr><td colspan="6" style="padding:10px;text-align:center;color:#64748b;font-style:italic">Aucune unité avec vaccinés = 0</td></tr>';
                     h += '</tbody></table></div>';
 
                     /* Overlay */
