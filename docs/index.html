@@ -4799,6 +4799,11 @@
                 return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Zone de Santé' };
             }
             if (hasProv) {
+                /* Province avec une seule antenne : descendre directement au niveau ZS */
+                var nbCascAnt = S.cascaded && S.cascaded.antenne ? S.cascaded.antenne.length : 0;
+                if (nbCascAnt === 1) {
+                    return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_AS', useAS: true, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Zone de Santé', singleAntenneMode: true };
+                }
                 /* Province sélectionnée (sans antenne) : afficher les Antennes PEV */
                 return { groupKey: '_Antenne', label: 'Antenne PEV', dedupKey: '_ZS', useAS: false, scopeLevel: scopeLevel, scopeLabel: scopeLabel, childLabel: 'Antenne PEV' };
             }
@@ -5030,7 +5035,7 @@
                 var belowLabel = gi.label + ' avec DTC3 < 80%';
 
                 /* ── Titre ── */
-                var scopeLbl = gi.useAS
+                var scopeLbl = (gi.useAS && !gi.singleAntenneMode)
                     ? 'ZS : <strong>' + (f.zs && f.zs[0] ? f.zs[0] : '?') + '</strong>'
                     : (f.province ? 'Province : <strong>' + f.province + '</strong>' : 'Niveau <strong>National</strong>');
                 var hdr = E('div', 'cb');
@@ -5252,10 +5257,10 @@
                 */
                 if (gi.scopeLevel !== 'as' && gi.scopeLevel !== 'zs') {
                     var rowKey, childKeyForProp, rowLabelHdr, childLabelPlural;
-                    if (gi.scopeLevel === 'national' || gi.scopeLevel === 'province') {
+                    if ((gi.scopeLevel === 'national' || gi.scopeLevel === 'province') && !gi.singleAntenneMode) {
                         rowKey = '_Antenne'; childKeyForProp = '_ZS';
                         rowLabelHdr = 'Antenne PEV'; childLabelPlural = 'Zones de Santé';
-                    } else { /* antenne */
+                    } else { /* antenne ou province à antenne unique */
                         rowKey = '_ZS'; childKeyForProp = '_AS';
                         rowLabelHdr = 'Zone de Santé'; childLabelPlural = 'Aires de Santé';
                     }
@@ -5700,7 +5705,7 @@
                 }
 
                 /* ── Header ── */
-                var scopeLbl = gi.useAS
+                var scopeLbl = (gi.useAS && !gi.singleAntenneMode)
                     ? 'ZS : <strong>' + (f.zs && f.zs[0] ? f.zs[0] : '?') + '</strong>'
                     : (f.province ? 'Province : <strong>' + f.province + '</strong>' : 'Niveau <strong>National</strong>');
                 var hdr = E('div', 'cb');
@@ -6034,10 +6039,10 @@
                    Ligne par row (Antenne ou ZS) ; chaque cellule affiche curr % / prev %. */
                 if (gi.scopeLevel !== 'as' && gi.scopeLevel !== 'zs') {
                     var rowKeyC, childKeyForPropC, rowLabelHdrC, childLabelPluralC;
-                    if (gi.scopeLevel === 'national' || gi.scopeLevel === 'province') {
+                    if ((gi.scopeLevel === 'national' || gi.scopeLevel === 'province') && !gi.singleAntenneMode) {
                         rowKeyC = '_Antenne'; childKeyForPropC = '_ZS';
                         rowLabelHdrC = 'Antenne PEV'; childLabelPluralC = 'Zones de Santé';
-                    } else { /* antenne */
+                    } else { /* antenne ou province à antenne unique */
                         rowKeyC = '_ZS'; childKeyForPropC = '_AS';
                         rowLabelHdrC = 'Zone de Santé'; childLabelPluralC = 'Aires de Santé';
                     }
