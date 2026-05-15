@@ -1,8 +1,7 @@
-name: Update DHIS2 vaccination data
+name: "[OBSOLETE] Update DHIS2 vaccination data"
+# REMPLACÉ par sync_dhis2.yml — déclenche manuellement seulement si besoin
 
 on:
-  schedule:
-    - cron: '30 1 * * *'  # quotidien 01:30 UTC
   workflow_dispatch:
 
 # ✅ Empêche deux workflows (update/backfill) d'écrire en même temps
