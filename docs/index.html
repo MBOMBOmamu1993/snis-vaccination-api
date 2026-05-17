@@ -6626,33 +6626,6 @@
                 .catch(function () { _cibleAjustCache[year] = null; return null; });
         }
 
-        /* Niveau d'affichage pour la page « cible admin vs ajustée » :
-           plafonné à la Zone de Santé (la base ajustée ne descend pas plus bas). */
-        function _cvAjustGroupInfo() {
-            var f = S.filters;
-            var hasProv = !!(f.province && f.province !== '');
-            var hasAnt = !!(hasProv && f.antenne && f.antenne.length &&
-                S.cascaded && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length);
-            var hasZS = !!(hasProv && f.zs && f.zs.length &&
-                S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length);
-            if (hasZS) {
-                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', scopeLevel: 'zs', scopeLabel: 'Zone de Santé' };
-            }
-            if (hasAnt) {
-                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', scopeLevel: 'antenne', scopeLabel: 'Antenne PEV' };
-            }
-            if (hasProv) {
-                return { groupKey: '_Antenne', label: 'Antenne PEV', dedupKey: '_ZS', scopeLevel: 'province', scopeLabel: 'Province' };
-            }
-            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', scopeLevel: 'national', scopeLabel: 'National' };
-        }
-
-        /* Cibles admin (NV/NS) pour la page ajustée — réutilise _cvTargets
-           mais avec dedupKey = _ZS car la base ajustée s'arrête à la ZS. */
-        function _cvAdminTargetsForAjust(recs, n_periods) {
-            return _cvTargets(recs, n_periods, '_ZS');
-        }
-
         /* Cibles ajustées agrégées sur la sélection courante.
            Index par (_Province||_ZS) puis somme dédoublonnée. */
         function _cvAjustTargets(recs, cibleData, n_periods) {
@@ -6708,14 +6681,19 @@
         }
 
         function rAnalysesCVAjust(c) {
-            var gi = _cvAjustGroupInfo();
+            /* Réutilise exactement _cvGroupInfo() (chargement données + dedupKey identiques
+               aux autres pages) pour que les cibles admin soient cohérentes.
+               On plafonne uniquement l'affichage : si le scope descend jusqu'à l'AS,
+               on remonte au niveau ZS (la base ajustée s'arrête à la ZS). */
+            var gi = _cvGroupInfo();
+            /* Niveau d'affichage plafonné à ZS pour la colonne ajustée */
+            var giDisp = (gi.groupKey === '_AS')
+                ? { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: gi.dedupKey, scopeLevel: gi.scopeLevel, scopeLabel: gi.scopeLabel }
+                : gi;
             c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement données comparatives…</div>';
-            /* On utilise toujours les données niveau-AS pour la cohérence avec les
-               numérateurs (somme FOSA). Les agrégats sont ensuite faits par ZS. */
             var f = S.filters;
-            var dataPromise = (f.province && f.province !== '')
-                ? _loadCVASData(f.province)
-                : _loadCVZSData();
+            /* Chargement données : même logique que rAnalysesCV */
+            var dataPromise = gi.useAS ? _loadCVASData(f.province) : _loadCVZSData();
             /* Détermine l'année de la sélection (la plus récente) */
             var pers = (f.period && f.period.length) ? f.period.slice().sort() : [];
             var selYear = pers.length ? pers[pers.length - 1].substr(0, 4)
@@ -6739,8 +6717,8 @@
                     return;
                 }
 
-                /* Cibles */
-                var tgtAdm = _cvAdminTargetsForAjust(cvFlt, n_periods);
+                /* Cibles admin — même calcul (même gi.dedupKey) que les autres pages */
+                var tgtAdm = _cvTargets(cvFlt, n_periods, gi.dedupKey);
                 var tgtAj = _cvAjustTargets(cvFlt, cible, n_periods);
                 var hasAjust = !!(tgtAj && tgtAj.ns_ann > 0);
                 var isVAPprov = _computeIsVAP(f.province || '');
@@ -6752,7 +6730,7 @@
                     '<p style="font-size:12px;color:#555;margin:0">' + scopeLbl +
                     ' — Période : <strong>' + perLbl + '</strong>' +
                     ' — Année : <strong>' + selYear + '</strong>' +
-                    ' — Niveau affiché : <strong>' + gi.label + '</strong>' +
+                    ' — Niveau affiché : <strong>' + giDisp.label + '</strong>' +
                     (isVAPprov ? ' &nbsp;<span style="background:#e65100;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700">Province VAP</span>' : '') +
                     '</p>' +
                     (hasAjust
@@ -6786,7 +6764,7 @@
                 antigList = antigList.filter(function (a) { return _agSel(a.ag); });
 
                 var cvBox = E('div', 'cb');
-                cvBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Couvertures vaccinales — ' + gi.scopeLabel + ' · ' + perLbl + '</h4>';
+                cvBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Couvertures vaccinales — ' + giDisp.scopeLabel + ' · ' + perLbl + '</h4>';
                 var tH = '<div style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>' +
                     '<tr style="background:#0b3a6f;color:#fff">' +
                     '<th style="text-align:left">Antigène</th>' +
@@ -6939,14 +6917,14 @@
                 if (typeof Chart !== 'undefined') {
                     var orgG = {}, orgNames = [];
                     cvFlt.forEach(function (r) {
-                        var k = r[gi.groupKey] || ''; if (!k) return;
+                        var k = r[giDisp.groupKey] || ''; if (!k) return;
                         if (!orgG[k]) orgG[k] = [];
                         orgG[k].push(r);
                     });
                     orgNames = Object.keys(orgG).filter(Boolean).sort();
                     if (orgNames.length) {
                         var ouBox = E('div', 'cb');
-                        ouBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Couverture vaccinale DTC1 : Admin vs Ajustée par ' + gi.label + '</h4>';
+                        ouBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Couverture vaccinale DTC1 : Admin vs Ajustée par ' + giDisp.label + '</h4>';
                         var ouId = 'cv_ajust_ou_' + Date.now();
                         var hPx = Math.max(280, Math.min(900, 24 * orgNames.length + 80));
                         ouBox.innerHTML += '<div style="position:relative;height:' + hPx + 'px;overflow:auto"><canvas id="' + ouId + '"></canvas></div>';
@@ -6956,7 +6934,7 @@
                             var dAdm = [], dAj = [];
                             orgNames.forEach(function (n) {
                                 var recs = orgG[n];
-                                var tA = _cvTargets(recs, n_periods, '_ZS');
+                                var tA = _cvTargets(recs, n_periods, gi.dedupKey);
                                 var d1 = _cvSum(recs, 'DTC1_0_11');
                                 dAdm.push(tA.ns > 0 ? +(d1 / tA.ns * 100).toFixed(1) : null);
                                 if (hasAjust) {
@@ -6989,16 +6967,16 @@
                 /* ── Tableau détaillé par scope : doses, cible admin, CV admin, cible ajustée, CV ajustée ── */
                 var orgG2 = {};
                 cvFlt.forEach(function (r) {
-                    var k = r[gi.groupKey] || ''; if (!k) return;
+                    var k = r[giDisp.groupKey] || ''; if (!k) return;
                     if (!orgG2[k]) orgG2[k] = [];
                     orgG2[k].push(r);
                 });
                 var orgNames2 = Object.keys(orgG2).filter(Boolean).sort();
                 var detBox = E('div', 'cb');
-                detBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Tableau détaillé — DTC1 / DTC3 par ' + gi.label + '</h4>';
+                detBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Tableau détaillé — DTC1 / DTC3 par ' + giDisp.label + '</h4>';
                 var dH = '<div style="overflow-x:auto;max-height:520px"><table class="dt" style="font-size:11px;white-space:nowrap"><thead>' +
                     '<tr style="background:#0b3a6f;color:#fff">' +
-                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;text-align:left">' + gi.label + '</th>' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;text-align:left">' + giDisp.label + '</th>' +
                     '<th style="text-align:right">DTC1 doses</th>' +
                     '<th style="text-align:right">Cible NS admin</th>' +
                     '<th style="text-align:right">CV DTC1 admin</th>' +
@@ -7031,7 +7009,7 @@
                     '</tr>';
                 orgNames2.forEach(function (ouName, idx) {
                     var recs = orgG2[ouName];
-                    var tA = _cvTargets(recs, n_periods, '_ZS');
+                    var tA = _cvTargets(recs, n_periods, gi.dedupKey);
                     var tJ = hasAjust ? _cvAjustTargets(recs, cible, n_periods) : null;
                     var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
                     var cv1A = tA.ns > 0 ? d1 / tA.ns * 100 : null;
