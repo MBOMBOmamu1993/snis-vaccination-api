@@ -1008,7 +1008,7 @@
                 id: 'oqd', lb: 'Outil qualité données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques et données manquantes', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
-            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Courbe de suivi des CV', ic: '📈' }, { t: '5. Logistique', ic: '📦' }] },
+            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }, { t: '6. Logistique', ic: '📦' }] },
             { id: 'as', lb: 'Aire de Santé', fl: ['province', 'antenne', 'zs', 'as', 'period'], pp: [{ t: 'Vaccination AS', ic: '📍' }, { t: 'Logistique AS', ic: '📦' }] },
             { id: 'zs', lb: 'Zone de Santé', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Vaccination ZS', ic: '🗺️' }, { t: 'Logistique ZS', ic: '📦' }] },
             { id: 'ant', lb: 'Antenne PEV', fl: ['province', 'antenne', 'period'], pp: [{ t: 'Tableau de bord Antenne', ic: '📡' }] },
@@ -2068,7 +2068,7 @@
             db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
-            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rCourbesCV, rLog][S.pg](ct); }
+            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV, rLog][S.pg](ct); }
             else if (tab.id === 'as' || tab.id === 'zs') { [rVac, rLog][S.pg](ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
@@ -6603,6 +6603,457 @@
                         });
                     }
                 }, 120);
+            });
+        }
+
+        /* ═══════════════════════════════════════════════════════
+         *  PAGE : ANALYSE COMPARATIVE — CIBLE ADMIN vs CIBLE AJUSTÉE
+         *  Source ajustée : data/cibles_ajustees/{year}.json
+         *    structure : { year, records: [{_Province,_Antenne,_ZS,SV_ajust,NV_ajust}, …] }
+         *  Si le fichier d'une année est absent (ex. 2026 avant import),
+         *  seule la partie administrative est affichée.
+         *  Niveaux supportés : Province / Antenne PEV / Zone de Santé
+         *  (la base ajustée s'arrête à la ZS — pas d'AS).
+         * ═══════════════════════════════════════════════════════ */
+        var _cibleAjustCache = {};
+        function _loadCibleAjustee(year) {
+            if (Object.prototype.hasOwnProperty.call(_cibleAjustCache, year)) {
+                return Promise.resolve(_cibleAjustCache[year]);
+            }
+            return fetch('./data/cibles_ajustees/' + year + '.json', { cache: 'no-cache' })
+                .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+                .then(function (d) { _cibleAjustCache[year] = d; return d; })
+                .catch(function () { _cibleAjustCache[year] = null; return null; });
+        }
+
+        /* Niveau d'affichage pour la page « cible admin vs ajustée » :
+           plafonné à la Zone de Santé (la base ajustée ne descend pas plus bas). */
+        function _cvAjustGroupInfo() {
+            var f = S.filters;
+            var hasProv = !!(f.province && f.province !== '');
+            var hasAnt = !!(hasProv && f.antenne && f.antenne.length &&
+                S.cascaded && S.cascaded.antenne && f.antenne.length < S.cascaded.antenne.length);
+            var hasZS = !!(hasProv && f.zs && f.zs.length &&
+                S.cascaded && S.cascaded.zs && f.zs.length < S.cascaded.zs.length);
+            if (hasZS) {
+                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', scopeLevel: 'zs', scopeLabel: 'Zone de Santé' };
+            }
+            if (hasAnt) {
+                return { groupKey: '_ZS', label: 'Zone de Santé', dedupKey: '_ZS', scopeLevel: 'antenne', scopeLabel: 'Antenne PEV' };
+            }
+            if (hasProv) {
+                return { groupKey: '_Antenne', label: 'Antenne PEV', dedupKey: '_ZS', scopeLevel: 'province', scopeLabel: 'Province' };
+            }
+            return { groupKey: '_Province', label: 'Province', dedupKey: '_ZS', scopeLevel: 'national', scopeLabel: 'National' };
+        }
+
+        /* Cibles admin (NV/NS) pour la page ajustée — réutilise _cvTargets
+           mais avec dedupKey = _ZS car la base ajustée s'arrête à la ZS. */
+        function _cvAdminTargetsForAjust(recs, n_periods) {
+            return _cvTargets(recs, n_periods, '_ZS');
+        }
+
+        /* Cibles ajustées agrégées sur la sélection courante.
+           Index par (_Province||_ZS) puis somme dédoublonnée. */
+        function _cvAjustTargets(recs, cibleData, n_periods) {
+            if (!cibleData || !cibleData.records) return null;
+            var idx = {};
+            cibleData.records.forEach(function (r) {
+                idx[(r._Province || '') + '||' + (r._ZS || '')] = r;
+            });
+            var seen = {}, nv_ann = 0, sv_ann = 0, nMatched = 0, nTotal = 0;
+            recs.forEach(function (r) {
+                var k = (r._Province || '') + '||' + (r._ZS || '');
+                if (seen[k]) return;
+                seen[k] = 1;
+                nTotal++;
+                var c = idx[k];
+                if (c) {
+                    nMatched++;
+                    nv_ann += Number(c.NV_ajust) || 0;
+                    sv_ann += Number(c.SV_ajust) || 0;
+                }
+            });
+            return {
+                nv_ann: nv_ann, ns_ann: sv_ann,
+                nv: nv_ann * n_periods / 12,
+                ns: sv_ann * n_periods / 12,
+                nMatched: nMatched, nTotal: nTotal
+            };
+        }
+
+        /* Zéro-dose / sous-vaccinés à partir de cibles ajustées (mensualisé par ZS). */
+        function _cvZDAjust(recs, cibleData, doseField) {
+            if (!cibleData || !cibleData.records) return null;
+            var idx = {};
+            cibleData.records.forEach(function (r) {
+                idx[(r._Province || '') + '||' + (r._ZS || '')] = r;
+            });
+            /* Agrège doses + SV ajusté par ZS×YM (SV ajusté mensuel = SV_ajust / 12). */
+            var zsDoses = {};
+            recs.forEach(function (r) {
+                var k = (r._Province || '') + '||' + (r._ZS || '') + '||' + (r._YM || '');
+                if (!zsDoses[k]) zsDoses[k] = { p: r._Province, z: r._ZS, d: 0 };
+                zsDoses[k].d += Number(r[doseField]) || 0;
+            });
+            var total = 0;
+            Object.keys(zsDoses).forEach(function (k) {
+                var v = zsDoses[k];
+                var c = idx[(v.p || '') + '||' + (v.z || '')];
+                if (!c) return;
+                var ns_m = (Number(c.SV_ajust) || 0) / 12;
+                total += Math.max(0, ns_m - v.d);
+            });
+            return total;
+        }
+
+        function rAnalysesCVAjust(c) {
+            var gi = _cvAjustGroupInfo();
+            c.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">⏳ Chargement données comparatives…</div>';
+            /* On utilise toujours les données niveau-AS pour la cohérence avec les
+               numérateurs (somme FOSA). Les agrégats sont ensuite faits par ZS. */
+            var f = S.filters;
+            var dataPromise = (f.province && f.province !== '')
+                ? _loadCVASData(f.province)
+                : _loadCVZSData();
+            /* Détermine l'année de la sélection (la plus récente) */
+            var pers = (f.period && f.period.length) ? f.period.slice().sort() : [];
+            var selYear = pers.length ? pers[pers.length - 1].substr(0, 4)
+                : String(new Date().getFullYear());
+
+            Promise.all([dataPromise, _loadCibleAjustee(selYear)]).then(function (rs) {
+                var data = rs[0], cible = rs[1];
+                c.innerHTML = '';
+                if (!data || !data.length) {
+                    c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;border:1px solid #fca5a5;color:#dc2626">' +
+                        '<strong>❌ Données couverture non disponibles.</strong></div>';
+                    return;
+                }
+                var n_periods = pers.length || 1;
+                var perLbl = n_periods === 1 ? mL(pers[0]) :
+                    (pers.length > 1 ? mL(pers[0]) + ' – ' + mL(pers[pers.length - 1]) : 'Toutes périodes');
+
+                var cvFlt = _cvFilterData(data, gi);
+                if (!cvFlt.length) {
+                    c.innerHTML = '<div style="padding:24px;background:#fff;border-radius:8px;color:#888">Aucune donnée pour les filtres sélectionnés.</div>';
+                    return;
+                }
+
+                /* Cibles */
+                var tgtAdm = _cvAdminTargetsForAjust(cvFlt, n_periods);
+                var tgtAj = _cvAjustTargets(cvFlt, cible, n_periods);
+                var hasAjust = !!(tgtAj && tgtAj.ns_ann > 0);
+                var isVAPprov = _computeIsVAP(f.province || '');
+
+                /* ── En-tête ── */
+                var scopeLbl = (f.province ? 'Province : <strong>' + f.province + '</strong>' : 'Niveau <strong>National</strong>');
+                var hdr = E('div', 'cb');
+                hdr.innerHTML = '<h3 style="color:#0b3a6f;margin:0 0 4px">⚖️ Analyse comparative — Cible administrative vs Cible ajustée</h3>' +
+                    '<p style="font-size:12px;color:#555;margin:0">' + scopeLbl +
+                    ' — Période : <strong>' + perLbl + '</strong>' +
+                    ' — Année : <strong>' + selYear + '</strong>' +
+                    ' — Niveau affiché : <strong>' + gi.label + '</strong>' +
+                    (isVAPprov ? ' &nbsp;<span style="background:#e65100;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700">Province VAP</span>' : '') +
+                    '</p>' +
+                    (hasAjust
+                        ? '<p style="font-size:11px;color:#0b3a6f;margin:6px 0 0">📂 Source ajustée : <code>data/cibles_ajustees/' + selYear + '.json</code> · ' + tgtAj.nMatched + '/' + tgtAj.nTotal + ' ZS appariées</p>'
+                        : '<p style="font-size:11px;color:#b45309;margin:6px 0 0">⚠️ Aucune cible ajustée disponible pour ' + selYear + ' (fichier <code>data/cibles_ajustees/' + selYear + '.json</code> absent). Seule la partie administrative est affichée. Importez le fichier via <code>scripts/import_cibles_ajustees.py</code> pour activer l\'analyse ajustée.</p>') +
+                    '<p style="font-size:10px;color:#888;margin:4px 0 0"><em>Dénominateur ajusté : Naissances vivantes ajustées (BCG, Td) ou Nourrissons survivants ajustés (autres antigènes). Niveaux disponibles : Province → Antenne PEV → Zone de Santé.</em></p>';
+                c.appendChild(hdr);
+
+                /* ── KPI top : populations / cibles admin vs ajustées ── */
+                var kpiBox = E('div', 'kr'); kpiBox.style.marginBottom = '16px';
+                [
+                    { v: Math.round(tgtAdm.nv).toLocaleString(), l: 'Cible NV admin (' + perLbl + ')', col: '#1565c0' },
+                    { v: hasAjust ? Math.round(tgtAj.nv).toLocaleString() : '–', l: 'Cible NV ajustée', col: '#0b3a6f' },
+                    { v: Math.round(tgtAdm.ns).toLocaleString(), l: 'Cible NS admin', col: '#00838f' },
+                    { v: hasAjust ? Math.round(tgtAj.ns).toLocaleString() : '–', l: 'Cible NS ajustée', col: '#7c3aed' }
+                ].forEach(function (k) {
+                    var kc = E('div', 'kc');
+                    kc.style.cssText = 'flex:1;min-width:160px;border-left:5px solid ' + k.col;
+                    kc.innerHTML = '<div class="kv" style="color:' + k.col + '">' + k.v + '</div><div class="kl">' + k.l + '</div>';
+                    kpiBox.appendChild(kc);
+                });
+                c.appendChild(kpiBox);
+
+                /* ── Tableau 1.1 : Couvertures vaccinales nationales par antigène ── */
+                var antigList = [
+                    { ag: 'BCG', useNV: true }, { ag: 'DTC1', useNV: false }, { ag: 'DTC3', useNV: false },
+                    { ag: 'VAR1', useNV: false }, { ag: 'VAR2', useNV: false }, { ag: 'VPO3', useNV: false },
+                    { ag: 'VAA', useNV: false }, { ag: 'PCV13_3', useNV: false }, { ag: 'ROTA3', useNV: false },
+                    { ag: 'VPI1', useNV: false }, { ag: 'VPI2', useNV: false }, { ag: 'TD', useNV: true }
+                ];
+                antigList = antigList.filter(function (a) { return _agSel(a.ag); });
+
+                var cvBox = E('div', 'cb');
+                cvBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Couvertures vaccinales — ' + gi.scopeLabel + ' · ' + perLbl + '</h4>';
+                var tH = '<div style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th style="text-align:left">Antigène</th>' +
+                    '<th style="text-align:center">Cible administrative</th>' +
+                    (hasAjust ? '<th style="text-align:center">Cible ajustée</th>' : '') +
+                    '</tr></thead><tbody>';
+                antigList.forEach(function (a) {
+                    var field = AG_FIELD_MAP[a.ag];
+                    var doses = field ? _cvSum(cvFlt, field) : 0;
+                    var denAdm = a.useNV ? tgtAdm.nv : tgtAdm.ns;
+                    var denAj = hasAjust ? (a.useNV ? tgtAj.nv : tgtAj.ns) : 0;
+                    var cvAdm = denAdm > 0 ? doses / denAdm * 100 : null;
+                    var cvAj = denAj > 0 ? doses / denAj * 100 : null;
+                    function _bar(p) {
+                        if (p === null) return '<div style="text-align:center;color:#bbb">–</div>';
+                        var w = Math.max(2, Math.min(100, p));
+                        var col = _cvColor(p);
+                        return '<div style="position:relative;background:#f1f5f9;border-radius:4px;height:22px;overflow:hidden">' +
+                            '<div style="background:' + col + ';height:100%;width:' + w + '%"></div>' +
+                            '<div style="position:absolute;top:0;left:0;right:0;line-height:22px;text-align:center;color:#000;font-weight:700;font-size:11px">' + p.toFixed(0) + '%</div>' +
+                            '</div>';
+                    }
+                    tH += '<tr><td style="font-weight:700;color:#0b3a6f">' + a.ag.replace(/_/g, '-') + '</td>';
+                    tH += '<td style="min-width:240px">' + _bar(cvAdm) + '</td>';
+                    if (hasAjust) tH += '<td style="min-width:240px">' + _bar(cvAj) + '</td>';
+                    tH += '</tr>';
+                });
+                tH += '</tbody></table></div>';
+                cvBox.innerHTML += tH;
+                c.appendChild(cvBox);
+
+                /* ── KPI ZS<80% Penta3 + Abandon Penta1-3 (admin vs ajustée) ── */
+                /* Recalcul par ZS pour le seuil */
+                var zsG = {}, zsNames = [];
+                cvFlt.forEach(function (r) {
+                    var k = (r._Province || '') + '||' + (r._ZS || '');
+                    if (!zsG[k]) { zsG[k] = { recs: [], prov: r._Province, zs: r._ZS }; zsNames.push(k); }
+                    zsG[k].recs.push(r);
+                });
+                var cibleIdx = {};
+                if (hasAjust) cible.records.forEach(function (r) {
+                    cibleIdx[(r._Province || '') + '||' + (r._ZS || '')] = r;
+                });
+                var nBelow80Adm = 0, nBelow80Aj = 0, nZSAj = 0;
+                zsNames.forEach(function (k) {
+                    var g = zsG[k];
+                    var tAdm = _cvTargets(g.recs, n_periods, '_ZS');
+                    var d3 = _cvSum(g.recs, 'DTC3_0_11');
+                    var cvA = tAdm.ns > 0 ? d3 / tAdm.ns * 100 : null;
+                    if (cvA !== null && cvA < 80) nBelow80Adm++;
+                    if (hasAjust) {
+                        var c2 = cibleIdx[k];
+                        if (c2) {
+                            nZSAj++;
+                            var nsAj = (Number(c2.SV_ajust) || 0) * n_periods / 12;
+                            var cvJ = nsAj > 0 ? d3 / nsAj * 100 : null;
+                            if (cvJ !== null && cvJ < 80) nBelow80Aj++;
+                        }
+                    }
+                });
+                /* Abandon */
+                var d1T = _cvSum(cvFlt, 'DTC1_0_11'), d3T = _cvSum(cvFlt, 'DTC3_0_11');
+                var abPct = d1T > 0 ? (d1T - d3T) / d1T * 100 : null;
+                /* Zéro-dose */
+                var zdAdm = _cvZD(cvFlt);
+                var zdAj = hasAjust ? _cvZDAjust(cvFlt, cible, 'DTC1_0_11') : null;
+
+                var donutBox = E('div', 'cb');
+                donutBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">🎯 Indicateurs synthétiques — Admin vs Ajustée</h4>';
+                var dh = '<div style="display:flex;flex-wrap:wrap;gap:14px">';
+                function _donut(pct, label, col) {
+                    var p = (pct === null || pct === undefined) ? 0 : Math.max(0, Math.min(100, pct));
+                    return '<div style="flex:1;min-width:170px;background:#fff;border-radius:10px;padding:14px;text-align:center;border:1px solid #e2e8f0">' +
+                        '<div style="position:relative;width:110px;height:110px;margin:0 auto">' +
+                        '<svg viewBox="0 0 36 36" style="width:110px;height:110px;transform:rotate(-90deg)">' +
+                        '<circle cx="18" cy="18" r="15.91549431" fill="none" stroke="#e2e8f0" stroke-width="3.5"/>' +
+                        '<circle cx="18" cy="18" r="15.91549431" fill="none" stroke="' + col + '" stroke-width="3.5" stroke-dasharray="' + p.toFixed(1) + ' ' + (100 - p).toFixed(1) + '"/>' +
+                        '</svg>' +
+                        '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;font-weight:800;color:' + col + '">' + (pct === null ? '–' : pct.toFixed(0) + '%') + '</div>' +
+                        '</div>' +
+                        '<div style="margin-top:8px;font-size:11px;color:#475569;font-weight:600">' + label + '</div></div>';
+                }
+                var pctBelowAdm = zsNames.length ? nBelow80Adm / zsNames.length * 100 : null;
+                var pctBelowAj = nZSAj ? nBelow80Aj / nZSAj * 100 : null;
+                dh += _donut(pctBelowAdm, 'ZS &lt; 80% Penta3 (admin)<br>n = ' + nBelow80Adm + '/' + zsNames.length, '#0b3a6f');
+                if (hasAjust) dh += _donut(pctBelowAj, 'ZS &lt; 80% Penta3 (ajustée)<br>n = ' + nBelow80Aj + '/' + nZSAj, '#7c3aed');
+                dh += _donut(abPct, 'Abandon Penta1-Penta3', _abandonColor(abPct !== null ? abPct / 100 : null));
+                dh += '</div>';
+                donutBox.innerHTML += dh;
+                c.appendChild(donutBox);
+
+                /* ── Zéro-dose admin vs ajustée ── */
+                var zdBox = E('div', 'cb');
+                zdBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">👶 Enfants zéro-dose enregistrés sur la période — Admin vs Ajustée</h4>';
+                var zh = '<div style="display:flex;flex-wrap:wrap;gap:14px">';
+                zh += '<div style="flex:1;min-width:200px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;text-align:center">' +
+                    '<div style="font-size:32px;font-weight:800;color:#0b3a6f">' + Math.round(zdAdm).toLocaleString() + '</div>' +
+                    '<div style="font-size:12px;color:#475569;margin-top:6px">Enfants zéro-dose — base cibles administratives</div></div>';
+                if (hasAjust) {
+                    zh += '<div style="flex:1;min-width:200px;background:#fff;border:2px solid #7c3aed;border-radius:10px;padding:18px;text-align:center">' +
+                        '<div style="font-size:32px;font-weight:800;color:#7c3aed">' + Math.round(zdAj).toLocaleString() + '</div>' +
+                        '<div style="font-size:12px;color:#475569;margin-top:6px">Enfants zéro-dose — base cibles ajustées</div></div>';
+                }
+                zh += '</div>';
+                zdBox.innerHTML += zh;
+                c.appendChild(zdBox);
+
+                /* ── Graphe barres groupées : CV par antigène admin vs ajustée ── */
+                if (typeof Chart !== 'undefined') {
+                    var chBox = E('div', 'cb');
+                    chBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📈 Couvertures vaccinales par antigène — Admin vs Ajustée</h4>';
+                    var cvId = 'cv_ajust_chart_' + Date.now();
+                    chBox.innerHTML += '<div style="position:relative;height:360px"><canvas id="' + cvId + '"></canvas></div>';
+                    c.appendChild(chBox);
+                    setTimeout(function () {
+                        var labels = antigList.map(function (a) { return a.ag.replace(/_/g, '-'); });
+                        var dAdm = antigList.map(function (a) {
+                            var doses = _cvSum(cvFlt, AG_FIELD_MAP[a.ag]);
+                            var den = a.useNV ? tgtAdm.nv : tgtAdm.ns;
+                            return den > 0 ? +(doses / den * 100).toFixed(1) : null;
+                        });
+                        var datasets = [{ label: 'Administrative', data: dAdm, backgroundColor: '#5b4b8a' }];
+                        if (hasAjust) {
+                            var dAj = antigList.map(function (a) {
+                                var doses = _cvSum(cvFlt, AG_FIELD_MAP[a.ag]);
+                                var den = a.useNV ? tgtAj.nv : tgtAj.ns;
+                                return den > 0 ? +(doses / den * 100).toFixed(1) : null;
+                            });
+                            datasets.push({ label: 'Ajustée', data: dAj, backgroundColor: '#7dd3c0' });
+                        }
+                        new Chart(document.getElementById(cvId).getContext('2d'), {
+                            type: 'bar',
+                            data: { labels: labels, datasets: datasets },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    tooltip: { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y === null ? '–' : ctx.parsed.y + '%'); } } }
+                                },
+                                scales: {
+                                    y: { beginAtZero: true, title: { display: true, text: 'Couverture vaccinale (%)' } },
+                                    x: { ticks: { font: { size: 10 }, maxRotation: 45 } }
+                                }
+                            }
+                        });
+                    }, 120);
+                }
+
+                /* ── Graphe par scope (Antenne / ZS / Province) : DTC1 admin vs ajustée ── */
+                if (typeof Chart !== 'undefined') {
+                    var orgG = {}, orgNames = [];
+                    cvFlt.forEach(function (r) {
+                        var k = r[gi.groupKey] || ''; if (!k) return;
+                        if (!orgG[k]) orgG[k] = [];
+                        orgG[k].push(r);
+                    });
+                    orgNames = Object.keys(orgG).filter(Boolean).sort();
+                    if (orgNames.length) {
+                        var ouBox = E('div', 'cb');
+                        ouBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">📊 Couverture vaccinale DTC1 : Admin vs Ajustée par ' + gi.label + '</h4>';
+                        var ouId = 'cv_ajust_ou_' + Date.now();
+                        var hPx = Math.max(280, Math.min(900, 24 * orgNames.length + 80));
+                        ouBox.innerHTML += '<div style="position:relative;height:' + hPx + 'px;overflow:auto"><canvas id="' + ouId + '"></canvas></div>';
+                        c.appendChild(ouBox);
+                        setTimeout(function () {
+                            var lbls = orgNames.map(function (n) { return tr(n, 22); });
+                            var dAdm = [], dAj = [];
+                            orgNames.forEach(function (n) {
+                                var recs = orgG[n];
+                                var tA = _cvTargets(recs, n_periods, '_ZS');
+                                var d1 = _cvSum(recs, 'DTC1_0_11');
+                                dAdm.push(tA.ns > 0 ? +(d1 / tA.ns * 100).toFixed(1) : null);
+                                if (hasAjust) {
+                                    var tJ = _cvAjustTargets(recs, cible, n_periods);
+                                    dAj.push(tJ && tJ.ns > 0 ? +(d1 / tJ.ns * 100).toFixed(1) : null);
+                                }
+                            });
+                            var datasets = [{ label: 'DTC1 admin', data: dAdm, backgroundColor: '#0b3a6f' }];
+                            if (hasAjust) datasets.push({ label: 'DTC1 ajustée', data: dAj, backgroundColor: '#38bdf8' });
+                            new Chart(document.getElementById(ouId).getContext('2d'), {
+                                type: 'bar',
+                                data: { labels: lbls, datasets: datasets },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: true, maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { position: 'bottom' },
+                                        tooltip: { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.x === null ? '–' : ctx.parsed.x + '%'); } } }
+                                    },
+                                    scales: {
+                                        x: { beginAtZero: true, title: { display: true, text: 'CV (%)' } },
+                                        y: { ticks: { font: { size: 10 } } }
+                                    }
+                                }
+                            });
+                        }, 120);
+                    }
+                }
+
+                /* ── Tableau détaillé par scope : doses, cible admin, CV admin, cible ajustée, CV ajustée ── */
+                var orgG2 = {};
+                cvFlt.forEach(function (r) {
+                    var k = r[gi.groupKey] || ''; if (!k) return;
+                    if (!orgG2[k]) orgG2[k] = [];
+                    orgG2[k].push(r);
+                });
+                var orgNames2 = Object.keys(orgG2).filter(Boolean).sort();
+                var detBox = E('div', 'cb');
+                detBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 8px">📋 Tableau détaillé — DTC1 / DTC3 par ' + gi.label + '</h4>';
+                var dH = '<div style="overflow-x:auto;max-height:520px"><table class="dt" style="font-size:11px;white-space:nowrap"><thead>' +
+                    '<tr style="background:#0b3a6f;color:#fff">' +
+                    '<th style="position:sticky;left:0;background:#0b3a6f;z-index:2;text-align:left">' + gi.label + '</th>' +
+                    '<th style="text-align:right">DTC1 doses</th>' +
+                    '<th style="text-align:right">Cible NS admin</th>' +
+                    '<th style="text-align:right">CV DTC1 admin</th>' +
+                    (hasAjust ? '<th style="text-align:right">Cible NS ajustée</th>' : '') +
+                    (hasAjust ? '<th style="text-align:right">CV DTC1 ajustée</th>' : '') +
+                    '<th style="text-align:right">DTC3 doses</th>' +
+                    '<th style="text-align:right">CV DTC3 admin</th>' +
+                    (hasAjust ? '<th style="text-align:right">CV DTC3 ajustée</th>' : '') +
+                    '</tr></thead><tbody>';
+                function _pctCell(p) {
+                    if (p === null || p === undefined || !isFinite(p)) return '<td style="text-align:right;color:#bbb">–</td>';
+                    return '<td style="text-align:right;background:' + _cvColor(p) + ';color:#fff;font-weight:700">' + p.toFixed(1) + '%</td>';
+                }
+                /* Total */
+                var totD1 = _cvSum(cvFlt, 'DTC1_0_11'), totD3 = _cvSum(cvFlt, 'DTC3_0_11');
+                var cvD1Adm = tgtAdm.ns > 0 ? totD1 / tgtAdm.ns * 100 : null;
+                var cvD3Adm = tgtAdm.ns > 0 ? totD3 / tgtAdm.ns * 100 : null;
+                var cvD1Aj = hasAjust && tgtAj.ns > 0 ? totD1 / tgtAj.ns * 100 : null;
+                var cvD3Aj = hasAjust && tgtAj.ns > 0 ? totD3 / tgtAj.ns * 100 : null;
+                dH += '<tr style="background:#e8f0fe;font-weight:800">' +
+                    '<td style="position:sticky;left:0;background:#e8f0fe;z-index:1">TOTAL</td>' +
+                    '<td style="text-align:right">' + Math.round(totD1).toLocaleString() + '</td>' +
+                    '<td style="text-align:right">' + Math.round(tgtAdm.ns).toLocaleString() + '</td>' +
+                    _pctCell(cvD1Adm) +
+                    (hasAjust ? '<td style="text-align:right">' + Math.round(tgtAj.ns).toLocaleString() + '</td>' : '') +
+                    (hasAjust ? _pctCell(cvD1Aj) : '') +
+                    '<td style="text-align:right">' + Math.round(totD3).toLocaleString() + '</td>' +
+                    _pctCell(cvD3Adm) +
+                    (hasAjust ? _pctCell(cvD3Aj) : '') +
+                    '</tr>';
+                orgNames2.forEach(function (ouName, idx) {
+                    var recs = orgG2[ouName];
+                    var tA = _cvTargets(recs, n_periods, '_ZS');
+                    var tJ = hasAjust ? _cvAjustTargets(recs, cible, n_periods) : null;
+                    var d1 = _cvSum(recs, 'DTC1_0_11'), d3 = _cvSum(recs, 'DTC3_0_11');
+                    var cv1A = tA.ns > 0 ? d1 / tA.ns * 100 : null;
+                    var cv3A = tA.ns > 0 ? d3 / tA.ns * 100 : null;
+                    var cv1J = tJ && tJ.ns > 0 ? d1 / tJ.ns * 100 : null;
+                    var cv3J = tJ && tJ.ns > 0 ? d3 / tJ.ns * 100 : null;
+                    var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                    dH += '<tr style="background:' + bg + '">' +
+                        '<td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:600">' + tr(ouName, 30) + '</td>' +
+                        '<td style="text-align:right">' + Math.round(d1).toLocaleString() + '</td>' +
+                        '<td style="text-align:right">' + Math.round(tA.ns).toLocaleString() + '</td>' +
+                        _pctCell(cv1A) +
+                        (hasAjust ? '<td style="text-align:right">' + (tJ ? Math.round(tJ.ns).toLocaleString() : '–') + '</td>' : '') +
+                        (hasAjust ? _pctCell(cv1J) : '') +
+                        '<td style="text-align:right">' + Math.round(d3).toLocaleString() + '</td>' +
+                        _pctCell(cv3A) +
+                        (hasAjust ? _pctCell(cv3J) : '') +
+                        '</tr>';
+                });
+                dH += '</tbody></table></div>';
+                detBox.innerHTML += dH;
+                c.appendChild(detBox);
             });
         }
 
