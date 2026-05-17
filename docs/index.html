@@ -7196,8 +7196,18 @@
                         });
                     });
 
+                    /* Liste des ZS dans le scope actuel (province/antenne/zs/as filtres déjà appliqués sur cvFlt)
+                       — sert à filtrer le topojson pour ne dessiner que les polygones concernés et auto-zoomer. */
+                    var zsList = Object.keys(zsMapG);
+                    /* Scope label pour le titre */
+                    var scopeMapLbl = f.zs && f.zs.length
+                        ? (f.zs.length === 1 ? 'ZS : ' + f.zs[0] : f.zs.length + ' ZS sélectionnées')
+                        : (f.antenne && f.antenne.length
+                            ? (f.antenne.length === 1 ? 'Antenne : ' + f.antenne[0] : f.antenne.length + ' antennes')
+                            : (f.province ? 'Province : ' + f.province : 'National'));
+
                     var mapBox = E('div', 'cb');
-                    mapBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">🗺️ Cartes des couvertures vaccinales DTC3 par Zone de Santé — Admin vs Ajustée</h4>';
+                    mapBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">🗺️ Cartes des couvertures vaccinales DTC3 par Zone de Santé — Admin vs Ajustée <span style="font-weight:400;color:#64748b;font-size:12px">(' + scopeMapLbl + ')</span></h4>';
                     var mapId = 'vl_map_' + Date.now();
                     mapBox.innerHTML += '<div id="' + mapId + '" style="overflow-x:auto"></div>';
                     c.appendChild(mapBox);
@@ -7208,9 +7218,14 @@
                         range:  ['#e53935', '#f9a825', '#7cb342', '#1b5e20', '#3949ab', '#e0e0e0']
                     };
 
+                    /* Dimensions plus grandes lorsque le scope est restreint (zoom visuel) */
+                    var nZs = zsList.length;
+                    var mapW = (nZs <= 3) ? 520 : (nZs <= 30 ? 460 : 400);
+                    var mapH = (nZs <= 3) ? 560 : (nZs <= 30 ? 520 : 460);
+
                     function makeMapSpec(field, title, legendTitle) {
                         return {
-                            width: 380, height: 450,
+                            width: mapW, height: mapH,
                             data: {
                                 url: TOPO_URL,
                                 format: { type: 'topojson', feature: 'Zone de SantéRDC' }
@@ -7218,6 +7233,9 @@
                             projection: { type: 'mercator' },
                             title: { text: title, fontSize: 13, dy: 8 },
                             transform: [
+                                /* Filtre par scope : ne garder que les ZS du scope actuel.
+                                   Vega-Lite auto-ajuste la projection à l'étendue des features restantes. */
+                                { filter: { field: 'properties.name', oneOf: zsList } },
                                 {
                                     lookup: 'properties.name',
                                     from: { data: { name: 'mapds' }, key: 'Level 3 Org Unit', fields: [field] },
@@ -7233,9 +7251,9 @@
                                 }
                             ],
                             layer: [
-                                { mark: { type: 'geoshape', fill: '#f7f7f7', stroke: '#bdbdbd', strokeWidth: 0.25 } },
+                                { mark: { type: 'geoshape', fill: '#f7f7f7', stroke: '#bdbdbd', strokeWidth: 0.3 } },
                                 {
-                                    mark: { type: 'geoshape', stroke: '#555', strokeWidth: 0.35 },
+                                    mark: { type: 'geoshape', stroke: '#555', strokeWidth: 0.5 },
                                     encoding: {
                                         color: {
                                             field: 'tranche', type: 'nominal',
