@@ -308,12 +308,6 @@ RENAME_MAP: Dict[str, str] = {
     "pak21wvkWJC.oSYTyzezWif": "VAR1 mobile1",
     "cTLKwfG8pSv.Dr4rWTqepnP": "VAR1 mobile2",
 
-    "i5zmivDIHN8.g6mIyKoGIh2": "VAR2 fixe1",
-    "i5zmivDIHN8.QRyK6yxKBU3": "VAR2 fixe2",
-    "i5zmivDIHN8.Rby9Jdri29F": "VAR2 avancé",
-    "i5zmivDIHN8.FCXzheCQXtr": "VAR2 mobile1",
-    "i5zmivDIHN8.VrEj0UVVGr4": "VAR2 mobile2",
-
     "M2JQW0H44dI": "ECV",
     "s5EUr8GznWY": "Séances prévues",
     "lHB57kjRtUz": "Séances réalisées",
