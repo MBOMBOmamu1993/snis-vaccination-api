@@ -11,6 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
     <style>
         * {
             margin: 0;
@@ -7032,6 +7035,249 @@
                 dH += '</tbody></table></div>';
                 detBox.innerHTML += dH;
                 c.appendChild(detBox);
+
+                /* ── Dumbbell chart : % ZS < 80% Penta3 par Antenne (admin vs ajustée) ── */
+                (function () {
+                    /* Regrouper cvFlt par Antenne × ZS */
+                    var antZS = {};
+                    cvFlt.forEach(function (r) {
+                        var ant = r._Antenne || r._Province || 'National';
+                        var zs  = r._ZS || '';
+                        if (!zs) return;
+                        if (!antZS[ant]) antZS[ant] = {};
+                        if (!antZS[ant][zs]) antZS[ant][zs] = [];
+                        antZS[ant][zs].push(r);
+                    });
+                    var antNames = Object.keys(antZS).sort();
+                    if (!antNames.length) return;
+
+                    /* Pour chaque antenne : % ZS < 80% admin et ajustée */
+                    var rows = antNames.map(function (ant) {
+                        var zsKeys = Object.keys(antZS[ant]);
+                        var nTotal = zsKeys.length;
+                        var nBelowAdm = 0, nBelowAj = 0, nAjTotal = 0;
+                        zsKeys.forEach(function (zs) {
+                            var recs = antZS[ant][zs];
+                            var tA  = _cvTargets(recs, n_periods, '_ZS');
+                            var d3  = _cvSum(recs, 'DTC3_0_11');
+                            if (tA.ns > 0 && (d3 / tA.ns * 100) < 80) nBelowAdm++;
+                            if (hasAjust) {
+                                var zsKey2 = (recs[0]._Province || '') + '||' + zs;
+                                var cRec = cibleIdx[zsKey2];
+                                if (cRec) {
+                                    nAjTotal++;
+                                    var nsAj2 = (Number(cRec.SV_ajust) || 0) * n_periods / 12;
+                                    if (nsAj2 > 0 && (d3 / nsAj2 * 100) < 80) nBelowAj++;
+                                }
+                            }
+                        });
+                        return {
+                            ant: ant,
+                            pctAdm: nTotal > 0 ? nBelowAdm / nTotal * 100 : null,
+                            pctAj:  hasAjust && nAjTotal > 0 ? nBelowAj / nAjTotal * 100 : null
+                        };
+                    });
+
+                    /* Trier par pctAj desc, puis pctAdm */
+                    rows.sort(function (a, b) {
+                        var va = a.pctAj !== null ? a.pctAj : (a.pctAdm || 0);
+                        var vb = b.pctAj !== null ? b.pctAj : (b.pctAdm || 0);
+                        return vb - va;
+                    });
+
+                    var dbBox = E('div', 'cb');
+                    dbBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">🎯 % de ZS avec couverture vaccinale au Penta3 &lt;80% — par Antenne</h4>';
+
+                    /* Construction SVG dumbbell */
+                    var W = 700, ROW_H = 18, PAD_L = 160, PAD_R = 40, PAD_TOP = 30, PAD_BOT = 50;
+                    var H = PAD_TOP + rows.length * ROW_H + PAD_BOT;
+                    var xMax = 110;
+                    function xPx(v) { return PAD_L + (v / xMax) * (W - PAD_L - PAD_R); }
+
+                    /* Lignes de référence 80% et 90% et 100% */
+                    var refLines = [
+                        { x: 80, color: '#16a34a', label: '80%' },
+                        { x: 90, color: '#16a34a', label: '90%' },
+                        { x: 100, color: '#16a34a', label: '100%' }
+                    ];
+
+                    var svgParts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" style="font-family:sans-serif;font-size:10px;overflow:visible">'];
+
+                    /* Lignes grille */
+                    [0, 20, 40, 60, 80, 100].forEach(function (v) {
+                        var x = xPx(v);
+                        svgParts.push('<line x1="' + x + '" y1="' + PAD_TOP + '" x2="' + x + '" y2="' + (H - PAD_BOT) + '" stroke="#e5e7eb" stroke-width="1"/>');
+                        svgParts.push('<text x="' + x + '" y="' + (H - PAD_BOT + 14) + '" text-anchor="middle" fill="#6b7280" font-size="9">' + v + '</text>');
+                    });
+
+                    /* Lignes de référence vertes */
+                    refLines.forEach(function (ref) {
+                        var x = xPx(ref.x);
+                        svgParts.push('<line x1="' + x + '" y1="' + PAD_TOP + '" x2="' + x + '" y2="' + (H - PAD_BOT) + '" stroke="' + ref.color + '" stroke-width="1.5" stroke-dasharray="4,3"/>');
+                    });
+
+                    /* Bandes alternées */
+                    rows.forEach(function (row, i) {
+                        if (i % 2 === 0) {
+                            var y = PAD_TOP + i * ROW_H;
+                            svgParts.push('<rect x="' + PAD_L + '" y="' + y + '" width="' + (W - PAD_L - PAD_R) + '" height="' + ROW_H + '" fill="#f8fafc"/>');
+                        }
+                    });
+
+                    /* Données par antenne */
+                    rows.forEach(function (row, i) {
+                        var cy = PAD_TOP + i * ROW_H + ROW_H / 2;
+                        /* Label antenne */
+                        svgParts.push('<text x="' + (PAD_L - 6) + '" y="' + (cy + 3) + '" text-anchor="end" fill="#374151" font-size="9">' + row.ant.substring(0, 22) + '</text>');
+
+                        /* Barre grise de connexion */
+                        if (row.pctAdm !== null && row.pctAj !== null) {
+                            var x1 = xPx(Math.min(row.pctAdm, row.pctAj));
+                            var x2 = xPx(Math.max(row.pctAdm, row.pctAj));
+                            svgParts.push('<line x1="' + x1 + '" y1="' + cy + '" x2="' + x2 + '" y2="' + cy + '" stroke="#d1d5db" stroke-width="3"/>');
+                        }
+
+                        /* Point admin (bleu) */
+                        if (row.pctAdm !== null) {
+                            svgParts.push('<circle cx="' + xPx(row.pctAdm) + '" cy="' + cy + '" r="4" fill="#1e40af" opacity="0.85"/>');
+                        }
+                        /* Point ajustée (rouge) */
+                        if (row.pctAj !== null) {
+                            svgParts.push('<circle cx="' + xPx(row.pctAj) + '" cy="' + cy + '" r="4" fill="#b91c1c" opacity="0.85"/>');
+                        }
+                    });
+
+                    /* Titre axe X */
+                    svgParts.push('<text x="' + ((PAD_L + W - PAD_R) / 2) + '" y="' + (H - 8) + '" text-anchor="middle" fill="#374151" font-size="10">% de ZS avec une couverture vaccinale au Penta3&lt;80%</text>');
+
+                    /* Légende */
+                    var lx = PAD_L;
+                    svgParts.push('<circle cx="' + lx + '" cy="' + (H - PAD_BOT + 28) + '" r="5" fill="#1e40af"/>');
+                    svgParts.push('<text x="' + (lx + 8) + '" y="' + (H - PAD_BOT + 31) + '" fill="#374151" font-size="10">Cibles administratives</text>');
+                    svgParts.push('<circle cx="' + (lx + 140) + '" cy="' + (H - PAD_BOT + 28) + '" r="5" fill="#b91c1c"/>');
+                    svgParts.push('<text x="' + (lx + 148) + '" y="' + (H - PAD_BOT + 31) + '" fill="#374151" font-size="10">Cibles ajustées</text>');
+
+                    /* Axe Y label */
+                    svgParts.push('<text transform="rotate(-90,' + (PAD_L - 110) + ',' + (H / 2) + ')" x="' + (PAD_L - 110) + '" y="' + (H / 2) + '" text-anchor="middle" fill="#374151" font-size="10">Antenne</text>');
+
+                    svgParts.push('</svg>');
+                    dbBox.innerHTML += '<div style="overflow-x:auto">' + svgParts.join('') + '</div>';
+                    c.appendChild(dbBox);
+                })();
+
+                /* ── Cartes choroplèthes Vega-Lite : CV DTC3 par ZS (admin vs ajustée) ── */
+                if (typeof vegaEmbed !== 'undefined') {
+                    /* Construire le dataset inline : une ligne par ZS avec les couvertures */
+                    var mapData = [];
+                    var zsMapG = {};
+                    cvFlt.forEach(function (r) {
+                        var zs = r._ZS || ''; if (!zs) return;
+                        if (!zsMapG[zs]) zsMapG[zs] = { recs: [], prov: r._Province || '' };
+                        zsMapG[zs].recs.push(r);
+                    });
+                    Object.keys(zsMapG).forEach(function (zs) {
+                        var g  = zsMapG[zs];
+                        var tA = _cvTargets(g.recs, n_periods, '_ZS');
+                        var d3 = _cvSum(g.recs, 'DTC3_0_11');
+                        var cvAdmin = tA.ns > 0 ? d3 / tA.ns : null;
+                        var cvAj    = null;
+                        if (hasAjust) {
+                            var k2   = (g.prov) + '||' + zs;
+                            var cRec = cibleIdx[k2];
+                            if (cRec) {
+                                var nsAj3 = (Number(cRec.SV_ajust) || 0) * n_periods / 12;
+                                if (nsAj3 > 0) cvAj = d3 / nsAj3;
+                            }
+                        }
+                        mapData.push({
+                            'Level 3 Org Unit': zs,
+                            'CV DTC3 % (moyenne période) ZS': cvAdmin,
+                            'CV DTC3 % (mois) ajustée': cvAj
+                        });
+                    });
+
+                    var mapBox = E('div', 'cb');
+                    mapBox.innerHTML = '<h4 style="color:#0b3a6f;margin:0 0 10px">🗺️ Cartes des couvertures vaccinales DTC3 par Zone de Santé — Admin vs Ajustée</h4>';
+                    var mapId = 'vl_map_' + Date.now();
+                    mapBox.innerHTML += '<div id="' + mapId + '" style="overflow-x:auto"></div>';
+                    c.appendChild(mapBox);
+
+                    var TOPO_URL = 'https://gist.githubusercontent.com/MBOMBOmamu1993/1297c206c046ee018d5ed6c392d6c20f/raw/24ce95b2935d2b4cc4ef71701138218ca870ff01/rdc_zs.topojson';
+                    var colorScale = {
+                        domain: ['<50%', '50–79%', '80–89%', '90–100%', '>100%', 'NA'],
+                        range:  ['#e53935', '#f9a825', '#7cb342', '#1b5e20', '#3949ab', '#e0e0e0']
+                    };
+
+                    function makeMapSpec(field, title, legendTitle) {
+                        return {
+                            width: 380, height: 450,
+                            data: {
+                                url: TOPO_URL,
+                                format: { type: 'topojson', feature: 'Zone de SantéRDC' }
+                            },
+                            projection: { type: 'mercator' },
+                            title: { text: title, fontSize: 13, dy: 8 },
+                            transform: [
+                                {
+                                    lookup: 'properties.name',
+                                    from: { data: { name: 'mapds' }, key: 'Level 3 Org Unit', fields: [field] },
+                                    as: ['val_raw']
+                                },
+                                {
+                                    calculate: 'isValid(datum.val_raw) ? datum.val_raw * 100 : null',
+                                    as: 'val_pct'
+                                },
+                                {
+                                    calculate: "datum.val_pct == null ? 'NA' : (datum.val_pct < 50 ? '<50%' : (datum.val_pct < 80 ? '50–79%' : (datum.val_pct < 90 ? '80–89%' : (datum.val_pct <= 100 ? '90–100%' : '>100%'))))",
+                                    as: 'tranche'
+                                }
+                            ],
+                            layer: [
+                                { mark: { type: 'geoshape', fill: '#f7f7f7', stroke: '#bdbdbd', strokeWidth: 0.25 } },
+                                {
+                                    mark: { type: 'geoshape', stroke: '#555', strokeWidth: 0.35 },
+                                    encoding: {
+                                        color: {
+                                            field: 'tranche', type: 'nominal',
+                                            scale: colorScale,
+                                            legend: {
+                                                title: legendTitle,
+                                                orient: 'bottom', direction: 'horizontal',
+                                                columns: 3, labelFontSize: 9, titleFontSize: 10
+                                            }
+                                        },
+                                        tooltip: [
+                                            { field: 'properties.name', title: 'Zone de Santé' },
+                                            { field: 'val_pct', title: 'CV DTC3 (%)', format: '.1f' },
+                                            { field: 'tranche', title: 'Tranche' }
+                                        ]
+                                    }
+                                }
+                            ]
+                        };
+                    }
+
+                    var vlSpec = {
+                        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                        datasets: { mapds: mapData },
+                        hconcat: [
+                            makeMapSpec('CV DTC3 % (moyenne période) ZS', 'CV DTC3 — Cibles administratives', 'CV DTC3 admin'),
+                            makeMapSpec('CV DTC3 % (mois) ajustée', 'CV DTC3 — Cibles ajustées', 'CV DTC3 ajustée')
+                        ],
+                        resolve: { scale: { color: 'independent' } },
+                        config: { view: { stroke: null } }
+                    };
+
+                    setTimeout(function () {
+                        var el = document.getElementById(mapId);
+                        if (el) {
+                            vegaEmbed(el, vlSpec, { actions: false, renderer: 'svg' }).catch(function (err) {
+                                el.innerHTML = '<p style="color:#dc2626;font-size:12px">⚠️ Impossible de charger les cartes : ' + err.message + '</p>';
+                            });
+                        }
+                    }, 200);
+                }
+
             });
         }
 
