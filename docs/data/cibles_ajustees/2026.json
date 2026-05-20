@@ -1,0 +1,3642 @@
+{
+  "year": 2026,
+  "generated_at": "2026-05-20T18:50:54.099884+00:00",
+  "source": "0544a527-tab_combine_survivants_naiss_viv.xlsx",
+  "ns_rate": 0.0349,
+  "nv_rate": 0.04,
+  "records": [
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Aketi Zone de Santé",
+      "SV_ajust": 6775.0,
+      "NV_ajust": 10220.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Ango Zone de Santé",
+      "SV_ajust": 8145.0,
+      "NV_ajust": 9433.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Bili Zone de Santé",
+      "SV_ajust": 5614.0,
+      "NV_ajust": 6383.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Bondo Zone de Santé",
+      "SV_ajust": 11910.0,
+      "NV_ajust": 13734.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Buta Zone de Santé",
+      "SV_ajust": 14018.0,
+      "NV_ajust": 16118.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Ganga Zone de Santé",
+      "SV_ajust": 9820.0,
+      "NV_ajust": 11036.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Likati Zone de Santé",
+      "SV_ajust": 5253.0,
+      "NV_ajust": 7572.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Monga Zone de Santé",
+      "SV_ajust": 6397.0,
+      "NV_ajust": 7346.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Poko Zone de Santé",
+      "SV_ajust": 8833.0,
+      "NV_ajust": 11108.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Titule Zone de Santé",
+      "SV_ajust": 4755.0,
+      "NV_ajust": 5335.0
+    },
+    {
+      "_Province": "bu Bas Uele Province",
+      "_Antenne": "Buta",
+      "_ZS": "bu Viadana Zone de Santé",
+      "SV_ajust": 8284.0,
+      "NV_ajust": 10005.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Basankusu Zone de Santé",
+      "SV_ajust": 11882.0,
+      "NV_ajust": 13688.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Bikoro Zone de Santé",
+      "SV_ajust": 8725.0,
+      "NV_ajust": 9774.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Bolenge Zone de Santé",
+      "SV_ajust": 8096.0,
+      "NV_ajust": 9279.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Bolomba Zone de Santé",
+      "SV_ajust": 15004.0,
+      "NV_ajust": 23603.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Bomongo Zone de Santé",
+      "SV_ajust": 5424.0,
+      "NV_ajust": 6884.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Djombo Zone de Santé",
+      "SV_ajust": 4904.0,
+      "NV_ajust": 5379.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Iboko Zone de Santé",
+      "SV_ajust": 7941.0,
+      "NV_ajust": 8893.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Ingende Zone de Santé",
+      "SV_ajust": 8300.0,
+      "NV_ajust": 9400.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Irebu Zone de Santé",
+      "SV_ajust": 2518.0,
+      "NV_ajust": 2926.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Lilanga Bobangi Zone de Santé",
+      "SV_ajust": 4115.0,
+      "NV_ajust": 4979.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Lotumbe Zone de Santé",
+      "SV_ajust": 5900.0,
+      "NV_ajust": 7712.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Lukolela Zone de Santé",
+      "SV_ajust": 7383.0,
+      "NV_ajust": 8631.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Makanza Zone de Santé",
+      "SV_ajust": 6293.0,
+      "NV_ajust": 8233.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Mampoko Zone de Santé",
+      "SV_ajust": 5845.0,
+      "NV_ajust": 6866.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Mbandaka Zone de Santé",
+      "SV_ajust": 12404.0,
+      "NV_ajust": 13431.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Monieka Zone de Santé",
+      "SV_ajust": 3848.0,
+      "NV_ajust": 4260.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Ntondo Zone de Santé",
+      "SV_ajust": 5514.0,
+      "NV_ajust": 6278.0
+    },
+    {
+      "_Province": "eq Equateur Province",
+      "_Antenne": "Mbandaka",
+      "_ZS": "eq Wangata Zone de Santé",
+      "SV_ajust": 11075.0,
+      "NV_ajust": 12921.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kafubu Zone de Santé",
+      "SV_ajust": 10137.0,
+      "NV_ajust": 11650.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kamalondo Zone de Santé",
+      "SV_ajust": 1781.0,
+      "NV_ajust": 2009.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Kambove Zone de Santé",
+      "SV_ajust": 12538.0,
+      "NV_ajust": 14845.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kampemba Zone de Santé",
+      "SV_ajust": 39489.0,
+      "NV_ajust": 47212.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Kapolowe Zone de Santé",
+      "SV_ajust": 19383.0,
+      "NV_ajust": 24938.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kasenga Zone de Santé",
+      "SV_ajust": 12201.0,
+      "NV_ajust": 13652.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kashobwe Zone de Santé",
+      "SV_ajust": 9418.0,
+      "NV_ajust": 10794.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Katuba Zone de Santé",
+      "SV_ajust": 8635.0,
+      "NV_ajust": 10412.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kenya Zone de Santé",
+      "SV_ajust": 17204.0,
+      "NV_ajust": 19781.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Kikula Zone de Santé",
+      "SV_ajust": 18694.0,
+      "NV_ajust": 21928.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Kilela Balanda Zone de Santé",
+      "SV_ajust": 6067.0,
+      "NV_ajust": 7126.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kilwa Zone de Santé",
+      "SV_ajust": 31554.0,
+      "NV_ajust": 35577.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kipushi Zone de Santé",
+      "SV_ajust": 15583.0,
+      "NV_ajust": 19234.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kisanga Zone de Santé",
+      "SV_ajust": 34691.0,
+      "NV_ajust": 41763.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Kowe Zone de Santé",
+      "SV_ajust": 3859.0,
+      "NV_ajust": 4092.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Likasi Zone de Santé",
+      "SV_ajust": 15464.0,
+      "NV_ajust": 18221.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Lubumbashi Zone de Santé",
+      "SV_ajust": 22846.0,
+      "NV_ajust": 27709.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Lukafu Zone de Santé",
+      "SV_ajust": 11606.0,
+      "NV_ajust": 12370.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Mitwaba Zone de Santé",
+      "SV_ajust": 7590.0,
+      "NV_ajust": 8657.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Mufunga Sampwe Zone de Santé",
+      "SV_ajust": 9439.0,
+      "NV_ajust": 10934.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Mumbunda Zone de Santé",
+      "SV_ajust": 23863.0,
+      "NV_ajust": 29505.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Likasi",
+      "_ZS": "hk Panda Zone de Santé",
+      "SV_ajust": 5457.0,
+      "NV_ajust": 6164.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Pweto Zone de Santé",
+      "SV_ajust": 22653.0,
+      "NV_ajust": 25630.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Ruashi Zone de Santé",
+      "SV_ajust": 44248.0,
+      "NV_ajust": 52099.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Sakania Zone de Santé",
+      "SV_ajust": 30690.0,
+      "NV_ajust": 34782.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Tshamilemba Zone de Santé",
+      "SV_ajust": 11988.0,
+      "NV_ajust": 15339.0
+    },
+    {
+      "_Province": "hk Haut Katanga Province",
+      "_Antenne": "Lubumbashi",
+      "_ZS": "hk Vangu Zone de Santé",
+      "SV_ajust": 7533.0,
+      "NV_ajust": 8328.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Baka Zone de Santé",
+      "SV_ajust": 1629.0,
+      "NV_ajust": 1860.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Bukama Zone de Santé",
+      "SV_ajust": 17927.0,
+      "NV_ajust": 20561.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Butumba Zone de Santé",
+      "SV_ajust": 13385.0,
+      "NV_ajust": 15421.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Kabondo Dianda Zone de Santé",
+      "SV_ajust": 13438.0,
+      "NV_ajust": 17360.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Kabongo Zone de Santé",
+      "SV_ajust": 20236.0,
+      "NV_ajust": 23282.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Kamina Zone de Santé",
+      "SV_ajust": 16589.0,
+      "NV_ajust": 20249.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Kaniama Zone de Santé",
+      "SV_ajust": 15995.0,
+      "NV_ajust": 17567.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Kayamba Zone de Santé",
+      "SV_ajust": 5131.0,
+      "NV_ajust": 5756.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Kinda Zone de Santé",
+      "SV_ajust": 4849.0,
+      "NV_ajust": 5400.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Kinkondja Zone de Santé",
+      "SV_ajust": 16567.0,
+      "NV_ajust": 19803.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Kitenge Zone de Santé",
+      "SV_ajust": 15608.0,
+      "NV_ajust": 18107.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Lwamba Zone de Santé",
+      "SV_ajust": 7891.0,
+      "NV_ajust": 10508.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Malemba Nkulu Zone de Santé",
+      "SV_ajust": 19787.0,
+      "NV_ajust": 23779.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Mukanga Zone de Santé",
+      "SV_ajust": 13482.0,
+      "NV_ajust": 16180.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kabondo Dianda",
+      "_ZS": "hl Mulongo Zone de Santé",
+      "SV_ajust": 16972.0,
+      "NV_ajust": 19414.0
+    },
+    {
+      "_Province": "hl Haut Lomami Province",
+      "_Antenne": "Kamina",
+      "_ZS": "hl Songa Zone de Santé",
+      "SV_ajust": 10446.0,
+      "NV_ajust": 12164.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Watsa",
+      "_ZS": "hu Aba Zone de Santé",
+      "SV_ajust": 12069.0,
+      "NV_ajust": 15470.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Boma Mangbetu Zone de Santé",
+      "SV_ajust": 6931.0,
+      "NV_ajust": 9415.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Doruma Zone de Santé",
+      "SV_ajust": 4187.0,
+      "NV_ajust": 4854.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Dungu Zone de Santé",
+      "SV_ajust": 9741.0,
+      "NV_ajust": 11252.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Watsa",
+      "_ZS": "hu Faradje Zone de Santé",
+      "SV_ajust": 10028.0,
+      "NV_ajust": 12153.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Watsa",
+      "_ZS": "hu Gombari Zone de Santé",
+      "SV_ajust": 8590.0,
+      "NV_ajust": 10623.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Isiro Zone de Santé",
+      "SV_ajust": 22423.0,
+      "NV_ajust": 26208.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Watsa",
+      "_ZS": "hu Makoro Zone de Santé",
+      "SV_ajust": 15432.0,
+      "NV_ajust": 17788.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Niangara Zone de Santé",
+      "SV_ajust": 7158.0,
+      "NV_ajust": 8505.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Pawa Zone de Santé",
+      "SV_ajust": 9309.0,
+      "NV_ajust": 11969.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Rungu Zone de Santé",
+      "SV_ajust": 8366.0,
+      "NV_ajust": 10122.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Isiro",
+      "_ZS": "hu Wamba Zone de Santé",
+      "SV_ajust": 11909.0,
+      "NV_ajust": 14072.0
+    },
+    {
+      "_Province": "hu Haut Uele Province",
+      "_Antenne": "Watsa",
+      "_ZS": "hu Watsa Zone de Santé",
+      "SV_ajust": 23653.0,
+      "NV_ajust": 28701.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Adi Zone de Santé",
+      "SV_ajust": 10204.0,
+      "NV_ajust": 14656.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Adja Zone de Santé",
+      "SV_ajust": 6631.0,
+      "NV_ajust": 7597.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Angumu Zone de Santé",
+      "SV_ajust": 11474.0,
+      "NV_ajust": 14212.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Ariwara Zone de Santé",
+      "SV_ajust": 12023.0,
+      "NV_ajust": 15898.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Aru Zone de Santé",
+      "SV_ajust": 12143.0,
+      "NV_ajust": 14163.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Aungba Zone de Santé",
+      "SV_ajust": 9371.0,
+      "NV_ajust": 12374.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Bambu Zone de Santé",
+      "SV_ajust": 8107.0,
+      "NV_ajust": 14172.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Biringi Zone de Santé",
+      "SV_ajust": 7204.0,
+      "NV_ajust": 8763.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Boga Zone de Santé",
+      "SV_ajust": 3821.0,
+      "NV_ajust": 4347.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Bunia Zone de Santé",
+      "SV_ajust": 22072.0,
+      "NV_ajust": 27747.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Damas Zone de Santé",
+      "SV_ajust": 5572.0,
+      "NV_ajust": 6533.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Drodro Zone de Santé",
+      "SV_ajust": 8121.0,
+      "NV_ajust": 9739.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Fataki Zone de Santé",
+      "SV_ajust": 8199.0,
+      "NV_ajust": 9577.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Gety Zone de Santé",
+      "SV_ajust": 10924.0,
+      "NV_ajust": 14064.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Jiba Zone de Santé",
+      "SV_ajust": 4905.0,
+      "NV_ajust": 5864.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Kambala Zone de Santé",
+      "SV_ajust": 6354.0,
+      "NV_ajust": 8022.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Kilo Zone de Santé",
+      "SV_ajust": 2528.0,
+      "NV_ajust": 3198.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Komanda Zone de Santé",
+      "SV_ajust": 14887.0,
+      "NV_ajust": 16771.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Laybo Zone de Santé",
+      "SV_ajust": 7878.0,
+      "NV_ajust": 10738.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Linga Zone de Santé",
+      "SV_ajust": 7581.0,
+      "NV_ajust": 8980.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Lita Zone de Santé",
+      "SV_ajust": 7548.0,
+      "NV_ajust": 8954.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Logo Zone de Santé",
+      "SV_ajust": 17897.0,
+      "NV_ajust": 22957.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Lolwa Zone de Santé",
+      "SV_ajust": 4636.0,
+      "NV_ajust": 5349.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Mahagi Zone de Santé",
+      "SV_ajust": 9638.0,
+      "NV_ajust": 12888.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Mambasa Zone de Santé",
+      "SV_ajust": 6208.0,
+      "NV_ajust": 7622.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Mandima Zone de Santé",
+      "SV_ajust": 11783.0,
+      "NV_ajust": 15032.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Mangala Zone de Santé",
+      "SV_ajust": 5314.0,
+      "NV_ajust": 6062.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Mongbwalu Zone de Santé",
+      "SV_ajust": 8236.0,
+      "NV_ajust": 10524.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Nia Nia Zone de Santé",
+      "SV_ajust": 6217.0,
+      "NV_ajust": 10044.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Nizi Zone de Santé",
+      "SV_ajust": 10682.0,
+      "NV_ajust": 14199.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Nyankunde Zone de Santé",
+      "SV_ajust": 5556.0,
+      "NV_ajust": 6489.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Nyarambe Zone de Santé",
+      "SV_ajust": 11237.0,
+      "NV_ajust": 14331.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Rethy Zone de Santé",
+      "SV_ajust": 13356.0,
+      "NV_ajust": 15054.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Aru",
+      "_ZS": "it Rimba Zone de Santé",
+      "SV_ajust": 11133.0,
+      "NV_ajust": 13804.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Rwampara Zone de Santé",
+      "SV_ajust": 11052.0,
+      "NV_ajust": 14464.0
+    },
+    {
+      "_Province": "it Ituri Province",
+      "_Antenne": "Bunia",
+      "_ZS": "it Tchomia Zone de Santé",
+      "SV_ajust": 5553.0,
+      "NV_ajust": 6670.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Banga Lubaka Zone de Santé",
+      "SV_ajust": 10527.0,
+      "NV_ajust": 12008.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Bulape Zone de Santé",
+      "SV_ajust": 13330.0,
+      "NV_ajust": 15537.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Dekese Zone de Santé",
+      "SV_ajust": 13788.0,
+      "NV_ajust": 16179.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Ilebo Zone de Santé",
+      "SV_ajust": 16224.0,
+      "NV_ajust": 19084.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Kakenge Zone de Santé",
+      "SV_ajust": 10125.0,
+      "NV_ajust": 12219.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Kalonda Ouest Zone de Santé",
+      "SV_ajust": 31184.0,
+      "NV_ajust": 36399.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Kamonia Zone de Santé",
+      "SV_ajust": 33548.0,
+      "NV_ajust": 38260.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Kamwesha Zone de Santé",
+      "SV_ajust": 34316.0,
+      "NV_ajust": 40272.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Kanzala Zone de Santé",
+      "SV_ajust": 20739.0,
+      "NV_ajust": 24524.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Kitangwa Zone de Santé",
+      "SV_ajust": 14353.0,
+      "NV_ajust": 17772.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Luebo Zone de Santé",
+      "SV_ajust": 15987.0,
+      "NV_ajust": 22748.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Mikope Zone de Santé",
+      "SV_ajust": 10061.0,
+      "NV_ajust": 12046.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Mushenge Zone de Santé",
+      "SV_ajust": 12146.0,
+      "NV_ajust": 14175.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Mutena Zone de Santé",
+      "SV_ajust": 17031.0,
+      "NV_ajust": 19025.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Mweka",
+      "_ZS": "ks Mweka Zone de Santé",
+      "SV_ajust": 15172.0,
+      "NV_ajust": 18601.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Ndjoko Mpunda Zone de Santé",
+      "SV_ajust": 12882.0,
+      "NV_ajust": 14378.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Nyanga Zone de Santé",
+      "SV_ajust": 7665.0,
+      "NV_ajust": 9258.0
+    },
+    {
+      "_Province": "ks Kasai Province",
+      "_Antenne": "Tshikapa",
+      "_ZS": "ks Tshikapa Zone de Santé",
+      "SV_ajust": 24513.0,
+      "NV_ajust": 27786.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Bena Leka Zone de Santé",
+      "SV_ajust": 15250.0,
+      "NV_ajust": 18204.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Bena Tshadi Zone de Santé",
+      "SV_ajust": 6084.0,
+      "NV_ajust": 7017.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Bilomba Zone de Santé",
+      "SV_ajust": 4932.0,
+      "NV_ajust": 5802.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Bobozo Zone de Santé",
+      "SV_ajust": 3305.0,
+      "NV_ajust": 3789.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Bunkonde Zone de Santé",
+      "SV_ajust": 5925.0,
+      "NV_ajust": 6375.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Demba Zone de Santé",
+      "SV_ajust": 21348.0,
+      "NV_ajust": 23861.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Dibaya Zone de Santé",
+      "SV_ajust": 11385.0,
+      "NV_ajust": 12872.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Luiza",
+      "_ZS": "kr Kalomba Zone de Santé",
+      "SV_ajust": 8749.0,
+      "NV_ajust": 10561.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Kananga Zone de Santé",
+      "SV_ajust": 15665.0,
+      "NV_ajust": 19766.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Katende Zone de Santé",
+      "SV_ajust": 4836.0,
+      "NV_ajust": 6154.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Katoka Zone de Santé",
+      "SV_ajust": 7761.0,
+      "NV_ajust": 8915.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Luiza",
+      "_ZS": "kr Luambo Zone de Santé",
+      "SV_ajust": 13959.0,
+      "NV_ajust": 15863.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Lubondaie Zone de Santé",
+      "SV_ajust": 7851.0,
+      "NV_ajust": 8691.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Lubunga Zone de Santé",
+      "SV_ajust": 6524.0,
+      "NV_ajust": 7086.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Luiza",
+      "_ZS": "kr Luiza Zone de Santé",
+      "SV_ajust": 8688.0,
+      "NV_ajust": 9806.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Lukonga Zone de Santé",
+      "SV_ajust": 12588.0,
+      "NV_ajust": 15783.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Luiza",
+      "_ZS": "kr Masuika Zone de Santé",
+      "SV_ajust": 12625.0,
+      "NV_ajust": 14601.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Mikalayi Zone de Santé",
+      "SV_ajust": 11761.0,
+      "NV_ajust": 13573.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Muetshi Zone de Santé",
+      "SV_ajust": 6233.0,
+      "NV_ajust": 7586.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Mutoto Zone de Santé",
+      "SV_ajust": 6758.0,
+      "NV_ajust": 7622.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Ndekesha Zone de Santé",
+      "SV_ajust": 9071.0,
+      "NV_ajust": 10371.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Ndesha Zone de Santé",
+      "SV_ajust": 5471.0,
+      "NV_ajust": 6338.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Luiza",
+      "_ZS": "kr Tshibala Zone de Santé",
+      "SV_ajust": 13008.0,
+      "NV_ajust": 14925.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Tshikaji Zone de Santé",
+      "SV_ajust": 6336.0,
+      "NV_ajust": 7643.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Kananga",
+      "_ZS": "kr Tshikula Zone de Santé",
+      "SV_ajust": 7239.0,
+      "NV_ajust": 8517.0
+    },
+    {
+      "_Province": "kr Kasai Central Province",
+      "_Antenne": "Luiza",
+      "_ZS": "kr Yangala Zone de Santé",
+      "SV_ajust": 8345.0,
+      "NV_ajust": 10409.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Bibanga Zone de Santé",
+      "SV_ajust": 10532.0,
+      "NV_ajust": 12959.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Bipemba Zone de Santé",
+      "SV_ajust": 23008.0,
+      "NV_ajust": 26302.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Bonzola Zone de Santé",
+      "SV_ajust": 11324.0,
+      "NV_ajust": 14465.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Cilundu Zone de Santé",
+      "SV_ajust": 10186.0,
+      "NV_ajust": 11555.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Citenge Zone de Santé",
+      "SV_ajust": 18770.0,
+      "NV_ajust": 23424.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Dibindi Zone de Santé",
+      "SV_ajust": 17751.0,
+      "NV_ajust": 19207.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Diulu Zone de Santé",
+      "SV_ajust": 20174.0,
+      "NV_ajust": 23343.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Kabeya Kamwanga Zone de Santé",
+      "SV_ajust": 11867.0,
+      "NV_ajust": 18244.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Kansele Zone de Santé",
+      "SV_ajust": 12878.0,
+      "NV_ajust": 15131.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Kasansa Zone de Santé",
+      "SV_ajust": 16919.0,
+      "NV_ajust": 20491.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Lubilanji Zone de Santé",
+      "SV_ajust": 12879.0,
+      "NV_ajust": 15343.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Lukelenge Zone de Santé",
+      "SV_ajust": 20141.0,
+      "NV_ajust": 22637.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Miabi Zone de Santé",
+      "SV_ajust": 9567.0,
+      "NV_ajust": 10681.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Mpokolo Zone de Santé",
+      "SV_ajust": 15460.0,
+      "NV_ajust": 19635.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Mukumbi Zone de Santé",
+      "SV_ajust": 10379.0,
+      "NV_ajust": 12044.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Muya Zone de Santé",
+      "SV_ajust": 21512.0,
+      "NV_ajust": 24364.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Nzaba Zone de Santé",
+      "SV_ajust": 17639.0,
+      "NV_ajust": 20887.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Tshilenge Zone de Santé",
+      "SV_ajust": 17197.0,
+      "NV_ajust": 20694.0
+    },
+    {
+      "_Province": "ke Kasai Oriental Province",
+      "_Antenne": "Mbuji Mayi",
+      "_ZS": "ke Tshishimbi Zone de Santé",
+      "SV_ajust": 12139.0,
+      "NV_ajust": 14279.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Bandalungwa Zone de Santé",
+      "SV_ajust": 7642.0,
+      "NV_ajust": 8560.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Barumbu Zone de Santé",
+      "SV_ajust": 13442.0,
+      "NV_ajust": 15403.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Binza Meteo Zone de Santé",
+      "SV_ajust": 30069.0,
+      "NV_ajust": 33991.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Binza Ozone Zone de Santé",
+      "SV_ajust": 27818.0,
+      "NV_ajust": 32834.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Biyela Zone de Santé",
+      "SV_ajust": 17020.0,
+      "NV_ajust": 19486.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Bumbu Zone de Santé",
+      "SV_ajust": 24692.0,
+      "NV_ajust": 27865.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Gombe Zone de Santé",
+      "SV_ajust": 7977.0,
+      "NV_ajust": 9723.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Kalamu 1 Zone de Santé",
+      "SV_ajust": 17824.0,
+      "NV_ajust": 19992.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Kalamu 2 Zone de Santé",
+      "SV_ajust": 13880.0,
+      "NV_ajust": 15907.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Kasa Vubu Zone de Santé",
+      "SV_ajust": 10993.0,
+      "NV_ajust": 12275.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Kikimi Zone de Santé",
+      "SV_ajust": 21076.0,
+      "NV_ajust": 22766.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Kimbanseke Zone de Santé",
+      "SV_ajust": 19346.0,
+      "NV_ajust": 22536.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Kingabwa Zone de Santé",
+      "SV_ajust": 17290.0,
+      "NV_ajust": 20100.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Kingasani Zone de Santé",
+      "SV_ajust": 17206.0,
+      "NV_ajust": 22202.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Kinshasa Zone de Santé",
+      "SV_ajust": 13560.0,
+      "NV_ajust": 15272.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Kintambo Zone de Santé",
+      "SV_ajust": 6758.0,
+      "NV_ajust": 8646.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Kisenso Zone de Santé",
+      "SV_ajust": 26721.0,
+      "NV_ajust": 30404.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Kokolo Zone de Santé",
+      "SV_ajust": 23843.0,
+      "NV_ajust": 27469.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Lemba Zone de Santé",
+      "SV_ajust": 17338.0,
+      "NV_ajust": 19349.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Limete Zone de Santé",
+      "SV_ajust": 18660.0,
+      "NV_ajust": 22804.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Lingwala Zone de Santé",
+      "SV_ajust": 10324.0,
+      "NV_ajust": 11847.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Makala Zone de Santé",
+      "SV_ajust": 23763.0,
+      "NV_ajust": 27111.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Maluku 1 Zone de Santé",
+      "SV_ajust": 17598.0,
+      "NV_ajust": 20672.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Maluku 2 Zone de Santé",
+      "SV_ajust": 6580.0,
+      "NV_ajust": 7532.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Masina 1 Zone de Santé",
+      "SV_ajust": 40992.0,
+      "NV_ajust": 46788.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Masina 2 Zone de Santé",
+      "SV_ajust": 21773.0,
+      "NV_ajust": 25302.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Matete Zone de Santé",
+      "SV_ajust": 20101.0,
+      "NV_ajust": 22904.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Mont Ngafula 1 Zone de Santé",
+      "SV_ajust": 24129.0,
+      "NV_ajust": 27430.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Mont Ngafula 2 Zone de Santé",
+      "SV_ajust": 18605.0,
+      "NV_ajust": 21138.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Ndjili Zone de Santé",
+      "SV_ajust": 25429.0,
+      "NV_ajust": 28858.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Ngaba Zone de Santé",
+      "SV_ajust": 12434.0,
+      "NV_ajust": 14119.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Centre",
+      "_ZS": "kn Ngiri Ngiri Zone de Santé",
+      "SV_ajust": 20963.0,
+      "NV_ajust": 23458.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Est",
+      "_ZS": "kn Nsele Zone de Santé",
+      "SV_ajust": 30480.0,
+      "NV_ajust": 33660.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Police Zone de Santé",
+      "SV_ajust": 9953.0,
+      "NV_ajust": 11298.0
+    },
+    {
+      "_Province": "kn Kinshasa Province",
+      "_Antenne": "Kin Ouest",
+      "_ZS": "kn Selembao Zone de Santé",
+      "SV_ajust": 28802.0,
+      "NV_ajust": 33074.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Boko Kivulu Zone de Santé",
+      "SV_ajust": 9806.0,
+      "NV_ajust": 11165.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Boma Zone de Santé",
+      "SV_ajust": 11132.0,
+      "NV_ajust": 14641.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Boma Bungu Zone de Santé",
+      "SV_ajust": 5463.0,
+      "NV_ajust": 7123.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Gombe Matadi Zone de Santé",
+      "SV_ajust": 5072.0,
+      "NV_ajust": 6372.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Inga Zone de Santé",
+      "SV_ajust": 6271.0,
+      "NV_ajust": 7278.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Kangu Zone de Santé",
+      "SV_ajust": 5579.0,
+      "NV_ajust": 7385.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Kibunzi Zone de Santé",
+      "SV_ajust": 3317.0,
+      "NV_ajust": 3869.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Kimpangu Zone de Santé",
+      "SV_ajust": 6435.0,
+      "NV_ajust": 7819.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Kimpese Zone de Santé",
+      "SV_ajust": 9661.0,
+      "NV_ajust": 10822.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Kimvula Zone de Santé",
+      "SV_ajust": 4543.0,
+      "NV_ajust": 5949.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Kinkonzi Zone de Santé",
+      "SV_ajust": 3499.0,
+      "NV_ajust": 4054.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Kisantu Zone de Santé",
+      "SV_ajust": 10332.0,
+      "NV_ajust": 16642.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Kitona Zone de Santé",
+      "SV_ajust": 4748.0,
+      "NV_ajust": 5552.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Kizu Zone de Santé",
+      "SV_ajust": 3185.0,
+      "NV_ajust": 3816.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Kuimba Zone de Santé",
+      "SV_ajust": 4991.0,
+      "NV_ajust": 5644.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Kwilu Ngongo Zone de Santé",
+      "SV_ajust": 8028.0,
+      "NV_ajust": 9058.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Lukula Zone de Santé",
+      "SV_ajust": 12585.0,
+      "NV_ajust": 16224.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Luozi Zone de Santé",
+      "SV_ajust": 4801.0,
+      "NV_ajust": 5979.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Mangembo Zone de Santé",
+      "SV_ajust": 3276.0,
+      "NV_ajust": 3973.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Massa Zone de Santé",
+      "SV_ajust": 5925.0,
+      "NV_ajust": 7348.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Matadi Zone de Santé",
+      "SV_ajust": 14973.0,
+      "NV_ajust": 17351.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Mbanza Ngungu Zone de Santé",
+      "SV_ajust": 8596.0,
+      "NV_ajust": 10081.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Muanda Zone de Santé",
+      "SV_ajust": 10686.0,
+      "NV_ajust": 13556.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Ngidinga Zone de Santé",
+      "SV_ajust": 7199.0,
+      "NV_ajust": 8914.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Nselo Zone de Santé",
+      "SV_ajust": 4573.0,
+      "NV_ajust": 5267.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Nsona Mpangu Zone de Santé",
+      "SV_ajust": 6718.0,
+      "NV_ajust": 7596.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Nzanza Zone de Santé",
+      "SV_ajust": 8447.0,
+      "NV_ajust": 9427.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Matadi",
+      "_ZS": "kc Seke Banza Zone de Santé",
+      "SV_ajust": 9630.0,
+      "NV_ajust": 10734.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Mbanza Ngungu",
+      "_ZS": "kc Sona Bata Zone de Santé",
+      "SV_ajust": 5979.0,
+      "NV_ajust": 6883.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Tshela Zone de Santé",
+      "SV_ajust": 4237.0,
+      "NV_ajust": 4790.0
+    },
+    {
+      "_Province": "kc Kongo Central Province",
+      "_Antenne": "Boma",
+      "_ZS": "kc Vaku Zone de Santé",
+      "SV_ajust": 3771.0,
+      "NV_ajust": 4248.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Boko Zone de Santé",
+      "SV_ajust": 10853.0,
+      "NV_ajust": 12282.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Feshi Zone de Santé",
+      "SV_ajust": 7173.0,
+      "NV_ajust": 8362.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kahemba",
+      "_ZS": "kg Kahemba Zone de Santé",
+      "SV_ajust": 12601.0,
+      "NV_ajust": 14423.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kahemba",
+      "_ZS": "kg Kajiji Zone de Santé",
+      "SV_ajust": 7985.0,
+      "NV_ajust": 8579.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Kasongo Lunda Zone de Santé",
+      "SV_ajust": 8961.0,
+      "NV_ajust": 10731.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Kenge Zone de Santé",
+      "SV_ajust": 14880.0,
+      "NV_ajust": 18256.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Kimbao Zone de Santé",
+      "SV_ajust": 10287.0,
+      "NV_ajust": 11676.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kahemba",
+      "_ZS": "kg Kisanji Zone de Santé",
+      "SV_ajust": 5777.0,
+      "NV_ajust": 6521.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Kitenda Zone de Santé",
+      "SV_ajust": 7965.0,
+      "NV_ajust": 9349.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Mwela Lembwa Zone de Santé",
+      "SV_ajust": 5842.0,
+      "NV_ajust": 6692.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kahemba",
+      "_ZS": "kg Panzi Zone de Santé",
+      "SV_ajust": 9762.0,
+      "NV_ajust": 10894.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Popokabaka Zone de Santé",
+      "SV_ajust": 14444.0,
+      "NV_ajust": 16416.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kahemba",
+      "_ZS": "kg Tembo Zone de Santé",
+      "SV_ajust": 4864.0,
+      "NV_ajust": 5755.0
+    },
+    {
+      "_Province": "kg Kwango Province",
+      "_Antenne": "Kenge",
+      "_ZS": "kg Wamba Lwadi Zone de Santé",
+      "SV_ajust": 6674.0,
+      "NV_ajust": 7678.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Bandundu",
+      "_ZS": "kl Bagata Zone de Santé",
+      "SV_ajust": 11019.0,
+      "NV_ajust": 12871.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Bandundu",
+      "_ZS": "kl Bandundu Zone de Santé",
+      "SV_ajust": 12319.0,
+      "NV_ajust": 13957.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Bulungu Zone de Santé",
+      "SV_ajust": 14598.0,
+      "NV_ajust": 16216.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Bandundu",
+      "_ZS": "kl Djuma Zone de Santé",
+      "SV_ajust": 10934.0,
+      "NV_ajust": 12321.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Gungu Zone de Santé",
+      "SV_ajust": 16894.0,
+      "NV_ajust": 18828.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Idiofa Zone de Santé",
+      "SV_ajust": 14717.0,
+      "NV_ajust": 17007.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Ipamu Zone de Santé",
+      "SV_ajust": 10371.0,
+      "NV_ajust": 11602.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Bandundu",
+      "_ZS": "kl Kikongo Zone de Santé",
+      "SV_ajust": 9223.0,
+      "NV_ajust": 10344.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Kikwit Nord Zone de Santé",
+      "SV_ajust": 12428.0,
+      "NV_ajust": 14276.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Kikwit Sud Zone de Santé",
+      "SV_ajust": 12929.0,
+      "NV_ajust": 16090.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Kimputu Zone de Santé",
+      "SV_ajust": 9883.0,
+      "NV_ajust": 11306.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Kingandu Zone de Santé",
+      "SV_ajust": 5610.0,
+      "NV_ajust": 6364.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Koshibanda Zone de Santé",
+      "SV_ajust": 9721.0,
+      "NV_ajust": 11427.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Lusanga Zone de Santé",
+      "SV_ajust": 14731.0,
+      "NV_ajust": 16608.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Masi Manimba Zone de Santé",
+      "SV_ajust": 13026.0,
+      "NV_ajust": 14763.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Moanza Zone de Santé",
+      "SV_ajust": 8440.0,
+      "NV_ajust": 9448.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Mokala Zone de Santé",
+      "SV_ajust": 11156.0,
+      "NV_ajust": 12817.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Mosango Zone de Santé",
+      "SV_ajust": 6399.0,
+      "NV_ajust": 7063.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Mukedi Zone de Santé",
+      "SV_ajust": 9363.0,
+      "NV_ajust": 10833.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Mungindu Zone de Santé",
+      "SV_ajust": 8438.0,
+      "NV_ajust": 9286.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Pay Kongila Zone de Santé",
+      "SV_ajust": 7509.0,
+      "NV_ajust": 8708.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Bandundu",
+      "_ZS": "kl Sia Zone de Santé",
+      "SV_ajust": 6642.0,
+      "NV_ajust": 7596.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Bandundu",
+      "_ZS": "kl Vanga Zone de Santé",
+      "SV_ajust": 15294.0,
+      "NV_ajust": 17242.0
+    },
+    {
+      "_Province": "kl Kwilu Province",
+      "_Antenne": "Kikwit",
+      "_ZS": "kl Yasa Bonga Zone de Santé",
+      "SV_ajust": 18239.0,
+      "NV_ajust": 20142.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Kabinda Zone de Santé",
+      "SV_ajust": 17552.0,
+      "NV_ajust": 21684.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Kalambayi Kabanga Zone de Santé",
+      "SV_ajust": 10028.0,
+      "NV_ajust": 14603.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Kalenda Zone de Santé",
+      "SV_ajust": 12917.0,
+      "NV_ajust": 17431.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Kalonda Est Zone de Santé",
+      "SV_ajust": 13339.0,
+      "NV_ajust": 14409.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Kamana Zone de Santé",
+      "SV_ajust": 15277.0,
+      "NV_ajust": 17232.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Kamiji Zone de Santé",
+      "SV_ajust": 4860.0,
+      "NV_ajust": 5733.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Kanda Kanda Zone de Santé",
+      "SV_ajust": 11216.0,
+      "NV_ajust": 14440.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Lubao Zone de Santé",
+      "SV_ajust": 11352.0,
+      "NV_ajust": 14245.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Ludimbi Lukula Zone de Santé",
+      "SV_ajust": 7661.0,
+      "NV_ajust": 8751.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Luputa Zone de Santé",
+      "SV_ajust": 15669.0,
+      "NV_ajust": 19979.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Makota Zone de Santé",
+      "SV_ajust": 14111.0,
+      "NV_ajust": 16016.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Mulumba Zone de Santé",
+      "SV_ajust": 17291.0,
+      "NV_ajust": 24977.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Mweneditu Zone de Santé",
+      "SV_ajust": 21835.0,
+      "NV_ajust": 27402.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Ngandajika Zone de Santé",
+      "SV_ajust": 16418.0,
+      "NV_ajust": 22347.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Kabinda",
+      "_ZS": "lm Tshofa Zone de Santé",
+      "SV_ajust": 6842.0,
+      "NV_ajust": 7967.0
+    },
+    {
+      "_Province": "lm Lomami Province",
+      "_Antenne": "Mweneditu",
+      "_ZS": "lm Wikong Zone de Santé",
+      "SV_ajust": 6428.0,
+      "NV_ajust": 7226.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Bunkeya Zone de Santé",
+      "SV_ajust": 3599.0,
+      "NV_ajust": 4424.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Dilala Zone de Santé",
+      "SV_ajust": 27580.0,
+      "NV_ajust": 37161.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kisenge",
+      "_ZS": "ll Dilolo Zone de Santé",
+      "SV_ajust": 11190.0,
+      "NV_ajust": 13062.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Fungurume Zone de Santé",
+      "SV_ajust": 35161.0,
+      "NV_ajust": 43725.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kisenge",
+      "_ZS": "ll Kafakumba Zone de Santé",
+      "SV_ajust": 8293.0,
+      "NV_ajust": 9580.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kisenge",
+      "_ZS": "ll Kalamba Zone de Santé",
+      "SV_ajust": 6458.0,
+      "NV_ajust": 8909.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Kanzenze Zone de Santé",
+      "SV_ajust": 12094.0,
+      "NV_ajust": 14411.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kisenge",
+      "_ZS": "ll Kapanga Zone de Santé",
+      "SV_ajust": 8489.0,
+      "NV_ajust": 11029.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kisenge",
+      "_ZS": "ll Kasaji Zone de Santé",
+      "SV_ajust": 16073.0,
+      "NV_ajust": 17593.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Lualaba Zone de Santé",
+      "SV_ajust": 27403.0,
+      "NV_ajust": 33609.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Lubudi Zone de Santé",
+      "SV_ajust": 7025.0,
+      "NV_ajust": 7849.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Manika Zone de Santé",
+      "SV_ajust": 32664.0,
+      "NV_ajust": 39763.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kolwezi",
+      "_ZS": "ll Mutshatsha Zone de Santé",
+      "SV_ajust": 5277.0,
+      "NV_ajust": 6038.0
+    },
+    {
+      "_Province": "ll Lualaba Province",
+      "_Antenne": "Kisenge",
+      "_ZS": "ll Sandoa Zone de Santé",
+      "SV_ajust": 12362.0,
+      "NV_ajust": 14030.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Banzow Moke Zone de Santé",
+      "SV_ajust": 8150.0,
+      "NV_ajust": 8892.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Bokoro Zone de Santé",
+      "SV_ajust": 17645.0,
+      "NV_ajust": 20487.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Bolobo Zone de Santé",
+      "SV_ajust": 9551.0,
+      "NV_ajust": 10980.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Bosobe Zone de Santé",
+      "SV_ajust": 7050.0,
+      "NV_ajust": 8056.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Inongo Zone de Santé",
+      "SV_ajust": 13157.0,
+      "NV_ajust": 15077.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Kiri Zone de Santé",
+      "SV_ajust": 6714.0,
+      "NV_ajust": 8698.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Kwamouth Zone de Santé",
+      "SV_ajust": 7700.0,
+      "NV_ajust": 8796.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Mimia Zone de Santé",
+      "SV_ajust": 2901.0,
+      "NV_ajust": 3308.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Mushie Zone de Santé",
+      "SV_ajust": 8426.0,
+      "NV_ajust": 9645.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Nioki Zone de Santé",
+      "SV_ajust": 13180.0,
+      "NV_ajust": 14295.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Ntandembelo Zone de Santé",
+      "SV_ajust": 5892.0,
+      "NV_ajust": 6489.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Oshwe Zone de Santé",
+      "SV_ajust": 11494.0,
+      "NV_ajust": 13620.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Pendjwa Zone de Santé",
+      "SV_ajust": 4819.0,
+      "NV_ajust": 5340.0
+    },
+    {
+      "_Province": "md Maindombe Province",
+      "_Antenne": "Inongo",
+      "_ZS": "md Yumbi Zone de Santé",
+      "SV_ajust": 9643.0,
+      "NV_ajust": 11135.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Alunguli Zone de Santé",
+      "SV_ajust": 4892.0,
+      "NV_ajust": 5545.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Ferekeni Zone de Santé",
+      "SV_ajust": 2415.0,
+      "NV_ajust": 2982.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Kabambare Zone de Santé",
+      "SV_ajust": 6617.0,
+      "NV_ajust": 7478.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Kailo Zone de Santé",
+      "SV_ajust": 7521.0,
+      "NV_ajust": 9477.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Kalima Zone de Santé",
+      "SV_ajust": 10424.0,
+      "NV_ajust": 12482.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Kampene Zone de Santé",
+      "SV_ajust": 8904.0,
+      "NV_ajust": 10823.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Kasongo Zone de Santé",
+      "SV_ajust": 11881.0,
+      "NV_ajust": 17422.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Kibombo Zone de Santé",
+      "SV_ajust": 8617.0,
+      "NV_ajust": 9906.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Kindu Zone de Santé",
+      "SV_ajust": 20226.0,
+      "NV_ajust": 24829.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Kunda Zone de Santé",
+      "SV_ajust": 17103.0,
+      "NV_ajust": 20463.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Lubutu Zone de Santé",
+      "SV_ajust": 7130.0,
+      "NV_ajust": 11625.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Lusangi Zone de Santé",
+      "SV_ajust": 9386.0,
+      "NV_ajust": 15263.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Obokote Zone de Santé",
+      "SV_ajust": 5343.0,
+      "NV_ajust": 6555.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Pangi Zone de Santé",
+      "SV_ajust": 6696.0,
+      "NV_ajust": 8738.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kindu",
+      "_ZS": "mn Punia Zone de Santé",
+      "SV_ajust": 6629.0,
+      "NV_ajust": 9897.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Samba Zone de Santé",
+      "SV_ajust": 7176.0,
+      "NV_ajust": 11005.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Saramabila Zone de Santé",
+      "SV_ajust": 8415.0,
+      "NV_ajust": 9267.0
+    },
+    {
+      "_Province": "mn Maniema Province",
+      "_Antenne": "Kasongo",
+      "_ZS": "mn Tunda Zone de Santé",
+      "SV_ajust": 3619.0,
+      "NV_ajust": 4547.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Binga Zone de Santé",
+      "SV_ajust": 11613.0,
+      "NV_ajust": 19606.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Bongandanga Zone de Santé",
+      "SV_ajust": 13454.0,
+      "NV_ajust": 15937.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Boso Manzi Zone de Santé",
+      "SV_ajust": 7728.0,
+      "NV_ajust": 11420.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Boso Mondanda Zone de Santé",
+      "SV_ajust": 10986.0,
+      "NV_ajust": 13280.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Bosondjo Zone de Santé",
+      "SV_ajust": 17709.0,
+      "NV_ajust": 20073.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Bumba",
+      "_ZS": "mg Bumba Zone de Santé",
+      "SV_ajust": 19804.0,
+      "NV_ajust": 22324.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Lisala Zone de Santé",
+      "SV_ajust": 26297.0,
+      "NV_ajust": 41486.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Bumba",
+      "_ZS": "mg Lolo Zone de Santé",
+      "SV_ajust": 12915.0,
+      "NV_ajust": 14561.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Lisala",
+      "_ZS": "mg Pimu Zone de Santé",
+      "SV_ajust": 18515.0,
+      "NV_ajust": 21939.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Bumba",
+      "_ZS": "mg Yamaluka Zone de Santé",
+      "SV_ajust": 7983.0,
+      "NV_ajust": 9009.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Bumba",
+      "_ZS": "mg Yambuku Zone de Santé",
+      "SV_ajust": 15068.0,
+      "NV_ajust": 17061.0
+    },
+    {
+      "_Province": "mg Mongala Province",
+      "_Antenne": "Bumba",
+      "_ZS": "mg Yamongili Zone de Santé",
+      "SV_ajust": 7561.0,
+      "NV_ajust": 12748.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Alimbongo Zone de Santé",
+      "SV_ajust": 12093.0,
+      "NV_ajust": 14446.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Bambo Zone de Santé",
+      "SV_ajust": 8805.0,
+      "NV_ajust": 10223.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Beni Zone de Santé",
+      "SV_ajust": 25743.0,
+      "NV_ajust": 31180.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Biena Zone de Santé",
+      "SV_ajust": 6837.0,
+      "NV_ajust": 8149.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Binza Zone de Santé",
+      "SV_ajust": 9099.0,
+      "NV_ajust": 10330.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Birambizo Zone de Santé",
+      "SV_ajust": 9889.0,
+      "NV_ajust": 11047.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Butembo Zone de Santé",
+      "SV_ajust": 10527.0,
+      "NV_ajust": 14596.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Goma Zone de Santé",
+      "SV_ajust": 16272.0,
+      "NV_ajust": 18839.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Itebero Zone de Santé",
+      "SV_ajust": 9636.0,
+      "NV_ajust": 10816.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Kalunguta Zone de Santé",
+      "SV_ajust": 9715.0,
+      "NV_ajust": 11037.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Kamango Zone de Santé",
+      "SV_ajust": 7755.0,
+      "NV_ajust": 9317.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Karisimbi Zone de Santé",
+      "SV_ajust": 27650.0,
+      "NV_ajust": 34952.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Katoyi Zone de Santé",
+      "SV_ajust": 16992.0,
+      "NV_ajust": 20533.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Katwa Zone de Santé",
+      "SV_ajust": 24919.0,
+      "NV_ajust": 31919.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Kayna Zone de Santé",
+      "SV_ajust": 17845.0,
+      "NV_ajust": 21304.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Kibirizi Zone de Santé",
+      "SV_ajust": 17854.0,
+      "NV_ajust": 21457.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Kibua Zone de Santé",
+      "SV_ajust": 5499.0,
+      "NV_ajust": 6230.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Kirotshe Zone de Santé",
+      "SV_ajust": 24978.0,
+      "NV_ajust": 32980.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Kyondo Zone de Santé",
+      "SV_ajust": 9072.0,
+      "NV_ajust": 11019.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Lubero Zone de Santé",
+      "SV_ajust": 14860.0,
+      "NV_ajust": 16795.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Mabalako Zone de Santé",
+      "SV_ajust": 10903.0,
+      "NV_ajust": 12398.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Manguredjipa Zone de Santé",
+      "SV_ajust": 4226.0,
+      "NV_ajust": 5487.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Masereka Zone de Santé",
+      "SV_ajust": 7361.0,
+      "NV_ajust": 9836.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Masisi Zone de Santé",
+      "SV_ajust": 22162.0,
+      "NV_ajust": 33838.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Musienene Zone de Santé",
+      "SV_ajust": 13547.0,
+      "NV_ajust": 15901.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Mutwanga Zone de Santé",
+      "SV_ajust": 17732.0,
+      "NV_ajust": 20037.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Mweso Zone de Santé",
+      "SV_ajust": 22898.0,
+      "NV_ajust": 29744.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Nyiragongo Zone de Santé",
+      "SV_ajust": 20979.0,
+      "NV_ajust": 26500.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Oicha Zone de Santé",
+      "SV_ajust": 15889.0,
+      "NV_ajust": 18122.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Pinga Zone de Santé",
+      "SV_ajust": 8887.0,
+      "NV_ajust": 10144.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Rutshuru Zone de Santé",
+      "SV_ajust": 14572.0,
+      "NV_ajust": 16665.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Rwanguba Zone de Santé",
+      "SV_ajust": 14058.0,
+      "NV_ajust": 15645.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Butembo",
+      "_ZS": "nk Vuhovi Zone de Santé",
+      "SV_ajust": 5963.0,
+      "NV_ajust": 6844.0
+    },
+    {
+      "_Province": "nk Nord Kivu Province",
+      "_Antenne": "Goma",
+      "_ZS": "nk Walikale Zone de Santé",
+      "SV_ajust": 9462.0,
+      "NV_ajust": 12759.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Abuzi Zone de Santé",
+      "SV_ajust": 4072.0,
+      "NV_ajust": 5288.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Bili Zone de Santé",
+      "SV_ajust": 10012.0,
+      "NV_ajust": 11081.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Bosobolo Zone de Santé",
+      "SV_ajust": 8168.0,
+      "NV_ajust": 10739.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Businga Zone de Santé",
+      "SV_ajust": 6220.0,
+      "NV_ajust": 7413.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Gbadolite Zone de Santé",
+      "SV_ajust": 8788.0,
+      "NV_ajust": 9948.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Karawa Zone de Santé",
+      "SV_ajust": 12626.0,
+      "NV_ajust": 16190.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Loko Zone de Santé",
+      "SV_ajust": 6316.0,
+      "NV_ajust": 8483.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Mobayi Mbongo Zone de Santé",
+      "SV_ajust": 7121.0,
+      "NV_ajust": 8368.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Wapinda Zone de Santé",
+      "SV_ajust": 3938.0,
+      "NV_ajust": 5501.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Wasolo Zone de Santé",
+      "SV_ajust": 3815.0,
+      "NV_ajust": 4276.0
+    },
+    {
+      "_Province": "nu Nord Ubangi Province",
+      "_Antenne": "Gbadolite",
+      "_ZS": "nu Yakoma Zone de Santé",
+      "SV_ajust": 5789.0,
+      "NV_ajust": 6930.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Bena Dibele Zone de Santé",
+      "SV_ajust": 6097.0,
+      "NV_ajust": 6948.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Dikungu Zone de Santé",
+      "SV_ajust": 8730.0,
+      "NV_ajust": 9949.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Djalo Ndjeka Zone de Santé",
+      "SV_ajust": 4044.0,
+      "NV_ajust": 5293.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Katako Kombe Zone de Santé",
+      "SV_ajust": 10513.0,
+      "NV_ajust": 12390.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Kole Zone de Santé",
+      "SV_ajust": 5836.0,
+      "NV_ajust": 6427.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Lodja Zone de Santé",
+      "SV_ajust": 27218.0,
+      "NV_ajust": 33142.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Lomela Zone de Santé",
+      "SV_ajust": 9642.0,
+      "NV_ajust": 11008.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Lusambo Zone de Santé",
+      "SV_ajust": 8471.0,
+      "NV_ajust": 13423.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Minga Zone de Santé",
+      "SV_ajust": 12012.0,
+      "NV_ajust": 13730.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Omendjadi Zone de Santé",
+      "SV_ajust": 7399.0,
+      "NV_ajust": 8567.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Ototo Zone de Santé",
+      "SV_ajust": 6857.0,
+      "NV_ajust": 7815.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Pania Mutombo Zone de Santé",
+      "SV_ajust": 6612.0,
+      "NV_ajust": 8249.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Tshudi Loto Zone de Santé",
+      "SV_ajust": 3694.0,
+      "NV_ajust": 4467.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Tshumbe Zone de Santé",
+      "SV_ajust": 6571.0,
+      "NV_ajust": 7662.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Vanga Kete Zone de Santé",
+      "SV_ajust": 6156.0,
+      "NV_ajust": 7122.0
+    },
+    {
+      "_Province": "sn Sankuru Province",
+      "_Antenne": "Lodja",
+      "_ZS": "sn Wembo Nyama Zone de Santé",
+      "SV_ajust": 8868.0,
+      "NV_ajust": 10065.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Bagira Zone de Santé",
+      "SV_ajust": 8298.0,
+      "NV_ajust": 11217.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Bunyakiri Zone de Santé",
+      "SV_ajust": 13329.0,
+      "NV_ajust": 18589.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Fizi Zone de Santé",
+      "SV_ajust": 19392.0,
+      "NV_ajust": 22227.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Haut Plateau Zone de Santé",
+      "SV_ajust": 6805.0,
+      "NV_ajust": 7825.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Ibanda Zone de Santé",
+      "SV_ajust": 23366.0,
+      "NV_ajust": 27025.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Idjwi Zone de Santé",
+      "SV_ajust": 14110.0,
+      "NV_ajust": 16183.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Itombwe Zone de Santé",
+      "SV_ajust": 4466.0,
+      "NV_ajust": 5120.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kabare Zone de Santé",
+      "SV_ajust": 11124.0,
+      "NV_ajust": 13086.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kadutu Zone de Santé",
+      "SV_ajust": 20737.0,
+      "NV_ajust": 24053.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kalehe Zone de Santé",
+      "SV_ajust": 8658.0,
+      "NV_ajust": 10308.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kalole Zone de Santé",
+      "SV_ajust": 6848.0,
+      "NV_ajust": 10596.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kalonge Zone de Santé",
+      "SV_ajust": 9577.0,
+      "NV_ajust": 11757.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kamituga Zone de Santé",
+      "SV_ajust": 9848.0,
+      "NV_ajust": 11677.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kaniola Zone de Santé",
+      "SV_ajust": 8266.0,
+      "NV_ajust": 9475.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Katana Zone de Santé",
+      "SV_ajust": 11057.0,
+      "NV_ajust": 15880.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kaziba Zone de Santé",
+      "SV_ajust": 6719.0,
+      "NV_ajust": 8492.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Kimbi Lulenge Zone de Santé",
+      "SV_ajust": 24723.0,
+      "NV_ajust": 28618.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Kitutu Zone de Santé",
+      "SV_ajust": 10286.0,
+      "NV_ajust": 11556.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Lemera Zone de Santé",
+      "SV_ajust": 8284.0,
+      "NV_ajust": 9778.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Lulingu Zone de Santé",
+      "SV_ajust": 8700.0,
+      "NV_ajust": 9828.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Minembwe Zone de Santé",
+      "SV_ajust": 6574.0,
+      "NV_ajust": 7637.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Minova Zone de Santé",
+      "SV_ajust": 18382.0,
+      "NV_ajust": 22216.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Miti Murhesa Zone de Santé",
+      "SV_ajust": 13574.0,
+      "NV_ajust": 18161.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Mubumbano Zone de Santé",
+      "SV_ajust": 8963.0,
+      "NV_ajust": 13336.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Mulungu Zone de Santé",
+      "SV_ajust": 10860.0,
+      "NV_ajust": 13525.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Mwana Zone de Santé",
+      "SV_ajust": 6485.0,
+      "NV_ajust": 7642.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Mwenga Zone de Santé",
+      "SV_ajust": 6559.0,
+      "NV_ajust": 7720.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Nundu Zone de Santé",
+      "SV_ajust": 10991.0,
+      "NV_ajust": 12583.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Nyangezi Zone de Santé",
+      "SV_ajust": 8304.0,
+      "NV_ajust": 9308.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Nyantende Zone de Santé",
+      "SV_ajust": 11064.0,
+      "NV_ajust": 14709.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Ruzizi Zone de Santé",
+      "SV_ajust": 8415.0,
+      "NV_ajust": 9592.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Shabunda Zone de Santé",
+      "SV_ajust": 8294.0,
+      "NV_ajust": 9647.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Uvira",
+      "_ZS": "sk Uvira Zone de Santé",
+      "SV_ajust": 15820.0,
+      "NV_ajust": 18193.0
+    },
+    {
+      "_Province": "sk Sud Kivu Province",
+      "_Antenne": "Bukavu",
+      "_ZS": "sk Walungu Zone de Santé",
+      "SV_ajust": 13532.0,
+      "NV_ajust": 18220.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Bangabola Zone de Santé",
+      "SV_ajust": 12414.0,
+      "NV_ajust": 15708.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Bogosenubea Zone de Santé",
+      "SV_ajust": 9648.0,
+      "NV_ajust": 12539.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Bokonzi Zone de Santé",
+      "SV_ajust": 13823.0,
+      "NV_ajust": 17389.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Bominenge Zone de Santé",
+      "SV_ajust": 9339.0,
+      "NV_ajust": 10372.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Boto Zone de Santé",
+      "SV_ajust": 9667.0,
+      "NV_ajust": 12084.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Budjala Zone de Santé",
+      "SV_ajust": 10092.0,
+      "NV_ajust": 14005.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Bulu Zone de Santé",
+      "SV_ajust": 10388.0,
+      "NV_ajust": 12439.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Bwamanda Zone de Santé",
+      "SV_ajust": 14739.0,
+      "NV_ajust": 20921.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Gemena Zone de Santé",
+      "SV_ajust": 26224.0,
+      "NV_ajust": 32901.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Kungu Zone de Santé",
+      "SV_ajust": 16857.0,
+      "NV_ajust": 20415.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Libenge Zone de Santé",
+      "SV_ajust": 13572.0,
+      "NV_ajust": 17075.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Mawuya Zone de Santé",
+      "SV_ajust": 9463.0,
+      "NV_ajust": 14090.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Mbaya Zone de Santé",
+      "SV_ajust": 4151.0,
+      "NV_ajust": 4773.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Ndage Zone de Santé",
+      "SV_ajust": 9441.0,
+      "NV_ajust": 11346.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Tandala Zone de Santé",
+      "SV_ajust": 18463.0,
+      "NV_ajust": 22907.0
+    },
+    {
+      "_Province": "su Sud Ubangi Province",
+      "_Antenne": "Gemena",
+      "_ZS": "su Zongo Zone de Santé",
+      "SV_ajust": 4943.0,
+      "NV_ajust": 5669.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kabalo",
+      "_ZS": "tn Ankoro Zone de Santé",
+      "SV_ajust": 14383.0,
+      "NV_ajust": 16039.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kabalo",
+      "_ZS": "tn Kabalo Zone de Santé",
+      "SV_ajust": 16870.0,
+      "NV_ajust": 18498.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kalemie",
+      "_ZS": "tn Kalemie Zone de Santé",
+      "SV_ajust": 22929.0,
+      "NV_ajust": 26826.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kalemie",
+      "_ZS": "tn Kansimba Zone de Santé",
+      "SV_ajust": 10504.0,
+      "NV_ajust": 15661.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kabalo",
+      "_ZS": "tn Kiambi Zone de Santé",
+      "SV_ajust": 9537.0,
+      "NV_ajust": 10686.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kabalo",
+      "_ZS": "tn Kongolo Zone de Santé",
+      "SV_ajust": 20943.0,
+      "NV_ajust": 25507.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kabalo",
+      "_ZS": "tn Manono Zone de Santé",
+      "SV_ajust": 18141.0,
+      "NV_ajust": 20606.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kabalo",
+      "_ZS": "tn Mbulula Zone de Santé",
+      "SV_ajust": 12326.0,
+      "NV_ajust": 13877.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kalemie",
+      "_ZS": "tn Moba Zone de Santé",
+      "SV_ajust": 17760.0,
+      "NV_ajust": 19719.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kalemie",
+      "_ZS": "tn Nyemba Zone de Santé",
+      "SV_ajust": 25595.0,
+      "NV_ajust": 30588.0
+    },
+    {
+      "_Province": "tn Tanganyika Province",
+      "_Antenne": "Kalemie",
+      "_ZS": "tn Nyunzu Zone de Santé",
+      "SV_ajust": 18876.0,
+      "NV_ajust": 21820.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Bafwagbogbo Zone de Santé",
+      "SV_ajust": 4492.0,
+      "NV_ajust": 5322.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Bafwasende Zone de Santé",
+      "SV_ajust": 7193.0,
+      "NV_ajust": 8393.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Banalia Zone de Santé",
+      "SV_ajust": 11518.0,
+      "NV_ajust": 13023.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Lokutu",
+      "_ZS": "tp Basali Zone de Santé",
+      "SV_ajust": 4511.0,
+      "NV_ajust": 6138.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Lokutu",
+      "_ZS": "tp Basoko Zone de Santé",
+      "SV_ajust": 12173.0,
+      "NV_ajust": 16009.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Bengamisa Zone de Santé",
+      "SV_ajust": 8815.0,
+      "NV_ajust": 10722.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Lokutu",
+      "_ZS": "tp Isangi Zone de Santé",
+      "SV_ajust": 12799.0,
+      "NV_ajust": 14937.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Kabondo Zone de Santé",
+      "SV_ajust": 15921.0,
+      "NV_ajust": 18719.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Lowa Zone de Santé",
+      "SV_ajust": 10530.0,
+      "NV_ajust": 12834.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Lubunga Zone de Santé",
+      "SV_ajust": 10875.0,
+      "NV_ajust": 13440.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Makiso Kisangani Zone de Santé",
+      "SV_ajust": 32511.0,
+      "NV_ajust": 36745.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Mangobo Zone de Santé",
+      "SV_ajust": 16650.0,
+      "NV_ajust": 18779.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Opala Zone de Santé",
+      "SV_ajust": 7947.0,
+      "NV_ajust": 10845.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Opienge Zone de Santé",
+      "SV_ajust": 3175.0,
+      "NV_ajust": 5631.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Tshopo Zone de Santé",
+      "SV_ajust": 13666.0,
+      "NV_ajust": 15658.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Ubundu Zone de Santé",
+      "SV_ajust": 6313.0,
+      "NV_ajust": 7072.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Wanierukula Zone de Santé",
+      "SV_ajust": 4450.0,
+      "NV_ajust": 6058.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Lokutu",
+      "_ZS": "tp Yabaondo Zone de Santé",
+      "SV_ajust": 7117.0,
+      "NV_ajust": 9161.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Yahisuli Zone de Santé",
+      "SV_ajust": 6936.0,
+      "NV_ajust": 8502.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Lokutu",
+      "_ZS": "tp Yahuma Zone de Santé",
+      "SV_ajust": 11203.0,
+      "NV_ajust": 14664.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Yakusu Zone de Santé",
+      "SV_ajust": 13107.0,
+      "NV_ajust": 14954.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Kisangani",
+      "_ZS": "tp Yaleko Zone de Santé",
+      "SV_ajust": 10864.0,
+      "NV_ajust": 13997.0
+    },
+    {
+      "_Province": "tp Tshopo Province",
+      "_Antenne": "Lokutu",
+      "_ZS": "tp Yalimbongo Zone de Santé",
+      "SV_ajust": 4659.0,
+      "NV_ajust": 6961.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Boende",
+      "_ZS": "tu Befale Zone de Santé",
+      "SV_ajust": 14673.0,
+      "NV_ajust": 17069.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Boende",
+      "_ZS": "tu Boende Zone de Santé",
+      "SV_ajust": 15997.0,
+      "NV_ajust": 17927.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Bokungu",
+      "_ZS": "tu Bokungu Zone de Santé",
+      "SV_ajust": 11852.0,
+      "NV_ajust": 15276.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Bokungu",
+      "_ZS": "tu Busanga Zone de Santé",
+      "SV_ajust": 6974.0,
+      "NV_ajust": 7943.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Bokungu",
+      "_ZS": "tu Djolu Zone de Santé",
+      "SV_ajust": 11366.0,
+      "NV_ajust": 12830.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Bokungu",
+      "_ZS": "tu Ikela Zone de Santé",
+      "SV_ajust": 14783.0,
+      "NV_ajust": 17882.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Boende",
+      "_ZS": "tu Lingomo Zone de Santé",
+      "SV_ajust": 9849.0,
+      "NV_ajust": 12088.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Boende",
+      "_ZS": "tu Mompono Zone de Santé",
+      "SV_ajust": 7694.0,
+      "NV_ajust": 9926.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Bokungu",
+      "_ZS": "tu Mondombe Zone de Santé",
+      "SV_ajust": 11803.0,
+      "NV_ajust": 14697.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Boende",
+      "_ZS": "tu Monkoto Zone de Santé",
+      "SV_ajust": 8761.0,
+      "NV_ajust": 12605.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Boende",
+      "_ZS": "tu Wema Zone de Santé",
+      "SV_ajust": 7692.0,
+      "NV_ajust": 9307.0
+    },
+    {
+      "_Province": "tu Tshuapa Province",
+      "_Antenne": "Bokungu",
+      "_ZS": "tu Yalifafu Zone de Santé",
+      "SV_ajust": 7059.0,
+      "NV_ajust": 8216.0
+    }
+  ]
+}
