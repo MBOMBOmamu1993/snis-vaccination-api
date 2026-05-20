@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SITREP N°02 — Antenne PEV Luiza — JNV Polio Mai 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1f2937; font-size: 11px; }
+  .page {
+    width: 210mm; min-height: 297mm; padding: 9mm 8mm 8mm;
+    margin: 0 auto; background: #fff; position: relative;
+    page-break-after: always; display: flex; flex-direction: column;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  /* Header */
+  .hdr { border: 2px solid #0b3a6f; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .hdr-top { display: flex; align-items: center; background: #0b3a6f; color: #fff; padding: 6px 10px; }
+  .hdr-top .flag, .hdr-top .pev { width: 46px; text-align: center; font-size: 8px; line-height: 1.1; }
+  .hdr-top .flag img, .hdr-top .pev img { max-width: 42px; max-height: 34px; }
+  .hdr-top .ttl { flex: 1; text-align: center; }
+  .hdr-top .ttl h1 { font-size: 12.5px; font-weight: 700; letter-spacing: .2px; }
+  .hdr-sub { background: #0b3a6f; color: #cfe0f5; text-align: center; font-size: 9.5px; font-style: italic; padding: 0 0 5px; }
+  .hdr-band { background: #ffd400; color: #0b3a6f; text-align: center; font-weight: 700; font-size: 11.5px; padding: 4px; }
+
+  .sec { background: #0b3a6f; color: #fff; font-weight: 700; font-size: 11.5px; padding: 5px 9px; border-radius: 3px; margin: 8px 0 7px; }
+  .sec.alt { background: #155e9c; }
+
+  /* KPI cards */
+  .kpis { display: flex; gap: 8px; margin-bottom: 8px; }
+  .kpi { flex: 1; border: 1px solid #d6dee8; border-radius: 5px; text-align: center; padding: 7px 4px; background: #f7fafd; }
+  .kpi .v { font-size: 23px; font-weight: 800; color: #0b3a6f; line-height: 1; }
+  .kpi .l { font-size: 8.5px; color: #5b6b7c; margin-top: 4px; letter-spacing: .3px; }
+
+  .grid2 { display: flex; gap: 10px; }
+  .col-info { width: 38%; font-size: 10px; }
+  .col-map { width: 62%; }
+  .col-info .blk { margin-bottom: 6px; }
+  .col-info b { color: #0b3a6f; }
+  .col-info ul { list-style: none; margin: 2px 0 0 6px; }
+  .col-info li::before { content: "•"; color: #d32f2f; font-weight: 700; margin-right: 5px; }
+  .tag { display: inline-block; background: #e8f1fb; border: 1px solid #b9d2ee; color: #0b3a6f; border-radius: 10px; padding: 1px 9px; font-weight: 700; font-size: 10px; }
+  .tag.red { background: #fdeaea; border-color: #f0b4b4; color: #b3261e; }
+  .map-title { text-align: center; font-weight: 700; color: #0b3a6f; font-size: 10.5px; margin-bottom: 3px; }
+  .col-map img { width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; }
+
+  /* OSP */
+  .osp { display: flex; gap: 8px; }
+  .osp-card { border: 1px solid #d6dee8; border-radius: 5px; padding: 8px; }
+  .osp-global { width: 25%; text-align: center; background: #f1f8f3; display: flex; flex-direction: column; justify-content: center; }
+  .osp-global .pct { font-size: 40px; font-weight: 800; color: #c0392b; line-height: 1; }
+  .osp-global .lab { font-weight: 700; color: #0b3a6f; font-size: 10px; margin: 4px 0 8px; }
+  .osp-global .row { font-size: 9.5px; color: #374151; text-align: left; margin: 1px 0; }
+  .osp-global .warn { color: #16a34a; font-weight: 700; font-size: 9.5px; margin-top: 6px; }
+  .osp-chart { width: 37.5%; }
+  .osp-chart h5 { text-align: center; font-size: 10px; color: #0b3a6f; margin-bottom: 6px; }
+  .bar-row { display: flex; align-items: center; font-size: 9px; margin: 5px 0; }
+  .bar-row .nm { width: 78px; text-align: right; padding-right: 6px; color: #374151; }
+  .bar-track { flex: 1; background: #eef2f6; border-radius: 2px; height: 13px; position: relative; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+  .bar-row .pc { width: 34px; padding-left: 5px; font-weight: 700; color: #1f2937; }
+
+  /* Saillants */
+  table.sail { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+  table.sail td { border: 1px solid #d6dee8; padding: 5px 7px; vertical-align: top; }
+  table.sail td.k { width: 105px; font-weight: 700; color: #fff; background: #155e9c; text-align: center; }
+  table.sail tr:nth-child(odd) td.k { background: #0b3a6f; }
+
+  /* Commission table */
+  table.cm { width: 100%; border-collapse: collapse; font-size: 9.3px; }
+  table.cm th { background: #0b3a6f; color: #fff; padding: 5px; border: 1px solid #0b3a6f; font-size: 10px; }
+  table.cm td { border: 1px solid #d6dee8; padding: 5px 7px; vertical-align: top; }
+  table.cm td.k { font-weight: 700; color: #0b3a6f; width: 120px; }
+  table.cm tr:nth-child(even) td { background: #fbfdff; }
+  table.cm tr.tech td.k { color: #b45309; }
+
+  table.fin { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+  table.fin th { background: #0b3a6f; color: #fff; padding: 5px; border: 1px solid #0b3a6f; }
+  table.fin td { border: 1px solid #d6dee8; padding: 5px 7px; }
+
+  .diff { display: flex; }
+  .diff > div { width: 50%; }
+  .diff .h { color: #fff; font-weight: 700; text-align: center; padding: 4px; font-size: 10.5px; }
+  .diff .hd { background: #c0392b; } .diff .ha { background: #1e8449; }
+  .diff ul { list-style: none; padding: 7px 9px; font-size: 9.3px; border: 1px solid #d6dee8; min-height: 100%; }
+  .diff li { margin: 3px 0; } .diff li::before { content: "• "; }
+
+  .persp { display: flex; gap: 8px; }
+  .persp .p { flex: 1; border: 1px solid #d6dee8; border-radius: 5px; padding: 8px; font-size: 9.3px; }
+  .persp .p h6 { color: #0b3a6f; font-size: 10px; border-bottom: 2px solid #ffd400; padding-bottom: 3px; margin-bottom: 5px; }
+
+  table.osptab { width: 100%; border-collapse: collapse; font-size: 10px; }
+  table.osptab th { background: #0b3a6f; color: #fff; padding: 6px; border: 1px solid #0b3a6f; }
+  table.osptab td { border: 1px solid #d6dee8; padding: 5px 7px; text-align: center; }
+  table.osptab td.nm { text-align: left; font-weight: 700; color: #0b3a6f; }
+  table.osptab tr.tot td { background: #eaf2fb; font-weight: 700; }
+
+  table.team { width: 100%; border-collapse: collapse; font-size: 9.8px; }
+  table.team th { background: #0b3a6f; color: #fff; padding: 6px; border: 1px solid #0b3a6f; }
+  table.team td { border: 1px solid #d6dee8; padding: 5px 8px; }
+
+  .partners { margin-top: auto; border-top: 2px solid #0b3a6f; padding-top: 5px; }
+  .partners .lab { font-weight: 700; color: #0b3a6f; font-size: 9px; margin-bottom: 3px; }
+  .partners .logos { display: flex; flex-wrap: wrap; gap: 6px; }
+  .partners .logos span { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 3px; padding: 3px 8px; font-size: 8.5px; color: #334155; font-weight: 600; }
+  .pageno { position: absolute; bottom: 4mm; right: 8mm; font-size: 8.5px; color: #94a3b8; }
+
+  .legbox { font-size: 8.5px; color: #475569; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<div class="page">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="flag"><img src="https://raw.githubusercontent.com/MBOMBOmamu1993/pev-assets/main/PEV_RD_Congo_TRANSPARENT.png" alt=""></div>
+      <div class="ttl">
+        <h1>RÉPUBLIQUE DÉMOCRATIQUE DU CONGO — MINISTÈRE DE LA SANTÉ PUBLIQUE, HYGIÈNE ET PRÉVOYANCE SOCIALE</h1>
+      </div>
+      <div class="pev">PEV</div>
+    </div>
+    <div class="hdr-sub">Programme Élargi de Vaccination — Antenne PEV de Luiza — Province du Kasaï Central</div>
+    <div class="hdr-band">SITREP N°02 — CAMPAGNE JNV POLIO MAI 2026 | J-2 — 20 Mai 2026</div>
+  </div>
+
+  <div class="sec">I. INFORMATIONS GÉNÉRALES</div>
+  <div class="kpis">
+    <div class="kpi"><div class="v">01</div><div class="l">ANTENNE PEV</div></div>
+    <div class="kpi"><div class="v">6</div><div class="l">ZONES DE SANTÉ</div></div>
+    <div class="kpi"><div class="v">137</div><div class="l">AIRES DE SANTÉ</div></div>
+    <div class="kpi"><div class="v">329 162</div><div class="l">CIBLE 0–59 MOIS</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="col-info">
+      <div class="blk"><b>PÉRIODE :</b> 22 au 24 mai 2026</div>
+      <div class="blk"><b>LANCEMENT :</b> jeudi 22 mai 2026<br><span style="font-size:9px;color:#b3261e">(anticipé le 21 mai 2026 — ZS Luambo, frontalière Angola)</span></div>
+      <div class="blk"><b>POPULATION :</b> 1 741 599</div>
+      <div class="blk"><b>CIBLES :</b>
+        <ul>
+          <li>0 – 59 mois : 329 162</li>
+          <li>6 – 59 mois : 294 330</li>
+          <li>12 – 59 mois : 259 498</li>
+          <li>6 – 11 mois : 34 460</li>
+        </ul>
+      </div>
+      <div class="blk"><b>ANTIGÈNES :</b> <span class="tag">nVPO2 + VPOb</span> <span style="font-size:9px">(co-administration)</span></div>
+      <div class="blk"><b>Territoires :</b> 2 &nbsp;|&nbsp; <b>Commune rurale :</b> 1</div>
+      <div class="blk"><b>ANTENNE :</b> Luiza (6 ZS)</div>
+      <div class="blk"><span class="tag red">Campagne synchronisée avec l'Angola</span></div>
+    </div>
+    <div class="col-map">
+      <div class="map-title">CARTE DE L'ANTENNE PEV LUIZA — 6 ZS ET FRONTIÈRE AVEC L'ANGOLA</div>
+      <img src="carte_luiza_antenne.png" alt="Carte Antenne PEV Luiza">
+    </div>
+  </div>
+
+  <div class="sec">II. NIVEAU DES PRÉPARATIFS (OSP au 20 mai 2026)</div>
+  <div class="osp">
+    <div class="osp-card osp-global">
+      <div class="pct">73%</div>
+      <div class="lab">OSP ANTENNE GLOBAL</div>
+      <div class="row">Moyenne ZS : <b>73 %</b></div>
+      <div class="row">ZS ≥ 85 % &nbsp;&nbsp;&nbsp; 0 ZS</div>
+      <div class="row">ZS 70–84 % &nbsp;&nbsp; 4 ZS</div>
+      <div class="row">ZS 50–69 % &nbsp;&nbsp; 2 ZS</div>
+      <div class="row">ZS à 0 % &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 ZS</div>
+      <div class="warn">6/6 ZS ont renseigné le Dashboard</div>
+    </div>
+    <div class="osp-card osp-chart">
+      <h5>OSP antenne par domaine</h5>
+      <div class="bar-row"><div class="nm">Technique</div><div class="bar-track"><div class="bar-fill" style="width:88%;background:#f39c12"></div></div><div class="pc">88%</div></div>
+      <div class="bar-row"><div class="nm">Communication</div><div class="bar-track"><div class="bar-fill" style="width:88%;background:#2980b9"></div></div><div class="pc">88%</div></div>
+      <div class="bar-row"><div class="nm">Logistique</div><div class="bar-track"><div class="bar-fill" style="width:43%;background:#27ae60"></div></div><div class="pc">43%</div></div>
+    </div>
+    <div class="osp-card osp-chart">
+      <h5>OSP par zone de santé</h5>
+      <div class="bar-row"><div class="nm">MASUIKA</div><div class="bar-track"><div class="bar-fill" style="width:84%;background:#e67e22"></div></div><div class="pc">84%</div></div>
+      <div class="bar-row"><div class="nm">LUAMBO</div><div class="bar-track"><div class="bar-fill" style="width:76%;background:#e67e22"></div></div><div class="pc">76%</div></div>
+      <div class="bar-row"><div class="nm">YANGALA</div><div class="bar-track"><div class="bar-fill" style="width:76%;background:#e67e22"></div></div><div class="pc">76%</div></div>
+      <div class="bar-row"><div class="nm">LUIZA</div><div class="bar-track"><div class="bar-fill" style="width:75%;background:#e67e22"></div></div><div class="pc">75%</div></div>
+      <div class="bar-row"><div class="nm">TSHIBALA</div><div class="bar-track"><div class="bar-fill" style="width:67%;background:#f1c40f"></div></div><div class="pc">67%</div></div>
+      <div class="bar-row"><div class="nm">KALOMBA</div><div class="bar-track"><div class="bar-fill" style="width:58%;background:#f1c40f"></div></div><div class="pc">58%</div></div>
+    </div>
+  </div>
+
+  <div class="sec">III. POINTS SAILLANTS</div>
+  <table class="sail">
+    <tr><td class="k">Sécurité</td><td>Situation sécuritaire calme dans les 6/6 ZS.</td></tr>
+    <tr><td class="k">Coordination</td><td>5 réunions de coordination tenues au niveau de l'antenne PEV ; 2 réunions en moyenne dans 5 ZS et 1 réunion dans la ZS Luiza. <b>6/6 ZS ont renseigné le Dashboard.</b> Lancement anticipé prévu le 21/05/2026 dans la ZS Luambo (frontalière Angola). Coordination transfrontalière maintenue avec l'Angola.</td></tr>
+    <tr><td class="k">Technique</td><td>Recrutement et briefing des acteurs réalisés dans les 6/6 ZS ; élaboration des croquis des aires de vaccination en cours ; réception des bases de données dans les 6/6 ZS.</td></tr>
+    <tr><td class="k">Logistique</td><td>Arrivée des vaccins et autres intrants de la campagne au niveau de la province le 20/05/2026 ; actualisation des inventaires MDCF et recyclage des accumulateurs de froid dans les 6 ZS.</td></tr>
+    <tr><td class="k">Communication</td><td>Plan de communication actualisé disponible dans les ZS ; séances de plaidoyer réalisées ; émissions radio dans 2 radios ciblées (ZS Luiza et ZS Masuika).</td></tr>
+    <tr><td class="k">Finances</td><td>Fonds de mise en œuvre de la campagne non disponibles.</td></tr>
+  </table>
+
+  <div class="partners">
+    <div class="lab">PARTENAIRES DE LA CAMPAGNE</div>
+    <div class="logos">
+      <span>Gavi</span><span>CDC</span><span>Gates Foundation</span><span>Rotary</span><span>OMS</span><span>UNICEF</span><span>AFENET</span><span>VillageReach</span><span>PATH</span>
+    </div>
+  </div>
+  <div class="pageno">Page 1/3</div>
+</div>
+
+<!-- ============ PAGE 2 ============ -->
+<div class="page">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="flag"><img src="https://raw.githubusercontent.com/MBOMBOmamu1993/pev-assets/main/PEV_RD_Congo_TRANSPARENT.png" alt=""></div>
+      <div class="ttl"><h1>RÉPUBLIQUE DÉMOCRATIQUE DU CONGO — MINISTÈRE DE LA SANTÉ PUBLIQUE, HYGIÈNE ET PRÉVOYANCE SOCIALE</h1></div>
+      <div class="pev">PEV</div>
+    </div>
+    <div class="hdr-sub">Programme Élargi de Vaccination — Antenne PEV de Luiza — Province du Kasaï Central</div>
+    <div class="hdr-band">SITREP N°02 — CAMPAGNE JNV POLIO MAI 2026 | J-2 — 20 Mai 2026</div>
+  </div>
+
+  <div class="sec">IV. ÉTAT D'AVANCEMENT PAR COMMISSION</div>
+  <table class="cm">
+    <tr><th style="width:120px">Commission</th><th>Réalisations clés</th><th>Prochaines étapes</th></tr>
+    <tr><td class="k">Coordination &amp; Planification</td>
+      <td>5 réunions de coordination tenues au niveau de l'antenne. 2 réunions en moyenne dans 5 ZS (1 réunion dans la ZS Luiza). 6/6 ZS ont renseigné le Dashboard. Coordination transfrontalière maintenue avec l'Angola.</td>
+      <td>Tenir la réunion CLC dans la ZS Luiza ; poursuivre la coordination transfrontalière ; finaliser le lancement (Luambo 21/05, antenne 22/05).</td></tr>
+    <tr class="tech"><td class="k">Technique</td>
+      <td>Recrutement et briefing des acteurs dans les 6/6 ZS ; croquis des aires de vaccination en cours ; réception des bases de données dans les 6/6 ZS.</td>
+      <td>Finaliser les croquis ; partager les listes de prestataires à l'antenne PEV ; maintenir le coaching des équipes.</td></tr>
+    <tr><td class="k">Logistique</td>
+      <td>Vaccins et intrants arrivés au niveau de la province le 20/05/2026 ; inventaires MDCF et recyclage des accumulateurs de froid actualisés dans les 6 ZS.</td>
+      <td>Déployer les vaccins et intrants vers les 6 ZS et les sites de vaccination ; sécuriser la chaîne de froid.</td></tr>
+    <tr><td class="k">Communication</td>
+      <td>Plan de communication actualisé ; plaidoyer réalisé ; émissions radio dans les ZS Luiza et Masuika.</td>
+      <td>Remonter les chronogrammes ; réaliser le pré-marquage et l'identification des enfants en conflit vaccinal.</td></tr>
+    <tr><td class="k">Finances</td>
+      <td>Fonds de mise en œuvre non disponibles.</td>
+      <td>Accélérer la mobilisation et le décaissement des fonds auprès des partenaires.</td></tr>
+  </table>
+
+  <div class="sec alt">V. FINANCEMENT (situation au 20 mai 2026)</div>
+  <table class="fin">
+    <tr><th style="width:33%">Situation</th><th style="width:30%">État</th><th>Action prioritaire</th></tr>
+    <tr><td><b>Fonds de mise en œuvre</b></td><td>Non disponibles à la date du SITREP.</td><td>Accélérer la mobilisation et le décaissement avant le lancement (21–22 mai 2026).</td></tr>
+  </table>
+
+  <div class="sec alt">VI. DIFFICULTÉS ET ACTIONS PRISES</div>
+  <div class="diff">
+    <div>
+      <div class="h hd">Difficultés rencontrées</div>
+      <ul>
+        <li>Vaccins et intrants arrivés au niveau provincial mais non encore déployés dans les 6 ZS</li>
+        <li>ZS Luiza sans réunion CLC à la date du SITREP</li>
+        <li>Croquis des aires de vaccination non finalisés</li>
+        <li>Listes de prestataires non encore partagées à l'antenne PEV</li>
+        <li>Fonds de mise en œuvre non disponibles</li>
+      </ul>
+    </div>
+    <div>
+      <div class="h ha">Actions prises</div>
+      <ul>
+        <li>Organiser le déploiement immédiat des vaccins et intrants vers les ZS et les sites</li>
+        <li>Programmer et tenir la réunion CLC dans la ZS Luiza</li>
+        <li>Accélérer la finalisation des croquis des aires de vaccination</li>
+        <li>Relancer le partage des listes de prestataires à l'antenne PEV</li>
+        <li>Accélérer la mobilisation des fonds</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec alt">VII. PERSPECTIVES — PRIORITÉS AVANT LE LANCEMENT (22 MAI 2026)</div>
+  <div class="persp">
+    <div class="p"><h6>FINANCEMENT</h6>Accélérer la mise à disposition des fonds de mise en œuvre.</div>
+    <div class="p"><h6>LOGISTIQUE</h6>Déployer les vaccins et intrants vers les 6 ZS et les sites de vaccination.</div>
+    <div class="p"><h6>TECHNIQUE</h6>Finaliser les croquis, partager les listes de prestataires et poursuivre le briefing.</div>
+    <div class="p"><h6>LANCEMENT</h6>Lancement anticipé ZS Luambo le 21/05 ; lancement officiel de l'antenne le jeudi 22/05/2026 ; pré-marquage et identification des enfants.</div>
+  </div>
+
+  <div class="partners">
+    <div class="lab">PARTENAIRES DE LA CAMPAGNE</div>
+    <div class="logos">
+      <span>Gavi</span><span>CDC</span><span>Gates Foundation</span><span>Rotary</span><span>OMS</span><span>UNICEF</span><span>AFENET</span><span>VillageReach</span><span>PATH</span>
+    </div>
+  </div>
+  <div class="pageno">Page 2/3</div>
+</div>
+
+<!-- ============ PAGE 3 ============ -->
+<div class="page">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="flag"><img src="https://raw.githubusercontent.com/MBOMBOmamu1993/pev-assets/main/PEV_RD_Congo_TRANSPARENT.png" alt=""></div>
+      <div class="ttl"><h1>RÉPUBLIQUE DÉMOCRATIQUE DU CONGO — MINISTÈRE DE LA SANTÉ PUBLIQUE, HYGIÈNE ET PRÉVOYANCE SOCIALE</h1></div>
+      <div class="pev">PEV</div>
+    </div>
+    <div class="hdr-sub">Programme Élargi de Vaccination — Antenne PEV de Luiza — Province du Kasaï Central</div>
+    <div class="hdr-band">SITREP N°02 — CAMPAGNE JNV POLIO MAI 2026 | J-2 — 20 Mai 2026</div>
+  </div>
+
+  <div class="sec">VIII. SYNTHÈSE OSP PAR ZONE DE SANTÉ (au 20 mai 2026)</div>
+  <table class="osptab">
+    <tr><th>Zone de Santé</th><th>Technique</th><th>Logistique</th><th>Communication</th><th>OSP global</th></tr>
+    <tr><td class="nm">Masuika</td><td>93%</td><td>59%</td><td>100%</td><td>84%</td></tr>
+    <tr><td class="nm">Luambo</td><td>84%</td><td>59%</td><td>83%</td><td>76%</td></tr>
+    <tr><td class="nm">Yangala</td><td>73%</td><td>55%</td><td>100%</td><td>76%</td></tr>
+    <tr><td class="nm">Luiza</td><td>86%</td><td>57%</td><td>83%</td><td>75%</td></tr>
+    <tr><td class="nm">Tshibala</td><td>100%</td><td>0%</td><td>100%</td><td>67%</td></tr>
+    <tr><td class="nm">Kalomba</td><td>90%</td><td>25%</td><td>59%</td><td>58%</td></tr>
+    <tr class="tot"><td class="nm">ANTENNE LUIZA</td><td>88%</td><td>43%</td><td>88%</td><td>73%</td></tr>
+  </table>
+  <div class="legbox">Source : Outil de suivi des préparatifs des AS — JNV Mai 2026 (Kasaï Central, antenne Luiza). La logistique reste le domaine le plus faible (vaccins et intrants en cours de déploiement depuis le niveau provincial).</div>
+
+  <div class="sec">IX. CARTOGRAPHIE DE L'ANTENNE</div>
+  <div style="text-align:center">
+    <img src="carte_luiza_antenne.png" alt="Carte Antenne PEV Luiza" style="width:74%;border:1px solid #cbd5e1;border-radius:4px">
+    <div class="legbox" style="text-align:center">Carte établie à partir du fond topojson officiel des Zones de Santé de la RDC — limites réelles des 6 ZS, ZS voisines, limite provinciale et frontière internationale RDC–Angola.</div>
+  </div>
+
+  <div class="sec">X. ÉQUIPE DE RÉDACTION</div>
+  <table class="team">
+    <tr><th>Nom</th><th>Fonction</th><th>Tél.</th><th>E-mail</th></tr>
+    <tr><td>Dr Judith KANGOJI MISENGA</td><td>MCA a.i.</td><td>+243 999 091 207</td><td>judithmisenga@yahoo.fr</td></tr>
+    <tr><td>Bernard UPUTU MUKALENGI</td><td>Logisticien Antenne PEV</td><td>+243 977 328 547</td><td>mukalengiuputu@gmail.com</td></tr>
+    <tr><td>Clément KAKUTA</td><td>DATA Manager Antenne PEV</td><td>+243 970 522 546</td><td>clementkakuta@gmail.com</td></tr>
+    <tr><td>Dr Felly LOFOLI</td><td>Consultant Épidémiologiste OMS</td><td>+243 813 662 142</td><td>lofolif@who.int</td></tr>
+    <tr><td>Raymond RAMAZANI</td><td>Consultant VM UNICEF</td><td>+243 813 233 209</td><td>motokaleraymond@gmail.com</td></tr>
+  </table>
+
+  <div class="partners">
+    <div class="lab">PARTENAIRES DE LA CAMPAGNE</div>
+    <div class="logos">
+      <span>Gavi</span><span>CDC</span><span>Gates Foundation</span><span>Rotary</span><span>OMS</span><span>UNICEF</span><span>AFENET</span><span>VillageReach</span><span>PATH</span>
+    </div>
+  </div>
+  <div class="pageno">Page 3/3</div>
+</div>
+
+</body>
+</html>
