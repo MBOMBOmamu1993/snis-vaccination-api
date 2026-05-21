@@ -1411,7 +1411,9 @@ def main() -> int:
         print(f"Missing/invalid docs/config/rename_map.json at {zoho_rename_path}", file=sys.stderr)
         return 2
 
-    dx_expected = [x.strip() for x in DX_LIST.split(";") if x.strip()]
+    # dédupliquer en conservant l'ordre : un même dx.coc présent 2x dans DX_LIST
+    # serait sinon requêté dans 2 chunks puis additionné par pivot_records (valeur doublée)
+    dx_expected = list(dict.fromkeys(x.strip() for x in DX_LIST.split(";") if x.strip()))
     client = Dhis2Client(base_url=base_url, username=username, password=password)
 
     end = args.end or current_yyyymm()
