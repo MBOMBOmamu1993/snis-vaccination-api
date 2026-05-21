@@ -1038,17 +1038,28 @@
         };
 
         /* ═══ HELPERS ═══ */
-        async function fetchGzip(url, _attempt) {
+        /* Version des données = meta.generated_at. Sert à invalider le cache HTTP :
+           on suffixe ?v=<version> aux fichiers de données → quand une correction
+           régénère les agrégats, l'URL change et le navigateur récupère la version
+           fraîche (sinon GitHub Pages sert l'ancien fichier en cache ~10 min). */
+        var DATA_VER = '';
+        async function fetchGzip(url, _attempt, forceFresh) {
             _attempt = _attempt || 1;
             var maxAttempts = 3;
-            var fetchUrl = _attempt > 1 ? (url + (url.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now()) : url;
-            var fetchOpts = _attempt > 1 ? { cache: 'no-store' } : {};
+            var bust = forceFresh || _attempt > 1;
+            var fetchUrl = url;
+            if (bust) {
+                fetchUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now();
+            } else if (DATA_VER && url.indexOf('v=') === -1) {
+                fetchUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'v=' + encodeURIComponent(DATA_VER);
+            }
+            var fetchOpts = bust ? { cache: 'no-store' } : {};
             try {
                 var response = await fetch(fetchUrl, fetchOpts);
                 if (!response.ok) {
                     if (url.indexOf('.gz') !== -1) {
                         console.warn('Gzip non trouvé, tentative version non-compressée:', url);
-                        return await fetchGzip(url.replace('.gz', ''));
+                        return await fetchGzip(url.replace('.gz', ''), 1, forceFresh);
                     }
                     throw new Error('Erreur HTTP ' + response.status + ' sur ' + url);
                 }
@@ -1066,7 +1077,7 @@
                 if (retriable && _attempt < maxAttempts) {
                     console.warn('fetchGzip retry ' + (_attempt + 1) + '/' + maxAttempts + ' (' + url + '): ' + msg);
                     await new Promise(function (r) { setTimeout(r, 400 * _attempt); });
-                    return await fetchGzip(url, _attempt + 1);
+                    return await fetchGzip(url, _attempt + 1, forceFresh);
                 }
                 console.error('Erreur fetchGzip (' + url + '):', e);
                 throw e;
@@ -1190,8 +1201,14 @@
         async function loadAll() {
             var t0 = Date.now(); sp(10, 'Chargement...', '⏳ Chargement...');
             try {
-                var [mR, pR, zR, hmR, fosaR, asR, asLogIdx] = await Promise.all([
-                    fetchGzip(BASE + '/meta.json'),
+                /* meta.json chargé en premier et SANS cache (forceFresh) : il porte la
+                   version (generated_at) qui sert ensuite à invalider le cache des
+                   fichiers de données via ?v=. */
+                var mR = await fetchGzip(BASE + '/meta.json', 1, true);
+                S.meta = mR;
+                DATA_VER = (mR && mR.generated_at) || '';
+                _idbPurgeOld(mR && mR.generated_at); /* Supprime les caches de versions antérieures */
+                var [pR, zR, hmR, fosaR, asR, asLogIdx] = await Promise.all([
                     fetchGzip(BASE + '/by_province.json.gz'),
                     fetchGzip(BASE + '/by_zs.json.gz'),
                     fetchGzip(BASE + '/heatmap/manifest.json.gz').catch(function () { return {}; }),
@@ -1200,8 +1217,6 @@
                     fetchGzip('./data_as/dashboard/by_as/manifest.json.gz').catch(function () { return {}; })
                 ]);
                                 sp(40, 'Parsing...');
-                S.meta = mR;
-                _idbPurgeOld(mR && mR.generated_at); /* Supprime les caches de versions antérieures */
                 var byZS = zR;
 
                 S.hmIndex = hmR;
