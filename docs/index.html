@@ -1135,7 +1135,13 @@
             if (mo <= 0) { mo += 12; yr -= 1; }
             var ym = '' + yr + (mo < 10 ? '0' : '') + mo;
             if (months.indexOf(ym) >= 0) return [ym];
-            return [months[months.length - 1]];
+            /* Mois cible absent : prendre le mois disponible le plus récent
+               qui ne dépasse pas la fenêtre (jamais le mois en cours, vide). */
+            var sorted = months.slice().sort();
+            for (var i = sorted.length - 1; i >= 0; i--) {
+                if (sorted[i] <= ym) return [sorted[i]];
+            }
+            return [sorted[0]];
         }
         function _getChartCutoff() {
             var now = new Date(), day = now.getDate(), yr = now.getFullYear(), mo = now.getMonth() + 1;
