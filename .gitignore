@@ -2,3 +2,13 @@ __pycache__/
 *.pyc
 .env
 .aider*
+
+# Next.js / Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Données publiées générées au build depuis docs/data (source de vérité)
+/public/data/

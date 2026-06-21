@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "node scripts/prepare-data.mjs && next build",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
+}
