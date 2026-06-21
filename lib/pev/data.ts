@@ -10,8 +10,8 @@ import type { AggRecord, Meta } from "./types";
    province et période, des milliers d'enregistrements sans planter le serveur. */
 const BASE = "/data/dashboard";
 
-async function gunzipJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { cache: "force-cache" });
+async function gunzipJson<T>(url: string, opts?: RequestInit): Promise<T> {
+  const res = await fetch(url, opts);
   if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
   // Fichiers .json simples (meta) : pas de décompression.
   if (url.endsWith(".json")) return (await res.json()) as T;
@@ -21,14 +21,18 @@ async function gunzipJson<T>(url: string): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-/* Cache module : chaque fichier n'est téléchargé / décompressé qu'une fois. */
+/* Cache module : chaque fichier n'est téléchargé / décompressé qu'une fois PAR
+   SESSION. Le navigateur revalide auprès de Vercel à chaque nouvelle visite, si
+   bien qu'un nouveau déploiement quotidien (données DHIS2 rafraîchies) est servi
+   automatiquement — le dashboard n'est jamais figé. */
 const cache = new Map<string, Promise<unknown>>();
 function once<T>(key: string, loader: () => Promise<T>): Promise<T> {
   if (!cache.has(key)) cache.set(key, loader());
   return cache.get(key) as Promise<T>;
 }
 
-export const loadMeta = () => once<Meta>("meta", () => gunzipJson<Meta>(`${BASE}/meta.json`));
+// meta.json (léger) : toujours rechargé (no-store) → détecte la dernière synchro.
+export const loadMeta = () => gunzipJson<Meta>(`${BASE}/meta.json`, { cache: "no-store" });
 export const loadProvince = () => once<AggRecord[]>("prov", () => gunzipJson<AggRecord[]>(`${BASE}/by_province.json.gz`));
 /** by_zs.json.gz : niveau Zone de santé + Antenne (chargé à la demande, mis en
  *  cache) — utilisé pour la cascade Antenne/ZS et les vues par ZS. */
