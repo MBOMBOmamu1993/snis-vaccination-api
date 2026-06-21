@@ -42,6 +42,19 @@ export function aggregate(records: AggRecord[]): AggSummary {
 
 export const dropout = (a: number, b: number): number => (a > 0 ? ((a - b) / a) * 100 : 0);
 
+/** Somme d'un champ arbitraire sur un jeu d'enregistrements (séances, logistique…). */
+export const sumField = (records: AggRecord[], field: string): number => records.reduce((s, r) => s + num(r[field]), 0);
+
+/** Nombre d'entités distinctes (AS/ZS/FOSA/province) ayant field > 0. */
+export function countEntitiesWith(records: AggRecord[], field: string): number {
+  const m = new Map<string, number>();
+  for (const r of records) {
+    const k = String(r._AS ?? r._ZS ?? r._Province ?? "—");
+    m.set(k, (m.get(k) ?? 0) + num(r[field]));
+  }
+  return Array.from(m.values()).filter((v) => v > 0).length;
+}
+
 /** Regroupe par clé (province / ZS / antenne / mois) et agrège. */
 export function groupBy(records: AggRecord[], key: keyof AggRecord): { name: string; agg: AggSummary; records: AggRecord[] }[] {
   const map = new Map<string, AggRecord[]>();

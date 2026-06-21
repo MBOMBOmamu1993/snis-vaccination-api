@@ -2,8 +2,8 @@
 
 import JSZip from "jszip";
 import type { AggRecord } from "./types";
-import { aggregate, dropout, cleanName, ymLabel } from "./calc";
-import { num } from "./data";
+import { aggregate, dropout, cleanName, ymLabel, sumField, countEntitiesWith } from "./calc";
+import { SEANCES } from "./data";
 
 const TEMPLATE_URL = "/canevas/canevas_revue_formative_pev.pptx";
 const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
@@ -41,23 +41,18 @@ export function computeRevueData(base: AggRecord[], filters: { province: string;
   const periodLabel = curMonths.length ? `${ymLabel(curMonths[0])} – ${ymLabel(curMonths[curMonths.length - 1])}` : "Toutes périodes";
   const prevPeriodLabel = prevMonths.length ? `${ymLabel(prevMonths[0])} – ${ymLabel(prevMonths[prevMonths.length - 1])}` : "—";
 
-  // Proxy stratégie avancée/mobile : entités (CS/ZS) avec doses hors stratégie fixe.
-  const countAvm = (recs: AggRecord[]) => {
-    const byEnt = new Map<string, number>();
-    for (const r of recs) {
-      const k = String(r._AS ?? r._ZS ?? r._Province);
-      const avm = num(r["DTC1_0_11"]) - num(r["DTC1_0_11_fixe"]);
-      byEnt.set(k, (byEnt.get(k) ?? 0) + avm);
-    }
-    return Array.from(byEnt.values()).filter((v) => v > 0).length;
-  };
+  // Séances prévues/réalisées par stratégie — données DHIS2 (champs seances_*).
+  const sf = SEANCES.find((s) => s.key === "fixe")!;
+  const sa = SEANCES.find((s) => s.key === "avancee")!;
+  const sm = SEANCES.find((s) => s.key === "mobile")!;
+  const pr = (recs: AggRecord[], s: typeof sf) => `${Math.round(sumField(recs, s.prevu))} / ${Math.round(sumField(recs, s.real))}`;
 
   const slide10: RevueData["slide10"] = [
-    { label: "Nombre de CS avec stratégie avancées", prev: String(countAvm(prev) || "—"), cur: String(countAvm(cur) || "—") },
-    { label: "Nombre de CS avec stratégie mobile", prev: "—", cur: "—" },
-    { label: "Nombre des séances de vaccination en stratégie fixe (Prévue/réalisée)", prev: "—", cur: "—" },
-    { label: "Nombre des séances de vaccination en stratégie avancée (Prévue/réalisée)", prev: "—", cur: "—" },
-    { label: "Nombre des séances de vaccination en stratégie mobile (Prévue/réalisée)", prev: "—", cur: "—" },
+    { label: "Nombre de CS avec stratégie avancées", prev: String(countEntitiesWith(prev, sa.real) || "—"), cur: String(countEntitiesWith(cur, sa.real) || "—") },
+    { label: "Nombre de CS avec stratégie mobile", prev: String(countEntitiesWith(prev, sm.real) || "—"), cur: String(countEntitiesWith(cur, sm.real) || "—") },
+    { label: "Nombre des séances de vaccination en stratégie fixe (Prévue/réalisée)", prev: pr(prev, sf), cur: pr(cur, sf) },
+    { label: "Nombre des séances de vaccination en stratégie avancée (Prévue/réalisée)", prev: pr(prev, sa), cur: pr(cur, sa) },
+    { label: "Nombre des séances de vaccination en stratégie mobile (Prévue/réalisée)", prev: pr(prev, sm), cur: pr(cur, sm) },
   ];
 
   // Diapos 11 & 12 — regroupement par ZS (si province choisie) ou par province.

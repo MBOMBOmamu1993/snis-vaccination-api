@@ -2,14 +2,14 @@
 
 import type { EChartsCoreOption } from "echarts/core";
 import EChart from "@/components/charts/EChart";
-import { Card, CardHeader, SectionBar } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { fmtPct, fmtNum } from "@/lib/client/format";
-import { TRACERS, num } from "@/lib/pev/data";
+import { LOGI_VACCINS, LOGI_FIELDS } from "@/lib/pev/data";
 import { usePevData } from "@/lib/pev/useData";
-import { cleanName } from "@/lib/pev/calc";
+import { sumField } from "@/lib/pev/calc";
 import { ScopeNote, Loading } from "./_shared";
 
 export function LogistiqueStrategie() {
@@ -17,55 +17,78 @@ export function LogistiqueStrategie() {
   if (loading) return <Loading />;
   if (!records.length) return <EmptyState message="Aucune donnée pour la sélection." />;
 
-  // Stratégie fixe vs avancée+mobile : par antigène, doses _fixe et doses totales.
-  const ags = TRACERS;
-  const fixe: number[] = [], avm: number[] = [];
-  let totFixe = 0, totAll = 0;
-  for (const a of ags) {
-    let tf = 0, tt = 0;
-    for (const r of records) { tf += num(r[`${a.field}_fixe`]); tt += num(r[a.field]); }
-    fixe.push(tf); avm.push(Math.max(0, tt - tf)); totFixe += tf; totAll += tt;
-  }
-  const fixePct = totAll ? (totFixe / totAll) * 100 : 0;
+  // Mouvements de stock par vaccin (DHIS2 — logistique).
+  const data = LOGI_VACCINS.map((v) => {
+    const recues = sumField(records, `${v.prefix}_${LOGI_FIELDS.recues}`);
+    const utilisees = sumField(records, `${v.prefix}_${LOGI_FIELDS.utilisees}`);
+    const pertes = sumField(records, `${v.prefix}_${LOGI_FIELDS.pertes}`);
+    const stockFin = sumField(records, `${v.prefix}_${LOGI_FIELDS.stockFin}`);
+    const joursRupture = sumField(records, `${v.prefix}_${LOGI_FIELDS.joursRupture}`);
+    const tauxPerte = utilisees + pertes ? (pertes / (utilisees + pertes)) * 100 : 0;
+    return { ...v, recues, utilisees, pertes, stockFin, joursRupture, tauxPerte: +tauxPerte.toFixed(1) };
+  });
 
-  const stack: EChartsCoreOption = {
+  const totUtil = data.reduce((s, d) => s + d.utilisees, 0);
+  const totPertes = data.reduce((s, d) => s + d.pertes, 0);
+  const totRupture = data.reduce((s, d) => s + d.joursRupture, 0);
+  const tauxPerteGlobal = totUtil + totPertes ? (totPertes / (totUtil + totPertes)) * 100 : 0;
+
+  const barPerte: EChartsCoreOption = {
+    tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: (v: number) => `${v}%` },
+    grid: { left: 8, right: 24, top: 16, bottom: 8, containLabel: true },
+    xAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
+    yAxis: { type: "category", data: data.map((d) => d.label) },
+    series: [{
+      type: "bar", data: data.map((d) => d.tauxPerte),
+      itemStyle: { color: "#0d9488", borderRadius: [0, 3, 3, 0] },
+      markLine: { silent: true, symbol: "none", lineStyle: { color: "#c81e1e", type: "dashed" }, data: [{ xAxis: 5, name: "Seuil 5%" }], label: { formatter: "Seuil 5%", fontSize: 9 } },
+    }],
+  };
+
+  const barMouv: EChartsCoreOption = {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: { top: 2, data: ["Stratégie fixe", "Avancée + mobile"], textStyle: { fontSize: 11 } },
+    legend: { top: 2, data: ["Reçues", "Utilisées", "Pertes"], textStyle: { fontSize: 11 } },
     grid: { left: 8, right: 16, top: 34, bottom: 8, containLabel: true },
-    xAxis: { type: "category", data: ags.map((a) => a.label), axisLabel: { rotate: 45, fontSize: 9 } },
+    xAxis: { type: "category", data: data.map((d) => d.label), axisLabel: { fontSize: 10 } },
     yAxis: { type: "value", axisLabel: { formatter: (v: number) => fmtNum(v) } },
     series: [
-      { name: "Stratégie fixe", type: "bar", stack: "s", data: fixe, itemStyle: { color: "#00205c" } },
-      { name: "Avancée + mobile", type: "bar", stack: "s", data: avm, itemStyle: { color: "#0093d5" } },
+      { name: "Reçues", type: "bar", data: data.map((d) => d.recues), itemStyle: { color: "#0093d5" } },
+      { name: "Utilisées", type: "bar", data: data.map((d) => d.utilisees), itemStyle: { color: "#00205c" } },
+      { name: "Pertes", type: "bar", data: data.map((d) => d.pertes), itemStyle: { color: "#f59e0b" } },
     ],
   };
 
-  const cols = ["Antigène", "Doses fixe", "Doses avancée + mobile", "Total", "% fixe"];
-  const rows = ags.map((a, i) => ({
-    "Antigène": a.label, "Doses fixe": fixe[i], "Doses avancée + mobile": avm[i],
-    "Total": fixe[i] + avm[i], "% fixe": +((fixe[i] + avm[i]) ? (fixe[i] / (fixe[i] + avm[i])) * 100 : 0).toFixed(1),
+  const cols = ["Vaccin", "Reçues", "Utilisées", "Pertes", "Taux de perte %", "Stock fin", "Jours de rupture"];
+  const rows = data.map((d) => ({
+    "Vaccin": d.label, "Reçues": d.recues, "Utilisées": d.utilisees, "Pertes": d.pertes,
+    "Taux de perte %": d.tauxPerte, "Stock fin": d.stockFin, "Jours de rupture": d.joursRupture,
   }));
 
   return (
     <div className="space-y-4">
       <ScopeNote />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <KpiCard label="Part stratégie fixe" value={fmtPct(fixePct, 1)} tone="teal" icon="hospital" />
-        <KpiCard label="Doses en stratégie fixe" value={fmtNum(totFixe)} tone="navy" icon="syringe" />
-        <KpiCard label="Doses avancée + mobile" value={fmtNum(totAll - totFixe)} tone="brand" icon="truck" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KpiCard label="Taux de perte global" value={fmtPct(tauxPerteGlobal, 1)} tone={tauxPerteGlobal <= 5 ? "good" : tauxPerteGlobal <= 10 ? "warn" : "bad"} icon="alert" />
+        <KpiCard label="Doses utilisées" value={fmtNum(totUtil)} tone="navy" icon="syringe" />
+        <KpiCard label="Doses perdues" value={fmtNum(totPertes)} tone="warn" icon="down" />
+        <KpiCard label="Jours de rupture (cumulés)" value={fmtNum(totRupture)} tone={totRupture === 0 ? "good" : "bad"} icon="calendar" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Taux de perte par vaccin" subtitle="Pertes / (utilisées + pertes) — seuil OMS 5 % (DHIS2)" icon="bars" iconTone="teal" />
+          <EChart option={barPerte} height={320} exportTitle="Taux_perte_vaccin"
+            exportData={{ columns: ["Vaccin", "Taux de perte %"], rows: data.map((d) => [d.label, d.tauxPerte]) }} />
+        </Card>
+        <Card>
+          <CardHeader title="Mouvements de stock par vaccin" subtitle="Reçues · utilisées · pertes (DHIS2)" icon="truck" iconTone="blue" />
+          <EChart option={barMouv} height={320} exportTitle="Mouvements_stock"
+            exportData={{ columns: cols.slice(0, 4), rows: data.map((d) => [d.label, d.recues, d.utilisees, d.pertes]) }} />
+        </Card>
       </div>
       <Card>
-        <CardHeader title="Stratégie de vaccination par antigène" subtitle="Répartition fixe vs avancée + mobile (DHIS2)" icon="truck" iconTone="teal" />
-        <EChart option={stack} height={360} exportTitle="Strategie_vaccination"
-          exportData={{ columns: ["Antigène", "Fixe", "Avancée + mobile"], rows: ags.map((a, i) => [a.label, fixe[i], avm[i]]) }} />
+        <CardHeader title="Gestion des intrants vaccinaux" subtitle="Détail par vaccin (DHIS2)" icon="table" iconTone="teal" />
+        <DataTable columns={cols} rows={rows} maxRows={50} exportFilename="logistique_intrants" />
       </Card>
-      <Card>
-        <CardHeader title="Détail par antigène" icon="table" iconTone="teal" />
-        <DataTable columns={cols} rows={rows} maxRows={50} exportFilename="strategie_vaccination" />
-      </Card>
-      <SectionBar icon="alert">
-        Le suivi détaillé des stocks d'intrants (réceptions, utilisations, pertes, ruptures) provient du module logistique DHIS2 et sera affiché ici dès son intégration au pipeline de backfill.
-      </SectionBar>
     </div>
   );
 }

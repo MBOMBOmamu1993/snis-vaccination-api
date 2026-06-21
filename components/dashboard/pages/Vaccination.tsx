@@ -7,9 +7,9 @@ import { KpiCard } from "@/components/ui/KpiCard";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { fmtNum, fmtPct } from "@/lib/client/format";
-import { TRACERS } from "@/lib/pev/data";
+import { TRACERS, SEANCES } from "@/lib/pev/data";
 import { usePevData } from "@/lib/pev/useData";
-import { aggregate, groupBy, dropout, cleanName, ymLabel } from "@/lib/pev/calc";
+import { aggregate, groupBy, dropout, cleanName, ymLabel, sumField } from "@/lib/pev/calc";
 import { ScopeNote, Loading } from "./_shared";
 
 export function VaccinationAntigenes() {
@@ -102,6 +102,80 @@ export function VaccinationAbandon() {
       <Card>
         <CardHeader title="Détail des taux d'abandon" icon="table" iconTone="navy" />
         <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="taux_abandon" />
+      </Card>
+    </div>
+  );
+}
+
+export function VaccinationSeances() {
+  const { records, groupKey, level, loading } = usePevData();
+  if (loading) return <Loading />;
+  if (!records.length) return <EmptyState message="Aucune donnée pour la sélection." />;
+
+  // Séances prévues / réalisées par stratégie (DHIS2).
+  const prevu = SEANCES.map((s) => sumField(records, s.prevu));
+  const real = SEANCES.map((s) => sumField(records, s.real));
+  const totPrevu = prevu.reduce((a, b) => a + b, 0);
+  const totReal = real.reduce((a, b) => a + b, 0);
+  const tauxReal = totPrevu ? (totReal / totPrevu) * 100 : 0;
+
+  const bar: EChartsCoreOption = {
+    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    legend: { top: 2, data: ["Séances prévues", "Séances réalisées"], textStyle: { fontSize: 11 } },
+    grid: { left: 8, right: 16, top: 34, bottom: 8, containLabel: true },
+    xAxis: { type: "category", data: SEANCES.map((s) => s.label), axisLabel: { fontSize: 11 } },
+    yAxis: { type: "value", axisLabel: { formatter: (v: number) => fmtNum(v) } },
+    series: [
+      { name: "Séances prévues", type: "bar", data: prevu, itemStyle: { color: "#94a3b8", borderRadius: [3, 3, 0, 0] } },
+      { name: "Séances réalisées", type: "bar", data: real, itemStyle: { color: "#0093d5", borderRadius: [3, 3, 0, 0] } },
+    ],
+  };
+
+  // Proportion (%) des séances réalisées par rapport aux prévues, par stratégie.
+  const tauxParStrat = SEANCES.map((_, i) => +(prevu[i] ? (real[i] / prevu[i]) * 100 : 0).toFixed(1));
+  const donut: EChartsCoreOption = {
+    tooltip: { trigger: "item", formatter: "{b} : {c} ({d}%)" },
+    legend: { bottom: 0, textStyle: { fontSize: 11 } },
+    series: [{
+      type: "pie", radius: ["45%", "70%"], center: ["50%", "45%"],
+      label: { formatter: "{b}\n{d}%", fontSize: 10 },
+      data: SEANCES.map((s, i) => ({ name: `Séances ${s.label.toLowerCase()}`, value: real[i] })),
+      color: ["#00205c", "#0093d5", "#7c3aed"],
+    }],
+  };
+
+  const groups = groupBy(records, groupKey);
+  const cols = ["Entité", "Prévues", "Réalisées", "% réalisation"];
+  const rows = groups.map((g) => {
+    const p = SEANCES.reduce((s, x) => s + sumField(g.records, x.prevu), 0);
+    const r = SEANCES.reduce((s, x) => s + sumField(g.records, x.real), 0);
+    return { "Entité": cleanName(g.name), "Prévues": p, "Réalisées": r, "% réalisation": +(p ? (r / p) * 100 : 0).toFixed(1) };
+  });
+
+  return (
+    <div className="space-y-4">
+      <ScopeNote />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KpiCard label="Séances prévues" value={fmtNum(totPrevu)} tone="neutral" icon="calendar" />
+        <KpiCard label="Séances réalisées" value={fmtNum(totReal)} tone="brand" icon="check" />
+        <KpiCard label="% de réalisation" value={fmtPct(tauxReal, 1)} tone={tauxReal >= 80 ? "good" : tauxReal >= 50 ? "warn" : "bad"} icon="gauge" />
+        <KpiCard label="Part stratégie avancée + mobile" value={fmtPct(totReal ? ((real[1] + real[2]) / totReal) * 100 : 0, 1)} tone="violet" icon="route" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Séances de vaccination — prévues vs réalisées" subtitle="Par stratégie (DHIS2)" icon="bars" iconTone="navy" />
+          <EChart option={bar} height={320} exportTitle="Seances_prevues_realisees"
+            exportData={{ columns: ["Stratégie", "Prévues", "Réalisées", "% réalisation"], rows: SEANCES.map((s, i) => [s.label, prevu[i], real[i], tauxParStrat[i]]) }} />
+        </Card>
+        <Card>
+          <CardHeader title="Répartition des séances réalisées" subtitle="Proportion par stratégie (DHIS2)" icon="chart" iconTone="violet" />
+          <EChart option={donut} height={320} exportTitle="Repartition_seances"
+            exportData={{ columns: ["Stratégie", "Séances réalisées"], rows: SEANCES.map((s, i) => [s.label, real[i]]) }} />
+        </Card>
+      </div>
+      <Card>
+        <CardHeader title={`Séances par ${level === "province" ? "province" : "zone de santé"}`} icon="table" iconTone="navy" />
+        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="seances_vaccination" />
       </Card>
     </div>
   );

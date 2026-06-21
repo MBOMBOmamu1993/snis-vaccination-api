@@ -47,7 +47,7 @@ export function TelechargerCanevas() {
             <ul className="space-y-2 text-[13px] text-surface-700">
               {[
                 "Page de garde : province et période filtrées",
-                "Diapo 10 : résultats de processus (période n-1 / période courante)",
+                "Diapo 10 : séances de vaccination prévues/réalisées (fixe, avancée, mobile) — DHIS2, période n-1 / période courante",
                 "Diapo 11 : complétude, promptitude & doses (DTC3, VAR1) par zone de santé",
                 "Diapo 12 : taux d'abandon DTC1–DTC3 et BCG–VAR1 par zone de santé",
               ].map((t) => (
@@ -57,7 +57,7 @@ export function TelechargerCanevas() {
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-[11.5px] italic leading-snug text-surface-500">Le fichier conserve la mise en forme du canevas officiel et reste <b>entièrement éditable</b> dans PowerPoint. Les rubriques non disponibles dans DHIS2 (ex. séances prévues/réalisées) restent à compléter manuellement.</p>
+            <p className="mt-4 text-[11.5px] italic leading-snug text-surface-500">Le fichier conserve la mise en forme du canevas officiel et reste <b>entièrement éditable</b> dans PowerPoint. Toutes les valeurs proviennent du DHIS2 pour la période et le périmètre filtrés.</p>
           </div>
 
           <div className="flex flex-col items-center justify-center rounded-[14px] border border-surface-200 bg-white p-6 text-center">

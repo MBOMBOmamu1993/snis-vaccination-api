@@ -77,3 +77,30 @@ export const num = (v: string | number | undefined): number => {
   const n = typeof v === "number" ? v : v == null ? 0 : parseFloat(v);
   return Number.isFinite(n) ? n : 0;
 };
+
+/* ---- Séances de vaccination par stratégie (issues du DHIS2 — Séances
+   prévues/réalisées fixes/avancées/mobiles). Données déjà présentes dans
+   l'agrégat (champs seances_*). ---- */
+export interface SeanceDef { key: string; label: string; prevu: string; real: string; }
+export const SEANCES: SeanceDef[] = [
+  { key: "fixe", label: "Fixe", prevu: "seances_fixes_prevues", real: "seances_fixes_realisees" },
+  { key: "avancee", label: "Avancée", prevu: "seances_avancees_prevues", real: "seances_avancees_realisees" },
+  { key: "mobile", label: "Mobile", prevu: "seances_mobiles_prevues", real: "seances_mobiles_realisees" },
+];
+
+/* ---- Logistique des vaccins (DHIS2) : préfixe + suffixes de mouvement de stock. ---- */
+export interface VaccinLogi { prefix: string; label: string; }
+export const LOGI_VACCINS: VaccinLogi[] = [
+  { prefix: "BCG", label: "BCG" },
+  { prefix: "VPO", label: "VPO" },
+  { prefix: "VPI", label: "VPI" },
+  { prefix: "DTC", label: "DTC (Penta)" },
+  { prefix: "PCV13", label: "PCV13" },
+  { prefix: "ROTA", label: "ROTA" },
+  { prefix: "VAR", label: "VAR" },
+  { prefix: "VAA", label: "VAA" },
+];
+export const LOGI_FIELDS = {
+  recues: "re_ues", utilisees: "utilis_es", pertes: "pertes",
+  stockDebut: "stock_d_but", stockFin: "stock_fin", joursRupture: "jours_rupture", administrees: "administr_es",
+} as const;

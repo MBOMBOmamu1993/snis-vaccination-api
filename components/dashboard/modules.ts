@@ -20,15 +20,16 @@ export const MODULES: ModuleDef[] = [
     desc: "Doses administrées par antigène · Taux d'abandon (DTC1/DTC3, BCG/VAR) · Courbe de suivi mensuelle.",
     pages: [
       { id: "v_antigenes", label: "Vaccination par antigène", icon: "syringe" },
+      { id: "v_seances", label: "Séances de vaccination", icon: "calendar" },
       { id: "v_abandon", label: "Taux d'abandon", icon: "down" },
       { id: "v_courbe", label: "Courbe de suivi", icon: "chart" },
     ],
   },
   {
     key: "logistique", name: "Logistique", icon: "route", tone: "teal", live: true,
-    desc: "Suivi des intrants vaccinaux et de la stratégie de vaccination (fixe / avancée / mobile).",
+    desc: "Gestion des intrants vaccinaux (DHIS2) : reçues, utilisées, pertes, taux de perte et jours de rupture par vaccin.",
     pages: [
-      { id: "l_strategie", label: "Stratégie & disponibilité", icon: "truck" },
+      { id: "l_strategie", label: "Gestion des intrants", icon: "truck" },
     ],
   },
   {
