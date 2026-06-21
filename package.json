@@ -1,5 +1,5 @@
 {
-  "name": "dashboard-pev-routine",
+  "name": "snis-vaccination-dhis2",
   "version": "1.0.0",
   "private": true,
   "description": "Dashboard PEV de routine — RDC. Données DHIS2 (backfill), design OMS/PEV.",
