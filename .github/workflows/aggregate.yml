@@ -54,3 +54,18 @@ jobs:
             chmod +x scripts/safe_push.sh
             ./scripts/safe_push.sh main
           fi
+
+      # --- 5. Redéploiement Vercel (synchro quotidienne du dashboard) ---
+      # Déclenche un build de production Vercel APRÈS le rafraîchissement des
+      # données, pour que le dashboard affiche les nouvelles données DHIS2 chaque
+      # jour. Étape non bloquante : ignorée si le secret n'est pas défini.
+      - name: Trigger Vercel production deploy
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL non défini — redéploiement Vercel ignoré."
+            exit 0
+          fi
+          echo "Déclenchement du redéploiement Vercel…"
+          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL" && echo "Déploiement Vercel déclenché."
