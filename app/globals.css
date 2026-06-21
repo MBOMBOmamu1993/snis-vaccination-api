@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-surface-100 text-surface-900 font-sans antialiased;
+  }
+  .tabular-nums,
+  .kpi-value,
+  .kpi-sub,
+  .font-mono {
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-surface-200 p-4;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -18px rgba(15, 23, 42, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05), 0 22px 46px -22px rgba(0, 32, 92, 0.4);
+  }
+  .card-pad { padding: 14px 16px; }
+
+  /* Tableau dense fidèle au prototype. Classe `dtable` (et NON `grid`, qui
+     entrerait en collision avec l'utilitaire Tailwind .grid{display:grid} et
+     désalignerait les colonnes en-tête / corps). */
+  table.dtable { width: 100%; display: table; table-layout: auto; border-collapse: collapse; font-size: 11.5px; }
+  /* En-têtes de tableaux — bandeau navy/bleu, texte blanc */
+  table.dtable th {
+    padding: 8px 8px; background: linear-gradient(180deg, #0a3a86, #00205c);
+    font-weight: 700; color: #fff;
+    border: 1px solid #1b3f7a; font-size: 10.5px; line-height: 1.15; text-align: center; vertical-align: middle;
+    letter-spacing: .01em;
+  }
+  table.dtable td {
+    padding: 6px 8px; border: 1px solid #e8eef5; text-align: center; vertical-align: middle;
+    font-variant-numeric: tabular-nums; color: #1e293b;
+  }
+  /* 1re colonne (org unit / variable) — navy, texte blanc. */
+  table.dtable td.name, table.dtable th.name {
+    text-align: left; font-weight: 700; color: #fff;
+    background: linear-gradient(100deg, #0a3a86, #00205c);
+    border-color: #1b3f7a;
+  }
+  table.dtable tbody tr:nth-child(even) { background: #fafcff; }
+  /* le zébrage ne doit pas recouvrir la colonne navy */
+  table.dtable tbody tr:nth-child(even) td.name { background: linear-gradient(100deg, #0a3a86, #00205c); }
+
+  /* Variante OPT-IN « dtable-frozen » : 1re colonne FIGÉE à gauche, réservée aux
+     tableaux LARGES (triangulation, doses disponibles, couvertures par antigène,
+     détails mensuels…) afin de garder l'org unit visible au défilement horizontal.
+     Important — en border-collapse: collapse, les bordures fusionnées ne « suivent »
+     pas une cellule sticky, ce qui faisait apparaître EN DOUBLON la bordure grise de
+     la colonne de données voisine. Correctif : on neutralise la bordure droite de la
+     cellule figée (transparent → gagne le conflit de fusion et masque le gris) et on
+     dessine le séparateur via box-shadow INSET, qui lui suit la cellule au scroll. */
+  table.dtable-frozen td:first-child.name,
+  table.dtable-frozen th:first-child.name {
+    position: sticky; left: 0; z-index: 2;
+    border-right-color: transparent;
+    box-shadow: inset -1px 0 0 0 #1b3f7a;
+  }
+  /* l'en-tête de la colonne figée passe au-dessus des cellules du corps */
+  table.dtable-frozen thead th:first-child.name { z-index: 3; }
+  table.dtable tfoot td { background: #eef4fc; font-weight: 800; border-top: 2px solid #c5d2ea; }
+
+  .badge-appr {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px;
+    border-radius: 999px; font-size: 11px; font-weight: 800;
+  }
+  .card-header {
+    @apply flex flex-wrap items-start justify-between gap-3 pb-3 mb-3 border-b border-surface-100;
+  }
+  .card-title {
+    @apply text-[13px] font-semibold text-surface-900 leading-tight;
+  }
+  .card-subtitle {
+    @apply text-[11.5px] text-surface-700 leading-snug;
+  }
+
+  .kpi-label {
+    @apply text-[10px] uppercase tracking-[0.12em] text-surface-700 font-semibold;
+  }
+  .kpi-value {
+    @apply text-[24px] font-semibold text-surface-900 leading-none tabular-nums;
+  }
+  .kpi-sub {
+    @apply text-[11.5px] text-surface-700 tabular-nums;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10.5px] font-medium uppercase tracking-wider;
+  }
+  .chip-good { @apply chip bg-good-50 text-good-600; }
+  .chip-warn { @apply chip bg-warn-50 text-warn-600; }
+  .chip-bad { @apply chip bg-danger-50 text-danger-600; }
+  .chip-info { @apply chip bg-oms-50 text-oms-700; }
+
+  .table-default { @apply w-full text-[12px] border-collapse; }
+  .table-default th {
+    @apply text-center px-3 py-2.5 bg-surface-50 font-semibold text-surface-700 border-b border-surface-200 uppercase text-[10px] tracking-wider;
+  }
+  .table-default td {
+    @apply px-3 py-2 border-b border-surface-100 text-center text-surface-800 transition-colors tabular-nums;
+  }
+  .table-default tr:nth-child(even) td {
+    @apply bg-surface-50/40;
+  }
+  .table-default tr:hover td {
+    @apply bg-oms-50/50;
+  }
+  .table-default th:first-child,
+  .table-default td:first-child {
+    @apply text-center font-medium;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-1.5 px-3 h-8 text-[12px] rounded-md border border-surface-200 bg-white hover:bg-surface-50 text-surface-800 font-medium transition;
+  }
+  .btn-primary {
+    @apply btn bg-oms-600 border-oms-600 text-white hover:bg-oms-700;
+  }
+
+  .input {
+    @apply w-full text-[12px] rounded-md border border-surface-200 bg-white px-2.5 h-8 focus:outline-none focus:ring-2 focus:ring-oms-300 focus:border-oms-500;
+  }
+
+  /* Bandeau de section — dégradé bleu marine OMS (#00205c → #0a3a86) */
+  .section-bar {
+    @apply flex flex-wrap items-center gap-2 px-3.5 py-2 rounded-lg text-white text-[12.5px] font-bold uppercase tracking-wide mb-3;
+    background: linear-gradient(90deg, #00205c 0%, #0a3a86 100%);
+    box-shadow: 0 1px 2px rgba(0, 32, 92, 0.18);
+  }
+  .section-bar svg { width: 16px; height: 16px; }
+
+  /* ---- Aperçu rapports (design modèle Angola) ---- */
+  .rap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .rap-slide { aspect-ratio: 16/9; background: #DEE5EE; border: 1px solid #c3cfe0; border-radius: 8px; overflow: hidden; box-shadow: 0 6px 18px -10px rgba(0, 27, 77, .4); display: flex; flex-direction: column; }
+  .rap-band { background: linear-gradient(100deg, #001B4D, #002A72); color: #fff; display: flex; align-items: center; gap: 8px; padding: 8px 10px; position: relative; }
+  .rap-oms { height: 24px; width: auto; flex: none; }
+  .rap-band-txt { min-width: 0; flex: 1; }
+  .rap-title { font-size: 11px; font-weight: 800; line-height: 1.1; text-transform: uppercase; letter-spacing: .01em; }
+  .rap-sub { font-size: 8px; color: #bcd0ef; font-weight: 500; margin-top: 1px; line-height: 1.1; }
+  .rap-no { font-size: 9px; font-weight: 800; background: rgba(255, 255, 255, .15); border-radius: 5px; padding: 2px 6px; flex: none; }
+  .rap-body { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; }
+  .rap-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); gap: 8px; }
+  .rap-kpi { background: #fff; border-radius: 7px; padding: 7px 4px; text-align: center; box-shadow: 0 1px 3px rgba(0, 27, 77, .12); }
+  .rap-kpi-v { font-size: 15px; font-weight: 800; line-height: 1; }
+  .rap-kpi-l { font-size: 7.5px; color: #475569; font-weight: 600; margin-top: 3px; line-height: 1.05; }
+  .rap-bars { display: flex; align-items: flex-end; gap: 7px; height: 78px; padding: 0 4px; }
+  .rap-bar { flex: 1; border-radius: 3px 3px 0 0; min-height: 8px; }
+  .rap-donut { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; }
+  .rap-donut span { background: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #001B4D; }
+  .rap-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .rap-list { font-size: 9.5px; color: #1e293b; font-weight: 600; line-height: 1.7; }
+  .rap-cover { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .rap-cover-emb { background: #001B4D; color: #fff; font-weight: 800; font-size: 12px; letter-spacing: .05em; padding: 6px 18px; border-radius: 7px; }
+  .rap-cover-meta { font-size: 9px; color: #33415e; font-weight: 600; }
+}
