@@ -12,3 +12,6 @@ next-env.d.ts
 
 # Données publiées générées au build depuis docs/data (source de vérité)
 /public/data/
+
+# Build statique Vercel
+/dist/
