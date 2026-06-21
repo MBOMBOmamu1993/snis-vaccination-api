@@ -15,6 +15,7 @@ const FILES = [
   ["docs/index.html", "dist/index.html"],
   ["docs/oms-white.png", "dist/oms-white.png"],
   ["docs/pev-transparent.png", "dist/pev-transparent.png"],
+  ["docs/canevas_revue_formative_pev.pptx", "dist/canevas_revue_formative_pev.pptx"],
   ["docs/.nojekyll", "dist/.nojekyll"],
 ];
 

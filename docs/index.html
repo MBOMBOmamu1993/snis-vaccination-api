@@ -10,6 +10,8 @@
     <!-- Bibliothèques pour les exports PDF et PowerPoint -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
+    <!-- JSZip : remplissage du canevas PPTX existant (diapos 10–12) en conservant son design -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
@@ -1120,17 +1122,20 @@
             dispo: 80,
             satisf: 80
         };
+        /* 4 ONGLETS (demande utilisateur). Les pages réutilisent EXACTEMENT les
+           mêmes fonctions de rendu / analyses / filtres qu'avant — seule
+           l'organisation en onglets change. */
         var TABS = [
             {
                 id: 'oqd', lb: 'Contrôle qualité des données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques et données manquantes', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
-            { id: 'vacc', lb: 'Vaccination et Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'], pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }, { t: '6. Logistique', ic: '📦' }] },
-            { id: 'as', lb: 'Aire de Santé', fl: ['province', 'antenne', 'zs', 'as', 'period'], pp: [{ t: 'Vaccination AS', ic: '📍' }, { t: 'Logistique AS', ic: '📦' }] },
-            { id: 'zs', lb: 'Zone de Santé', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Vaccination ZS', ic: '🗺️' }, { t: 'Logistique ZS', ic: '📦' }] },
-            { id: 'ant', lb: 'Antenne PEV', fl: ['province', 'antenne', 'period'], pp: [{ t: 'Tableau de bord Antenne', ic: '📡' }] },
-            { id: 'nat', lb: 'National', fl: ['province', 'period'], pp: [{ t: 'Tableau de bord National', ic: '🇨🇩' }] },
-            { id: 'gen', lb: 'Aperçu général', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: 'Aperçu général', ic: '🎯' }] }
+            {
+                id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'],
+                pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }]
+            },
+            { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: 'Logistique', ic: '📦' }] },
+            { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] }
         ];
 
         /* ═══ STATE ═══ */
@@ -2193,6 +2198,133 @@
         }
         function chPg(d) { var tab = TABS[S.tab], np = S.pg + d; if (np >= 0 && np < tab.pp.length) { S.pg = np; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
 
+        /* ═══ TÉLÉCHARGEMENT — CANEVAS DE REVUE FORMATIVE (PPTX éditable) ═══
+           Remplit les diapos 10 à 12 du canevas officiel avec les données DHIS2
+           de la période / du périmètre filtrés, en conservant le design du modèle. */
+        var _PPTX_A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+        var _PPTX_P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+        function _cn(s) { return String(s || '').replace(/^[a-z]{2}\s+/i, '').replace(/\s+(Province|Zone de Sant[ée]|Aire de Sant[ée])$/i, '').trim(); }
+        function _escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function _descLocal(root, local) { var out = []; (function w(n) { for (var i = 0; i < n.children.length; i++) { var c = n.children[i]; if (c.localName === local) out.push(c); w(c); } })(root.documentElement || root); return out; }
+        function _setCell(doc, tc, text) {
+            var ps = _descLocal(tc, 'p'); if (!ps.length) return; var p = ps[0];
+            var rs = _descLocal(p, 'r'), r;
+            if (!rs.length) {
+                r = doc.createElementNS(_PPTX_A, 'a:r');
+                var rPr = doc.createElementNS(_PPTX_A, 'a:rPr'); rPr.setAttribute('lang', 'fr-FR'); rPr.setAttribute('sz', '1400');
+                var lt = doc.createElementNS(_PPTX_A, 'a:latin'); lt.setAttribute('typeface', 'Times New Roman'); rPr.appendChild(lt);
+                var t0 = doc.createElementNS(_PPTX_A, 'a:t'); r.appendChild(rPr); r.appendChild(t0);
+                var ep = _descLocal(p, 'endParaRPr'); if (ep.length) p.insertBefore(r, ep[0]); else p.appendChild(r);
+            } else r = rs[0];
+            var ts = _descLocal(r, 't'), t; if (!ts.length) { t = doc.createElementNS(_PPTX_A, 'a:t'); r.appendChild(t); } else t = ts[0];
+            t.textContent = text;
+        }
+        function _tableXml(head, rows) {
+            var W = 11277600, X = 457200, first = Math.round(W * 0.42), rest = Math.round((W - first) / Math.max(1, head.length - 1));
+            var grid = head.map(function (_, i) { return '<a:gridCol w="' + (i === 0 ? first : rest) + '"/>'; }).join('');
+            function cell(txt, bold, fill, col) {
+                return '<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="' + (bold ? 'ctr' : 'l') + '"/><a:r><a:rPr lang="fr-FR" sz="1100" b="' + (bold ? 1 : 0) + '"><a:solidFill><a:srgbClr val="' + col + '"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _escXml(txt) + '</a:t></a:r></a:p></a:txBody><a:tcPr marL="45720" marR="45720" marT="22860" marB="22860" anchor="ctr">' + (fill ? '<a:solidFill><a:srgbClr val="' + fill + '"/></a:solidFill>' : '') + '</a:tcPr></a:tc>';
+            }
+            var hr = '<a:tr h="370000">' + head.map(function (h) { return cell(h, true, '00205C', 'FFFFFF'); }).join('') + '</a:tr>';
+            var br = rows.map(function (r, ri) { return '<a:tr h="300000">' + r.map(function (c, ci) { return cell(String(c), false, ri % 2 ? 'EEF4FC' : 'FFFFFF', ci === 0 ? '0A3A86' : '1E293B'); }).join('') + '</a:tr>'; }).join('');
+            return '<p:graphicFrame xmlns:p="' + _PPTX_P + '" xmlns:a="' + _PPTX_A + '" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:nvGraphicFramePr><p:cNvPr id="900" name="TableDHIS2"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="' + X + '" y="2600000"/><a:ext cx="' + W + '" cy="' + (300000 * (rows.length + 1)) + '"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"><a:tableStyleId>{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}</a:tableStyleId></a:tblPr><a:tblGrid>' + grid + '</a:tblGrid>' + hr + br + '</a:tbl></a:graphicData></a:graphic></p:graphicFrame>';
+        }
+        function _appendTable(doc, head, rows) {
+            var st = _descLocal(doc, 'spTree'); if (!st.length) return;
+            var gf = new DOMParser().parseFromString(_tableXml(head, rows.slice(0, 16)), 'application/xml').documentElement;
+            st[0].appendChild(doc.importNode(gf, true));
+        }
+        function _revueData() {
+            var prov = S.filters.province;
+            var allMonths = uv(S.data, function (r) { return r.period; }).sort();
+            var curMonths = (S.filters.period && S.filters.period.length) ? S.filters.period.slice().sort() : allMonths;
+            var prevMonths = curMonths.map(function (m) { return (parseInt(m.slice(0, 4), 10) - 1) + m.slice(4); });
+            var cur = S.flt;
+            var prev = S.data.filter(function (r) { return (!prov || r.org2 === prov) && prevMonths.indexOf(r.period) >= 0; });
+            function pr(recs, pf) { return Math.round(sf(recs, 'seances_' + pf + '_prevues')) + ' / ' + Math.round(sf(recs, 'seances_' + pf + '_realisees')); }
+            function nCS(recs, pf) { var g = grp(recs, function (r) { return r.org5; }); return Object.keys(g).filter(function (k) { return k && sf(g[k], 'seances_' + pf + '_realisees') > 0; }).length; }
+            var perLbl = curMonths.length ? (mL(curMonths[0]) + ' – ' + mL(curMonths[curMonths.length - 1])) : 'Toutes périodes';
+            var prevLbl = prevMonths.length ? (mL(prevMonths[0]) + ' – ' + mL(prevMonths[prevMonths.length - 1])) : '—';
+            var slide10 = [
+                { l: 'Nombre de CS avec stratégie avancées', p: String(nCS(prev, 'avancees') || '—'), c: String(nCS(cur, 'avancees') || '—') },
+                { l: 'Nombre de CS avec stratégie mobile', p: String(nCS(prev, 'mobiles') || '—'), c: String(nCS(cur, 'mobiles') || '—') },
+                { l: 'Séances de vaccination en stratégie fixe (Prévue/réalisée)', p: pr(prev, 'fixes'), c: pr(cur, 'fixes') },
+                { l: 'Séances de vaccination en stratégie avancée (Prévue/réalisée)', p: pr(prev, 'avancees'), c: pr(cur, 'avancees') },
+                { l: 'Séances de vaccination en stratégie mobile (Prévue/réalisée)', p: pr(prev, 'mobiles'), c: pr(cur, 'mobiles') }
+            ];
+            var byZs = grp(cur, function (r) { return r.org3; });
+            var zsNames = Object.keys(byZs).filter(Boolean).sort();
+            var s11 = zsNames.map(function (z) { var rc = byZs[z]; return [_cn(z), af(rc, 'completude').toFixed(1), af(rc, 'promptitude').toFixed(1), Math.round(sf(rc, 'DTC3')), Math.round(sf(rc, 'VAR1'))]; });
+            var s12 = zsNames.map(function (z) { var rc = byZs[z]; var d1 = sf(rc, 'DTC1'), d3 = sf(rc, 'DTC3'), b = sf(rc, 'BCG'), v = sf(rc, 'VAR1'); return [_cn(z), (d1 ? ((d1 - d3) / d1 * 100) : 0).toFixed(1), (b ? ((b - v) / b * 100) : 0).toFixed(1)]; });
+            return {
+                province: prov ? _cn(prov) : 'Toutes les provinces', periodLabel: perLbl, prevLabel: prevLbl, slide10: slide10,
+                s11: { head: ['Zone de santé', 'Complétude %', 'Promptitude %', 'DTC3', 'VAR1'], rows: s11 },
+                s12: { head: ['Zone de santé', 'Abandon DTC1–DTC3 %', 'Abandon BCG–VAR1 %'], rows: s12 }
+            };
+        }
+        async function _genCanevas() {
+            var btn = document.getElementById('dlBtn'); var msg = document.getElementById('dlMsg');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération en cours…'; }
+            try {
+                var data = _revueData();
+                var buf = await fetch('canevas_revue_formative_pev.pptx').then(function (r) { if (!r.ok) throw new Error('Modèle PPTX introuvable'); return r.arrayBuffer(); });
+                var zip = await JSZip.loadAsync(buf);
+                var ser = new XMLSerializer();
+                // Diapo 1 — page de garde
+                if (zip.file('ppt/slides/slide1.xml')) {
+                    var x1 = await zip.file('ppt/slides/slide1.xml').async('string');
+                    x1 = x1.replace(/(ZONE DE SANT[ÉE] DE\s*:?)([^<]*)/i, '$1 ' + _escXml(data.province + ' — ' + data.periodLabel));
+                    zip.file('ppt/slides/slide1.xml', x1);
+                }
+                // Diapo 10 — séances (tableau existant)
+                if (zip.file('ppt/slides/slide10.xml')) {
+                    var d10 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide10.xml').async('string'), 'application/xml');
+                    var tbls = _descLocal(d10, 'tbl');
+                    if (tbls.length) {
+                        var trs = _descLocal(tbls[0], 'tr');
+                        var hd = _descLocal(trs[0], 'tc'); if (hd[1]) _setCell(d10, hd[1], data.prevLabel); if (hd[2]) _setCell(d10, hd[2], data.periodLabel);
+                        data.slide10.forEach(function (row, i) { var tr0 = trs[i + 1]; if (!tr0) return; var tcs = _descLocal(tr0, 'tc'); if (tcs[1]) _setCell(d10, tcs[1], row.p); if (tcs[2]) _setCell(d10, tcs[2], row.c); });
+                    }
+                    zip.file('ppt/slides/slide10.xml', ser.serializeToString(d10));
+                }
+                // Diapos 11 & 12 — tableaux DHIS2 ajoutés
+                if (zip.file('ppt/slides/slide11.xml')) { var d11 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide11.xml').async('string'), 'application/xml'); _appendTable(d11, data.s11.head, data.s11.rows); zip.file('ppt/slides/slide11.xml', ser.serializeToString(d11)); }
+                if (zip.file('ppt/slides/slide12.xml')) { var d12 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide12.xml').async('string'), 'application/xml'); _appendTable(d12, data.s12.head, data.s12.rows); zip.file('ppt/slides/slide12.xml', ser.serializeToString(d12)); }
+                var out = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+                var a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = 'Canevas_Revue_Formative_PEV_' + data.province.replace(/\s+/g, '_') + '.pptx';
+                document.body.appendChild(a); a.click(); a.remove();
+                if (msg) msg.textContent = '✅ Canevas PPTX éditable généré avec les données DHIS2.';
+            } catch (e) {
+                if (msg) msg.textContent = '❌ Erreur : ' + ((e && e.message) || e);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '📥 Télécharger en PPTX éditable'; }
+            }
+        }
+        function rDownload(c) {
+            var prov = S.filters.province ? _cn(S.filters.province) : 'Toutes les provinces';
+            var per = (S.filters.period && S.filters.period.length) ? (mL(S.filters.period.slice().sort()[0]) + ' → ' + mL(S.filters.period.slice().sort()[S.filters.period.length - 1])) : 'Toutes les périodes';
+            c.innerHTML =
+                '<div class="cb"><h4>📥 Canevas de revue formative PEV — génération automatique (PPTX éditable)</h4>' +
+                '<div class="cr">' +
+                '<div class="ch" style="min-width:300px"><div style="background:#f6f8fb;border:1px solid #e7edf5;border-radius:14px;padding:18px">' +
+                '<b style="color:#00205c">Contenu renseigné depuis le DHIS2 :</b>' +
+                '<div style="font-size:13px;color:#475467;line-height:1.7;margin-top:8px">' +
+                '✅ Page de garde : province et période filtrées<br>' +
+                '✅ Diapo 10 : séances de vaccination prévues/réalisées (fixe, avancée, mobile) — période n-1 vs courante<br>' +
+                '✅ Diapo 11 : complétude, promptitude &amp; doses (DTC3, VAR1) par zone de santé<br>' +
+                '✅ Diapo 12 : taux d\'abandon DTC1–DTC3 et BCG–VAR1 par zone de santé</div>' +
+                '<div style="font-size:11.5px;color:#64748b;font-style:italic;margin-top:12px">Le fichier conserve la mise en forme du canevas officiel et reste entièrement éditable dans PowerPoint.</div>' +
+                '</div></div>' +
+                '<div class="ch" style="min-width:280px"><div style="border:1px solid #e7edf5;border-radius:14px;padding:24px;text-align:center;background:#fff">' +
+                '<div style="font-size:40px">📊</div>' +
+                '<div style="font-weight:800;color:#00205c;margin-top:6px">' + prov + '</div>' +
+                '<div style="font-size:12px;color:#475467">' + per + '</div>' +
+                '<button id="dlBtn" onclick="_genCanevas()" style="margin-top:18px;border:none;cursor:pointer;padding:13px 26px;border-radius:12px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(120deg,#00205c,#15479e);box-shadow:0 14px 28px -14px rgba(0,32,92,.7)">📥 Télécharger en PPTX éditable</button>' +
+                '<div id="dlMsg" style="margin-top:14px;font-size:12px;font-weight:600;color:#475467"></div>' +
+                '</div></div>' +
+                '</div></div>';
+        }
+
         /* ═══ RENDER ═══ */
         function render() {
             Object.values(S.charts).forEach(function (c) { try { c.destroy(); } catch (e) { } }); S.charts = {};
@@ -2210,8 +2342,9 @@
             db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
-            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV, rLog][S.pg](ct); }
-            else if (tab.id === 'as' || tab.id === 'zs') { [rVac, rLog][S.pg](ct); }
+            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV][S.pg](ct); }
+            else if (tab.id === 'log') { rLog(ct); }
+            else if (tab.id === 'dl') { rDownload(ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
             if (tab.pp.length > 1) { bar.style.display = 'flex'; document.getElementById('PI').textContent = 'Page ' + (S.pg + 1) + ' sur ' + tab.pp.length; document.getElementById('BP').disabled = S.pg === 0; document.getElementById('BN').disabled = S.pg >= tab.pp.length - 1; }
