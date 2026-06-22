@@ -184,7 +184,7 @@ export default function ChartMenu({ getInstance, getContainer, option, title, ex
       tmp.style.cssText = `position:fixed;left:-10000px;top:0;width:${el.clientWidth || 800}px;height:${el.clientHeight || 400}px;`;
       document.body.appendChild(tmp);
       try {
-        const inst = echarts.init(tmp, undefined, { renderer: "svg" });
+        const inst = echarts.init(tmp, "pev", { renderer: "svg" });
         inst.setOption({ backgroundColor: "#fff", ...option, animation: false } as EChartsCoreOption, true);
         const svg = tmp.querySelector("svg");
         if (svg) {
@@ -222,7 +222,7 @@ export default function ChartMenu({ getInstance, getContainer, option, title, ex
         aria-label="Menu d'export du graphique"
         title="Exporter le graphique"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-[24px] w-[24px] items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+        className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-slate-200 bg-white/80 text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,.06)] backdrop-blur-sm transition hover:border-oms-400 hover:bg-oms-50 hover:text-oms-600"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
           <path d="M4 6h16M4 12h16M4 18h16" />

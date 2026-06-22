@@ -7,8 +7,14 @@
   body {
     height: 100%;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-surface-100 text-surface-900 font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   .tabular-nums,
   .kpi-value,
@@ -16,17 +22,32 @@
   .font-mono {
     font-feature-settings: "tnum" 1;
   }
+
+  /* Sélection de texte aux teintes OMS */
+  ::selection { background: rgba(0, 147, 213, 0.22); color: #00205c; }
+
+  /* Scrollbars fines et discrètes — rendu « lisse / huilé » au défilement.
+     (WebKit + Firefox ; ne touche ni la mise en page ni les données.) */
+  * { scrollbar-width: thin; scrollbar-color: #b7c4da transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: #c2cee0; border-radius: 999px;
+    border: 2px solid transparent; background-clip: padding-box;
+    transition: background 0.2s ease;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: #8ea4c6; background-clip: padding-box; }
 }
 
 @layer components {
   .card {
     @apply bg-white rounded-xl border border-surface-200 p-4;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -18px rgba(15, 23, 42, 0.28);
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 30px -20px rgba(0, 32, 92, 0.28);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05), 0 22px 46px -22px rgba(0, 32, 92, 0.4);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05), 0 24px 50px -24px rgba(0, 32, 92, 0.42);
   }
   .card-pad { padding: 14px 16px; }
 
@@ -43,8 +64,11 @@
   }
   table.dtable td {
     padding: 6px 8px; border: 1px solid #e8eef5; text-align: center; vertical-align: middle;
-    font-variant-numeric: tabular-nums; color: #1e293b;
+    font-variant-numeric: tabular-nums; color: #1e293b; transition: background 0.15s ease;
   }
+  /* Survol de ligne discret (hors colonne navy) — lecture plus fluide. */
+  table.dtable tbody tr:hover td { background: #eef6fd; }
+  table.dtable tbody tr:hover td.name { background: linear-gradient(100deg, #0a3a86, #00205c); }
   /* 1re colonne (org unit / variable) — navy, texte blanc. */
   table.dtable td.name, table.dtable th.name {
     text-align: left; font-weight: 700; color: #fff;
