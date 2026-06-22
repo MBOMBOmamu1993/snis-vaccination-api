@@ -2,6 +2,7 @@
 
 import type { EChartsCoreOption } from "echarts/core";
 import EChart from "@/components/charts/EChart";
+import { barStyle, barEmphasis } from "@/components/charts/decor";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { DataTable } from "@/components/ui/DataTable";
@@ -40,7 +41,7 @@ export function LogistiqueStrategie() {
     yAxis: { type: "category", data: data.map((d) => d.label) },
     series: [{
       type: "bar", data: data.map((d) => d.tauxPerte),
-      itemStyle: { color: "#0d9488", borderRadius: [0, 3, 3, 0] },
+      itemStyle: barStyle("#0d9488", "across"), emphasis: barEmphasis,
       markLine: { silent: true, symbol: "none", lineStyle: { color: "#c81e1e", type: "dashed" }, data: [{ xAxis: 5, name: "Seuil 5%" }], label: { formatter: "Seuil 5%", fontSize: 9 } },
     }],
   };
@@ -52,9 +53,9 @@ export function LogistiqueStrategie() {
     xAxis: { type: "category", data: data.map((d) => d.label), axisLabel: { fontSize: 10 } },
     yAxis: { type: "value", axisLabel: { formatter: (v: number) => fmtNum(v) } },
     series: [
-      { name: "Reçues", type: "bar", data: data.map((d) => d.recues), itemStyle: { color: "#0093d5" } },
-      { name: "Utilisées", type: "bar", data: data.map((d) => d.utilisees), itemStyle: { color: "#00205c" } },
-      { name: "Pertes", type: "bar", data: data.map((d) => d.pertes), itemStyle: { color: "#f59e0b" } },
+      { name: "Reçues", type: "bar", data: data.map((d) => d.recues), itemStyle: barStyle("#0093d5", "up"), emphasis: barEmphasis },
+      { name: "Utilisées", type: "bar", data: data.map((d) => d.utilisees), itemStyle: barStyle("#00205c", "up"), emphasis: barEmphasis },
+      { name: "Pertes", type: "bar", data: data.map((d) => d.pertes), itemStyle: barStyle("#f59e0b", "up"), emphasis: barEmphasis },
     ],
   };
 

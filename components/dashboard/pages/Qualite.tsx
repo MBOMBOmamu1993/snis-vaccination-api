@@ -2,6 +2,7 @@
 
 import type { EChartsCoreOption } from "echarts/core";
 import EChart from "@/components/charts/EChart";
+import { barStyle, barEmphasis } from "@/components/charts/decor";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { DataTable } from "@/components/ui/DataTable";
@@ -29,8 +30,8 @@ export function QualiteCompletude() {
     xAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" } },
     yAxis: { type: "category", data: names, axisLabel: { fontSize: names.length > 18 ? 8 : 10 } },
     series: [
-      { name: "Complétude", type: "bar", data: comp, itemStyle: { color: "#0093d5", borderRadius: [0, 3, 3, 0] } },
-      { name: "Promptitude", type: "bar", data: prompt, itemStyle: { color: "#f59e0b", borderRadius: [0, 3, 3, 0] } },
+      { name: "Complétude", type: "bar", data: comp, itemStyle: barStyle("#0093d5", "across"), emphasis: barEmphasis },
+      { name: "Promptitude", type: "bar", data: prompt, itemStyle: barStyle("#f59e0b", "across"), emphasis: barEmphasis },
     ],
   };
 

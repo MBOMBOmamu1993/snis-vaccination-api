@@ -2,6 +2,7 @@
 
 import type { EChartsCoreOption } from "echarts/core";
 import EChart from "@/components/charts/EChart";
+import { barStyle, barEmphasis, donutItemStyle } from "@/components/charts/decor";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { DataTable } from "@/components/ui/DataTable";
@@ -24,7 +25,7 @@ export function VaccinationAntigenes() {
     grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
     xAxis: { type: "category", data: ags.map((a) => a.label), axisLabel: { rotate: 45, fontSize: 9 } },
     yAxis: { type: "value", axisLabel: { formatter: (v: number) => fmtNum(v) } },
-    series: [{ type: "bar", data: ags.map((a) => total.doses[a.key] ?? 0), itemStyle: { color: "#0a3a86", borderRadius: [3, 3, 0, 0] } }],
+    series: [{ type: "bar", data: ags.map((a) => total.doses[a.key] ?? 0), itemStyle: barStyle("#0a3a86", "up"), emphasis: barEmphasis }],
   };
 
   const groups = groupBy(records, groupKey);
@@ -79,8 +80,8 @@ export function VaccinationAbandon() {
     xAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
     yAxis: { type: "category", data: names, axisLabel: { fontSize: names.length > 18 ? 8 : 10 } },
     series: [
-      { name: "Abandon DTC1–DTC3", type: "bar", data: dDtc, itemStyle: { color: "#c81e1e", borderRadius: [0, 3, 3, 0] } },
-      { name: "Abandon BCG–VAR1", type: "bar", data: dBcg, itemStyle: { color: "#f59e0b", borderRadius: [0, 3, 3, 0] } },
+      { name: "Abandon DTC1–DTC3", type: "bar", data: dDtc, itemStyle: barStyle("#c81e1e", "across"), emphasis: barEmphasis },
+      { name: "Abandon BCG–VAR1", type: "bar", data: dBcg, itemStyle: barStyle("#f59e0b", "across"), emphasis: barEmphasis },
     ],
   };
 
@@ -126,8 +127,8 @@ export function VaccinationSeances() {
     xAxis: { type: "category", data: SEANCES.map((s) => s.label), axisLabel: { fontSize: 11 } },
     yAxis: { type: "value", axisLabel: { formatter: (v: number) => fmtNum(v) } },
     series: [
-      { name: "Séances prévues", type: "bar", data: prevu, itemStyle: { color: "#94a3b8", borderRadius: [3, 3, 0, 0] } },
-      { name: "Séances réalisées", type: "bar", data: real, itemStyle: { color: "#0093d5", borderRadius: [3, 3, 0, 0] } },
+      { name: "Séances prévues", type: "bar", data: prevu, itemStyle: barStyle("#94a3b8", "up"), emphasis: barEmphasis },
+      { name: "Séances réalisées", type: "bar", data: real, itemStyle: barStyle("#0093d5", "up"), emphasis: barEmphasis },
     ],
   };
 
@@ -139,6 +140,7 @@ export function VaccinationSeances() {
     series: [{
       type: "pie", radius: ["45%", "70%"], center: ["50%", "45%"],
       label: { formatter: "{b}\n{d}%", fontSize: 10 },
+      itemStyle: donutItemStyle,
       data: SEANCES.map((s, i) => ({ name: `Séances ${s.label.toLowerCase()}`, value: real[i] })),
       color: ["#00205c", "#0093d5", "#7c3aed"],
     }],
