@@ -95,7 +95,19 @@
   }
   /* l'en-tête de la colonne figée passe au-dessus des cellules du corps */
   table.dtable-frozen thead th:first-child.name { z-index: 3; }
-  table.dtable tfoot td { background: #eef4fc; font-weight: 800; border-top: 2px solid #c5d2ea; }
+  table.dtable tfoot td,
+  table.dtable tr.total td { background: #eef4fc; font-weight: 800; border-top: 2px solid #c5d2ea; }
+
+  /* Coloration conditionnelle heatmap façon Shiny PEV RDC — à poser via une
+     classe sur la cellule SELON les seuils déjà définis dans le code (ce CSS ne
+     fournit que les couleurs, pas la logique de seuil). Variantes pleines et
+     « soft » (fond clair, texte foncé) pour rester lisible. */
+  table.dtable td.hm-good { background: #1f9d57; color: #fff; font-weight: 700; }
+  table.dtable td.hm-good-soft { background: #d6f1e1; color: #0f5132; font-weight: 700; }
+  table.dtable td.hm-warn { background: #f0a800; color: #3a2a00; font-weight: 700; }
+  table.dtable td.hm-warn-soft { background: #fdeecb; color: #7a5200; font-weight: 700; }
+  table.dtable td.hm-bad { background: #e23636; color: #fff; font-weight: 700; }
+  table.dtable td.hm-bad-soft { background: #fbd5d5; color: #8a1c1c; font-weight: 700; }
 
   .badge-appr {
     display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px;

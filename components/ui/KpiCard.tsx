@@ -1,18 +1,21 @@
-import { cn } from "@/lib/client/cn";
 import { fmtPct } from "@/lib/client/format";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 export type KpiTone = "neutral" | "navy" | "good" | "warn" | "bad" | "brand" | "violet" | "teal";
 
-const TONE: Record<KpiTone, { ico: string; bg: string; border: string; text: string }> = {
-  neutral: { ico: "#475569", bg: "#f6f8fb", border: "#e2e8f0", text: "#1e293b" },
-  navy:    { ico: "#00205c", bg: "#e7ecf6", border: "#c5d2ea", text: "#00205c" },
-  good:    { ico: "#1f9d57", bg: "#e9f8f0", border: "#bce6cf", text: "#178a44" },
-  warn:    { ico: "#f59e0b", bg: "#fff5e4", border: "#fbe2ad", text: "#c87b04" },
-  bad:     { ico: "#e23636", bg: "#fdecec", border: "#f6c4c4", text: "#c81e1e" },
-  brand:   { ico: "#0093d5", bg: "#e6f3fb", border: "#bce0f3", text: "#0078ae" },
-  violet:  { ico: "#7c3aed", bg: "#f2ecfe", border: "#ddc9fb", text: "#6d28d9" },
-  teal:    { ico: "#0d9488", bg: "#e6f6f4", border: "#b6e3dd", text: "#0f766e" },
+/* Cartes KPI « pleines » fidèles au dashboard Shiny PEV RDC : fond saturé en
+ * dégradé, texte blanc, grande icône en filigrane dans le coin haut-droit.
+ * Seul l'habillage change — aucune donnée, aucun calcul, aucune prop ni logique
+ * de choix de ton (good/warn/bad…) n'est touché. */
+const TONE: Record<KpiTone, { from: string; to: string }> = {
+  neutral: { from: "#5b6b86", to: "#46536b" },
+  navy:    { from: "#0a3a86", to: "#00205c" },
+  good:    { from: "#2bbd6b", to: "#1f9d57" },
+  warn:    { from: "#fbab2d", to: "#f08c00" },
+  bad:     { from: "#f0524f", to: "#dc2f2f" },
+  brand:   { from: "#2bb0ee", to: "#0093d5" },
+  violet:  { from: "#9d5cf5", to: "#7c3aed" },
+  teal:    { from: "#19c2b1", to: "#0d9488" },
 };
 
 export function KpiCard({
@@ -38,26 +41,35 @@ export function KpiCard({
   return (
     <div
       title={hint}
-      className="relative rounded-2xl border p-4 pt-4 flex flex-col items-center text-center transition hover:-translate-y-0.5 hover:shadow-card"
-      style={{ background: t.bg, borderColor: t.border }}
+      className="kpi-tile relative overflow-hidden rounded-2xl px-4 py-3.5 flex flex-col justify-between min-h-[112px] text-white transition-transform duration-200 will-change-transform hover:-translate-y-0.5"
+      style={{
+        backgroundImage: `linear-gradient(150deg, ${t.from}, ${t.to})`,
+        boxShadow: `0 10px 24px -14px ${t.to}cc, inset 0 1px 0 rgba(255,255,255,0.18)`,
+      }}
     >
       {icon ? (
-        <div
-          className="w-[52px] h-[52px] rounded-full flex items-center justify-center mb-2 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.35)]"
-          style={{ background: t.ico, color: "#fff" }}
-        >
-          <Icon name={icon} className="w-[25px] h-[25px]" strokeWidth={1.9} />
-        </div>
+        <Icon
+          name={icon}
+          aria-hidden
+          className="pointer-events-none absolute -right-3 -top-3 w-[82px] h-[82px] opacity-[0.16]"
+          strokeWidth={1.4}
+        />
       ) : null}
-      <div className="text-[11.5px] font-bold leading-tight" style={{ color: t.text }}>{label}</div>
-      <div className="text-[28px] font-extrabold leading-none mt-1.5 mb-1 tabular-nums" style={{ color: t.text }}>{value}</div>
-      {pct !== undefined ? (
-        <div className="text-[11.5px] text-surface-700 font-medium">
-          {pct === null ? <span className="text-surface-400">% réalisation : n/d</span> : <>% réalisation : <span className="font-extrabold" style={{ color: t.text }}>{fmtPct(pct)}</span></>}
-        </div>
-      ) : sub ? (
-        <div className="text-[11.5px] text-surface-700 font-medium">{sub}</div>
-      ) : null}
+      <div className="relative text-[11px] font-bold uppercase tracking-[0.05em] leading-tight text-white/90">{label}</div>
+      <div className="relative">
+        <div className="text-[30px] font-extrabold leading-none tabular-nums drop-shadow-[0_1px_1px_rgba(0,0,0,0.18)]">{value}</div>
+        {pct !== undefined ? (
+          <div className="text-[11.5px] font-semibold mt-1.5">
+            {pct === null ? (
+              <span className="text-white/65">% réalisation : n/d</span>
+            ) : (
+              <span className="text-white/85">% réalisation : <span className="font-extrabold text-white">{fmtPct(pct)}</span></span>
+            )}
+          </div>
+        ) : sub ? (
+          <div className="text-[11.5px] font-medium text-white/85 mt-1.5">{sub}</div>
+        ) : null}
+      </div>
     </div>
   );
 }
