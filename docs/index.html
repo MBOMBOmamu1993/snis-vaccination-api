@@ -944,6 +944,46 @@
         #pevWelcome .pw-li { font-size: 13.5px; color: #475467; line-height: 1.5; margin: 7px 0; }
         #pevWelcome .pw-start { display: block; margin: 22px auto 0; border: none; cursor: pointer; padding: 14px 38px; border-radius: 14px; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #fff; background: linear-gradient(120deg, #00205c, #15479e); box-shadow: 0 16px 32px -14px rgba(0,32,92,.7); transition: transform .15s; }
         #pevWelcome .pw-start:hover { transform: translateY(-2px); }
+
+        /* ── Accueil : onglets présentés en cards plein écran (style Tshuapa) ── */
+        #pevHome { position: fixed; inset: 0; z-index: 1300; display: none; flex-direction: column; overflow-y: auto; background: var(--tsurf); }
+        #pevHome .ph-top { display: flex; align-items: center; gap: 20px; padding: 0 28px; height: 88px; color: #fff; background: #00205c; border-bottom: 3px solid var(--tb); position: sticky; top: 0; z-index: 2; }
+        #pevHome .ph-top img { height: 48px; }
+        #pevHome .ph-top .ph-mid { flex: 1; text-align: center; }
+        #pevHome .ph-top .ph-mid .ph-k { font-size: 11px; font-weight: 700; letter-spacing: .2em; color: rgba(255,255,255,.62); text-transform: uppercase; }
+        #pevHome .ph-top .ph-mid h1 { font-size: 22px; font-weight: 800; margin-top: 2px; }
+        #pevHome .ph-top img.pev { height: 56px; }
+        #pevHome .ph-wrap { max-width: 1240px; margin: 0 auto; width: 100%; padding: 36px 28px 48px; }
+        #pevHome .ph-hero { background: #fff; border-radius: 18px; border-top: 5px solid var(--ty); padding: 30px 36px; text-align: center; box-shadow: 0 10px 30px -18px rgba(15,23,42,.25); }
+        #pevHome .ph-hero h2 { font-size: 30px; font-weight: 800; color: var(--tn); }
+        #pevHome .ph-hero p { max-width: 820px; margin: 12px auto 0; font-size: 16px; line-height: 1.6; color: #475467; }
+        #pevHome .ph-sep { display: flex; align-items: center; gap: 14px; margin: 34px 0; color: #64748b; font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+        #pevHome .ph-sep:before, #pevHome .ph-sep:after { content: ""; flex: 1; height: 1px; background: #d7dfea; }
+        #pevHome .ph-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+        @media (max-width: 1100px) { #pevHome .ph-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 620px) { #pevHome .ph-grid { grid-template-columns: 1fr; } }
+        #pevHome .ph-card { background: #fff; border: 2px solid #e7edf5; border-radius: 18px; padding: 28px 20px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; min-height: 196px; display: flex; flex-direction: column; align-items: center; }
+        #pevHome .ph-card:hover { transform: translateY(-5px); box-shadow: 0 24px 46px -22px rgba(15,23,42,.4); border-color: var(--tb); }
+        #pevHome .ph-card .ph-ic { font-size: 46px; margin-bottom: 12px; }
+        #pevHome .ph-card h3 { font-size: 17px; font-weight: 800; color: var(--tn); line-height: 1.25; }
+        #pevHome .ph-card p { font-size: 12.5px; color: #64748b; margin-top: 10px; line-height: 1.5; }
+
+        /* ── Mode onglet : barre latérale des pages (style Tshuapa) ── */
+        body.tabmode .nav { display: none !important; }
+        #pevSide { display: none; }
+        body.tabmode #pevSide { display: flex; flex-direction: column; position: fixed; left: 0; top: 64px; bottom: 0; width: 256px; background: #001a45; color: #fff; z-index: 1150; overflow-y: auto; }
+        #pevSide .ps-home { display: flex; align-items: center; gap: 7px; margin: 16px 14px 6px; padding: 8px 12px; border-radius: 9px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.82); font-size: 12px; font-weight: 700; cursor: pointer; border: none; }
+        #pevSide .ps-home:hover { background: rgba(255,255,255,.16); color: #fff; }
+        #pevSide .ps-tab { margin: 8px 16px 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.1); }
+        #pevSide .ps-tab .ps-k { font-size: 10px; font-weight: 700; letter-spacing: .16em; color: rgba(255,255,255,.5); text-transform: uppercase; }
+        #pevSide .ps-tab .ps-n { font-size: 15px; font-weight: 800; margin-top: 3px; line-height: 1.2; }
+        #pevSide .ps-pg { display: flex; align-items: center; gap: 10px; margin: 3px 8px; padding: 11px 13px; border-radius: 9px; border-left: 3px solid transparent; color: rgba(255,255,255,.74); font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
+        #pevSide .ps-pg:hover { background: rgba(255,255,255,.08); color: #fff; }
+        #pevSide .ps-pg.act { background: rgba(255,255,255,.14); color: #fff; font-weight: 800; border-left-color: var(--tb); }
+        #pevSide .ps-pg .ps-ic { font-size: 16px; }
+        #pevSide .ps-src { margin-top: auto; padding: 12px 18px; font-size: 10.5px; color: rgba(255,255,255,.4); border-top: 1px solid rgba(255,255,255,.1); }
+        body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 256px; }
+        @media (max-width: 760px) { body.tabmode #pevSide { width: 60px; } body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 60px; } #pevSide .ps-pg span:not(.ps-ic), #pevSide .ps-tab, #pevSide .ps-home span { display: none; } }
     </style>
 </head>
 
@@ -996,6 +1036,28 @@
         </div>
     </div>
 
+    <!-- ACCUEIL : onglets en cards plein écran (style Tshuapa) -->
+    <div id="pevHome">
+        <div class="ph-top">
+            <img src="oms-white.png" alt="OMS">
+            <div class="ph-mid">
+                <div class="ph-k">Programme Élargi de Vaccination · OMS — RDC</div>
+                <h1>Dashboard PEV de routine</h1>
+            </div>
+            <img class="pev" src="pev-transparent.png" alt="PEV">
+        </div>
+        <div class="ph-wrap">
+            <div class="ph-hero">
+                <h2>Bienvenue sur le Dashboard PEV de routine</h2>
+                <p>Votre outil centralisé de suivi de la <b>vaccination de routine</b> : contrôle qualité des données,
+                    données de vaccination, logistique et canevas de revue formative. Données issues exclusivement du
+                    <b>DHIS2</b>. Sélectionnez un onglet pour commencer.</p>
+            </div>
+            <div class="ph-sep">Onglets disponibles</div>
+            <div class="ph-grid" id="pevHomeGrid"></div>
+        </div>
+    </div>
+
     <div class="hdr">
         <div class="logo oms">
             <img src="oms-white.png" alt="OMS">
@@ -1005,6 +1067,8 @@
             <img src="pev-transparent.png" alt="Logo PEV">
         </div>
     </div>
+    <!-- BARRE LATÉRALE des pages de l'onglet actif (style Tshuapa) -->
+    <div id="pevSide"></div>
     <div class="nav" id="NAV"></div>
     <div class="lb" id="LB">
         <div class="st" id="LS">⏳ Initialisation...</div>
@@ -1148,6 +1212,14 @@
         // dashboard déployé sur Vercel lise les mêmes agrégats sans les dupliquer.
         var DATA_ORIGIN = (location.hostname.indexOf('github.io') >= 0 || location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '.' : 'https://mbombomamu1993.github.io/snis-vaccination-api';
         var BASE = DATA_ORIGIN + '/data' + (lvl ? '_' + lvl : '') + '/dashboard';
+        /* Convertit tout chemin de données relatif (./data, ./data_as, ./data_zs,
+           /data/...) en URL absolue vers l'origine des données (GitHub Pages) quand
+           on n'est pas sur Pages — indispensable pour Vercel, sinon 404. */
+        function _dataAbs(u) {
+            if (DATA_ORIGIN === '.' || !u) return u;
+            if (/^https?:\/\//i.test(u)) return u;
+            return DATA_ORIGIN.replace(/\/+$/, '') + '/' + String(u).replace(/^\.?\/+/, '');
+        }
 
         var S = {
             tab: 0, pg: 0, data: [], flt: [], charts: {}, filters: { province: '', antenne: [], zs: [], as: [], fosa: [], period: [], antigens: [] },
@@ -1167,6 +1239,7 @@
            fraîche (sinon GitHub Pages sert l'ancien fichier en cache ~10 min). */
         var DATA_VER = '';
         async function fetchGzip(url, _attempt, forceFresh) {
+            url = _dataAbs(url);
             _attempt = _attempt || 1;
             var maxAttempts = 3;
             var bust = forceFresh || _attempt > 1;
@@ -6895,7 +6968,7 @@
             if (Object.prototype.hasOwnProperty.call(_cibleAjustCache, year)) {
                 return Promise.resolve(_cibleAjustCache[year]);
             }
-            return fetch('./data/cibles_ajustees/' + year + '.json', { cache: 'no-cache' })
+            return fetch(_dataAbs('./data/cibles_ajustees/' + year + '.json'), { cache: 'no-cache' })
                 .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
                 .then(function (d) { _cibleAjustCache[year] = d; return d; })
                 .catch(function () { _cibleAjustCache[year] = null; return null; });
@@ -7802,28 +7875,73 @@
         loadAll();
     </script>
     <script>
-        /* Séquence Tshuapa : chargement (logos OMS/PEV) → bienvenue → dashboard.
-         * N'interfère pas avec les analyses : ce ne sont que des surcouches. */
+        /* Séquence + disposition Tshuapa : chargement → bienvenue → ACCUEIL (onglets
+         * en cards) → onglet (barre latérale des pages). Surcouches uniquement :
+         * les analyses, calculs et filtres ne sont pas modifiés. */
         (function () {
+            var TAB_META = {
+                oqd: { ic: '📋', d: 'Complétude & promptitude, cohérence-temps, cohérence-donnée, valeurs atypiques & score qualité.' },
+                vacc: { ic: '💉', d: 'Données de vaccination, couvertures vaccinales, comparatives CV & courbes de suivi.' },
+                log: { ic: '📦', d: 'Gestion des intrants : stocks, pertes, ruptures et disponibilité des vaccins.' },
+                dl: { ic: '📥', d: 'Canevas de revue formative — PPTX éditable, diapos 10–12 renseignées depuis DHIS2.' }
+            };
             function go() {
                 var load = document.getElementById('pevLoad');
-                var anim = (((document.getElementById('pevLoad') || {}).querySelectorAll) ? document.querySelectorAll('#pevLoad .pl-dots i') : []);
-                anim.forEach(function (d, i) { d.style.animationDelay = (((i % 3) + Math.floor(i / 3)) * 0.12).toFixed(2) + 's'; });
+                document.querySelectorAll('#pevLoad .pl-dots i').forEach(function (d, i) { d.style.animationDelay = (((i % 3) + Math.floor(i / 3)) * 0.12).toFixed(2) + 's'; });
                 setTimeout(function () {
                     if (!load) return;
                     load.style.opacity = '0';
-                    setTimeout(function () {
-                        load.style.display = 'none';
-                        var w = document.getElementById('pevWelcome');
-                        if (w) w.style.display = 'flex';
-                    }, 500);
+                    setTimeout(function () { load.style.display = 'none'; var w = document.getElementById('pevWelcome'); if (w) w.style.display = 'flex'; }, 500);
                 }, 2200);
             }
-            window.pevStart = function () {
-                var w = document.getElementById('pevWelcome');
-                if (w) w.style.display = 'none';
+            function buildHome() {
+                var grid = document.getElementById('pevHomeGrid'); if (!grid || typeof TABS === 'undefined') return;
+                grid.innerHTML = '';
+                TABS.forEach(function (t, i) {
+                    var m = TAB_META[t.id] || { ic: '📊', d: '' };
+                    var card = document.createElement('div'); card.className = 'ph-card';
+                    card.onclick = function () { window.pevOpenTab(i); };
+                    card.innerHTML = '<div class="ph-ic">' + m.ic + '</div><h3>' + t.lb + '</h3><p>' + m.d + '</p>';
+                    grid.appendChild(card);
+                });
+            }
+            window.pevBuildSide = function (t) {
+                var side = document.getElementById('pevSide'); if (!side || typeof TABS === 'undefined') return;
+                var tab = TABS[t]; if (!tab) return;
+                var m = TAB_META[tab.id] || { ic: '📊' };
+                var h = '<button class="ps-home" onclick="pevShowHome()">‹ Accueil</button>' +
+                    '<div class="ps-tab"><div class="ps-k">Onglet</div><div class="ps-n">' + m.ic + ' ' + tab.lb + '</div></div>';
+                tab.pp.forEach(function (p, i) {
+                    h += '<div class="ps-pg' + (i === S.pg ? ' act' : '') + '" onclick="navTo(' + t + ',' + i + ')"><span class="ps-ic">' + (p.ic || '•') + '</span><span>' + p.t + '</span></div>';
+                });
+                h += '<div class="ps-src">Source : DHIS2 (SNIS)</div>';
+                side.innerHTML = h;
             };
-            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+            window.pevOpenTab = function (t) {
+                var hm = document.getElementById('pevHome'); if (hm) hm.style.display = 'none';
+                document.body.classList.add('tabmode');
+                if (typeof navTo === 'function') navTo(t, 0);
+                window.pevBuildSide(t);
+                window.scrollTo({ top: 0 });
+            };
+            window.pevShowHome = function () {
+                document.body.classList.remove('tabmode');
+                var hm = document.getElementById('pevHome'); if (hm) { buildHome(); hm.style.display = 'flex'; }
+            };
+            window.pevStart = function () {
+                var w = document.getElementById('pevWelcome'); if (w) w.style.display = 'none';
+                buildHome();
+                var hm = document.getElementById('pevHome'); if (hm) hm.style.display = 'flex';
+            };
+            /* Reconstruit la barre latérale à chaque rendu (changement de page via
+             * pagination ou navigation), sans toucher au rendu des analyses. */
+            function hookRender() {
+                if (typeof render !== 'function' || render.__pevHooked) { return; }
+                var orig = render;
+                render = function () { orig.apply(this, arguments); try { if (document.body.classList.contains('tabmode')) window.pevBuildSide(S.tab); } catch (e) { } };
+                render.__pevHooked = true;
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { go(); hookRender(); }); else { go(); hookRender(); }
         })();
     </script>
 </body>
