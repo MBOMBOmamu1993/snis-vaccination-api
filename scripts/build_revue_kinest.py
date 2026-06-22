@@ -542,43 +542,44 @@ for idx, chunk in enumerate(paginate(as_keys, 40), 1):
 # slide12 original index : 11 (0-based). Find current index after additions? We append then reorder.
 S12_AFTER = 11
 
-# 1. Enfants identifiés & récupérés (RECO) — tableaux DTC + VAR
+# 1. Enfants perdus de vue identifiés & récupérés PAR LES RECO (hors BCU)
+#    Indicateurs DHIS2 disponibles « par les RECO » : Penta1 + Penta3 (= DTC), tous âges.
 def pdv_rows(keys, label_fn, src):
-    hdr = ["Entité", "Identifiés DTC (Penta1+3)", "Récupérés DTC (Penta1+3)",
-           "% récup. DTC", "Récupérés VAR1 (BCU-FAE)"]
+    hdr = ["Entité", "Identifiés (RECO)", "Récupérés (RECO)", "% récupérés"]
     rows = []
-    tid = trec = tvar = 0.0
+    tid = trec = 0.0
     for k in keys:
-        e = src.get(k if not isinstance(k, tuple) else k, {"id": 0, "rec": 0, "var": 0})
-        i, rc, vr = e["id"], e["rec"], e["var"]
-        tid += i; trec += rc; tvar += vr
+        e = src.get(k, {"id": 0, "rec": 0, "var": 0})
+        i, rc = e["id"], e["rec"]
+        tid += i; trec += rc
         pct = f"{rc / i * 100:.0f}%" if i > 0 else "–"
-        rows.append([label_fn(k), f"{round(i)}", f"{round(rc)}", pct, f"{round(vr)}"])
+        rows.append([label_fn(k), f"{round(i)}", f"{round(rc)}", pct])
     total = ["TOTAL", f"{round(tid)}", f"{round(trec)}",
-             f"{trec / tid * 100:.0f}%" if tid > 0 else "–", f"{round(tvar)}"]
+             f"{trec / tid * 100:.0f}%" if tid > 0 else "–"]
     return hdr, [total] + rows
+
+PDV_NOTE = (SUB + " — Perdus de vue identifiés et récupérés par les RECO (DTC = Penta1 + Penta3, "
+            "tous âges). Source DHIS2 ; indicateur « par les RECO » non collecté pour la VAR.")
 
 # ZS
 hdr, rows = pdv_rows(zs_keys, lambda k: k, pdv_zs)
 sl = add_slide()
-add_title(sl, "Enfants perdus de vue identifiés et récupérés par les RECO — par ZS",
-          SUB + " — DTC = Penta1+Penta3 (RECO). VAR : récupérés VAR1 BCU-FAE (identifiés non collectés dans DHIS2).")
-add_table(sl, hdr, rows, top=Cm(2.4), size=9, col_w=[2.6, 2, 2, 1.4, 2])
+add_title(sl, "Enfants perdus de vue identifiés et récupérés par les RECO — par ZS", PDV_NOTE)
+add_table(sl, hdr, rows, top=Cm(2.4), size=10, col_w=[3, 2, 2, 1.6])
 remember(sl, S12_AFTER)
 
 # AS
-hdr = ["Aire de Santé", "Identifiés DTC (Penta1+3)", "Récupérés DTC (Penta1+3)", "% récup. DTC", "Récupérés VAR1 (BCU-FAE)"]
-for idx, chunk in enumerate(paginate(as_keys, 30), 1):
+hdr = ["Aire de Santé", "Identifiés (RECO)", "Récupérés (RECO)", "% récupérés"]
+for idx, chunk in enumerate(paginate(as_keys, 36), 1):
     rows = []
     for k in chunk:
         e = pdv_as.get(k, {"id": 0, "rec": 0, "var": 0})
-        i, rc, vr = e["id"], e["rec"], e["var"]
+        i, rc = e["id"], e["rec"]
         pct = f"{rc / i * 100:.0f}%" if i > 0 else "–"
-        rows.append([as_label(k), f"{round(i)}", f"{round(rc)}", pct, f"{round(vr)}"])
+        rows.append([as_label(k), f"{round(i)}", f"{round(rc)}", pct])
     sl = add_slide()
-    add_title(sl, f"Enfants perdus de vue identifiés et récupérés par les RECO — par AS ({idx})",
-              SUB + " — DTC = Penta1+Penta3 (RECO). VAR : récupérés VAR1 BCU-FAE.")
-    add_table(sl, hdr, rows, top=Cm(2.4), size=8, col_w=[2.6, 2, 2, 1.4, 2])
+    add_title(sl, f"Enfants perdus de vue identifiés et récupérés par les RECO — par AS ({idx})", PDV_NOTE)
+    add_table(sl, hdr, rows, top=Cm(2.4), size=9, col_w=[3, 2, 2, 1.6])
     remember(sl, S12_AFTER)
 
 # 2. Taux d'abandon BCG-VAR1 & DTC1-DTC3 — graphiques (ZS unique, AS paginé)
