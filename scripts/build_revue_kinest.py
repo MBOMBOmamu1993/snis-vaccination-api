@@ -251,16 +251,28 @@ def style_cell(cell, text, *, bold=False, fill=None, color=None, align=PP_ALIGN.
     f = run.font; f.size = Pt(size); f.bold = bold
     f.color.rgb = color if color is not None else (WHITE if fill is not None and bold else DARK)
 
-def add_table(sl, header, rows, *, top=Cm(2.0), size=8, col_w=None, cell_fills=None,
-              first_align=PP_ALIGN.LEFT):
-    """rows: list of list[str]. cell_fills[r][c] -> RGBColor or None (body only)."""
+TOP_DFLT = Cm(2.3)        # haut de zone contenu (sous le titre)
+BOT_MARGIN = Cm(0.6)
+
+def rows_per_page(row_cm, header_cm=0.85, top=TOP_DFLT):
+    """Nb max de lignes de DONNÉES qui tiennent verticalement sans débordement."""
+    avail_cm = (EMU_H - top - BOT_MARGIN) / 360000.0
+    return max(4, int((avail_cm - header_cm) / row_cm))
+
+def add_table(sl, header, rows, *, top=TOP_DFLT, size=8, col_w=None, cell_fills=None,
+              first_align=PP_ALIGN.LEFT, row_cm=0.6, header_cm=0.85):
+    """Tableau à hauteurs de lignes contrôlées (jamais de débordement)."""
     nrows = len(rows) + 1
     ncols = len(header)
     left = Cm(0.5); width = EMU_W - Cm(1.0)
-    height = min(EMU_H - top - Cm(0.6), Cm(0.62) * nrows)
-    gf = sl.shapes.add_table(nrows, ncols, left, top, width, int(height))
+    height = int(Cm(header_cm) + Cm(row_cm) * len(rows))
+    gf = sl.shapes.add_table(nrows, ncols, left, top, width, height)
     tbl = gf.table
     tbl.first_row = False; tbl.horz_banding = False
+    # hauteurs de lignes explicites
+    tbl.rows[0].height = int(Cm(header_cm))
+    for r in range(1, nrows):
+        tbl.rows[r].height = int(Cm(row_cm))
     if col_w:
         total = sum(col_w)
         for i, w in enumerate(col_w):
@@ -271,8 +283,7 @@ def add_table(sl, header, rows, *, top=Cm(2.0), size=8, col_w=None, cell_fills=N
     for ri, row in enumerate(rows):
         band = BAND if ri % 2 else WHITE
         for ci, val in enumerate(row):
-            fill = band
-            color = DARK
+            fill = band; color = DARK
             if cell_fills and cell_fills[ri][ci] is not None:
                 fill = cell_fills[ri][ci]; color = WHITE
             al = first_align if ci == 0 else PP_ALIGN.CENTER
@@ -280,28 +291,68 @@ def add_table(sl, header, rows, *, top=Cm(2.0), size=8, col_w=None, cell_fills=N
                        bold=(ci == 0 and val == "TOTAL"))
     return gf
 
-def paginate(items, per):
-    for i in range(0, len(items), per):
-        yield items[i:i + per]
+def chunks(items, per):
+    return [items[i:i + per] for i in range(0, len(items), per)]
 
-def add_bar_chart(sl, categories, series, *, top=Cm(2.0), title=None, horizontal=False):
+def add_bar_chart(sl, categories, series, *, top=TOP_DFLT, horizontal=True, pct=False):
+    """Barres horizontales (lisibles pour beaucoup d'entités), avec étiquettes de valeurs."""
     cd = CategoryChartData()
     cd.categories = categories
     for nm, vals in series:
         cd.add_series(nm, vals)
     ctype = XL_CHART_TYPE.BAR_CLUSTERED if horizontal else XL_CHART_TYPE.COLUMN_CLUSTERED
     gf = sl.shapes.add_chart(ctype, Cm(0.5), top, EMU_W - Cm(1.0),
-                             EMU_H - top - Cm(0.6), cd)
+                             int(EMU_H - top - BOT_MARGIN), cd)
     ch = gf.chart
     ch.has_legend = True
     ch.legend.position = XL_LEGEND_POSITION.TOP
     ch.legend.include_in_layout = False
+    plot = ch.plots[0]
+    plot.gap_width = 60
+    plot.has_data_labels = True
+    dl = plot.data_labels
+    dl.font.size = Pt(7)
+    dl.number_format = '0.0"%"' if pct else '0'
+    dl.number_format_is_linked = False
     try:
         ch.value_axis.tick_labels.font.size = Pt(8)
-        ch.category_axis.tick_labels.font.size = Pt(7)
+        ch.category_axis.tick_labels.font.size = Pt(8)
+        if pct:
+            ch.value_axis.has_major_gridlines = True
     except Exception:
         pass
     return gf
+
+def chart_slides(title, sub, entity_chunks, label_fn, series_fns, names, *, after, pct=False, per_note=""):
+    """Crée une diapo par paquet d'entités ; titre numéroté (i/N)."""
+    N = len(entity_chunks)
+    for i, chunk in enumerate(entity_chunks, 1):
+        sl = add_slide()
+        suff = f"  ({i}/{N})" if N > 1 else ""
+        add_title(sl, title + suff, sub)
+        cats = [label_fn(k) for k in chunk]
+        series = [(nm, [fn(k) for k in chunk]) for nm, fn in series_fns]
+        add_bar_chart(sl, cats, series, pct=pct)
+        remember(sl, after)
+
+def table_slides(title, sub, header, items, row_fn, *, after, size, col_w, row_cm,
+                 total_row=None, per=None):
+    """Tableau paginé proprement : TOTAL en tête de 1ʳᵉ page, en-tête répété, numéro (i/N)."""
+    if per is None:
+        per = rows_per_page(row_cm)
+    pages = chunks(items, per) or [[]]
+    N = len(pages)
+    for i, page in enumerate(pages, 1):
+        rows, fills = [], []
+        if i == 1 and total_row is not None:
+            rows.append(total_row[0]); fills.append(total_row[1])
+        for k in page:
+            r, f = row_fn(k); rows.append(r); fills.append(f)
+        sl = add_slide()
+        suff = f"  ({i}/{N})" if N > 1 else ""
+        add_title(sl, title + suff, sub)
+        add_table(sl, header, rows, size=size, col_w=col_w, cell_fills=fills, row_cm=row_cm)
+        remember(sl, after)
 
 NEW = []  # (after_index_0based, slide_element)  -- collected for reordering
 
@@ -360,24 +411,18 @@ def comp_prompt(recs):
     prompt = pw / n if n else 0
     return round(comp, 1), round(prompt, 1)
 
-# ZS chart
-cats = [k for k in zs_keys]
-comp_v = [comp_prompt(g_zs[k])[0] for k in zs_keys]
-prom_v = [comp_prompt(g_zs[k])[1] for k in zs_keys]
-sl = add_slide()
-add_title(sl, "Complétude & Promptitude par Zone de Santé", SUB)
-add_bar_chart(sl, cats, [("Complétude %", comp_v), ("Promptitude %", prom_v)], top=Cm(2.2))
-remember(sl, 10)
+CHART_PER = 22   # entités max par diapo-graphique (lisibilité barres horizontales)
 
-# AS chart paginé
-for idx, chunk in enumerate(paginate(as_keys, 40), 1):
-    sl = add_slide()
-    add_title(sl, f"Complétude & Promptitude par Aire de Santé ({idx})", SUB)
-    cats = [as_label(k) for k in chunk]
-    cv = [comp_prompt(g_as[k])[0] for k in chunk]
-    pv = [comp_prompt(g_as[k])[1] for k in chunk]
-    add_bar_chart(sl, cats, [("Complétude %", cv), ("Promptitude %", pv)], top=Cm(2.2))
-    remember(sl, 10)
+cp_series = [("Complétude %", lambda k, g: comp_prompt(g[k])[0]),
+             ("Promptitude %", lambda k, g: comp_prompt(g[k])[1])]
+# ZS
+chart_slides("Complétude & Promptitude par Zone de Santé", SUB, [zs_keys], lambda k: k,
+             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in cp_series],
+             None, after=10, pct=True)
+# AS
+chart_slides("Complétude & Promptitude par Aire de Santé", SUB, chunks(as_keys, CHART_PER), as_label,
+             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in cp_series],
+             None, after=10, pct=True)
 
 # 2. CV admin tous antigènes — tableaux (ZS unique, AS paginé)
 def cv_row(recs):
@@ -390,47 +435,28 @@ def cv_row(recs):
         fills.append(cv_color(p))
     return out, fills
 
-cv_header = ["Zone de Santé"] + AG_ORDER
-rows, fills = [], []
-# TOTAL
-tot_cells, tot_fills = cv_row(cur)
-rows.append(["TOTAL"] + tot_cells); fills.append([None] + tot_fills)
-for k in zs_keys:
-    c, fl = cv_row(g_zs[k]); rows.append([k] + c); fills.append([None] + fl)
-sl = add_slide()
-add_title(sl, "Couverture vaccinale administrative par ZS — tous antigènes (%)", SUB)
-add_table(sl, cv_header, rows, top=Cm(2.0), size=7,
-          col_w=[2.2] + [1] * len(AG_ORDER), cell_fills=fills)
-remember(sl, 10)
+CV_COLW = [2.4] + [1] * len(AG_ORDER)
+def cv_total():
+    c, fl = cv_row(cur); return (["TOTAL"] + c, [None] + fl)
+def cv_zs_row(k):
+    c, fl = cv_row(g_zs[k]); return ([k] + c, [None] + fl)
+def cv_as_row(k):
+    c, fl = cv_row(g_as[k]); return ([as_label(k)] + c, [None] + fl)
 
-cv_header_as = ["Aire de Santé"] + AG_ORDER
-for idx, chunk in enumerate(paginate(as_keys, 26), 1):
-    rows, fills = [], []
-    for k in chunk:
-        c, fl = cv_row(g_as[k]); rows.append([as_label(k)] + c); fills.append([None] + fl)
-    sl = add_slide()
-    add_title(sl, f"Couverture vaccinale administrative par AS — tous antigènes (%) ({idx})", SUB)
-    add_table(sl, cv_header_as, rows, top=Cm(2.0), size=6,
-              col_w=[2.6] + [1] * len(AG_ORDER), cell_fills=fills)
-    remember(sl, 10)
+table_slides("Couverture vaccinale administrative par ZS — tous antigènes (%)", SUB,
+             ["Zone de Santé"] + AG_ORDER, zs_keys, cv_zs_row, after=10, size=8,
+             col_w=CV_COLW, row_cm=0.62, total_row=cv_total())
+table_slides("Couverture vaccinale administrative par AS — tous antigènes (%)", SUB,
+             ["Aire de Santé"] + AG_ORDER, as_keys, cv_as_row, after=10, size=7,
+             col_w=CV_COLW, row_cm=0.52, total_row=cv_total())
 
-# 3. Enfants ZD & SV — graphiques (ZS unique, AS paginé)
-cats = list(zs_keys)
-zd_v = [round(zd(g_zs[k])) for k in zs_keys]
-sv_v = [round(sv(g_zs[k])) for k in zs_keys]
-sl = add_slide()
-add_title(sl, "Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par ZS", SUB)
-add_bar_chart(sl, cats, [("Enfants ZD", zd_v), ("Enfants SV", sv_v)], top=Cm(2.2))
-remember(sl, 10)
-
-for idx, chunk in enumerate(paginate(as_keys, 40), 1):
-    sl = add_slide()
-    add_title(sl, f"Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par AS ({idx})", SUB)
-    cats = [as_label(k) for k in chunk]
-    zdv = [round(zd(g_as[k])) for k in chunk]
-    svv = [round(sv(g_as[k])) for k in chunk]
-    add_bar_chart(sl, cats, [("Enfants ZD", zdv), ("Enfants SV", svv)], top=Cm(2.2))
-    remember(sl, 10)
+# 3. Enfants ZD & SV — graphiques
+zdsv_series = [("Enfants ZD", lambda k, g: round(zd(g[k]))),
+               ("Enfants SV", lambda k, g: round(sv(g[k])))]
+chart_slides("Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par ZS", SUB, [zs_keys], lambda k: k,
+             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in zdsv_series], None, after=10)
+chart_slides("Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par AS", SUB, chunks(as_keys, CHART_PER), as_label,
+             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in zdsv_series], None, after=10)
 
 # 4. Catégorisation ACZ — tableaux (ZS unique, AS paginé)
 def cat_row(recs):
@@ -442,41 +468,22 @@ def cat_row(recs):
     return ["–" if cv1 is None else f"{cv1:.1f}%",
             "–" if ta is None else f"{ta:.1f}%", cat], cat
 
-cat_header = ["{}", "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"]
-def build_cat(keys, label_fn, head_label, page=45):
-    hdr = [head_label, "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"]
-    items = keys
-    multipage = len(items) > page
-    pi = 0
-    for chunk in paginate(items, page):
-        pi += 1
-        rows, fills = [], []
-        for k in chunk:
-            cells, cat = cat_row(g_as[k] if head_label.startswith("Aire") else g_zs[k])
-            rows.append([label_fn(k)] + cells)
-            fills.append([None, None, None, cat_color(cat)])
-        sl = add_slide()
-        suff = f" ({pi})" if multipage else ""
-        add_title(sl, f"Catégorisation ACZ par {'AS' if head_label.startswith('Aire') else 'ZS'}{suff}",
-                  SUB + " — Cat.1: P1≥90 & TA≤10 · Cat.2: P1≥90 & TA>10 · Cat.3: P1<90 & TA≤10 · Cat.4: P1<90 & TA>10")
-        add_table(sl, hdr, rows, top=Cm(2.4), size=9, col_w=[3, 2, 2.5, 2], cell_fills=fills)
-        remember(sl, 10)
+CAT_NOTE = (SUB + " — Cat.1: P1≥90 & TA≤10 · Cat.2: P1≥90 & TA>10 · "
+            "Cat.3: P1<90 & TA≤10 · Cat.4: P1<90 & TA>10")
+CAT_COLW = [3.4, 2, 2.6, 2]
+def cat_total():
+    cells, cat = cat_row(cur); return (["TOTAL"] + cells, [None, None, None, cat_color(cat)])
+def cat_zs_r(k):
+    cells, cat = cat_row(g_zs[k]); return ([k] + cells, [None, None, None, cat_color(cat)])
+def cat_as_r(k):
+    cells, cat = cat_row(g_as[k]); return ([as_label(k)] + cells, [None, None, None, cat_color(cat)])
 
-# ZS total row included
-def cat_zs_rows():
-    hdr = ["Zone de Santé", "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"]
-    rows, fills = [], []
-    cells, cat = cat_row(cur); rows.append(["TOTAL"] + cells); fills.append([None, None, None, cat_color(cat)])
-    for k in zs_keys:
-        cells, cat = cat_row(g_zs[k]); rows.append([k] + cells); fills.append([None, None, None, cat_color(cat)])
-    sl = add_slide()
-    add_title(sl, "Catégorisation ACZ par ZS",
-              SUB + " — Cat.1: P1≥90 & TA≤10 · Cat.2: P1≥90 & TA>10 · Cat.3: P1<90 & TA≤10 · Cat.4: P1<90 & TA>10")
-    add_table(sl, hdr, rows, top=Cm(2.4), size=10, col_w=[3, 2, 2.5, 2], cell_fills=fills)
-    remember(sl, 10)
-
-cat_zs_rows()
-build_cat(as_keys, as_label, "Aire de Santé", page=42)
+table_slides("Catégorisation ACZ par ZS", CAT_NOTE,
+             ["Zone de Santé", "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"],
+             zs_keys, cat_zs_r, after=10, size=10, col_w=CAT_COLW, row_cm=0.7, total_row=cat_total())
+table_slides("Catégorisation ACZ par AS", CAT_NOTE,
+             ["Aire de Santé", "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"],
+             as_keys, cat_as_r, after=10, size=9, col_w=CAT_COLW, row_cm=0.56, total_row=cat_total())
 
 # 5. Disponibilité des intrants (BCG, DTC, VAR, VPO) — tableaux
 DISPO_V = [("BCG", "BCG"), ("DTC (Penta)", "DTC"), ("VAR", "VAR"), ("VPO", "VPO")]
@@ -487,25 +494,17 @@ def dispo_row(recs):
         cells.append("–" if p is None else f"{p:.1f}%"); fills.append(disp_color(p))
     return cells, fills
 
-hdr = ["Zone de Santé"] + [l for l, _ in DISPO_V]
-rows, fills = [], []
-c, fl = dispo_row(cur); rows.append(["TOTAL"] + c); fills.append([None] + fl)
-for k in zs_keys:
-    c, fl = dispo_row(g_zs[k]); rows.append([k] + c); fills.append([None] + fl)
-sl = add_slide()
-add_title(sl, "Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)", SUB)
-add_table(sl, hdr, rows, top=Cm(2.0), size=10, col_w=[3, 1.5, 1.5, 1.5, 1.5], cell_fills=fills)
-remember(sl, 10)
-
-hdr = ["Aire de Santé"] + [l for l, _ in DISPO_V]
-for idx, chunk in enumerate(paginate(as_keys, 40), 1):
-    rows, fills = [], []
-    for k in chunk:
-        c, fl = dispo_row(g_as[k]); rows.append([as_label(k)] + c); fills.append([None] + fl)
-    sl = add_slide()
-    add_title(sl, f"Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO) ({idx})", SUB)
-    add_table(sl, hdr, rows, top=Cm(2.0), size=8, col_w=[3, 1.5, 1.5, 1.5, 1.5], cell_fills=fills)
-    remember(sl, 10)
+DISPO_COLW = [3.4, 1.5, 1.5, 1.5, 1.5]
+def dispo_total():
+    c, fl = dispo_row(cur); return (["TOTAL"] + c, [None] + fl)
+table_slides("Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)", SUB,
+             ["Zone de Santé"] + [l for l, _ in DISPO_V], zs_keys,
+             lambda k: (["%s" % k] + dispo_row(g_zs[k])[0], [None] + dispo_row(g_zs[k])[1]),
+             after=10, size=11, col_w=DISPO_COLW, row_cm=0.75, total_row=dispo_total())
+table_slides("Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)", SUB,
+             ["Aire de Santé"] + [l for l, _ in DISPO_V], as_keys,
+             lambda k: ([as_label(k)] + dispo_row(g_as[k])[0], [None] + dispo_row(g_as[k])[1]),
+             after=10, size=9, col_w=DISPO_COLW, row_cm=0.56, total_row=dispo_total())
 
 # 6. Taux de perte (VPO, DTC, VAR, VAA, Td) — tableaux
 PERTE_V = [("VPO", "VPO"), ("DTC (Penta)", "DTC"), ("VAR", "VAR"), ("VAA", "VAA"), ("Td", "Td")]
@@ -516,25 +515,17 @@ def perte_row(recs):
         cells.append("–" if p is None else f"{p:.1f}%"); fills.append(perte_color(p))
     return cells, fills
 
-hdr = ["Zone de Santé"] + [l for l, _ in PERTE_V]
-rows, fills = [], []
-c, fl = perte_row(cur); rows.append(["TOTAL"] + c); fills.append([None] + fl)
-for k in zs_keys:
-    c, fl = perte_row(g_zs[k]); rows.append([k] + c); fills.append([None] + fl)
-sl = add_slide()
-add_title(sl, "Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)", SUB)
-add_table(sl, hdr, rows, top=Cm(2.0), size=10, col_w=[3, 1.4, 1.4, 1.4, 1.4, 1.4], cell_fills=fills)
-remember(sl, 10)
-
-hdr = ["Aire de Santé"] + [l for l, _ in PERTE_V]
-for idx, chunk in enumerate(paginate(as_keys, 40), 1):
-    rows, fills = [], []
-    for k in chunk:
-        c, fl = perte_row(g_as[k]); rows.append([as_label(k)] + c); fills.append([None] + fl)
-    sl = add_slide()
-    add_title(sl, f"Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td) ({idx})", SUB)
-    add_table(sl, hdr, rows, top=Cm(2.0), size=8, col_w=[3, 1.4, 1.4, 1.4, 1.4, 1.4], cell_fills=fills)
-    remember(sl, 10)
+PERTE_COLW = [3.4, 1.4, 1.4, 1.4, 1.4, 1.4]
+def perte_total():
+    c, fl = perte_row(cur); return (["TOTAL"] + c, [None] + fl)
+table_slides("Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)", SUB,
+             ["Zone de Santé"] + [l for l, _ in PERTE_V], zs_keys,
+             lambda k: (["%s" % k] + perte_row(g_zs[k])[0], [None] + perte_row(g_zs[k])[1]),
+             after=10, size=11, col_w=PERTE_COLW, row_cm=0.75, total_row=perte_total())
+table_slides("Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)", SUB,
+             ["Aire de Santé"] + [l for l, _ in PERTE_V], as_keys,
+             lambda k: ([as_label(k)] + perte_row(g_as[k])[0], [None] + perte_row(g_as[k])[1]),
+             after=10, size=9, col_w=PERTE_COLW, row_cm=0.56, total_row=perte_total())
 
 # ------------------------------------------------------------
 # DIAPO 12 — performance communication
@@ -544,65 +535,41 @@ S12_AFTER = 11
 
 # 1. Enfants perdus de vue identifiés & récupérés PAR LES RECO (hors BCU)
 #    Indicateurs DHIS2 disponibles « par les RECO » : Penta1 + Penta3 (= DTC), tous âges.
-def pdv_rows(keys, label_fn, src):
-    hdr = ["Entité", "Identifiés (RECO)", "Récupérés (RECO)", "% récupérés"]
-    rows = []
-    tid = trec = 0.0
-    for k in keys:
-        e = src.get(k, {"id": 0, "rec": 0, "var": 0})
-        i, rc = e["id"], e["rec"]
-        tid += i; trec += rc
-        pct = f"{rc / i * 100:.0f}%" if i > 0 else "–"
-        rows.append([label_fn(k), f"{round(i)}", f"{round(rc)}", pct])
-    total = ["TOTAL", f"{round(tid)}", f"{round(trec)}",
-             f"{trec / tid * 100:.0f}%" if tid > 0 else "–"]
-    return hdr, [total] + rows
-
 PDV_NOTE = (SUB + " — Perdus de vue identifiés et récupérés par les RECO (DTC = Penta1 + Penta3, "
             "tous âges). Source DHIS2 ; indicateur « par les RECO » non collecté pour la VAR.")
+PDV_HDR = ["{}", "Identifiés (RECO)", "Récupérés (RECO)", "% récupérés"]
+PDV_COLW = [3.4, 2, 2, 1.6]
+def _pdv(e):
+    i, rc = e["id"], e["rec"]
+    return f"{round(i)}", f"{round(rc)}", (f"{rc / i * 100:.0f}%" if i > 0 else "–")
+def pdv_total():
+    tid = sum(pdv_zs.get(k, {"id": 0})["id"] for k in zs_keys)
+    trec = sum(pdv_zs.get(k, {"rec": 0})["rec"] for k in zs_keys)
+    pct = f"{trec / tid * 100:.0f}%" if tid > 0 else "–"
+    return (["TOTAL", f"{round(tid)}", f"{round(trec)}", pct], [None, None, None, None])
+def pdv_zs_r(k):
+    a, b, c = _pdv(pdv_zs.get(k, {"id": 0, "rec": 0})); return ([k, a, b, c], [None] * 4)
+def pdv_as_r(k):
+    a, b, c = _pdv(pdv_as.get(k, {"id": 0, "rec": 0})); return ([as_label(k), a, b, c], [None] * 4)
 
-# ZS
-hdr, rows = pdv_rows(zs_keys, lambda k: k, pdv_zs)
-sl = add_slide()
-add_title(sl, "Enfants perdus de vue identifiés et récupérés par les RECO — par ZS", PDV_NOTE)
-add_table(sl, hdr, rows, top=Cm(2.4), size=10, col_w=[3, 2, 2, 1.6])
-remember(sl, S12_AFTER)
-
-# AS
-hdr = ["Aire de Santé", "Identifiés (RECO)", "Récupérés (RECO)", "% récupérés"]
-for idx, chunk in enumerate(paginate(as_keys, 36), 1):
-    rows = []
-    for k in chunk:
-        e = pdv_as.get(k, {"id": 0, "rec": 0, "var": 0})
-        i, rc = e["id"], e["rec"]
-        pct = f"{rc / i * 100:.0f}%" if i > 0 else "–"
-        rows.append([as_label(k), f"{round(i)}", f"{round(rc)}", pct])
-    sl = add_slide()
-    add_title(sl, f"Enfants perdus de vue identifiés et récupérés par les RECO — par AS ({idx})", PDV_NOTE)
-    add_table(sl, hdr, rows, top=Cm(2.4), size=9, col_w=[3, 2, 2, 1.6])
-    remember(sl, S12_AFTER)
+table_slides("Enfants perdus de vue identifiés et récupérés par les RECO — par ZS", PDV_NOTE,
+             ["Zone de Santé"] + PDV_HDR[1:], zs_keys, pdv_zs_r, after=S12_AFTER,
+             size=11, col_w=PDV_COLW, row_cm=0.75, total_row=pdv_total())
+table_slides("Enfants perdus de vue identifiés et récupérés par les RECO — par AS", PDV_NOTE,
+             ["Aire de Santé"] + PDV_HDR[1:], as_keys, pdv_as_r, after=S12_AFTER,
+             size=9, col_w=PDV_COLW, row_cm=0.56, total_row=pdv_total())
 
 # 2. Taux d'abandon BCG-VAR1 & DTC1-DTC3 — graphiques (ZS unique, AS paginé)
 def ab_pair(recs):
     return (round(abandon(s(recs, "DTC1_0_11"), s(recs, "DTC3_0_11")) or 0, 1),
             round(abandon(s(recs, "BCG_0_11"), s(recs, "VAR1_0_11")) or 0, 1))
 
-cats = list(zs_keys)
-ab_dtc = [ab_pair(g_zs[k])[0] for k in zs_keys]
-ab_bcg = [ab_pair(g_zs[k])[1] for k in zs_keys]
-sl = add_slide()
-add_title(sl, "Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", SUB)
-add_bar_chart(sl, cats, [("Abandon DTC1-DTC3 %", ab_dtc), ("Abandon BCG-VAR1 %", ab_bcg)], top=Cm(2.2))
-remember(sl, S12_AFTER)
-
-for idx, chunk in enumerate(paginate(as_keys, 40), 1):
-    sl = add_slide()
-    add_title(sl, f"Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS ({idx})", SUB)
-    cats = [as_label(k) for k in chunk]
-    d = [ab_pair(g_as[k])[0] for k in chunk]
-    b = [ab_pair(g_as[k])[1] for k in chunk]
-    add_bar_chart(sl, cats, [("Abandon DTC1-DTC3 %", d), ("Abandon BCG-VAR1 %", b)], top=Cm(2.2))
-    remember(sl, S12_AFTER)
+ab_series = [("Abandon DTC1-DTC3 %", lambda k, g: ab_pair(g[k])[0]),
+             ("Abandon BCG-VAR1 %", lambda k, g: ab_pair(g[k])[1])]
+chart_slides("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", SUB, [zs_keys], lambda k: k,
+             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in ab_series], None, after=S12_AFTER, pct=True)
+chart_slides("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS", SUB, chunks(as_keys, CHART_PER), as_label,
+             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in ab_series], None, after=S12_AFTER, pct=True)
 
 # ------------------------------------------------------------
 #  RÉORDONNANCEMENT : insérer les nouvelles diapos après 11 / 12
