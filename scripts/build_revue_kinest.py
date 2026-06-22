@@ -323,10 +323,21 @@ def add_bar_chart(sl, categories, series, *, top=TOP_DFLT, horizontal=True, pct=
         if series_colors:
             ser.format.fill.solid(); ser.format.fill.fore_color.rgb = series_colors[si]
         if highlight_negative:
-            for pi, v in enumerate(vals):
-                if v is not None and v < 0:
-                    pt = ser.points[pi]
-                    pt.format.fill.solid(); pt.format.fill.fore_color.rgb = NEG
+            # Empêche PowerPoint d'afficher les barres négatives en blanc (inversion) :
+            # les valeurs négatives gardent ainsi la COULEUR DE LEUR SÉRIE (= type d'abandon).
+            el = ser._element
+            for ex in el.findall(qn('c:invertIfNegative')):
+                el.remove(ex)
+            inv = el.makeelement(qn('c:invertIfNegative'), {'val': '0'})
+            ref = None
+            for tag in ('c:spPr', 'c:tx', 'c:order', 'c:idx'):
+                found = el.find(qn(tag))
+                if found is not None:
+                    ref = found; break
+            if ref is not None:
+                ref.addnext(inv)
+            else:
+                el.insert(0, inv)
     try:
         ch.value_axis.tick_labels.font.size = Pt(11)
         ch.category_axis.tick_labels.font.size = Pt(11)
