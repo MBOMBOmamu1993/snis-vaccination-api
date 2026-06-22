@@ -77,9 +77,10 @@ function ensureTheme() {
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: { color: "#64748b" },
-      splitLine: { show: true, lineStyle: { color: ["#eef2f7"], width: 1 } },
+      splitLine: { show: true, lineStyle: { color: ["#eef2f7"], width: 1, type: "dashed" } },
       splitArea: { show: false },
     },
+    bar: { itemStyle: { borderRadius: [4, 4, 0, 0] }, barMaxWidth: 46 },
     tooltip: {
       backgroundColor: "rgba(255,255,255,0.98)",
       borderColor: "#e2e8f0",
