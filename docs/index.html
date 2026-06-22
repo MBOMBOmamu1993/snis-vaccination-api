@@ -925,6 +925,13 @@
         .kc:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -16px rgba(0,32,92,.60), inset 0 1px 0 rgba(255,255,255,.22) !important; }
         .kv { color: #fff !important; font-size: 30px; text-shadow: 0 1px 1px rgba(0,0,0,.18); }
         .kl { color: rgba(255,255,255,.92) !important; text-transform: uppercase; letter-spacing: .04em; font-weight: 700 !important; }
+        /* Boutons de téléchargement (design only) : ⤓ sur chaque graphique, barre CSV/Excel sur chaque tableau. */
+        .pev-dl { position: absolute; top: 8px; right: 8px; z-index: 20; width: 26px; height: 26px; border-radius: 8px; border: 1px solid #e2e8f0; background: rgba(255,255,255,.92); color: #0b3a6f; font-size: 15px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(15,23,42,.12); transition: all .15s ease; }
+        .pev-dl:hover { background: #0093d5; color: #fff; border-color: #0093d5; }
+        .pev-tbar { display: flex; justify-content: flex-end; gap: 8px; margin: 0 0 8px; }
+        .pev-tbtn { border: 1px solid #cdd9ea; background: #fff; color: #0b3a6f; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 8px; cursor: pointer; transition: all .15s ease; }
+        .pev-tbtn:hover { background: #0b3a6f; color: #fff; border-color: #0b3a6f; }
+        @media print { .pev-dl, .pev-tbar { display: none !important; } }
         .cb { border-radius: 16px !important; border: 1px solid #e7edf5 !important; box-shadow: 0 8px 22px -14px rgba(15,23,42,.18) !important; }
         .cb h4 { color: var(--tn); border-bottom: 2px solid #eaf1fb; }
         .dt thead { background: linear-gradient(120deg, var(--tn), var(--tn2)) !important; }
@@ -1106,6 +1113,101 @@
     </div>
 
     <script>
+        /* ═══ HABILLAGE SHINY — défauts graphiques + boutons d'export (design only) ═══
+           Ajouts non intrusifs : aucun calcul ni donnée touché. Harmonise tous les
+           graphiques Chart.js (police, axes, tooltip, légende, animation) et ajoute
+           des boutons de téléchargement : ⤓ PNG sur chaque graphique, CSV + Excel sur
+           chaque tableau .dt. Plotly garde sa modebar native (download intégré). */
+        (function () {
+            try {
+                if (window.Chart && Chart.defaults) {
+                    var D = Chart.defaults;
+                    D.font.family = "'Segoe UI', system-ui, Tahoma, sans-serif";
+                    D.color = '#475569';
+                    D.animation.duration = 650;
+                    D.animation.easing = 'easeOutCubic';
+                    try { if (D.scale && D.scale.grid) { D.scale.grid.color = '#eef2f7'; D.scale.grid.drawTicks = false; } } catch (_) { }
+                    if (D.plugins && D.plugins.legend) {
+                        D.plugins.legend.labels.usePointStyle = true;
+                        D.plugins.legend.labels.boxWidth = 10;
+                        D.plugins.legend.labels.boxHeight = 10;
+                        D.plugins.legend.labels.padding = 14;
+                    }
+                    if (D.plugins && D.plugins.tooltip) {
+                        var T = D.plugins.tooltip;
+                        T.backgroundColor = 'rgba(255,255,255,.98)';
+                        T.titleColor = '#0f172a'; T.bodyColor = '#1e293b';
+                        T.borderColor = '#e2e8f0'; T.borderWidth = 1;
+                        T.padding = 10; T.cornerRadius = 10; T.boxPadding = 6;
+                        T.titleFont = { weight: '700' };
+                    }
+                    Chart.register({
+                        id: 'pevDl',
+                        afterInit: function (chart) {
+                            try {
+                                var cv = chart.canvas; if (!cv) return;
+                                var host = cv.parentNode; if (!host || host.querySelector('.pev-dl')) return;
+                                if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+                                var b = document.createElement('button');
+                                b.className = 'pev-dl'; b.type = 'button';
+                                b.title = 'Télécharger ce graphique (PNG)'; b.innerHTML = '⤓';
+                                b.onclick = function (e) {
+                                    e.preventDefault();
+                                    try { var a = document.createElement('a'); a.href = chart.toBase64Image('image/png', 1); a.download = 'graphique_pev.png'; a.click(); } catch (_) { }
+                                };
+                                host.appendChild(b);
+                            } catch (_) { }
+                        }
+                    });
+                }
+            } catch (_) { }
+
+            /* Export d'un <table> du DOM : CSV (UTF-8, séparateur « ; ») et Excel (.xls). */
+            function _pevCsv(tbl) {
+                var rows = [];
+                tbl.querySelectorAll('tr').forEach(function (tr) {
+                    var cells = [];
+                    tr.querySelectorAll('th,td').forEach(function (c) {
+                        var t = (c.textContent || '').replace(/\s+/g, ' ').trim();
+                        cells.push(/[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t);
+                    });
+                    if (cells.length) rows.push(cells.join(';'));
+                });
+                var blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tableau_pev.csv'; a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+            }
+            function _pevXls(tbl) {
+                var tmpl = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><table border="1">' + tbl.innerHTML + '</table></body></html>';
+                var a = document.createElement('a'); a.download = 'tableau_pev.xls';
+                a.href = 'data:application/vnd.ms-excel;base64,' + window.btoa(unescape(encodeURIComponent(tmpl))); a.click();
+            }
+            function _pevAddTblBtns(tbl) {
+                try {
+                    if (!tbl || tbl.dataset.pevExp) return;
+                    tbl.dataset.pevExp = '1';
+                    if (tbl.id === 'triTbl') return;            /* a déjà ses propres boutons */
+                    if (tbl.rows && tbl.rows.length < 2) return; /* ignore les mini-tables */
+                    var anchor = tbl.closest('.tw') || tbl;
+                    if (!anchor.parentNode) return;
+                    var bar = document.createElement('div'); bar.className = 'pev-tbar';
+                    var mk = function (label, fn) {
+                        var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pev-tbtn'; btn.textContent = label;
+                        btn.onclick = function (e) { e.preventDefault(); try { fn(tbl); } catch (_) { } };
+                        return btn;
+                    };
+                    bar.appendChild(mk('⤓ CSV', _pevCsv));
+                    bar.appendChild(mk('⤓ Excel', _pevXls));
+                    anchor.parentNode.insertBefore(bar, anchor);
+                } catch (_) { }
+            }
+            function _pevScan() { try { document.querySelectorAll('table.dt:not([data-pev-exp])').forEach(_pevAddTblBtns); } catch (_) { } }
+            var _pevTick = null;
+            var _mo = new MutationObserver(function () { if (_pevTick) return; _pevTick = requestAnimationFrame(function () { _pevTick = null; _pevScan(); }); });
+            function _pevStart() { _pevScan(); try { _mo.observe(document.body, { childList: true, subtree: true }); } catch (_) { } }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _pevStart); else _pevStart();
+        })();
+
         /* ═══ CONFIGURATION ═══ */
         var C = {
             MA: 11, CT: 0.33, CD: 0.10,
