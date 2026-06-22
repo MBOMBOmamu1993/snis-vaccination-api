@@ -907,9 +907,24 @@
         .fbtn .cn { background: var(--tb) !important; }
         .ct { background: var(--tsurf); }
         .db { border-radius: 16px !important; border: 1px solid #e7edf5 !important; box-shadow: 0 8px 26px -16px rgba(15,23,42,.22) !important; }
-        .kc { border-radius: 16px !important; border-left: none !important; border-top: 4px solid var(--tn); box-shadow: 0 8px 20px -12px rgba(15,23,42,.22) !important; }
-        .kc.gn { border-top-color: #178a44 !important; } .kc.rd { border-top-color: #e23636 !important; } .kc.or { border-top-color: #f59e0b !important; } .kc.bl { border-top-color: var(--tb) !important; } .kc.pu { border-top-color: #7c3aed !important; }
-        .kv { color: var(--tn); font-size: 30px; }
+        /* Cartes KPI « pleines » façon Shiny PEV RDC : fond saturé en dégradé,
+           texte blanc, ombre douce. Habillage uniquement — gabarit, valeurs et
+           logique de couleur inchangés. La teinte vient des variables --kc1/--kc2 :
+           les classes de ton (gn/rd/or/bl/pu/cy) ou la couleur sémantique posée par
+           le JS (cartes de couverture) les définissent ; défaut = navy OMS. */
+        .kc { position: relative; overflow: hidden; border: none !important; border-radius: 16px !important; color: #fff !important;
+              --kc1: var(--tn); --kc2: var(--tn2);
+              background-image: linear-gradient(150deg, var(--kc2), var(--kc1)) !important;
+              box-shadow: 0 12px 26px -14px rgba(0,32,92,.50), inset 0 1px 0 rgba(255,255,255,.18) !important; }
+        .kc.gn { --kc1:#1f9d57; --kc2:#2bbd6b; }
+        .kc.rd { --kc1:#dc2f2f; --kc2:#f0524f; }
+        .kc.or { --kc1:#f08c00; --kc2:#fbab2d; }
+        .kc.cy { --kc1:#e0a800; --kc2:#f5c518; }
+        .kc.bl { --kc1:#0093d5; --kc2:#2bb0ee; }
+        .kc.pu { --kc1:#7c3aed; --kc2:#9d5cf5; }
+        .kc:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -16px rgba(0,32,92,.60), inset 0 1px 0 rgba(255,255,255,.22) !important; }
+        .kv { color: #fff !important; font-size: 30px; text-shadow: 0 1px 1px rgba(0,0,0,.18); }
+        .kl { color: rgba(255,255,255,.92) !important; text-transform: uppercase; letter-spacing: .04em; font-weight: 700 !important; }
         .cb { border-radius: 16px !important; border: 1px solid #e7edf5 !important; box-shadow: 0 8px 22px -14px rgba(15,23,42,.18) !important; }
         .cb h4 { color: var(--tn); border-bottom: 2px solid #eaf1fb; }
         .dt thead { background: linear-gradient(120deg, var(--tn), var(--tn2)) !important; }
@@ -4312,7 +4327,7 @@
             kd.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px';
             kd.innerHTML =
                 '<div class="kc bl" style="flex:1;min-width:130px"><div class="kv">' + comp.toFixed(1) + '%</div><div class="kl">Complétude</div></div>' +
-                '<div class="kc" style="flex:1;min-width:130px;border-left:5px solid #f39c12"><div class="kv" style="color:#f39c12">' + prompt2.toFixed(1) + '%</div><div class="kl">Promptitude</div></div>' +
+                '<div class="kc or" style="flex:1;min-width:130px"><div class="kv">' + prompt2.toFixed(1) + '%</div><div class="kl">Promptitude</div></div>' +
                 '<div class="kc ' + (pctFix >= 80 ? 'gn' : pctFix >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctFix.toFixed(1) + ' %</div><div class="kl">% Séances fixes réalisées</div></div>' +
                 '<div class="kc ' + (pctAv >= 80 ? 'gn' : pctAv >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctAv.toFixed(1) + ' %</div><div class="kl">% Séances avancées réalisées</div></div>' +
                 '<div class="kc ' + (pctMob >= 80 ? 'gn' : pctMob >= 50 ? 'cy' : 'rd') + '" style="flex:1;min-width:130px"><div class="kv">' + pctMob.toFixed(1) + ' %</div><div class="kl">% Séances mobiles réalisées</div></div>';
@@ -4532,10 +4547,10 @@
             var nTot = orgNames.length || 1;
 
             cardBox.innerHTML += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:12px 0">' +
-                '<div class="kc rd" style="flex:1;min-width:180px"><div class="kv">' + (n0 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage 0%</div><div style="font-size:11px;color:#888">' + n0 + '/' + nTot + '</div></div>' +
-                '<div class="kc" style="flex:1;min-width:180px;border-left:5px solid #f39c12"><div class="kv" style="color:#f39c12">' + (nLt50 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage &lt;50%</div><div style="font-size:11px;color:#888">' + nLt50 + '/' + nTot + '</div></div>' +
-                '<div class="kc" style="flex:1;min-width:180px;border-left:5px solid #2196f3"><div class="kv" style="color:#2196f3">' + (n50_80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage 50-79.9%</div><div style="font-size:11px;color:#888">' + n50_80 + '/' + nTot + '</div></div>' +
-                '<div class="kc gn" style="flex:1;min-width:180px"><div class="kv">' + (nGe80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage ≥80%</div><div style="font-size:11px;color:#888">' + nGe80 + '/' + nTot + '</div></div></div>';
+                '<div class="kc rd" style="flex:1;min-width:180px"><div class="kv">' + (n0 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage 0%</div><div style="font-size:11px;color:rgba(255,255,255,.85)">' + n0 + '/' + nTot + '</div></div>' +
+                '<div class="kc or" style="flex:1;min-width:180px"><div class="kv">' + (nLt50 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage &lt;50%</div><div style="font-size:11px;color:rgba(255,255,255,.85)">' + nLt50 + '/' + nTot + '</div></div>' +
+                '<div class="kc bl" style="flex:1;min-width:180px"><div class="kv">' + (n50_80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage 50-79.9%</div><div style="font-size:11px;color:rgba(255,255,255,.85)">' + n50_80 + '/' + nTot + '</div></div>' +
+                '<div class="kc gn" style="flex:1;min-width:180px"><div class="kv">' + (nGe80 / nTot * 100).toFixed(1) + '%</div><div class="kl">' + ol.l + ' rapportage ≥80%</div><div style="font-size:11px;color:rgba(255,255,255,.85)">' + nGe80 + '/' + nTot + '</div></div></div>';
             c.appendChild(cardBox);
 
             /* ── Indicateurs clés de la logistique : 6 graphiques ──
@@ -5691,8 +5706,9 @@
                     { v: nBelow80 + '/' + orgNames.length, l: belowLabel, col: nBelow80 > 0 ? '#dc2626' : '#16a34a' }
                 ].forEach(function (k) {
                     var kc = E('div', 'kc');
-                    kc.style.cssText = 'flex:1;min-width:140px;border-left:5px solid ' + k.col;
-                    kc.innerHTML = '<div class="kv" style="color:' + k.col + '">' + k.v + '</div><div class="kl">' + k.l + '</div>';
+                    kc.style.cssText = 'flex:1;min-width:140px';
+                    kc.style.setProperty('--kc1', k.col); kc.style.setProperty('--kc2', k.col);
+                    kc.innerHTML = '<div class="kv">' + k.v + '</div><div class="kl">' + k.l + '</div>';
                     kpiBox.appendChild(kc);
                 });
                 c.appendChild(kpiBox);
@@ -6400,7 +6416,8 @@
                 ];
                 kpis.forEach(function (k) {
                     var kc = E('div', 'kc');
-                    kc.style.cssText = 'flex:1;min-width:160px;border-left:5px solid ' + k.col;
+                    kc.style.cssText = 'flex:1;min-width:160px';
+                    kc.style.setProperty('--kc1', k.col); kc.style.setProperty('--kc2', k.col);
                     function _fmt(v, mode, total) {
                         if (v === null || v === undefined || !isFinite(v)) return '–';
                         if (mode === 'pct') return v.toFixed(2) + '%';
@@ -6415,7 +6432,7 @@
                     kc.innerHTML =
                         '<div class="kl" style="font-size:11px;font-weight:700;color:#444">' + k.lbl + ' : ' + curLbl + '</div>' +
                         '<div class="kv" style="font-size:22px;color:' + k.col + '">' + curTxt + arrow + '</div>' +
-                        '<div style="font-size:11px;color:#666;margin-top:4px">' + prevLbl + ' : <strong>' + prevTxt + '</strong></div>';
+                        '<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:4px">' + prevLbl + ' : <strong>' + prevTxt + '</strong></div>';
                     kpiBox.appendChild(kc);
                 });
                 c.appendChild(kpiBox);
@@ -7096,7 +7113,8 @@
                     { v: hasAjust ? Math.round(tgtAj.ns).toLocaleString() : '–', l: 'Cible NS ajustée', col: '#7c3aed' }
                 ].forEach(function (k) {
                     var kc = E('div', 'kc');
-                    kc.style.cssText = 'flex:1;min-width:160px;border-left:5px solid ' + k.col;
+                    kc.style.cssText = 'flex:1;min-width:160px';
+                    kc.style.setProperty('--kc1', k.col); kc.style.setProperty('--kc2', k.col);
                     kc.innerHTML = '<div class="kv" style="color:' + k.col + '">' + k.v + '</div><div class="kl">' + k.l + '</div>';
                     kpiBox.appendChild(kc);
                 });
