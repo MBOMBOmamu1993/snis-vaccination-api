@@ -1006,7 +1006,43 @@
         #pevSide .ps-src { margin-top: auto; padding: 12px 18px; font-size: 10.5px; color: rgba(255,255,255,.4); border-top: 1px solid rgba(255,255,255,.1); }
         body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 256px; }
         @media (max-width: 760px) { body.tabmode #pevSide { width: 60px; } body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 60px; } #pevSide .ps-pg span:not(.ps-ic), #pevSide .ps-tab, #pevSide .ps-home span { display: none; } }
-    </style>
+    
+        /* ═══════════ PEV — Habillage type plateforme Shiny (calque additionnel) ═══════════ */
+        /* Bandeaux de titre de section / cartes */
+        .pev-banner{background:linear-gradient(120deg,var(--tn),var(--tn2) 55%,var(--tb))!important;color:#fff!important;
+            padding:13px 18px!important;border-radius:12px!important;margin:0 0 16px!important;font-weight:800!important;
+            font-size:15px!important;letter-spacing:.2px;display:flex;align-items:center;gap:10px;border:none!important;
+            box-shadow:0 8px 22px -10px rgba(0,32,92,.55)!important;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+        /* Boutons d'export tableaux — style plateforme */
+        .pev-tbar{gap:10px;align-items:center}
+        .pev-tbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid #cdd9ea;background:#fff;
+            color:var(--tn);font-size:11.5px;font-weight:700;padding:7px 14px;border-radius:9px;cursor:pointer;
+            box-shadow:0 1px 3px rgba(15,23,42,.10);transition:all .15s ease}
+        .pev-tbtn:hover{background:var(--tn);color:#fff;border-color:var(--tn);transform:translateY(-1px);
+            box-shadow:0 6px 16px -6px rgba(0,32,92,.5)}
+        /* Cellules heatmap couverture */
+        .dt td.pev-hm{font-weight:800;text-align:center;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.18)}
+        .dt td.pev-hm.pev-hm-g{background:#1f9d57!important}
+        .dt td.pev-hm.pev-hm-g2{background:#46b96e!important}
+        .dt td.pev-hm.pev-hm-y{background:#f2c200!important;color:#5a4500;text-shadow:none}
+        .dt td.pev-hm.pev-hm-o{background:#f08c00!important}
+        .dt td.pev-hm.pev-hm-r{background:#e23b3b!important}
+        /* Légende heatmap */
+        .pev-hm-leg{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;font-size:11px;
+            font-weight:700;color:var(--tn)}
+        .pev-hm-leg .pev-hm-chip{display:inline-flex;align-items:center;color:#fff;padding:3px 11px;border-radius:20px;
+            font-size:10.5px;font-weight:800}
+        /* Menu de téléchargement graphique (type Highcharts) */
+        .pev-dlmenu{position:absolute;top:40px;right:8px;z-index:60;background:#fff;border:1px solid #e2e8f0;
+            border-radius:10px;box-shadow:0 12px 34px -8px rgba(15,23,42,.32);min-width:196px;padding:6px;display:none}
+        .pev-dlmenu.open{display:block}
+        .pev-dlmenu button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;
+            padding:8px 12px;border-radius:7px;font-size:12.5px;color:#1f2937;cursor:pointer;font-family:inherit}
+        .pev-dlmenu button:hover{background:#eaf4fd;color:var(--tn)}
+        .pev-dlmenu .pev-dlsep{height:1px;background:#eef1f5;margin:5px 4px}
+        @media print{.pev-dlmenu,.pev-hm-leg{display:none!important}}
+
+        </style>
 </head>
 
 <body>
@@ -8064,6 +8100,170 @@
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { go(); hookRender(); }); else { go(); hookRender(); }
         })();
     </script>
+    <script>
+        /* ═══════════ PEV — Habillage type plateforme Shiny : heatmap, bandeaux, menu de DL ═══════════ */
+        (function () {
+            'use strict';
+
+            /* ---------- 1. Heatmap des cellules de couverture ---------- */
+            var COL_RE = /%|compl[ée]tude|promptitude|couv|\bcv\b|ajust|taux|atteint|performance/i;
+            var AGH_RE = /^\s*(BCG|VPO|VPI|DTC|PENTA|ROTA|PCV|VAR|VAA|TD|VAP|MCV|RR|HPV|MEN)/i;
+            var SKIP_RE = /abandon|perte|drop|z[ée]ro|[ée]cart|attendu|re[çc]u|nombre|effectif|population|cible|total|rang|manquant|stock|dose/i;
+
+            function hmClass(v) {
+                if (v >= 95) return 'pev-hm-g';
+                if (v >= 90) return 'pev-hm-g2';
+                if (v >= 80) return 'pev-hm-y';
+                if (v >= 60) return 'pev-hm-o';
+                return 'pev-hm-r';
+            }
+            function parseVal(t) {
+                if (!t) return null;
+                t = String(t).replace(/ /g, ' ').trim();
+                if (!/[0-9]/.test(t)) return null;
+                var isPct = /%/.test(t);
+                var m = t.replace(/\s/g, '').replace('%', '').replace(',', '.');
+                if (!/^-?\d+(\.\d+)?$/.test(m)) return null;
+                var v = parseFloat(m);
+                if (!isFinite(v)) return null;
+                return { v: v, isPct: isPct };
+            }
+            function addLegend(tbl) {
+                try {
+                    var anchor = tbl.closest('.tw') || tbl;
+                    if (!anchor.parentNode) return;
+                    if (anchor.parentNode.querySelector(':scope > .pev-hm-leg')) return;
+                    var leg = document.createElement('div');
+                    leg.className = 'pev-hm-leg';
+                    leg.innerHTML = '<span>Légende couverture :</span>' +
+                        '<span class="pev-hm-chip" style="background:#1f9d57">≥ 90%</span>' +
+                        '<span class="pev-hm-chip" style="background:#f2c200;color:#5a4500">80–90%</span>' +
+                        '<span class="pev-hm-chip" style="background:#f08c00">60–80%</span>' +
+                        '<span class="pev-hm-chip" style="background:#e23b3b">&lt; 60%</span>';
+                    anchor.parentNode.insertBefore(leg, anchor);
+                } catch (e) { }
+            }
+            function heatTable(tbl) {
+                try {
+                    if (!tbl || tbl.dataset.pevhm) return;
+                    tbl.dataset.pevhm = '1';
+                    var head = tbl.tHead;
+                    if (!head || !head.rows.length) return;
+                    var ths = head.rows[head.rows.length - 1].cells;
+                    var cov = {}, anyCov = false;
+                    for (var i = 0; i < ths.length; i++) {
+                        var ht = (ths[i].textContent || '');
+                        if ((COL_RE.test(ht) || AGH_RE.test(ht)) && !SKIP_RE.test(ht)) { cov[i] = true; anyCov = true; }
+                    }
+                    var body = tbl.tBodies[0];
+                    if (!body) return;
+                    var colored = false;
+                    for (var r = 0; r < body.rows.length; r++) {
+                        var cells = body.rows[r].cells;
+                        for (var c = 0; c < cells.length; c++) {
+                            var td = cells[c];
+                            if (td.classList.contains('cg') || td.classList.contains('crd') || td.classList.contains('pev-hm')) continue;
+                            var pr = parseVal(td.textContent);
+                            if (!pr) continue;
+                            var inCov = anyCov ? !!cov[c] : false;
+                            var ok = inCov ? (pr.v >= 0 && pr.v <= 150) : (!anyCov && pr.isPct && pr.v >= 0 && pr.v <= 150);
+                            if (!ok) continue;
+                            td.classList.add('pev-hm', hmClass(pr.v));
+                            colored = true;
+                        }
+                    }
+                    if (colored) addLegend(tbl);
+                } catch (e) { }
+            }
+
+            /* ---------- 2. Bandeaux de titre de section / carte ---------- */
+            function bannerize(scope) {
+                try {
+                    (scope || document).querySelectorAll('h3,h4').forEach(function (h) {
+                        if (h.dataset.pevbanner) return;
+                        var st = h.getAttribute('style') || '';
+                        var isPanel = h.tagName === 'H3' && /0b3a6f/i.test(st);
+                        var isCard = h.tagName === 'H4' && h.parentElement && h.parentElement.classList.contains('cb');
+                        if (!isPanel && !isCard) return;
+                        if (h.closest('#pevWelcome') || h.closest('.ph-card') || h.closest('.ph-grid')) return;
+                        h.dataset.pevbanner = '1';
+                        h.classList.add('pev-banner');
+                        h.style.color = '#fff';
+                    });
+                } catch (e) { }
+            }
+
+            /* ---------- 3. Menu de téléchargement des graphiques (Chart.js) ---------- */
+            function buildChartMenu(btn) {
+                try {
+                    if (btn.dataset.pevMenu) return;
+                    btn.dataset.pevMenu = '1';
+                    var host = btn.parentNode;
+                    if (!host) return;
+                    function getChart() {
+                        var cv = host.querySelector('canvas');
+                        return (cv && window.Chart && Chart.getChart) ? Chart.getChart(cv) : null;
+                    }
+                    function dl(type, ext) {
+                        var ch = getChart(); if (!ch) return;
+                        try {
+                            var a = document.createElement('a');
+                            a.href = ch.toBase64Image(type, 1);
+                            a.download = 'graphique_pev.' + ext; a.click();
+                        } catch (_) { }
+                    }
+                    var menu = document.createElement('div');
+                    menu.className = 'pev-dlmenu';
+                    function item(label, icon, fn) {
+                        var b = document.createElement('button');
+                        b.type = 'button';
+                        b.innerHTML = '<span>' + icon + '</span><span>' + label + '</span>';
+                        b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); menu.classList.remove('open'); fn(); };
+                        menu.appendChild(b);
+                    }
+                    item('Télécharger PNG', '🖼️', function () { dl('image/png', 'png'); });
+                    item('Télécharger JPEG', '🖼️', function () { dl('image/jpeg', 'jpg'); });
+                    var sep = document.createElement('div'); sep.className = 'pev-dlsep'; menu.appendChild(sep);
+                    item('Imprimer le graphique', '🖨️', function () {
+                        var ch = getChart(); if (!ch) return;
+                        try {
+                            var w = window.open(''); if (!w) return;
+                            w.document.write('<img src="' + ch.toBase64Image() + '" style="max-width:100%" onload="window.focus();window.print();">');
+                            w.document.close();
+                        } catch (_) { }
+                    });
+                    host.appendChild(menu);
+                    btn.title = 'Télécharger / imprimer ce graphique';
+                    btn.onclick = function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        document.querySelectorAll('.pev-dlmenu.open').forEach(function (m) { if (m !== menu) m.classList.remove('open'); });
+                        menu.classList.toggle('open');
+                    };
+                } catch (e) { }
+            }
+            document.addEventListener('click', function () {
+                document.querySelectorAll('.pev-dlmenu.open').forEach(function (m) { m.classList.remove('open'); });
+            });
+
+            /* ---------- Balayage + observation des rendus dynamiques ---------- */
+            function sweep() {
+                document.querySelectorAll('table.dt:not([data-pevhm])').forEach(heatTable);
+                bannerize(document);
+                document.querySelectorAll('.pev-dl:not([data-pev-menu])').forEach(buildChartMenu);
+            }
+            var tick = null;
+            var mo = new MutationObserver(function () {
+                if (tick) return;
+                tick = requestAnimationFrame(function () { tick = null; sweep(); });
+            });
+            function start() {
+                sweep();
+                try { mo.observe(document.body, { childList: true, subtree: true }); } catch (e) { }
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+        })();
+    </script>
+
 </body>
 
 </html>
