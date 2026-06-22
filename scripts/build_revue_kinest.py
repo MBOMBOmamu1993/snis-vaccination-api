@@ -294,8 +294,10 @@ def add_table(sl, header, rows, *, top=TOP_DFLT, size=8, col_w=None, cell_fills=
 def chunks(items, per):
     return [items[i:i + per] for i in range(0, len(items), per)]
 
-def add_bar_chart(sl, categories, series, *, top=TOP_DFLT, horizontal=True, pct=False):
-    """Barres horizontales (lisibles pour beaucoup d'entités), avec étiquettes de valeurs."""
+def add_bar_chart(sl, categories, series, *, top=TOP_DFLT, horizontal=True, pct=False,
+                  series_colors=None, highlight_negative=False):
+    """Barres horizontales (lisibles pour beaucoup d'entités), avec étiquettes de valeurs.
+       highlight_negative : colore en rouge foncé les barres dont la valeur est < 0."""
     cd = CategoryChartData()
     cd.categories = categories
     for nm, vals in series:
@@ -307,23 +309,35 @@ def add_bar_chart(sl, categories, series, *, top=TOP_DFLT, horizontal=True, pct=
     ch.has_legend = True
     ch.legend.position = XL_LEGEND_POSITION.TOP
     ch.legend.include_in_layout = False
+    ch.legend.font.size = Pt(12)
     plot = ch.plots[0]
-    plot.gap_width = 60
+    plot.gap_width = 50
     plot.has_data_labels = True
     dl = plot.data_labels
-    dl.font.size = Pt(7)
+    dl.font.size = Pt(10); dl.font.bold = True
     dl.number_format = '0.0"%"' if pct else '0'
     dl.number_format_is_linked = False
+    NEG = RGBColor(0x7F, 0x1D, 0x1D)
+    for si, (nm, vals) in enumerate(series):
+        ser = ch.series[si]
+        if series_colors:
+            ser.format.fill.solid(); ser.format.fill.fore_color.rgb = series_colors[si]
+        if highlight_negative:
+            for pi, v in enumerate(vals):
+                if v is not None and v < 0:
+                    pt = ser.points[pi]
+                    pt.format.fill.solid(); pt.format.fill.fore_color.rgb = NEG
     try:
-        ch.value_axis.tick_labels.font.size = Pt(8)
-        ch.category_axis.tick_labels.font.size = Pt(8)
+        ch.value_axis.tick_labels.font.size = Pt(11)
+        ch.category_axis.tick_labels.font.size = Pt(11)
         if pct:
             ch.value_axis.has_major_gridlines = True
     except Exception:
         pass
     return gf
 
-def chart_slides(title, sub, entity_chunks, label_fn, series_fns, names, *, after, pct=False, per_note=""):
+def chart_slides(title, sub, entity_chunks, label_fn, series_fns, names, *, after, pct=False,
+                 series_colors=None, highlight_negative=False):
     """Crée une diapo par paquet d'entités ; titre numéroté (i/N)."""
     N = len(entity_chunks)
     for i, chunk in enumerate(entity_chunks, 1):
@@ -332,15 +346,22 @@ def chart_slides(title, sub, entity_chunks, label_fn, series_fns, names, *, afte
         add_title(sl, title + suff, sub)
         cats = [label_fn(k) for k in chunk]
         series = [(nm, [fn(k) for k in chunk]) for nm, fn in series_fns]
-        add_bar_chart(sl, cats, series, pct=pct)
+        add_bar_chart(sl, cats, series, pct=pct, series_colors=series_colors,
+                      highlight_negative=highlight_negative)
         remember(sl, after)
 
 def table_slides(title, sub, header, items, row_fn, *, after, size, col_w, row_cm,
                  total_row=None, per=None):
     """Tableau paginé proprement : TOTAL en tête de 1ʳᵉ page, en-tête répété, numéro (i/N)."""
-    if per is None:
-        per = rows_per_page(row_cm)
-    pages = chunks(items, per) or [[]]
+    cap = per or rows_per_page(row_cm)
+    # La 1ʳᵉ page accueille la ligne TOTAL : on y réserve une place.
+    items = list(items)
+    pages, idx, first = [], 0, True
+    while idx < len(items):
+        take = cap - (1 if (first and total_row is not None) else 0)
+        pages.append(items[idx:idx + take]); idx += take; first = False
+    if not pages:
+        pages = [[]]
     N = len(pages)
     for i, page in enumerate(pages, 1):
         rows, fills = [], []
@@ -411,18 +432,21 @@ def comp_prompt(recs):
     prompt = pw / n if n else 0
     return round(comp, 1), round(prompt, 1)
 
-CHART_PER = 22   # entités max par diapo-graphique (lisibilité barres horizontales)
+CHART_PER = 12   # entités max par diapo-graphique → barres plus grandes et lisibles
+CP_COLORS = [RGBColor(0x00, 0x93, 0xD5), RGBColor(0xF5, 0x9E, 0x0B)]
+ZDSV_COLORS = [RGBColor(0x7C, 0x3A, 0xED), RGBColor(0xEA, 0xB3, 0x08)]
+AB_COLORS = [RGBColor(0xC8, 0x1E, 0x1E), RGBColor(0xF5, 0x9E, 0x0B)]
 
 cp_series = [("Complétude %", lambda k, g: comp_prompt(g[k])[0]),
              ("Promptitude %", lambda k, g: comp_prompt(g[k])[1])]
 # ZS
 chart_slides("Complétude & Promptitude par Zone de Santé", SUB, [zs_keys], lambda k: k,
              [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in cp_series],
-             None, after=10, pct=True)
+             None, after=10, pct=True, series_colors=CP_COLORS)
 # AS
 chart_slides("Complétude & Promptitude par Aire de Santé", SUB, chunks(as_keys, CHART_PER), as_label,
              [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in cp_series],
-             None, after=10, pct=True)
+             None, after=10, pct=True, series_colors=CP_COLORS)
 
 # 2. CV admin tous antigènes — tableaux (ZS unique, AS paginé)
 def cv_row(recs):
@@ -444,19 +468,21 @@ def cv_as_row(k):
     c, fl = cv_row(g_as[k]); return ([as_label(k)] + c, [None] + fl)
 
 table_slides("Couverture vaccinale administrative par ZS — tous antigènes (%)", SUB,
-             ["Zone de Santé"] + AG_ORDER, zs_keys, cv_zs_row, after=10, size=8,
-             col_w=CV_COLW, row_cm=0.62, total_row=cv_total())
+             ["Zone de Santé"] + AG_ORDER, zs_keys, cv_zs_row, after=10, size=10,
+             col_w=CV_COLW, row_cm=0.95, total_row=cv_total())
 table_slides("Couverture vaccinale administrative par AS — tous antigènes (%)", SUB,
-             ["Aire de Santé"] + AG_ORDER, as_keys, cv_as_row, after=10, size=7,
-             col_w=CV_COLW, row_cm=0.52, total_row=cv_total())
+             ["Aire de Santé"] + AG_ORDER, as_keys, cv_as_row, after=10, size=9,
+             col_w=CV_COLW, row_cm=0.72, total_row=cv_total())
 
 # 3. Enfants ZD & SV — graphiques
 zdsv_series = [("Enfants ZD", lambda k, g: round(zd(g[k]))),
                ("Enfants SV", lambda k, g: round(sv(g[k])))]
 chart_slides("Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par ZS", SUB, [zs_keys], lambda k: k,
-             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in zdsv_series], None, after=10)
+             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in zdsv_series], None, after=10,
+             series_colors=ZDSV_COLORS)
 chart_slides("Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par AS", SUB, chunks(as_keys, CHART_PER), as_label,
-             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in zdsv_series], None, after=10)
+             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in zdsv_series], None, after=10,
+             series_colors=ZDSV_COLORS)
 
 # 4. Catégorisation ACZ — tableaux (ZS unique, AS paginé)
 def cat_row(recs):
@@ -466,24 +492,26 @@ def cat_row(recs):
     ta = abandon(d1, d3)
     cat = categorize(cv1, ta)
     return ["–" if cv1 is None else f"{cv1:.1f}%",
-            "–" if ta is None else f"{ta:.1f}%", cat], cat
+            "–" if ta is None else f"{ta:.1f}%", cat], cat, ta
 
 CAT_NOTE = (SUB + " — Cat.1: P1≥90 & TA≤10 · Cat.2: P1≥90 & TA>10 · "
             "Cat.3: P1<90 & TA≤10 · Cat.4: P1<90 & TA>10")
 CAT_COLW = [3.4, 2, 2.6, 2]
+def _cat_fill(ta, cat):
+    return [None, None, ab_color(ta), cat_color(cat)]
 def cat_total():
-    cells, cat = cat_row(cur); return (["TOTAL"] + cells, [None, None, None, cat_color(cat)])
+    cells, cat, ta = cat_row(cur); return (["TOTAL"] + cells, _cat_fill(ta, cat))
 def cat_zs_r(k):
-    cells, cat = cat_row(g_zs[k]); return ([k] + cells, [None, None, None, cat_color(cat)])
+    cells, cat, ta = cat_row(g_zs[k]); return ([k] + cells, _cat_fill(ta, cat))
 def cat_as_r(k):
-    cells, cat = cat_row(g_as[k]); return ([as_label(k)] + cells, [None, None, None, cat_color(cat)])
+    cells, cat, ta = cat_row(g_as[k]); return ([as_label(k)] + cells, _cat_fill(ta, cat))
 
 table_slides("Catégorisation ACZ par ZS", CAT_NOTE,
              ["Zone de Santé", "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"],
-             zs_keys, cat_zs_r, after=10, size=10, col_w=CAT_COLW, row_cm=0.7, total_row=cat_total())
+             zs_keys, cat_zs_r, after=10, size=13, col_w=CAT_COLW, row_cm=1.05, total_row=cat_total())
 table_slides("Catégorisation ACZ par AS", CAT_NOTE,
              ["Aire de Santé", "CV Penta1 (%)", "Taux abandon DTC1-DTC3 (%)", "Catégorie ACZ"],
-             as_keys, cat_as_r, after=10, size=9, col_w=CAT_COLW, row_cm=0.56, total_row=cat_total())
+             as_keys, cat_as_r, after=10, size=12, col_w=CAT_COLW, row_cm=0.9, total_row=cat_total())
 
 # 5. Disponibilité des intrants (BCG, DTC, VAR, VPO) — tableaux
 DISPO_V = [("BCG", "BCG"), ("DTC (Penta)", "DTC"), ("VAR", "VAR"), ("VPO", "VPO")]
@@ -500,11 +528,11 @@ def dispo_total():
 table_slides("Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)", SUB,
              ["Zone de Santé"] + [l for l, _ in DISPO_V], zs_keys,
              lambda k: (["%s" % k] + dispo_row(g_zs[k])[0], [None] + dispo_row(g_zs[k])[1]),
-             after=10, size=11, col_w=DISPO_COLW, row_cm=0.75, total_row=dispo_total())
+             after=10, size=13, col_w=DISPO_COLW, row_cm=1.05, total_row=dispo_total())
 table_slides("Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)", SUB,
              ["Aire de Santé"] + [l for l, _ in DISPO_V], as_keys,
              lambda k: ([as_label(k)] + dispo_row(g_as[k])[0], [None] + dispo_row(g_as[k])[1]),
-             after=10, size=9, col_w=DISPO_COLW, row_cm=0.56, total_row=dispo_total())
+             after=10, size=12, col_w=DISPO_COLW, row_cm=0.9, total_row=dispo_total())
 
 # 6. Taux de perte (VPO, DTC, VAR, VAA, Td) — tableaux
 PERTE_V = [("VPO", "VPO"), ("DTC (Penta)", "DTC"), ("VAR", "VAR"), ("VAA", "VAA"), ("Td", "Td")]
@@ -521,11 +549,11 @@ def perte_total():
 table_slides("Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)", SUB,
              ["Zone de Santé"] + [l for l, _ in PERTE_V], zs_keys,
              lambda k: (["%s" % k] + perte_row(g_zs[k])[0], [None] + perte_row(g_zs[k])[1]),
-             after=10, size=11, col_w=PERTE_COLW, row_cm=0.75, total_row=perte_total())
+             after=10, size=13, col_w=PERTE_COLW, row_cm=1.05, total_row=perte_total())
 table_slides("Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)", SUB,
              ["Aire de Santé"] + [l for l, _ in PERTE_V], as_keys,
              lambda k: ([as_label(k)] + perte_row(g_as[k])[0], [None] + perte_row(g_as[k])[1]),
-             after=10, size=9, col_w=PERTE_COLW, row_cm=0.56, total_row=perte_total())
+             after=10, size=12, col_w=PERTE_COLW, row_cm=0.9, total_row=perte_total())
 
 # ------------------------------------------------------------
 # DIAPO 12 — performance communication
@@ -554,10 +582,10 @@ def pdv_as_r(k):
 
 table_slides("Enfants perdus de vue identifiés et récupérés par les RECO — par ZS", PDV_NOTE,
              ["Zone de Santé"] + PDV_HDR[1:], zs_keys, pdv_zs_r, after=S12_AFTER,
-             size=11, col_w=PDV_COLW, row_cm=0.75, total_row=pdv_total())
+             size=13, col_w=PDV_COLW, row_cm=1.05, total_row=pdv_total())
 table_slides("Enfants perdus de vue identifiés et récupérés par les RECO — par AS", PDV_NOTE,
              ["Aire de Santé"] + PDV_HDR[1:], as_keys, pdv_as_r, after=S12_AFTER,
-             size=9, col_w=PDV_COLW, row_cm=0.56, total_row=pdv_total())
+             size=12, col_w=PDV_COLW, row_cm=0.9, total_row=pdv_total())
 
 # 2. Taux d'abandon BCG-VAR1 & DTC1-DTC3 — graphiques (ZS unique, AS paginé)
 def ab_pair(recs):
@@ -567,9 +595,11 @@ def ab_pair(recs):
 ab_series = [("Abandon DTC1-DTC3 %", lambda k, g: ab_pair(g[k])[0]),
              ("Abandon BCG-VAR1 %", lambda k, g: ab_pair(g[k])[1])]
 chart_slides("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", SUB, [zs_keys], lambda k: k,
-             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in ab_series], None, after=S12_AFTER, pct=True)
+             [(nm, (lambda f: lambda k: f(k, g_zs))(fn)) for nm, fn in ab_series], None, after=S12_AFTER,
+             pct=True, series_colors=AB_COLORS, highlight_negative=True)
 chart_slides("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS", SUB, chunks(as_keys, CHART_PER), as_label,
-             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in ab_series], None, after=S12_AFTER, pct=True)
+             [(nm, (lambda f: lambda k: f(k, g_as))(fn)) for nm, fn in ab_series], None, after=S12_AFTER,
+             pct=True, series_colors=AB_COLORS, highlight_negative=True)
 
 # ------------------------------------------------------------
 #  RÉORDONNANCEMENT : insérer les nouvelles diapos après 11 / 12
