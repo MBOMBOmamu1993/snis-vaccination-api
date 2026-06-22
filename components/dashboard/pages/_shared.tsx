@@ -2,6 +2,25 @@
 
 import { useFilters } from "@/lib/pev/store";
 import { cleanName, ymLabel } from "@/lib/pev/calc";
+import type { HeatLevel } from "@/components/ui/DataTable";
+
+/* Heatmap des cellules de tableaux (design only, façon Shiny PEV RDC).
+ * Les SEUILS sont toujours fournis par la page appelante — repris tels quels de
+ * sa propre logique de tons KPI ; on n'invente aucun seuil ici. */
+
+/** Valeur élevée = bon (couverture, complétude, promptitude, % réalisation…). */
+export function heatUp(v: unknown, good: number, warn: number): HeatLevel {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return null;
+  return n >= good ? "good" : n >= warn ? "warn" : "bad";
+}
+
+/** Valeur basse = bon (taux d'abandon, taux de perte…). */
+export function heatDown(v: unknown, good: number, warn: number): HeatLevel {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return null;
+  return n <= good ? "good" : n <= warn ? "warn" : "bad";
+}
 
 /** Rappel du périmètre filtré (province / antenne / ZS / période). */
 export function ScopeNote() {

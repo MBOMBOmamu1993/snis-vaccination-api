@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { fmtPct, fmtNum } from "@/lib/client/format";
 import { usePevData } from "@/lib/pev/useData";
 import { aggregate, groupBy, cleanName, ymLabel } from "@/lib/pev/calc";
-import { ScopeNote, Loading } from "./_shared";
+import { ScopeNote, Loading, heatUp } from "./_shared";
 
 export function QualiteCompletude() {
   const { records, groupKey, level, loading } = usePevData();
@@ -60,7 +60,8 @@ export function QualiteCompletude() {
       </Card>
       <Card>
         <CardHeader title="Détail par entité" icon="table" iconTone="navy" />
-        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="completude_promptitude" />
+        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="completude_promptitude"
+          heat={(c, v) => (c === "Complétude %" || c === "Promptitude %" ? heatUp(v, 80, 50) : null)} />
       </Card>
     </div>
   );

@@ -11,7 +11,7 @@ import { fmtPct, fmtNum } from "@/lib/client/format";
 import { LOGI_VACCINS, LOGI_FIELDS } from "@/lib/pev/data";
 import { usePevData } from "@/lib/pev/useData";
 import { sumField } from "@/lib/pev/calc";
-import { ScopeNote, Loading } from "./_shared";
+import { ScopeNote, Loading, heatDown } from "./_shared";
 
 export function LogistiqueStrategie() {
   const { records, loading } = usePevData();
@@ -88,7 +88,8 @@ export function LogistiqueStrategie() {
       </div>
       <Card>
         <CardHeader title="Gestion des intrants vaccinaux" subtitle="Détail par vaccin (DHIS2)" icon="table" iconTone="teal" />
-        <DataTable columns={cols} rows={rows} maxRows={50} exportFilename="logistique_intrants" />
+        <DataTable columns={cols} rows={rows} maxRows={50} exportFilename="logistique_intrants"
+          heat={(c, v) => (c === "Taux de perte %" ? heatDown(v, 5, 10) : null)} />
       </Card>
     </div>
   );

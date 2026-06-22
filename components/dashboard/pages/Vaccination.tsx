@@ -11,7 +11,7 @@ import { fmtNum, fmtPct } from "@/lib/client/format";
 import { TRACERS, SEANCES } from "@/lib/pev/data";
 import { usePevData } from "@/lib/pev/useData";
 import { aggregate, groupBy, dropout, cleanName, ymLabel, sumField } from "@/lib/pev/calc";
-import { ScopeNote, Loading } from "./_shared";
+import { ScopeNote, Loading, heatUp, heatDown } from "./_shared";
 
 export function VaccinationAntigenes() {
   const { records, groupKey, level, loading } = usePevData();
@@ -102,7 +102,8 @@ export function VaccinationAbandon() {
       </Card>
       <Card>
         <CardHeader title="Détail des taux d'abandon" icon="table" iconTone="navy" />
-        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="taux_abandon" />
+        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="taux_abandon"
+          heat={(c, v) => (c.startsWith("Abandon") ? heatDown(v, 10, 20) : null)} />
       </Card>
     </div>
   );
@@ -177,7 +178,8 @@ export function VaccinationSeances() {
       </div>
       <Card>
         <CardHeader title={`Séances par ${level === "province" ? "province" : "zone de santé"}`} icon="table" iconTone="navy" />
-        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="seances_vaccination" />
+        <DataTable columns={cols} rows={rows} maxRows={100} exportFilename="seances_vaccination"
+          heat={(c, v) => (c === "% réalisation" ? heatUp(v, 80, 50) : null)} />
       </Card>
     </div>
   );
