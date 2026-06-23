@@ -41,10 +41,25 @@ npm run build    # build de production
 
 ## Déploiement Vercel
 
-1. Importer le dépôt dans Vercel (framework détecté : **Next.js**).
-2. La `buildCommand` (`vercel.json`) exécute `node scripts/prepare-data.mjs && next build`
-   pour publier les données fraîches issues du pipeline backfill.
-3. Aucune variable d'environnement requise pour l'affichage (données statiques pré-agrégées).
+Le déploiement Vercel publie le **dashboard statique `docs/index.html`** (re-skiné
+design Tshuapa/Shiny PEV), **pas** l'application Next.js. Configuration dans
+`vercel.json` :
+
+1. **Framework Preset = Other** (`"framework": null`) — surtout *ne pas* laisser
+   « Next.js » dans les *Project Settings* Vercel, sinon Vercel construit l'app
+   `app/` au lieu de `docs/index.html` et les modifications de `index.html`
+   n'apparaissent jamais en production.
+2. La `buildCommand` exécute `node scripts/build-static.mjs`, qui copie
+   `docs/index.html` + logos dans `dist/` (`outputDirectory`). L'`installCommand`
+   est neutralisée (`echo skip`) : le script n'utilise que des modules Node natifs.
+3. Les données pré-agrégées ne sont **pas** dupliquées dans `dist/` : `index.html`
+   les charge depuis GitHub Pages (`DATA_ORIGIN`), ce qui garde le déploiement léger.
+4. `index.html` est servi avec `Cache-Control: must-revalidate` (cf. `headers`)
+   pour qu'une nouvelle version soit toujours reprise sans cache CDN/navigateur.
+5. Aucune variable d'environnement requise pour l'affichage.
+
+> L'application **Next.js** (`app/`, `components/`, `lib/`) reste dans le dépôt pour
+> le développement local (`npm run dev`) mais n'est pas ce que Vercel déploie.
 
 > Les données affichées proviennent du DHIS2 et sont sujettes à validation /
 > modifications rétroactives.
