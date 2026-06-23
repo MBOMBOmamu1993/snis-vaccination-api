@@ -1041,6 +1041,18 @@
         .pev-dlmenu button:hover{background:#eaf4fd;color:var(--tn)}
         .pev-dlmenu .pev-dlsep{height:1px;background:#eef1f5;margin:5px 4px}
         @media print{.pev-dlmenu,.pev-hm-leg{display:none!important}}
+        /* Cellules de libellé d'organisation (Province / Antenne) — style plateforme */
+        .dt td.pev-rowlbl{background:#1f66c0!important;color:#fff!important;font-weight:700;text-align:left}
+        .dt td.pev-rowlbl.pev-rowlbl-prov{background:#15357a!important}
+        /* Couplage bannière ↔ tableau/carte : la bannière coiffe, coins bas carrés */
+        .pev-banner.pev-banner-tbl{border-radius:12px 12px 0 0!important;margin-bottom:0!important;justify-content:space-between}
+        .pev-banner.pev-banner-tbl + .tw,.pev-banner.pev-banner-tbl + table.dt{border-radius:0 0 14px 14px;overflow:hidden}
+        .pev-banner.pev-banner-tbl + .tw{box-shadow:0 8px 22px -14px rgba(0,32,92,.35)}
+        /* Boutons d'export logés dans la bannière du tableau (outline blanc) */
+        .pev-banner .pev-tbar{margin:0!important;gap:8px}
+        .pev-banner .pev-tbtn{border:1.5px solid rgba(255,255,255,.55)!important;background:transparent!important;color:#fff!important;
+            font-weight:700;font-size:13px;padding:8px 15px;border-radius:9px;box-shadow:none!important}
+        .pev-banner .pev-tbtn:hover{background:rgba(255,255,255,.16)!important;border-color:#fff!important;color:#fff!important;transform:none!important}
 
         </style>
 </head>
@@ -8109,6 +8121,7 @@
             var COL_RE = /%|compl[ée]tude|promptitude|couv|\bcv\b|ajust|taux|atteint|performance/i;
             var AGH_RE = /^\s*(BCG|VPO|VPI|DTC|PENTA|ROTA|PCV|VAR|VAA|TD|VAP|MCV|RR|HPV|MEN)/i;
             var SKIP_RE = /abandon|perte|drop|z[ée]ro|[ée]cart|attendu|re[çc]u|nombre|effectif|population|cible|total|rang|manquant|stock|dose/i;
+            var ORG_RE = /province|antenne|zone de sant|aire de sant|\bfosa\b|district|\bzs\b|\bas\b/i;
 
             function hmClass(v) {
                 if (v >= 95) return 'pev-hm-g';
@@ -8157,9 +8170,20 @@
                     }
                     var body = tbl.tBodies[0];
                     if (!body) return;
+                    /* Première colonne = libellé d'organisation → cellule bleue type plateforme */
+                    var lblTxt = ths.length ? (ths[0].textContent || '') : '';
+                    var isProv = /province/i.test(lblTxt);
+                    var orgCol = ORG_RE.test(lblTxt);
                     var colored = false;
                     for (var r = 0; r < body.rows.length; r++) {
                         var cells = body.rows[r].cells;
+                        if (orgCol && cells.length > 1) {
+                            var c0 = cells[0];
+                            if (!c0.classList.contains('pev-hm') && !c0.classList.contains('pev-rowlbl') && !parseVal(c0.textContent)) {
+                                c0.classList.add('pev-rowlbl');
+                                if (isProv) c0.classList.add('pev-rowlbl-prov');
+                            }
+                        }
                         for (var c = 0; c < cells.length; c++) {
                             var td = cells[c];
                             if (td.classList.contains('cg') || td.classList.contains('crd') || td.classList.contains('pev-hm')) continue;
@@ -8192,6 +8216,23 @@
                     });
                 } catch (e) { }
             }
+            /* Bannière coiffant un tableau : coins bas carrés + boutons d'export logés à droite.
+               Idempotent : ré-exécuté à chaque sweep pour capter les barres créées tardivement. */
+            function coupleBanners(scope) {
+                try {
+                    (scope || document).querySelectorAll('h3.pev-banner,h4.pev-banner').forEach(function (h) {
+                        var bars = [], n = h.nextElementSibling, anchor = null, steps = 0;
+                        while (n && steps < 4) {
+                            if (n.matches && (n.matches('table.dt') || (n.classList && n.classList.contains('tw') && n.querySelector('table.dt')))) { anchor = n; break; }
+                            if (n.classList && n.classList.contains('pev-tbar')) { bars.push(n); n = n.nextElementSibling; steps++; continue; }
+                            break;
+                        }
+                        if (!anchor) return;
+                        h.classList.add('pev-banner-tbl');
+                        bars.forEach(function (b) { h.appendChild(b); });
+                    });
+                } catch (e) { }
+            }
 
             /* ---------- 3. Menu de téléchargement des graphiques (Chart.js) ---------- */
             function buildChartMenu(btn) {
@@ -8221,9 +8262,48 @@
                         b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); menu.classList.remove('open'); fn(); };
                         menu.appendChild(b);
                     }
-                    item('Télécharger PNG', '🖼️', function () { dl('image/png', 'png'); });
-                    item('Télécharger JPEG', '🖼️', function () { dl('image/jpeg', 'jpg'); });
-                    var sep = document.createElement('div'); sep.className = 'pev-dlsep'; menu.appendChild(sep);
+                    function sepa() { var s = document.createElement('div'); s.className = 'pev-dlsep'; menu.appendChild(s); }
+                    function chartCsv(ch) {
+                        try {
+                            var labels = (ch.data && ch.data.labels) || [];
+                            var ds = (ch.data && ch.data.datasets) || [];
+                            var rows = [['Catégorie'].concat(ds.map(function (d) { return (d.label || 'Série').replace(/;/g, ','); }))];
+                            for (var i = 0; i < labels.length; i++) {
+                                var row = [String(labels[i]).replace(/;/g, ',')];
+                                for (var j = 0; j < ds.length; j++) { var v = ds[j].data ? ds[j].data[i] : ''; row.push(v == null ? '' : v); }
+                                rows.push(row);
+                            }
+                            var blob = new Blob(['﻿' + rows.map(function (r) { return r.join(';'); }).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+                            var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'graphique_pev.csv'; a.click();
+                            setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+                        } catch (_) { }
+                    }
+                    function chartTable(ch) {
+                        try {
+                            var labels = (ch.data && ch.data.labels) || [];
+                            var ds = (ch.data && ch.data.datasets) || [];
+                            var h = '<table class="dt"><thead><tr><th>Catégorie</th>';
+                            ds.forEach(function (d) { h += '<th>' + (d.label || 'Série') + '</th>'; });
+                            h += '</tr></thead><tbody>';
+                            for (var i = 0; i < labels.length; i++) {
+                                h += '<tr><td>' + labels[i] + '</td>';
+                                for (var j = 0; j < ds.length; j++) { var v = ds[j].data ? ds[j].data[i] : ''; h += '<td>' + (v == null ? '' : v) + '</td>'; }
+                                h += '</tr>';
+                            }
+                            h += '</tbody></table>';
+                            var w = window.open(''); if (!w) return;
+                            w.document.write('<meta charset="utf-8"><title>Données du graphique</title>' +
+                                '<style>body{font-family:Segoe UI,system-ui,sans-serif;padding:18px;background:#eef2f7}' +
+                                'table{border-collapse:collapse;width:100%;background:#fff}' +
+                                'th{background:linear-gradient(120deg,#00205c,#0a3a86);color:#fff;font-weight:700;padding:9px 12px;text-align:left}' +
+                                'td{padding:8px 12px;border-bottom:1px solid #eef1f5;color:#1f2937}</style>' + h);
+                            w.document.close();
+                        } catch (_) { }
+                    }
+                    /* Groupe 1 : plein écran / imprimer */
+                    item('Afficher en plein écran', '⛶', function () {
+                        try { var el = host.requestFullscreen ? host : (host.closest('.cb') || host); (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (_) { }
+                    });
                     item('Imprimer le graphique', '🖨️', function () {
                         var ch = getChart(); if (!ch) return;
                         try {
@@ -8232,6 +8312,14 @@
                             w.document.close();
                         } catch (_) { }
                     });
+                    sepa();
+                    /* Groupe 2 : images */
+                    item('Télécharger PNG', '🖼️', function () { dl('image/png', 'png'); });
+                    item('Télécharger JPEG', '🖼️', function () { dl('image/jpeg', 'jpg'); });
+                    sepa();
+                    /* Groupe 3 : données */
+                    item('Télécharger CSV', '⤓', function () { var ch = getChart(); if (ch) chartCsv(ch); });
+                    item('Afficher le tableau de données', '📑', function () { var ch = getChart(); if (ch) chartTable(ch); });
                     host.appendChild(menu);
                     btn.title = 'Télécharger / imprimer ce graphique';
                     btn.onclick = function (e) {
@@ -8249,6 +8337,7 @@
             function sweep() {
                 document.querySelectorAll('table.dt:not([data-pevhm])').forEach(heatTable);
                 bannerize(document);
+                coupleBanners(document);
                 document.querySelectorAll('.pev-dl:not([data-pev-menu])').forEach(buildChartMenu);
             }
             var tick = null;
