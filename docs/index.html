@@ -8217,15 +8217,17 @@
                 } catch (e) { }
             }
             /* Bannière coiffant un tableau : coins bas carrés + boutons d'export logés à droite.
-               Idempotent : ré-exécuté à chaque sweep pour capter les barres créées tardivement. */
+               Idempotent : ré-exécuté à chaque sweep pour capter les barres créées tardivement.
+               Saute les éléments intermédiaires (légende heatmap, etc.) entre la bannière et la table. */
             function coupleBanners(scope) {
                 try {
                     (scope || document).querySelectorAll('h3.pev-banner,h4.pev-banner').forEach(function (h) {
                         var bars = [], n = h.nextElementSibling, anchor = null, steps = 0;
-                        while (n && steps < 4) {
+                        while (n && steps < 6) {
                             if (n.matches && (n.matches('table.dt') || (n.classList && n.classList.contains('tw') && n.querySelector('table.dt')))) { anchor = n; break; }
-                            if (n.classList && n.classList.contains('pev-tbar')) { bars.push(n); n = n.nextElementSibling; steps++; continue; }
-                            break;
+                            if (n.classList && n.classList.contains('pev-tbar')) { bars.push(n); }
+                            else if (!(n.classList && n.classList.contains('pev-hm-leg'))) { break; }
+                            n = n.nextElementSibling; steps++;
                         }
                         if (!anchor) return;
                         h.classList.add('pev-banner-tbl');
