@@ -939,13 +939,16 @@
         @media print { .pev-dl, .pev-tbar { display: none !important; } }
         .cb { border-radius: 14px !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 14px -8px rgba(15,23,42,.10) !important; }
         .cb h4 { color: var(--tn); border-bottom: 2px solid #eaf1fb; }
-        /* Tables façon « Supervision conjointe » : en-tête gris clair, texte foncé,
-           cellules centrées, bordures fines. Habillage uniquement. */
-        .dt thead { background: #f1f5f9 !important; color: #334155 !important; }
-        .dt th { color:#334155 !important; text-align:center !important; text-transform:uppercase; letter-spacing:.03em; font-size:10px; border:1px solid #e2e8f0; background:#f1f5f9; }
+        /* Tables façon « Supervision conjointe » : en-tête MARINE plein texte blanc,
+           première colonne (entité) marine, cellules centrées. Habillage uniquement. */
+        .dt thead { background: linear-gradient(120deg, #00205c, #0a3a86) !important; color: #fff !important; }
+        .dt th { color:#fff !important; text-align:center !important; letter-spacing:.03em; font-size:10px; border:1px solid rgba(255,255,255,.16); background:transparent; }
         .dt td { text-align:center; border:1px solid #eef2f7; color:#1e293b; }
         .dt tbody tr:nth-child(even) { background:#fafcff !important; }
         .dt tbody tr:hover { background: #eaf4fd !important; }
+        /* Titres de section en bandeau marine (façon « INDICATEURS CLÉS » de Supervision conjointe) */
+        .st { background: linear-gradient(90deg, #00205c 0%, #0a3a86 100%) !important; color: #fff !important;
+              border-left: none !important; box-shadow: 0 6px 16px -8px rgba(0,32,92,.5); }
         .ibtn { border-color: rgba(255,255,255,.5); }
 
         /* ── Écran de chargement (logos OMS + PEV) ── */
@@ -1032,12 +1035,15 @@
         .pev-tbtn:hover{background:var(--tn);color:#fff;border-color:var(--tn);transform:translateY(-1px);
             box-shadow:0 6px 16px -6px rgba(0,32,92,.5)}
         /* Cellules heatmap couverture */
+        /* Échelle heatmap = celle de Supervision conjointe :
+           <50 rouge · 50–80 jaune · 80–90 vert clair · 90–100 vert · >100 bleu (à vérifier) */
         .dt td.pev-hm{font-weight:800;text-align:center;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.18)}
         .dt td.pev-hm.pev-hm-g{background:#1f9d57!important}
-        .dt td.pev-hm.pev-hm-g2{background:#46b96e!important}
+        .dt td.pev-hm.pev-hm-g2{background:#8fd18f!important;color:#14532d;text-shadow:none}
         .dt td.pev-hm.pev-hm-y{background:#f2c200!important;color:#5a4500;text-shadow:none}
         .dt td.pev-hm.pev-hm-o{background:#f08c00!important}
         .dt td.pev-hm.pev-hm-r{background:#e23b3b!important}
+        .dt td.pev-hm.pev-hm-b{background:#2e86de!important}
         /* Légende heatmap */
         .pev-hm-leg{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;font-size:11px;
             font-weight:700;color:var(--tn)}
@@ -1053,8 +1059,9 @@
         .pev-dlmenu .pev-dlsep{height:1px;background:#eef1f5;margin:5px 4px}
         @media print{.pev-dlmenu,.pev-hm-leg{display:none!important}}
         /* Cellules de libellé d'organisation (Province / Antenne) — style plateforme */
-        .dt td.pev-rowlbl{background:#eef4fc!important;color:#00205c!important;font-weight:700;text-align:left}
-        .dt td.pev-rowlbl.pev-rowlbl-prov{background:#dde8f7!important;color:#00205c!important}
+        /* Première colonne (entité) marine plein, texte blanc — comme Supervision conjointe */
+        .dt td.pev-rowlbl{background:#123a7d!important;color:#fff!important;font-weight:700;text-align:left}
+        .dt td.pev-rowlbl.pev-rowlbl-prov{background:#0b2a5e!important;color:#fff!important}
         /* Couplage bannière ↔ tableau/carte : la bannière coiffe, coins bas carrés */
         .pev-banner.pev-banner-tbl{border-radius:12px 12px 0 0!important;margin-bottom:0!important;justify-content:space-between}
         .pev-banner.pev-banner-tbl + .tw,.pev-banner.pev-banner-tbl + table.dt{border-radius:0 0 14px 14px;overflow:hidden}
@@ -8213,11 +8220,13 @@
             var SKIP_RE = /abandon|perte|drop|z[ée]ro|[ée]cart|attendu|re[çc]u|nombre|effectif|population|cible|total|rang|manquant|stock|dose|variation|concordance|erreur|valeur|moyenne/i;
             var ORG_RE = /province|antenne|zone de sant|aire de sant|\bfosa\b|district|\bzs\b|\bas\b/i;
 
+            /* Échelle Supervision conjointe : >100 bleu (à vérifier) · 90–100 vert ·
+               80–90 vert clair · 50–80 jaune · <50 rouge */
             function hmClass(v) {
-                if (v >= 95) return 'pev-hm-g';
-                if (v >= 90) return 'pev-hm-g2';
-                if (v >= 80) return 'pev-hm-y';
-                if (v >= 60) return 'pev-hm-o';
+                if (v > 100) return 'pev-hm-b';
+                if (v >= 90) return 'pev-hm-g';
+                if (v >= 80) return 'pev-hm-g2';
+                if (v >= 50) return 'pev-hm-y';
                 return 'pev-hm-r';
             }
             function parseVal(t) {
@@ -8238,13 +8247,13 @@
                     if (anchor.parentNode.querySelector(':scope > .pev-hm-leg')) return;
                     var leg = document.createElement('div');
                     leg.className = 'pev-hm-leg';
-                    /* Chips = exactement les seuils/couleurs appliqués par hmClass() sur ce tableau. */
-                    leg.innerHTML = '<span>Légende couverture (%) :</span>' +
-                        '<span class="pev-hm-chip" style="background:#1f9d57">≥ 95%</span>' +
-                        '<span class="pev-hm-chip" style="background:#46b96e">90–94%</span>' +
-                        '<span class="pev-hm-chip" style="background:#f2c200;color:#5a4500">80–89%</span>' +
-                        '<span class="pev-hm-chip" style="background:#f08c00">60–79%</span>' +
-                        '<span class="pev-hm-chip" style="background:#e23b3b">&lt; 60%</span>';
+                    /* Chips = exactement les seuils/couleurs appliqués par hmClass() (échelle Supervision conjointe). */
+                    leg.innerHTML = '<span>Légende :</span>' +
+                        '<span class="pev-hm-chip" style="background:#e23b3b">&lt; 50 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#f2c200;color:#5a4500">50 – 80 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#8fd18f;color:#14532d">80 – 90 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#1f9d57">90 – 100 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#2e86de">&gt; 100 %</span>';
                     anchor.parentNode.insertBefore(leg, anchor);
                 } catch (e) { }
             }
@@ -8286,7 +8295,7 @@
                                jamais colorés et ne reçoivent donc pas de légende couverture. */
                             if (!pr.isPct) continue;
                             var inCov = anyCov ? !!cov[c] : true;
-                            var ok = inCov && pr.v >= 0 && pr.v <= 150;
+                            var ok = inCov && pr.v >= 0;
                             if (!ok) continue;
                             td.classList.add('pev-hm', hmClass(pr.v));
                             colored = true;
