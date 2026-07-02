@@ -907,28 +907,27 @@
         .fbtn .cn { background: var(--tb) !important; }
         .ct { background: var(--tsurf); }
         .db { border-radius: 14px !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 6px 18px -10px rgba(15,23,42,.12) !important; }
-        /* Cartes KPI façon « Supervision conjointe » : tuiles pastel claires,
-           bordure et texte teintés par le ton (au lieu du dégradé plein). Habillage
-           uniquement — gabarit, valeurs et logique de couleur inchangés. La teinte
-           dérive de --kc1 via color-mix : les classes de ton (gn/rd/or/cy/bl/pu) OU
-           la couleur sémantique posée par le JS (cartes de couverture) la définissent ;
-           défaut = navy OMS. */
+        /* Cartes KPI façon « Supervision conjointe » : tuiles PLEINES colorées selon
+           la performance (dégradé --kc1 → --kc2) avec texte BLANC toujours lisible.
+           Habillage uniquement — gabarit, valeurs et logique de couleur inchangés.
+           La teinte vient des classes de ton (gn/rd/or/cy/bl/pu) OU de la couleur
+           sémantique posée par le JS (cartes de couverture) ; défaut = navy OMS. */
         .kc { position: relative; overflow: hidden; border-radius: 16px !important;
               --kc1: var(--tn); --kc2: var(--tn2);
-              background: color-mix(in srgb, var(--kc1) 12%, #fff) !important;
-              background-image: none !important;
-              border: 1px solid color-mix(in srgb, var(--kc1) 32%, #fff) !important;
-              color: color-mix(in srgb, var(--kc1) 80%, #1e293b) !important;
-              box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 14px -8px rgba(15,23,42,.12) !important; }
+              background: linear-gradient(135deg, var(--kc1), var(--kc2)) !important;
+              border: none !important;
+              border-left: none !important;
+              color: #fff !important;
+              box-shadow: 0 2px 6px rgba(15,23,42,.10), 0 8px 20px -10px rgba(15,23,42,.28) !important; }
         .kc.gn { --kc1:#1f9d57; --kc2:#2bbd6b; }
         .kc.rd { --kc1:#dc2f2f; --kc2:#f0524f; }
         .kc.or { --kc1:#f08c00; --kc2:#fbab2d; }
         .kc.cy { --kc1:#c99700; --kc2:#e0a800; }
         .kc.bl { --kc1:#0093d5; --kc2:#2bb0ee; }
         .kc.pu { --kc1:#7c3aed; --kc2:#9d5cf5; }
-        .kc:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -12px rgba(15,23,42,.22) !important; }
-        .kv { color: color-mix(in srgb, var(--kc1) 82%, #1e293b) !important; font-size: 28px; }
-        .kl { color: color-mix(in srgb, var(--kc1) 70%, #334155) !important; text-transform: uppercase; letter-spacing: .04em; font-weight: 700 !important; }
+        .kc:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -12px rgba(15,23,42,.38) !important; }
+        .kv { color: #fff !important; font-size: 28px; text-shadow: 0 1px 2px rgba(0,0,0,.18); }
+        .kl { color: rgba(255,255,255,.95) !important; text-transform: uppercase; letter-spacing: .04em; font-weight: 700 !important; }
         /* Boutons de téléchargement (design only) : ⤓ sur chaque graphique, barre CSV/Excel sur chaque tableau. */
         /* Bouton hamburger d'options du graphique — façon toolbox ECharts (Supervision conjointe) */
         .pev-dl { position: absolute; top: 6px; right: 8px; z-index: 20; width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #94a3b8; font-size: 19px; font-weight: 700; line-height: 1; cursor: pointer; transition: all .15s ease; }
@@ -1192,7 +1191,8 @@
                     D.color = '#475569';
                     D.animation.duration = 650;
                     D.animation.easing = 'easeOutCubic';
-                    try { if (D.scale && D.scale.grid) { D.scale.grid.color = '#eef2f7'; D.scale.grid.drawTicks = false; } } catch (_) { }
+                    /* Aucune grille d'arrière-plan sur les graphiques (demande design) */
+                    try { if (D.scale && D.scale.grid) { D.scale.grid.display = false; D.scale.grid.drawTicks = false; } } catch (_) { }
                     if (D.plugins && D.plugins.legend) {
                         D.plugins.legend.labels.usePointStyle = true;
                         D.plugins.legend.labels.boxWidth = 10;
@@ -1269,6 +1269,11 @@
                         afterDatasetsDraw: function (chart) {
                             try {
                                 if (_pevExempt(chart)) return;
+                                /* Pas de double étiquetage : si le graphique dessine déjà ses
+                                   propres valeurs (plugins locaux), on ne rajoute rien. */
+                                var _pl = (chart.options && chart.options.plugins) || {};
+                                if ((_pl.thresholdAndLabels && _pl.thresholdAndLabels.showLabels) ||
+                                    (_pl.klDataLabels && _pl.klDataLabels.show)) return;
                                 var sc = chart.options.scales || {};
                                 if ((sc.x && sc.x.stacked) || (sc.y && sc.y.stacked)) return;
                                 var horiz = chart.options.indexAxis === 'y';
@@ -1460,7 +1465,7 @@
                 id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'],
                 pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }]
             },
-            { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: 'Logistique', ic: '📦' }] },
+            { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
             { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] }
         ];
 
@@ -2678,7 +2683,7 @@
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
             else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV][S.pg](ct); }
-            else if (tab.id === 'log') { rLog(ct); }
+            else if (tab.id === 'log') { rLog(ct, S.pg); }
             else if (tab.id === 'dl') { rDownload(ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
@@ -2717,7 +2722,8 @@
                 var box = E('div', 'cb'); box.innerHTML = '<h4>📊 Complétude/Promptitude par ' + lv.l + '</h4><canvas id="cp' + idx + '" height="' + (labs.length > 15 ? Math.min(labs.length * 5, 200) : 70) + '"></canvas>'; c.appendChild(box);
                 setTimeout(function () {
                     var x = document.getElementById('cp' + idx); if (!x) return;
-                    S.charts['cp' + idx] = new Chart(x, { type: 'bar', data: { labels: labs.map(function (l) { return tr(l, 24); }), datasets: [{ label: 'Complétude (%)', data: cd, backgroundColor: 'rgba(33,150,243,.72)', borderRadius: 3 }, { label: 'Promptitude (%)', data: pd, backgroundColor: 'rgba(255,152,0,.72)', borderRadius: 3 }] }, options: { indexAxis: labs.length > 12 ? 'y' : 'x', responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: labs.length > 25 ? 7 : 9 } } } } } });
+                    /* Complétude = VERT · Promptitude = BLEU (demande design) — rendu net et lisse */
+                    S.charts['cp' + idx] = new Chart(x, { type: 'bar', data: { labels: labs.map(function (l) { return tr(l, 24); }), datasets: [{ label: 'Complétude (%)', data: cd, backgroundColor: '#1f9d57', hoverBackgroundColor: '#178a4b', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }, { label: 'Promptitude (%)', data: pd, backgroundColor: '#0093d5', hoverBackgroundColor: '#0080ba', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }] }, options: { indexAxis: labs.length > 12 ? 'y' : 'x', responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: labs.length > 25 ? 7 : 9 } } } } } });
                 }, 60 + idx * 30);
             });
 
@@ -2878,9 +2884,9 @@
                     ], {
                         margin: { l: 60, r: 20, t: 10, b: 60 },
                         legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center' },
-                        xaxis: { title: { text: 'Moyenne de ' + N + ' périodes précédentes', font: { size: 12 } }, zeroline: true },
-                        yaxis: { title: { text: mL(lastM), font: { size: 12 } }, zeroline: true },
-                        plot_bgcolor: '#fafbfc'
+                        xaxis: { title: { text: 'Moyenne de ' + N + ' périodes précédentes', font: { size: 12 } }, zeroline: true, showgrid: false },
+                        yaxis: { title: { text: mL(lastM), font: { size: 12 } }, zeroline: true, showgrid: false },
+                        plot_bgcolor: '#fff'
                     }, { responsive: true });
                 }, 80 + i * 60);
             });
@@ -3066,7 +3072,8 @@
                 if (isNA) cNA++; else cOK++;
                 var ac = isNA ? 'crd' : '';
                 var vc = vn > 0 ? '#e74c3c' : (vn < 0 ? '#1565c0' : '#666');
-                h += '<tr><td>' + tr(r.ou, 28) + '</td><td><b>' + r.vac + '</b></td>'
+                /* Colonnes org unit + antigène en bleu navy (demande design) */
+                h += '<tr><td style="background:#00205c;color:#fff;font-weight:600;text-align:left">' + tr(r.ou, 28) + '</td><td style="background:#00205c;color:#fff;font-weight:700">' + r.vac + '</td>'
                     + '<td style="text-align:right">' + r.val + '</td>'
                     + '<td style="text-align:right">' + r.avg + '</td>'
                     + '<td style="text-align:right;color:' + vc + ';font-weight:700">'
@@ -3177,7 +3184,7 @@
                         { x: [0, mx], y: [0, mx], type: 'scatter', mode: 'lines', line: { color: '#333', width: 2, dash: 'dot' }, name: '=' },
                         { x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '+' + Math.round(thr * 100) + '%' },
                         { x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '-' + Math.round(thr * 100) + '%' }
-                    ], { xaxis: { title: { text: AG_LBL[p.b], font: { size: 12 } } }, yaxis: { title: { text: AG_LBL[p.a], font: { size: 12 } } }, margin: { l: 60, r: 20, t: 10, b: 55 }, legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center' }, plot_bgcolor: '#fafbfc' }, { responsive: true });
+                    ], { xaxis: { title: { text: AG_LBL[p.b], font: { size: 12 } }, showgrid: false }, yaxis: { title: { text: AG_LBL[p.a], font: { size: 12 } }, showgrid: false }, margin: { l: 60, r: 20, t: 10, b: 55 }, legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center' }, plot_bgcolor: '#fff' }, { responsive: true });
                 }, 80 + pi * 80);
             });
 
@@ -3211,7 +3218,8 @@
                     var fLD = ld2.filter(function (r) { return selOU.indexOf(r[ol.k]) >= 0; });
                     var fGrps = SAME_AGE.filter(function (g, gi) { return selAG.indexOf(gi) >= 0; });
                     if (!fGrps.length) fGrps = SAME_AGE;
-                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr><th style="position:sticky;left:0;background:#00205c;z-index:2">' + ol.l + '</th>';
+                    /* data-pev-noheat : pas de légende ni d'échelle heatmap sur ce tableau (demande design) */
+                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt" data-pev-noheat="1"><thead><tr><th style="position:sticky;left:0;background:#00205c;z-index:2">' + ol.l + '</th>';
                     fGrps.forEach(function (g) { h += '<th>' + g.age + '</th><th>%Var</th>'; });
                     h += '<th>Cohérence vaccins<br><small>même âge</small></th></tr></thead><tbody>';
                     fLD.slice(0, 60).forEach(function (r, idx) {
@@ -3223,7 +3231,7 @@
                         fGrps.forEach(function (g) {
                             h += '<td style="font-size:9px">' + g.v.map(function (v) { return AG_LBL[v] + ':' + (Number(r[v]) || 0); }).join(', ') + '</td>';
                             var pts = [];
-                            for (var j = 0; j < g.v.length - 1; j++) { var a2 = Number(r[g.v[j]]) || 0, b2 = Number(r[g.v[j + 1]]) || 0, den = b2 || a2 || 1, pv = den > 0 ? ((a2 - b2) / den * 100) : 0; pts.push('<span style="color:' + (Math.abs(pv) > 10 ? '#e74c3c' : '#27ae60') + '">' + pv.toFixed(1) + '%</span>'); }
+                            for (var j = 0; j < g.v.length - 1; j++) { var a2 = Number(r[g.v[j]]) || 0, b2 = Number(r[g.v[j + 1]]) || 0, den = b2 || a2 || 1, pv = den > 0 ? ((a2 - b2) / den * 100) : 0; pts.push('<span style="color:#334155">' + pv.toFixed(1) + '%</span>'); }
                             h += '<td style="font-size:9px">' + pts.join(' ') + '</td>';
                         });
                         h += '<td class="' + (cohOui ? 'cg' : 'crd') + '">' + (cohOui ? 'Oui' : 'Non') + '</td></tr>';
@@ -3477,8 +3485,12 @@
             if (det.pg >= tp) det.pg = tp - 1; if (det.pg < 0) det.pg = 0;
             var st = det.pg * pp, pd = d.slice(st, st + pp), mos = det.mos;
             var ncol = mos.length + 8;
-            var h = '<table class="dt"><thead>';
-            h += '<tr><th rowspan="2">Unit\u00e9</th><th rowspan="2">Donn\u00e9es</th>';
+            /* Disposition d'origine conserv\u00e9e. Seuls changements demand\u00e9s :
+               en-t\u00eate = niveau org dynamique (Antenne PEV / ZS / AS / FOSA) au lieu
+               de \u00ab Unit\u00e9 \u00bb, et colonne org unit en bleu navy. Pas de heatmap auto. */
+            var _olLbl = (det.orgL && String(det.orgL)) || 'Unit\u00e9';
+            var h = '<table class="dt" data-pev-noheat="1"><thead>';
+            h += '<tr><th rowspan="2">' + _olLbl + '</th><th rowspan="2">Donn\u00e9es</th>';
             mos.forEach(function (m) { h += '<th style="font-size:9px">' + mL(m) + '</th>'; });
             h += '<th colspan="2" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.3)">' + (_p4Method === 'var33' ? '%Var' : 'Z-score') + '</th>';
             h += '<th rowspan="2">Manq.</th><th rowspan="2">Val.Atyp</th><th rowspan="2">Total</th><th rowspan="2"></th></tr>';
@@ -3489,7 +3501,7 @@
                 h += '<tr><td colspan="' + ncol + '" style="text-align:center;padding:24px;color:#888">Aucune donn\u00e9e.</td></tr>';
             } else {
                 pd.forEach(function (r, ri) {
-                    h += '<tr><td style="white-space:nowrap">' + tr(r.ou, 26) + '</td><td><b>' + r.lbl + '</b></td>';
+                    h += '<tr><td style="white-space:nowrap;background:#00205c;color:#fff;font-weight:600;text-align:left">' + tr(r.ou, 26) + '</td><td><b>' + r.lbl + '</b></td>';
                     r.vals.forEach(function (v, vi) {
                         var sty = '';
                         if (r.ia[vi] === 'a') sty = 'background:#fee2e2;color:#991b1b;font-weight:700';
@@ -3654,7 +3666,7 @@
             var act = document.getElementById('p4o_' + method);
             if (act) { act.style.background = method === 'var33' ? '#00205c' : (method === 'sd2' ? '#f39c12' : '#e74c3c'); act.style.color = '#fff'; act.style.fontWeight = '700'; }
             var tit = document.getElementById('p4DetTitle');
-            if (tit) { var ml = method === 'var33' ? '%Var \u00b133% Moy' : (method === 'sd2' ? '\u00b12 SD Mod\u00e9r\u00e9es' : '\u00b13 SD Extr\u00eames'); tit.innerHTML = '\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode ' + ml + ')'; }
+            if (tit) { var ml = method === 'var33' ? '%Var \u00b133% Moy' : (method === 'sd2' ? '\u00b12 SD Mod\u00e9r\u00e9es' : '\u00b13 SD Extr\u00eames'); var olT = (window._p4Det && window._p4Det.orgL) || 'unit\u00e9'; tit.innerHTML = '\ud83d\udcca D\u00e9tail valeurs atypiques par ' + olT + ' (m\u00e9thode ' + ml + ')'; }
         };
 
         /* ═══ P4: VALEURS ATYPIQUES ═══ */
@@ -3726,7 +3738,7 @@
 
                     /* ── Container ── */
                     var db = E('div', 'cb');
-                    db.innerHTML = '<h4 id="p4DetTitle">\ud83d\udcca D\u00e9tail valeurs atypiques par unit\u00e9 (m\u00e9thode %Var \u00b133% Moy)</h4>';
+                    db.innerHTML = '<h4 id="p4DetTitle">\ud83d\udcca D\u00e9tail valeurs atypiques par ' + (window._p4Det.orgL || 'unit\u00e9') + ' (m\u00e9thode %Var \u00b133% Moy)</h4>';
 
                     /* ── Filtres dropdown checkboxes ── */
                     var fH = '<div style="display:flex;gap:12px;margin:10px 0 14px;flex-wrap:wrap;align-items:flex-start">';
@@ -4719,7 +4731,12 @@
             if (f.province) return 'province';
             return 'national';
         }
-        function rLog(c) {
+        /* rLog(c, page) — onglet Logistique découpé en 3 pages :
+           page 0 « Rapportage »              : cards complétude + rapportage par org unit + évolution
+           page 1 « Indicateurs clés »        : taux dispo / perte / satisfaction / jours dispo + résumé heatmap + synthèse pivot
+           page 2 « Rapport logistique »      : tableau plat du rapport logistique */
+        function rLog(c, page) {
+            page = page || 0;
             var D = S.flt, AD = S.data;
             var f = S.filters;
             var ol = getOrgLevel(D);
@@ -4766,6 +4783,8 @@
                     ? (mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()))
                     : 'Toutes périodes');
 
+            /* ═══ PAGE 0 — RAPPORTAGE : cards complétude + rapportage par org unit + évolution ═══ */
+            if (page === 0) {
             /* ── Cards complétude logistique ── */
             var cardBox = E('div', 'cb');
             cardBox.innerHTML = '<h4 style="color:#00205c;margin-bottom:12px">📋 Complétude de rapportage des données logistiques</h4>';
@@ -4811,10 +4830,13 @@
                    • rupture = _jours_rupture
                    • <Réserve = MSD < 0,5 mois ; >Smaxi = MSD > stock_max/CMM
                      (défaut 3 mois) ; sinon adéquat. */
+            } /* fin bloc cards page 0 */
+
             var klBox; /* déclaré ici pour être accessible hors de l'IIFE */
             var _hmData = {}; /* données heatmap — accessibles hors de l'IIFE */
             var _ouKeys = []; /* clés d'org units pour la heatmap */
-            (function () {
+            /* ═══ PAGE 1 — INDICATEURS CLÉS : uniquement taux dispo / perte / satisfaction / jours dispo ═══ */
+            if (page === 1) (function () {
                 var KL_VAC = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') === 0; });
                 var KL_CON = LOGIST_FIELDS.filter(function (it) { return it.lbl.indexOf('Vaccin ') !== 0; });
 
@@ -4947,8 +4969,6 @@
                 var covCon = _coverageByItem(KL_CON);
                 var dayVac = _daysByItem(KL_VAC);
                 var dayCon = _daysByItem(KL_CON);
-                var msdVac = _msdSumByItem(KL_VAC);
-                var msdCon = _msdSumByItem(KL_CON);
                 var lossVac = _lossRateByItem(KL_VAC);
                 var lossCon = _lossRateByItem(KL_CON);
 
@@ -5027,26 +5047,20 @@
                 klBox.innerHTML =
                     '<h4 style="color:#00205c;margin:0 0 10px">📦 Indicateurs clés de la logistique — ' + perLblKL + '</h4>' +
                     '<p style="font-size:11px;color:#555;margin:0 0 12px"><em>Calculé au niveau ' + ol.l + ' (données agrégées au bon niveau, pas de cumul depuis FOSA). ' +
-                    'Couverture annuelle = Σ reçues / Σ (CMM × 12). ' +
-                    'Jours de disponibilité (graphiques empilés) : jours de rupture rapportés par DHIS2, classés via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat). ' +
-                    'Couverture théorique (jours) = Σ MSD × 30 — somme des MSD sur le périmètre filtré × 30 (cohérent avec l\'agrégation DHIS2).</em></p>' +
+                    'Jours de disponibilité (graphiques empilés) : jours de rupture rapportés par DHIS2, classés via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
-                    /* ═══ 6 GRAPHIQUES ORIGINAUX ═══ */
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">Couverture annuelle des besoins en vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">Couverture annuelle des besoins en matériels d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klCovCon"></canvas></div></div>' +
+                    /* ═══ Taux de disponibilité ═══ */
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">📊 Taux de disponibilité des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">📊 Taux de disponibilité des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoCon"></canvas></div></div>' +
+                    /* ═══ Taux de perte ═══ */
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">📊 Taux de perte des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">📊 Taux de perte des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
+                    /* ═══ Taux de satisfaction ═══ */
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">📊 Taux de satisfaction des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">📊 Taux de satisfaction des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfCon"></canvas></div></div>' +
+                    /* ═══ Nombre de jours de disponibilité ═══ */
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">Nbre de jours de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">Nbre de jours de disponibilité du matériel d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #0891b2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0e7490;text-align:center">Couverture théorique des vaccins (jours) — Σ MSD × 30 — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klMsdDaysVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #0891b2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#0e7490;text-align:center">Couverture théorique du matériel d\'injection (jours) — Σ MSD × 30 — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klMsdDaysCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">Disponibilité vaccins : doses reçues par dose programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#00205c;text-align:center">Disponibilité consommables : unités reçues par unité programme — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klRatCon"></canvas></div></div>' +
-                    /* ═══ 6 NOUVEAUX GRAPHIQUES INDICATEURS (Taux %) ═══ */
-                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de disponibilité des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de disponibilité des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de satisfaction des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de satisfaction des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfCon"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de perte des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#b45309;text-align:center">📊 Taux de perte des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
                     '</div>';
 
                 var klDataLabels = {
@@ -5242,25 +5256,21 @@
                             }
                         });
                     }
-                    /* 6 graphiques originaux + 2 graphiques MSD jours */
-                    _drawCov('klCovVac', covVac, '#1d4ed8');
-                    _drawCov('klCovCon', covCon, '#dc2626');
-                    _drawDays('klDayVac', dayVac);
-                    _drawDays('klDayCon', dayCon);
-                    _drawMsdDays('klMsdDaysVac', msdVac, '#0891b2');
-                    _drawMsdDays('klMsdDaysCon', msdCon, '#0891b2');
-                    _drawRatio('klRatVac', covVac, '#1d4ed8');
-                    _drawRatio('klRatCon', covCon, '#dc2626');
-                    /* 6 nouveaux graphiques de taux (%) */
+                    /* Visuels retenus : taux de disponibilité, taux de perte,
+                       taux de satisfaction, nombre de jours de disponibilité */
                     _drawPctBar('klDispoVac', dayVac, 'dispoRate', 'Taux de disponibilité %', true, LOGIST_NORMS.dispo);
                     _drawPctBar('klDispoCon', dayCon, 'dispoRate', 'Taux de disponibilité %', true, LOGIST_NORMS.dispo);
-                    _drawPctBar('klSatisfVac', covVac, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
-                    _drawPctBar('klSatisfCon', covCon, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
                     _drawLoss('klLossVac', lossVac);
                     _drawLoss('klLossCon', lossCon);
+                    _drawPctBar('klSatisfVac', covVac, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
+                    _drawPctBar('klSatisfCon', covCon, 'satisf', 'Taux de satisfaction %', true, LOGIST_NORMS.satisf);
+                    _drawDays('klDayVac', dayVac);
+                    _drawDays('klDayCon', dayCon);
                 }, 100);
             })();
 
+            /* ═══ PAGE 0 (suite) — graphiques de rapportage ═══ */
+            if (page === 0) {
             /* ── Graphique barre rapportage ── */
             var barBox = E('div', 'cb');
             barBox.innerHTML = '<h4>📊 Rapportage des données logistiques par ' + ol.l + '</h4><canvas id="logBar" height="' + Math.max(50, orgNames.length * 3) + '"></canvas>';
@@ -5296,7 +5306,10 @@
                 S.charts.logEvo = new Chart(x, { type: 'line', data: { labels: _allMosLog.map(mL), datasets: [{ label: '% rapportage', data: ed, borderColor: '#00205c', backgroundColor: 'rgba(11,58,111,.05)', fill: true, tension: .35, pointRadius: 5, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } } });
             }, 200);
 
-            /* ── Indicateurs clés (déplacé ici, après l'évolution de rapportage) ── */
+            } /* fin page 0 */
+
+            /* ═══ PAGE 1 (suite) — indicateurs clés + résumé heatmap + synthèse pivot ═══ */
+            if (page === 1) {
             c.appendChild(klBox);
 
             /* ── Heatmap résumé par antigène/intrant (séparé de la heatmap principale) ── */
@@ -5372,7 +5385,9 @@
             })();
             c.appendChild(sumBox);
 
-            /* ── Rapport logistique — tableau plat ── */
+            } /* fin page 1 (klBox + heatmap résumé) */
+
+            /* ═══ PAGE 2 — RAPPORT LOGISTIQUE : tableau plat ═══ */
             var niv = '';
             if (ul === 'fosa') niv = f.fosa[0];
             else if (ul === 'as') niv = f.as[0];
@@ -5382,7 +5397,9 @@
             else niv = 'National';
             var perLbl = f.period.length === 1 ? mL(f.period[0]) : (f.period.length > 1 ? mL(f.period.slice().sort()[0]) + ' – ' + mL(f.period.slice().sort().pop()) : 'Toutes périodes');
 
-            var repBox = E('div', 'cb');
+            var repBox = null;
+            if (page === 2) {
+            repBox = E('div', 'cb');
             repBox.innerHTML = '<h4 style="color:#00205c;margin-bottom:4px">📦 Rapport logistique : <b>' + niv + '</b></h4>'
                 + '<div style="font-size:12px;color:#666;margin-bottom:14px">Période : ' + perLbl + '</div>';
 
@@ -5430,8 +5447,9 @@
                 var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                 h += '<tr style="background:' + bg + '">';
                 h += '<td style="text-align:center;font-weight:600">' + (idx + 1) + '</td>';
-                h += '<td style="position:sticky;left:0;z-index:1;background:' + bg + ';font-weight:600;white-space:nowrap">' + item.lbl + '</td>';
-                h += '<td style="font-size:10px;color:#666">' + item.unit + '</td>';
+                /* Colonnes Désignation + Unité en bleu navy (demande design) */
+                h += '<td style="position:sticky;left:0;z-index:1;background:#00205c;color:#fff;font-weight:600;white-space:nowrap;text-align:left">' + item.lbl + '</td>';
+                h += '<td style="font-size:10px;background:#00205c;color:#fff">' + item.unit + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (stk ? stk.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (rcv ? rcv.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (used ? used.toLocaleString() : '\u2014') + '</td>';
@@ -5452,8 +5470,10 @@
 
             h += '</tbody></table></div>';
             repBox.innerHTML += h;
+            } /* fin build page 2 */
 
-            /* ── Tableau pivot synthèse logistique par OU × antigène ── */
+            /* ── Tableau pivot synthèse logistique par OU × antigène (page 1) ── */
+            if (page === 1) {
             var pivBox = E('div', 'cb');
             (function() { try {
                 var abbr = { BCG:'BCG', VPO:'VPO', DTC:'Penta', VPI:'VPI', PCV13:'PCV', ROTA:'Rota',
@@ -5525,8 +5545,9 @@
             }
             })();
             c.appendChild(pivBox);
+            } /* fin page 1 (synthèse pivot) */
 
-            c.appendChild(repBox);
+            if (page === 2 && repBox) c.appendChild(repBox);
         }
         /* ═══════════════════════════════════════════════════════
          *  COUVERTURE VACCINALE — Données AS avec population
@@ -6613,8 +6634,9 @@
                     var diff = curV - prevV;
                     var up = diff > 0;
                     var good = lowerBetter ? !up : up;
-                    if (Math.abs(diff) < 0.05) return '<span style="color:#888;font-size:11px;margin-left:4px">→</span>';
-                    var col = good ? '#16a34a' : '#dc2626';
+                    if (Math.abs(diff) < 0.05) return '<span style="color:rgba(255,255,255,.85);font-size:11px;margin-left:4px">→</span>';
+                    /* Cartes pleines colorées : flèche blanche (bon) / assombrie (mauvais) pour rester lisible */
+                    var col = good ? '#fff' : 'rgba(0,0,0,.45)';
                     return '<span style="color:' + col + ';font-size:13px;font-weight:800;margin-left:4px">' + (up ? '↑' : '↓') + '</span>';
                 }
                 function _kpiCV(recs, field, useNV) {
@@ -7378,7 +7400,9 @@
 
                 var cvBox = E('div', 'cb');
                 cvBox.innerHTML = '<h4 style="color:#00205c;margin:0 0 10px">📊 Couvertures vaccinales — ' + giDisp.scopeLabel + ' · ' + perLbl + '</h4>';
-                var tH = '<div style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead>' +
+                /* data-pev-noheat : les barres portent déjà le code couleur — pas de
+                   seconde couche heatmap sur les cellules (doublons de couleurs). */
+                var tH = '<div style="overflow-x:auto"><table class="dt" data-pev-noheat="1" style="font-size:11px"><thead>' +
                     '<tr style="background:#00205c;color:#fff">' +
                     '<th style="text-align:left">Antigène</th>' +
                     '<th style="text-align:center">Cible administrative</th>' +
@@ -7400,7 +7424,7 @@
                             '<div style="position:absolute;top:0;left:0;right:0;line-height:22px;text-align:center;color:#000;font-weight:700;font-size:11px">' + p.toFixed(0) + '%</div>' +
                             '</div>';
                     }
-                    tH += '<tr><td style="font-weight:700;color:#00205c">' + a.ag.replace(/_/g, '-') + '</td>';
+                    tH += '<tr><td style="font-weight:700;background:#00205c;color:#fff;text-align:left">' + a.ag.replace(/_/g, '-') + '</td>';
                     tH += '<td style="min-width:240px">' + _bar(cvAdm) + '</td>';
                     if (hasAjust) tH += '<td style="min-width:240px">' + _bar(cvAj) + '</td>';
                     tH += '</tr>';
@@ -7499,14 +7523,14 @@
                             var den = a.useNV ? tgtAdm.nv : tgtAdm.ns;
                             return den > 0 ? +(doses / den * 100).toFixed(1) : null;
                         });
-                        var datasets = [{ label: 'Administrative', data: dAdm, backgroundColor: '#5b4b8a' }];
+                        var datasets = [{ label: 'Administrative', data: dAdm, backgroundColor: '#00205c' }];
                         if (hasAjust) {
                             var dAj = antigList.map(function (a) {
                                 var doses = _cvSum(cvFlt, AG_FIELD_MAP[a.ag]);
                                 var den = a.useNV ? tgtAj.nv : tgtAj.ns;
                                 return den > 0 ? +(doses / den * 100).toFixed(1) : null;
                             });
-                            datasets.push({ label: 'Ajustée', data: dAj, backgroundColor: '#7dd3c0' });
+                            datasets.push({ label: 'Ajustée', data: dAj, backgroundColor: '#1f9d57' });
                         }
                         new Chart(document.getElementById(cvId).getContext('2d'), {
                             type: 'bar',
@@ -8217,7 +8241,7 @@
             /* ---------- 1. Heatmap des cellules de couverture ---------- */
             var COL_RE = /%|compl[ée]tude|promptitude|couv|\bcv\b|ajust|taux|atteint|performance/i;
             var AGH_RE = /^\s*(BCG|VPO|VPI|DTC|PENTA|ROTA|PCV|VAR|VAA|TD|VAP|MCV|RR|HPV|MEN)/i;
-            var SKIP_RE = /abandon|perte|drop|z[ée]ro|[ée]cart|attendu|re[çc]u|nombre|effectif|population|cible|total|rang|manquant|stock|dose|variation|concordance|erreur|valeur|moyenne/i;
+            var SKIP_RE = /abandon|perte|drop|z[ée]ro|[ée]cart|attendu|re[çc]u|nombre|effectif|population|cible|total|rang|manquant|stock|dose|variation|concordance|erreur|valeur|moyenne|atypiq/i;
             var ORG_RE = /province|antenne|zone de sant|aire de sant|\bfosa\b|district|\bzs\b|\bas\b/i;
 
             /* Échelle Supervision conjointe : >100 bleu (à vérifier) · 90–100 vert ·
@@ -8261,6 +8285,10 @@
                 try {
                     if (!tbl || tbl.dataset.pevhm) return;
                     tbl.dataset.pevhm = '1';
+                    /* Opt-out : les tableaux marqués data-pev-noheat ne reçoivent ni
+                       coloration heatmap ni légende (ex. Vaccins même âge, Détail
+                       valeurs atypiques, CV admin vs ajustée). */
+                    if (tbl.dataset.pevNoheat) return;
                     var head = tbl.tHead;
                     if (!head || !head.rows.length) return;
                     var ths = head.rows[head.rows.length - 1].cells;
@@ -8287,7 +8315,7 @@
                         }
                         for (var c = 0; c < cells.length; c++) {
                             var td = cells[c];
-                            if (td.classList.contains('cg') || td.classList.contains('crd') || td.classList.contains('pev-hm')) continue;
+                            if (td.classList.contains('cg') || td.classList.contains('cy') || td.classList.contains('crd') || td.classList.contains('pev-hm')) continue;
                             var pr = parseVal(td.textContent);
                             if (!pr) continue;
                             /* Heatmap « couverture » : uniquement des POURCENTAGES (cellule avec %).
