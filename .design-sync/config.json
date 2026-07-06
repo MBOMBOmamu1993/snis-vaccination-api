@@ -1,0 +1,34 @@
+{
+  "pkg": "snis-vaccination-dhis2",
+  "globalName": "SnisPev",
+  "shape": "package",
+  "entry": ".design-sync/ds-entry.ts",
+  "srcDir": "components",
+  "tsconfig": "./tsconfig.json",
+  "buildCmd": "npx tailwindcss -c .design-sync/tailwind.sync.ts -i app/globals.css -o .design-sync/.cache/tailwind.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "cssEntry": ".design-sync/.cache/tailwind.css",
+  "overrides": {
+    "KpiCard": { "cardMode": "column" },
+    "EChart": { "cardMode": "column" },
+    "Donut": { "cardMode": "column" },
+    "LineTrend": { "cardMode": "column" },
+    "Radar": { "cardMode": "column" }
+  },
+  "componentSrcMap": {
+    "Card": "components/ui/Card.tsx",
+    "CardHeader": "components/ui/Card.tsx",
+    "SectionBar": "components/ui/Card.tsx",
+    "KpiCard": "components/ui/KpiCard.tsx",
+    "DataTable": "components/ui/DataTable.tsx",
+    "EmptyState": "components/ui/EmptyState.tsx",
+    "Icon": "components/ui/Icon.tsx",
+    "Pager": "components/ui/Pagination.tsx",
+    "TableExportButtons": "components/ui/TableExport.tsx",
+    "EChart": "components/charts/EChart.tsx",
+    "Donut": "components/charts/Donut.tsx",
+    "LineTrend": "components/charts/LineTrend.tsx",
+    "Radar": "components/charts/Radar.tsx",
+    "ChartMenu": "components/charts/ChartMenu.tsx"
+  }
+}
