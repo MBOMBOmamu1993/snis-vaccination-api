@@ -9,11 +9,21 @@
   "readmeHeader": ".design-sync/conventions.md",
   "cssEntry": ".design-sync/.cache/tailwind.css",
   "overrides": {
-    "KpiCard": { "cardMode": "column" },
-    "EChart": { "cardMode": "column" },
-    "Donut": { "cardMode": "column" },
-    "LineTrend": { "cardMode": "column" },
-    "Radar": { "cardMode": "column" }
+    "KpiCard": {
+      "cardMode": "column"
+    },
+    "EChart": {
+      "cardMode": "column"
+    },
+    "Donut": {
+      "cardMode": "column"
+    },
+    "LineTrend": {
+      "cardMode": "column"
+    },
+    "Radar": {
+      "cardMode": "column"
+    }
   },
   "componentSrcMap": {
     "Card": "components/ui/Card.tsx",
@@ -30,5 +40,6 @@
     "LineTrend": "components/charts/LineTrend.tsx",
     "Radar": "components/charts/Radar.tsx",
     "ChartMenu": "components/charts/ChartMenu.tsx"
-  }
+  },
+  "projectId": "4fc85617-c873-49d6-8194-3a1c8dd351a8"
 }

@@ -1,0 +1,39 @@
+Radar from snis-vaccination-dhis2. Use via `window.SnisPev.Radar` (bundle loaded from the root `_ds_bundle.js`).
+
+## Examples
+
+### DeuxProvinces
+
+```jsx
+() => (
+  <Radar
+    height={300}
+    exportTitle="Profil qualité — comparaison"
+    indicators={indicators}
+    entities={[
+      { name: "Kinshasa", values: [96, 88, 93, 89, 95, 91] },
+      { name: "Tshuapa", values: [84, 59, 66, 62, 78, 70] },
+    ]}
+  />
+);
+
+/** Plusieurs entités : la palette PEV distingue chaque profil. */
+```
+
+### MultiEntites
+
+```jsx
+() => (
+  <Radar
+    height={300}
+    exportTitle="Profil qualité — 4 provinces"
+    indicators={indicators}
+    entities={[
+      { name: "Kinshasa", values: [96, 88, 93, 89, 95, 91] },
+      { name: "Kongo Central", values: [93, 77, 85, 82, 90, 86] },
+      { name: "Nord-Kivu", values: [92, 72, 79, 74, 88, 81] },
+      { name: "Tshopo", values: [89, 64, 71, 68, 82, 75] },
+    ]}
+  />
+)
+```
