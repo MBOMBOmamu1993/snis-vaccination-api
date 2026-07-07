@@ -539,15 +539,15 @@
         }
 
         .kc.gn {
-            border-left-color: #27ae60
+            border-left-color: #2ca02c
         }
 
         .kc.rd {
-            border-left-color: #e74c3c
+            border-left-color: #d62728
         }
 
         .kc.or {
-            border-left-color: #f39c12
+            border-left-color: #e2a33b
         }
 
         .kc.bl {
@@ -669,7 +669,7 @@
         }
 
         .tr {
-            color: #e74c3c !important;
+            color: #d62728 !important;
             font-weight: 700
         }
 
@@ -794,7 +794,7 @@
         }
 
         .frst:hover {
-            color: #e74c3c;
+            color: #d62728;
             transform: rotate(-90deg)
         }
 
@@ -1014,20 +1014,30 @@
         #pevHome .ph-card h3 { font-size: 17px; font-weight: 800; color: var(--tn); line-height: 1.25; }
         #pevHome .ph-card p { font-size: 12.5px; color: #64748b; margin-top: 10px; line-height: 1.5; }
 
-        /* ── Mode onglet : barre latérale des pages (style Tshuapa) ── */
+        /* ── Mode onglet : barre latérale des pages (style shinydashboard PEV RDC) ── */
         body.tabmode .nav { display: none !important; }
         #pevSide { display: none; }
         body.tabmode #pevSide { display: flex; flex-direction: column; position: fixed; left: 0; top: 64px; bottom: 0; width: 256px; background: #0f174e; color: #fff; z-index: 1150; overflow-y: auto; }
-        #pevSide .ps-home { display: flex; align-items: center; gap: 7px; margin: 16px 14px 6px; padding: 8px 12px; border-radius: 9px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.82); font-size: 12px; font-weight: 700; cursor: pointer; border: none; }
-        #pevSide .ps-home:hover { background: rgba(255,255,255,.16); color: #fff; }
-        #pevSide .ps-tab { margin: 8px 16px 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.1); }
-        #pevSide .ps-tab .ps-k { font-size: 10px; font-weight: 700; letter-spacing: .16em; color: rgba(255,255,255,.5); text-transform: uppercase; }
-        #pevSide .ps-tab .ps-n { font-size: 15px; font-weight: 800; margin-top: 3px; line-height: 1.2; }
-        #pevSide .ps-pg { display: flex; align-items: center; gap: 10px; margin: 3px 8px; padding: 11px 13px; border-radius: 9px; border-left: 3px solid transparent; color: rgba(255,255,255,.74); font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
-        #pevSide .ps-pg:hover { background: rgba(255,255,255,.08); color: #fff; }
-        #pevSide .ps-pg.act { background: rgba(255,255,255,.14); color: #fff; font-weight: 800; border-left-color: var(--ty); }
-        #pevSide .ps-pg .ps-ic { font-size: 16px; }
-        #pevSide .ps-src { margin-top: auto; padding: 12px 18px; font-size: 10.5px; color: rgba(255,255,255,.4); border-top: 1px solid rgba(255,255,255,.1); }
+        #pevSide .ps-home { display: flex; align-items: center; gap: 7px; margin: 16px 14px 6px; padding: 8px 12px; border-radius: 9px; background: rgba(255,255,255,.08); color: #dfe3fb; font-size: 12px; font-weight: 700; cursor: pointer; border: none; transition: .2s; }
+        #pevSide .ps-home:hover { background: #1a237e; color: #fff; }
+        #pevSide .ps-tab { margin: 8px 16px 12px; padding-bottom: 12px; border-bottom: 1px solid #263079; }
+        #pevSide .ps-tab .ps-k { font-size: 10px; font-weight: 700; letter-spacing: .16em; color: #aeb6e6; text-transform: uppercase; }
+        #pevSide .ps-tab .ps-n { font-size: 15px; font-weight: 800; margin-top: 5px; line-height: 1.2; display: flex; align-items: center; gap: 8px; }
+        #pevSide .ps-tab .ps-n .pev-ic-svg { color: var(--ty); width: 19px; height: 19px; flex: 0 0 auto; }
+        #pevSide .ps-pg { display: flex; align-items: center; gap: 10px; margin: 2px 10px 2px 0; padding: 11px 13px 11px 15px; border-radius: 0 9px 9px 0; border-left: 3px solid transparent; color: #dfe3fb; font-size: 13px; font-weight: 600; cursor: pointer; transition: .25s; }
+        #pevSide .ps-pg:hover { background: #1a237e; color: #fff; border-left-color: var(--ty); }
+        #pevSide .ps-pg.act { background: #1a237e; color: #fff; font-weight: 800; border-left-color: var(--ty); }
+        #pevSide .ps-pg .ps-ic { font-size: 16px; flex: 0 0 auto; display: inline-flex; align-items: center; color: #aeb6e6; transition: .25s; }
+        #pevSide .ps-pg .ps-ic .pev-ic-svg { width: 17px; height: 17px; }
+        #pevSide .ps-pg:hover .ps-ic, #pevSide .ps-pg.act .ps-ic { color: var(--ty); }
+        #pevSide .ps-src { margin-top: auto; padding: 12px 18px; font-size: 10.5px; color: rgba(255,255,255,.4); border-top: 1px solid #263079; }
+        /* ── Icônes SVG infographiques (trait 2px, currentColor) ── */
+        .pev-ic-svg { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; }
+        .pev-ic-svg .pev-ok { stroke: #2ca02c; stroke-width: 2.4; }
+        .ph-ic .pev-ic-svg { width: 40px; height: 40px; color: #1a237e; }
+        .pev-banner .pev-ic-svg, .st .pev-ic-svg { color: var(--ty); width: 1.1em; height: 1.1em; margin-right: 2px; }
+        .pev-banner .pev-ic-svg .pev-ok, .st .pev-ic-svg .pev-ok { stroke: #7ee787; }
+        .cb h4 .pev-ic-svg, h3 .pev-ic-svg { flex: 0 0 auto; }
         body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 256px; }
         @media (max-width: 760px) { body.tabmode #pevSide { width: 60px; } body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 60px; } #pevSide .ps-pg span:not(.ps-ic), #pevSide .ps-tab, #pevSide .ps-home span { display: none; } }
     
@@ -1245,8 +1255,8 @@
                        jamais touchés — ni couleurs ni étiquettes. */
                     var _pevMap = {
                         '#2196f3': '#0d47a1', '#64b5f6': '#3f6fc2', '#0d47a1': '#0d47a1', '#1976d2': '#0d47a1',
-                        '#ff9800': '#e2a33b', '#ffa726': '#edbe6b', '#f39c12': '#e2a33b',
-                        '#e74c3c': '#d62728', '#27ae60': '#2ca02c', '#4caf50': '#3fbc3f',
+                        '#ff9800': '#e2a33b', '#ffa726': '#edbe6b', '#e2a33b': '#e2a33b',
+                        '#d62728': '#d62728', '#2ca02c': '#2ca02c', '#4caf50': '#3fbc3f',
                         'rgba(33,150,243,0.8)': 'rgba(13,71,161,.85)', 'rgba(33,150,243,.72)': 'rgba(13,71,161,.8)',
                         'rgba(255,152,0,0.85)': 'rgba(226,163,59,.9)', 'rgba(255,152,0,.72)': 'rgba(226,163,59,.85)',
                         'rgba(21,101,192,0.75)': 'rgba(26,35,126,.85)', 'rgba(46,125,50,0.75)': 'rgba(44,160,44,.9)'
@@ -1750,7 +1760,7 @@
 
             } catch (e) {
                 console.error(e); sp(0, '❌ ' + e.message, '❌ Erreur');
-                document.getElementById('DB').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c"><h3>❌ Erreur</h3><p>' + e.message + '</p></div>';
+                document.getElementById('DB').innerHTML = '<div style="text-align:center;padding:60px;color:#d62728"><h3>❌ Erreur</h3><p>' + e.message + '</p></div>';
             }
         }
 
@@ -2035,7 +2045,7 @@
             rstGlob.innerHTML = '↺';
             rstGlob.title = 'Réinitialiser tous les filtres par défaut';
             // Style pour l'aligner à droite (margin-left:auto), le centrer verticalement et le rendre interactif
-            rstGlob.style.cssText = 'font-size:26px; color:#e74c3c; cursor:pointer; font-weight:900; margin-left:auto; align-self:center; padding:0 15px; transition:transform 0.2s;';
+            rstGlob.style.cssText = 'font-size:26px; color:#d62728; cursor:pointer; font-weight:900; margin-left:auto; align-self:center; padding:0 15px; transition:transform 0.2s;';
 
             // Animation au survol
             rstGlob.onmouseover = function () { this.style.transform = 'rotate(-90deg)'; };
@@ -2768,13 +2778,13 @@
             }, 300);
 
             /* Heatmap */
-            var hb = E('div', 'cb'); hb.innerHTML = '<h4>🗓️ Soumissions FOSA × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#27ae60"></div> Oui</div><div class="lgi"><div class="lgd" style="background:#e74c3c"></div> Non</div></div><div id="HM" style="width:100%;min-height:300px"></div>'; c.appendChild(hb);
+            var hb = E('div', 'cb'); hb.innerHTML = '<h4>🗓️ Soumissions FOSA × mois</h4><div class="lgb"><div class="lgi"><div class="lgd" style="background:#2ca02c"></div> Oui</div><div class="lgi"><div class="lgd" style="background:#d62728"></div> Non</div></div><div id="HM" style="width:100%;min-height:300px"></div>'; c.appendChild(hb);
             setTimeout(function () {
                 var fosas = uv(D, function (r) { return r.org5; }).slice(0, 60);
                 if (!fosas.length || !mos.length) { document.getElementById('HM').innerHTML = '<em style="color:#888">Aucune donnée.</em>'; return; }
                 var z = fosas.map(function (f) { return mos.map(function (m) { var rec = D.find(function (r) { return r.org5 === f && r.period === m; }); if (!rec) return null; return isRep(rec) ? 1 : 0; }); });
                 var el2 = document.getElementById('HM'); el2.style.height = Math.max(300, fosas.length * 15) + 'px';
-                Plotly.newPlot(el2, [{ z: z, x: mos.map(mL), y: fosas.map(function (f) { return tr(f, 32); }), type: 'heatmap', colorscale: [[0, '#e74c3c'], [1, '#27ae60']], zmin: 0, zmax: 1, showscale: false, connectgaps: false }], { margin: { l: 200, r: 25, t: 8, b: 55 }, yaxis: { autorange: 'reversed', dtick: 1, tickfont: { size: 7 } }, plot_bgcolor: '#fafbfc' }, { responsive: true });
+                Plotly.newPlot(el2, [{ z: z, x: mos.map(mL), y: fosas.map(function (f) { return tr(f, 32); }), type: 'heatmap', colorscale: [[0, '#d62728'], [1, '#2ca02c']], zmin: 0, zmax: 1, showscale: false, connectgaps: false }], { margin: { l: 200, r: 25, t: 8, b: 55 }, yaxis: { autorange: 'reversed', dtick: 1, tickfont: { size: 7 } }, plot_bgcolor: '#fafbfc' }, { responsive: true });
             }, 500);
         }
 
@@ -2862,7 +2872,7 @@
                         if (!avg) return;
                         var v2 = (cv - avg) / avg;
                         xV.push(avg); yV.push(cv); col.push(Math.abs(v2) <= thr ? '#0d47a1' :
-                            '#e74c3c');
+                            '#d62728');
                         txt.push(tr(org, 28) + '<br>' + mL(lastM) + ': ' + cv + '<br>Average: ' + avg.toFixed(1) + '<br>Var: ' + (v2 > 0 ? '+' : '') + (v2 * 100).toFixed(1) + '%');
                     });
 
@@ -3083,7 +3093,7 @@
                 var vn = +r.var2, isNA = r.acc === 'Non acceptable';
                 if (isNA) cNA++; else cOK++;
                 var ac = isNA ? 'crd' : '';
-                var vc = vn > 0 ? '#e74c3c' : (vn < 0 ? '#0d47a1' : '#666');
+                var vc = vn > 0 ? '#d62728' : (vn < 0 ? '#0d47a1' : '#666');
                 /* Colonnes org unit + antigène en bleu navy (demande design) */
                 h += '<tr><td style="background:#1a237e;color:#fff;font-weight:600;text-align:left">' + tr(r.ou, 28) + '</td><td style="background:#1a237e;color:#fff;font-weight:700">' + r.vac + '</td>'
                     + '<td style="text-align:right">' + r.val + '</td>'
@@ -3186,7 +3196,7 @@
                     Object.keys(og).filter(Boolean).forEach(function (org) {
                         var vA = sf(og[org], p.a), vB = sf(og[org], p.b); if (!vA && !vB) return;
                         var den = vB || vA || 1, v2 = (vA - vB) / den;
-                        xV.push(vB); yV.push(vA); col.push(Math.abs(v2) > thr ? '#e74c3c' : '#0d47a1');
+                        xV.push(vB); yV.push(vA); col.push(Math.abs(v2) > thr ? '#d62728' : '#0d47a1');
                         txt.push(tr(org, 28) + '<br>' + AG_LBL[p.b] + ': ' + vB + '<br>' + AG_LBL[p.a] + ': ' + vA + '<br>Var: ' + (v2 > 0 ? '+' : '') + (v2 * 100).toFixed(1) + '%');
                     });
                     if (!xV.length) return;
@@ -3194,8 +3204,8 @@
                     Plotly.newPlot(dv, [
                         { x: xV, y: yV, text: txt, type: 'scatter', mode: 'markers', marker: { size: 9, color: col, line: { width: 1, color: '#fff' } }, hoverinfo: 'text', name: ol.l },
                         { x: [0, mx], y: [0, mx], type: 'scatter', mode: 'lines', line: { color: '#333', width: 2, dash: 'dot' }, name: '=' },
-                        { x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '+' + Math.round(thr * 100) + '%' },
-                        { x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: { color: '#27ae60', width: 1.5, dash: 'dash' }, name: '-' + Math.round(thr * 100) + '%' }
+                        { x: [0, mx], y: [0, mx * (1 + thr)], type: 'scatter', mode: 'lines', line: { color: '#2ca02c', width: 1.5, dash: 'dash' }, name: '+' + Math.round(thr * 100) + '%' },
+                        { x: [0, mx], y: [0, mx * (1 - thr)], type: 'scatter', mode: 'lines', line: { color: '#2ca02c', width: 1.5, dash: 'dash' }, name: '-' + Math.round(thr * 100) + '%' }
                     ], { xaxis: { title: { text: AG_LBL[p.b], font: { size: 12 } }, showgrid: false }, yaxis: { title: { text: AG_LBL[p.a], font: { size: 12 } }, showgrid: false }, margin: { l: 60, r: 20, t: 10, b: 55 }, legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center' }, plot_bgcolor: '#fff' }, { responsive: true });
                 }, 80 + pi * 80);
             });
@@ -3263,7 +3273,7 @@
                 trFH += '<h4 style="margin:0;border:none;padding:0;"> Triangulation données de vaccination et doses de vaccins disponibles au cours du mois</h4>';
                 trFH += '<div style="display:flex;gap:8px;">';
                 trFH += '<button onclick="_expTri(\'xls\')" style="background:#217346;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📥 Excel</button>';
-                trFH += '<button onclick="_expTri(\'pdf\')" style="background:#e74c3c;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 PDF</button>';
+                trFH += '<button onclick="_expTri(\'pdf\')" style="background:#d62728;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 PDF</button>';
                 trFH += '<button onclick="_expTri(\'pptx\')" style="background:#d35400;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📊 PowerPoint</button>';
                 trFH += '</div></div>';
 
@@ -3315,11 +3325,11 @@
                             if (ec < 0) neg++;
                             h += '<td style="text-align:right">' + dd.toLocaleString() + '</td>';
                             h += '<td style="text-align:right">' + vac.toLocaleString() + '</td>';
-                            h += '<td style="text-align:right;font-weight:700;color:' + (ec < 0 ? '#e74c3c' : '#27ae60') + '">' + (ec >= 0 ? '+' : '') + ec.toLocaleString() + '</td>';
+                            h += '<td style="text-align:right;font-weight:700;color:' + (ec < 0 ? '#d62728' : '#2ca02c') + '">' + (ec >= 0 ? '+' : '') + ec.toLocaleString() + '</td>';
                         });
                         var propNeg = fAgs.length > 0 ? (neg / fAgs.length * 100) : 0;
                         var cohOui = propNeg === 0;
-                        h += '<td style="text-align:center;font-weight:700;color:' + (propNeg > 0 ? '#e74c3c' : '#27ae60') + '">' + propNeg.toFixed(0) + '%</td>';
+                        h += '<td style="text-align:center;font-weight:700;color:' + (propNeg > 0 ? '#d62728' : '#2ca02c') + '">' + propNeg.toFixed(0) + '%</td>';
                         h += '<td class="' + (cohOui ? 'cg' : 'crd') + '" style="font-weight:800;text-align:center">' + (cohOui ? 'Oui ✓' : 'Non ✗') + '</td></tr>';
                     });
                     h += '</tbody></table></div>';
@@ -3406,8 +3416,8 @@
                                         opts.fill = { color: 'FFFFFF' };
                                         opts.color = '333333';
                                         var cs = window.getComputedStyle(cell);
-                                        if (cs.color.indexOf('255, 0') >= 0 || cs.color.indexOf('231, 76') >= 0) opts.color = 'e74c3c';
-                                        else if (cs.color.indexOf('0, 128') >= 0 || cs.color.indexOf('39, 174') >= 0 || cs.color.indexOf('46, 125') >= 0) opts.color = '27ae60';
+                                        if (cs.color.indexOf('255, 0') >= 0 || cs.color.indexOf('231, 76') >= 0) opts.color = 'd62728';
+                                        else if (cs.color.indexOf('0, 128') >= 0 || cs.color.indexOf('39, 174') >= 0 || cs.color.indexOf('46, 125') >= 0) opts.color = '2ca02c';
                                     }
                                     var cellDef = { text: cell.innerText.trim(), options: opts };
                                     if (cell.colSpan > 1) cellDef.options.colspan = cell.colSpan;
@@ -3454,7 +3464,7 @@
                 var x = document.getElementById('drC'); if (!x) return;
                 var og = grp(D, function (r) { return r.org3; }), orgs = Object.keys(og).filter(Boolean).sort();
                 var dV = orgs.map(function (org) { var d1 = sf(og[org], 'DTC1'), d3 = sf(og[org], 'DTC3'); return d1 > 0 ? ((d1 - d3) / d1 * 100) : 0; });
-                var dC = dV.map(function (v) { return v < 0 ? '#e74c3c' : '#0d47a1'; });
+                var dC = dV.map(function (v) { return v < 0 ? '#d62728' : '#0d47a1'; });
                 S.charts.dr = new Chart(x, { type: 'bar', data: { labels: orgs.map(function (l) { return tr(l, 24); }), datasets: [{ label: 'Dropout %', data: dV, backgroundColor: dC, borderRadius: 3 }] }, options: { indexAxis: orgs.length > 8 ? 'y' : 'x', responsive: true, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: '%' } } } } });
             }, 300);
         }
@@ -3523,8 +3533,8 @@
                     h += '<td style="text-align:right;font-weight:600">' + (_p4Method === 'var33' ? r.mu.toFixed(0) : r.mz.toFixed(2)) + '</td>';
                     h += '<td style="text-align:right">' + (_p4Method === 'var33' ? r.pctVar.toFixed(2) : r.cv.toFixed(2)) + '</td>';
                     h += '<td style="text-align:center;' + (r.miss > 0 ? 'color:#dc2626;font-weight:700' : '') + '">' + r.miss + '</td>';
-                    h += '<td style="text-align:center;font-weight:700;color:' + (r.ac > 0 ? '#e74c3c' : '#27ae60') + '">' + r.ac + '</td>';
-                    h += '<td style="text-align:center;font-weight:700;color:' + (r.tot > 0 ? '#e74c3c' : '#27ae60') + '">' + r.tot + '</td>';
+                    h += '<td style="text-align:center;font-weight:700;color:' + (r.ac > 0 ? '#d62728' : '#2ca02c') + '">' + r.ac + '</td>';
+                    h += '<td style="text-align:center;font-weight:700;color:' + (r.tot > 0 ? '#d62728' : '#2ca02c') + '">' + r.tot + '</td>';
                     h += '<td style="text-align:center"><span onclick="_showDetModal(' + (st + ri) + ')" style="cursor:pointer;font-size:18px;color:#1a237e" title="Voir les valeurs atypiques">\ud83d\udc41</span></td>';
                     h += '</tr>';
                 });
@@ -3557,13 +3567,13 @@
             if (_detModalChart) { try { _detModalChart.destroy(); } catch (e) { } _detModalChart = null; }
             var cv = document.getElementById('detMC');
             var colors = r.vals.map(function (v, i) {
-                if (r.ia[i] === 'a') return '#e74c3c';
-                if (r.ia[i] === 'm') return '#f59e0b';
-                return '#27ae60';
+                if (r.ia[i] === 'a') return '#d62728';
+                if (r.ia[i] === 'm') return '#e2a33b';
+                return '#2ca02c';
             });
             _detModalChart = new Chart(cv, {
                 type: 'bar',
-                data: { labels: window._p4Det.mos.map(mL), datasets: [{ label: r.lbl, data: r.vals, backgroundColor: colors, borderColor: colors.map(function (c2) { return c2 === '#e74c3c' ? '#b91c1c' : (c2 === '#f59e0b' ? '#d97706' : '#16a34a'); }), borderWidth: 1, borderRadius: 5 }] },
+                data: { labels: window._p4Det.mos.map(mL), datasets: [{ label: r.lbl, data: r.vals, backgroundColor: colors, borderColor: colors.map(function (c2) { return c2 === '#d62728' ? '#b91c1c' : (c2 === '#e2a33b' ? '#c98a2e' : '#16a34a'); }), borderWidth: 1, borderRadius: 5 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: r.lbl + ' \u2014 ' + r.ou, font: { size: 14 }, color: '#1a237e' }, tooltip: { callbacks: { afterLabel: function (ctx) { var f = r.ia[ctx.dataIndex]; if (f === 'a') return '\u26a0 Atypique'; if (f === 'm') return '\u26a0 Manquant (0)'; return ''; } } } }, scales: { y: { beginAtZero: true }, x: {} } }
             });
         };
@@ -3664,7 +3674,7 @@
             var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
             (window._p4Det && window._p4Det.rows || []).forEach(function (r) { if (atB[r.ag]) { atB[r.ag].a += r.ac; atB[r.ag].t += r.ac + r.norm; } });
             var agK = AG.filter(function (a) { return atB[a].t > 0; });
-            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#e74c3c', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#27ae60', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#d62728', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#2ca02c', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
         }
 
         window._changeP4Method = function (method) {
@@ -3676,7 +3686,7 @@
             _renderP4Chart();
             document.querySelectorAll('.p4ob').forEach(function (b) { b.style.background = '#e5e7eb'; b.style.color = '#333'; b.style.fontWeight = '600'; });
             var act = document.getElementById('p4o_' + method);
-            if (act) { act.style.background = method === 'var33' ? '#1a237e' : (method === 'sd2' ? '#f39c12' : '#e74c3c'); act.style.color = '#fff'; act.style.fontWeight = '700'; }
+            if (act) { act.style.background = method === 'var33' ? '#1a237e' : (method === 'sd2' ? '#e2a33b' : '#d62728'); act.style.color = '#fff'; act.style.fontWeight = '700'; }
             var tit = document.getElementById('p4DetTitle');
             if (tit) { var ml = method === 'var33' ? '%Var \u00b133% Moy' : (method === 'sd2' ? '\u00b12 SD Mod\u00e9r\u00e9es' : '\u00b13 SD Extr\u00eames'); var olT = (window._p4Det && window._p4Det.orgL) || 'unit\u00e9'; tit.innerHTML = '\ud83d\udcca D\u00e9tail valeurs atypiques par ' + olT + ' (m\u00e9thode ' + ml + ')'; }
         };
@@ -3897,7 +3907,7 @@
                             }
                             return { t: t, a: a, p: t ? (a / t * 100) : 0 };
                         });
-                        S.charts.atT = new Chart(x, { type: 'line', data: { labels: mosAt.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#e74c3c', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#f39c12', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
+                        S.charts.atT = new Chart(x, { type: 'line', data: { labels: mosAt.map(mL), datasets: [{ label: 'Nb', data: td.map(function (d) { return d.a; }), borderColor: '#d62728', fill: true, tension: .3, pointRadius: 5, borderWidth: 3, yAxisID: 'y' }, { label: '%', data: td.map(function (d) { return d.p; }), borderColor: '#e2a33b', borderWidth: 2, tension: .3, pointRadius: 4, borderDash: [5, 3], yAxisID: 'y1' }] }, options: { responsive: true, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } } });
                     }, 180);
                 }, 30);
             }
@@ -4293,7 +4303,7 @@
 
                     var h = '<div style="overflow-y:auto;max-height:65vh">';
                     h += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
-                    h += '<thead><tr style="background:#00008B;color:white;position:sticky;top:0">';
+                    h += '<thead><tr style="background:#1a237e;color:white;position:sticky;top:0">';
                     h += '<th style="padding:6px 8px;text-align:left">' + lvl.cl + '</th>';
                     h += '<th style="padding:6px 8px;text-align:center">% Séances fixes<br>réalisées</th>';
                     h += '<th style="padding:6px 8px;text-align:center">% Séances avancées<br>réalisées</th>';
@@ -4318,7 +4328,7 @@
                         var dsp  = sum(recs,stockKey) + sum(recs,recvKey);
                         var bg   = rowIdx2 % 2 === 0 ? '#f8fafc' : '#fff';
                         rowIdx2++;
-                        h += '<tr style="background:' + bg + ';color:#c0392b;font-weight:600">';
+                        h += '<tr style="background:' + bg + ';color:#b02121;font-weight:600">';
                         h += '<td style="padding:5px 8px">' + ch + '</td>';
                         h += '<td style="padding:5px 8px;text-align:center">' + pct2(sfr, sfp) + '</td>';
                         h += '<td style="padding:5px 8px;text-align:center">' + pct2(sar, sap) + '</td>';
@@ -4341,7 +4351,7 @@
                         + 'max-height:90vh;overflow:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.35)';
 
                     var ttl = document.createElement('h4');
-                    ttl.style.cssText = 'margin:0 0 14px;color:#00008B;font-size:14px;padding-right:28px';
+                    ttl.style.cssText = 'margin:0 0 14px;color:#1a237e;font-size:14px;padding-right:28px';
                     ttl.textContent = '📋 Détails — ' + row.name + ' | ' + ag + ' (' + row.vals[ag].toFixed(1) + '% avec valeur = 0)';
 
                     var xBtn = document.createElement('button');
@@ -4490,7 +4500,7 @@
                     var bins = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]];
                     var bL = bins.map(function (b) { return b[0] + '-' + (b[1] === 101 ? 100 : b[1]) + '%'; });
                     var bC = bins.map(function (b) { return rows.filter(function (r) { return r.pct100 >= b[0] && r.pct100 < b[1]; }).length; });
-                    S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#e74c3c', '#ff7043', '#f39c12', '#66bb6a', '#27ae60'], borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+                    S.charts.sDist = new Chart(x, { type: 'bar', data: { labels: bL, datasets: [{ data: bC, backgroundColor: ['#d62728', '#e07b30', '#e2a33b', '#74c476', '#2ca02c'], borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
                 }, 60);
 
                 /* Classification par score qualité — barres triées décroissant */
@@ -4499,7 +4509,7 @@
                     var x2 = document.getElementById('sClass'); if (!x2) return;
                     var labels = rows.map(function (r) { return tr(r.u, 26); });
                     var vals = rows.map(function (r) { return r.pct100; });
-                    var cols = rows.map(function (r) { return r.interp === 'Excellent' ? '#27ae60' : (r.interp === 'Bon' ? '#f39c12' : '#e74c3c'); });
+                    var cols = rows.map(function (r) { return r.interp === 'Excellent' ? '#2ca02c' : (r.interp === 'Bon' ? '#e2a33b' : '#d62728'); });
                     S.charts.sClass = new Chart(x2, {
                         type: 'bar',
                         data: { labels: labels, datasets: [{ label: '% Score', data: vals, backgroundColor: cols, borderRadius: 3 }] },
@@ -4530,7 +4540,7 @@
                     rows.forEach(function (r, idx) {
                         var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                         var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
-                        var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
+                        var scCol = r.pct100 >= 80 ? '#2ca02c' : (r.pct100 >= 50 ? '#e2a33b' : '#d62728');
                         h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:700"><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
                             '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
                             '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
@@ -4541,7 +4551,7 @@
                             '<td style="font-weight:800;text-align:center">' + r.tot + '/120</td>' +
                             '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:14px">' + r.pct100 + '%</td>' +
                             '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
-                            '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
+                            '<td style="font-size:9px;color:#d62728">' + r.notes + '</td></tr>';
                     });
                 } else {
                     h = '<div class="tw" style="overflow-x:auto"><table class="dt"><thead><tr>' +
@@ -4558,7 +4568,7 @@
                     rows.forEach(function (r, idx) {
                         var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                         var intC = r.interp === 'Excellent' ? 'cg' : (r.interp === 'Bon' ? 'cy' : 'crd');
-                        var scCol = r.pct100 >= 80 ? '#27ae60' : (r.pct100 >= 50 ? '#f39c12' : '#e74c3c');
+                        var scCol = r.pct100 >= 80 ? '#2ca02c' : (r.pct100 >= 50 ? '#e2a33b' : '#d62728');
                         h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-weight:700"><b>' + tr(r.u, 22) + '</b></td><td>' + r.nT + '</td><td>' + r.nR + '</td>' +
                             '<td class="' + ccl(r.tR) + '">' + r.tR.toFixed(1) + '%</td><td style="font-weight:700">' + r.scR + '</td>' +
                             '<td class="' + ccl(r.aE) + '">' + r.aE.toFixed(1) + '%</td><td style="font-weight:700">' + r.scE + '</td>' +
@@ -4567,7 +4577,7 @@
                             '<td class="' + (r.dr < 0 ? 'crd' : '') + '">' + r.dr.toFixed(1) + '%</td><td style="font-weight:700">' + r.scD + '</td>' +
                             '<td style="background:' + scCol + ';color:#fff;text-align:center;font-weight:800;font-size:15px">' + r.pct100 + '</td>' +
                             '<td class="' + intC + '" style="font-weight:700">' + r.interp + '</td>' +
-                            '<td style="font-size:9px;color:#e74c3c">' + r.notes + '</td></tr>';
+                            '<td style="font-size:9px;color:#d62728">' + r.notes + '</td></tr>';
                     });
                 }
                 sc.innerHTML += h + '</tbody></table></div>';
@@ -5051,9 +5061,9 @@
                 });
 
                 var _fmtKpi = function (v, sfx) { return v !== null ? v.toFixed(1) + sfx : '—'; };
-                var _kpiDispoCol = kpiDispo !== null ? (kpiDispo >= 80 ? '#27ae60' : kpiDispo >= 50 ? '#f39c12' : '#e74c3c') : '#888';
-                var _kpiSatisfCol = kpiSatisf !== null ? (kpiSatisf >= 80 ? '#27ae60' : kpiSatisf >= 50 ? '#f39c12' : '#e74c3c') : '#888';
-                var _kpiPerteCol = kpiPerte !== null ? (kpiPerte <= 5 ? '#27ae60' : kpiPerte <= 10 ? '#f39c12' : '#e74c3c') : '#888';
+                var _kpiDispoCol = kpiDispo !== null ? (kpiDispo >= 80 ? '#2ca02c' : kpiDispo >= 50 ? '#e2a33b' : '#d62728') : '#888';
+                var _kpiSatisfCol = kpiSatisf !== null ? (kpiSatisf >= 80 ? '#2ca02c' : kpiSatisf >= 50 ? '#e2a33b' : '#d62728') : '#888';
+                var _kpiPerteCol = kpiPerte !== null ? (kpiPerte <= 5 ? '#2ca02c' : kpiPerte <= 10 ? '#e2a33b' : '#d62728') : '#888';
 
                 klBox = E('div', 'cb');
                 klBox.innerHTML =
@@ -5179,7 +5189,7 @@
                                 datasets: [{
                                     label: 'Taux de perte %',
                                     data: sorted.map(function (d) { return +d.lossRate.toFixed(1); }),
-                                    backgroundColor: sorted.map(function (d) { return d.lossRate > 10 ? '#dc2626' : d.lossRate > 5 ? '#f4a800' : '#27ae60'; }),
+                                    backgroundColor: sorted.map(function (d) { return d.lossRate > 10 ? '#dc2626' : d.lossRate > 5 ? '#e2a33b' : '#2ca02c'; }),
                                     borderRadius: 2
                                 }]
                             },
@@ -5249,9 +5259,9 @@
                                     backgroundColor: sorted.map(function (d) {
                                         var v = d[key];
                                         if (isHigherBetter) {
-                                            return v >= norm ? '#27ae60' : v >= norm * 0.75 ? '#f4a800' : '#dc2626';
+                                            return v >= norm ? '#2ca02c' : v >= norm * 0.75 ? '#e2a33b' : '#dc2626';
                                         } else {
-                                            return v <= norm ? '#27ae60' : v <= norm * 1.5 ? '#f4a800' : '#dc2626';
+                                            return v <= norm ? '#2ca02c' : v <= norm * 1.5 ? '#e2a33b' : '#dc2626';
                                         }
                                     }),
                                     borderRadius: 2
@@ -5291,7 +5301,7 @@
                 var x = document.getElementById('logBar'); if (!x) return;
                 var sOrgs = orgNames.slice().sort(function (a, b) { return rapByOU[b] - rapByOU[a]; });
                 var vals = sOrgs.map(function (o) { return rapByOU[o]; });
-                var cols = vals.map(function (v) { return v >= 80 ? '#27ae60' : v >= 50 ? '#f39c12' : '#e74c3c'; });
+                var cols = vals.map(function (v) { return v >= 80 ? '#2ca02c' : v >= 50 ? '#e2a33b' : '#d62728'; });
                 S.charts.logBar = new Chart(x, { type: 'bar', data: { labels: sOrgs.map(function (l) { return tr(l, 24); }), datasets: [{ label: '% rapportage', data: vals, backgroundColor: cols, borderRadius: 3 }] }, options: { indexAxis: sOrgs.length > 8 ? 'y' : 'x', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: sOrgs.length > 25 ? 7 : 9 } } } } } });
             }, 100);
 
@@ -5334,8 +5344,8 @@
                              SAB_005ml:'S05', SAB_05ml:'S5', SAB_auto_bloquante:'SAB',
                              Ser_dilution_2ml:'sd2', Ser_dilution_5ml:'sd5', Ser_dilution_6ml:'sd6',
                              Adaptateurs:'Adp', Compte_goutte:'Cgt', R_ceptacles:'Rec' };
-                var thS = 'background:#1a237e;color:#fff;padding:4px 6px;border:1px solid #1d4ed8;font-weight:600;text-align:center;white-space:nowrap;font-size:10px';
-                var thR = 'background:#1e3a5f;color:#fff;padding:4px 8px;border:1px solid #1d4ed8;font-weight:600;text-align:left;white-space:nowrap;min-width:160px;font-size:10px';
+                var thS = 'background:#1a237e;color:#fff;padding:4px 6px;border:1px solid #3f6fc2;font-weight:600;text-align:center;white-space:nowrap;font-size:10px';
+                var thR = 'background:#26307b;color:#fff;padding:4px 8px;border:1px solid #3f6fc2;font-weight:600;text-align:left;white-space:nowrap;min-width:160px;font-size:10px';
                 var tdS = 'border:1px solid #e4e7f2;padding:4px 6px;text-align:center;white-space:nowrap;font-size:10px;font-weight:600';
                 var total = _ouKeys.length;
 
@@ -5467,9 +5477,9 @@
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (used ? used.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (admin ? admin.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (perdu ? perdu.toLocaleString() : '\u2014') + '</td>';
-                var txCol = txPerte > 5 ? '#e74c3c' : txPerte > 2 ? '#f39c12' : '#27ae60';
+                var txCol = txPerte > 5 ? '#d62728' : txPerte > 2 ? '#e2a33b' : '#2ca02c';
                 h += '<td style="text-align:right;font-weight:600;color:' + txCol + '">' + txPerte.toFixed(1) + '%</td>';
-                var jrCol = jrs > 0 ? '#e74c3c' : '#27ae60';
+                var jrCol = jrs > 0 ? '#d62728' : '#2ca02c';
                 h += '<td style="text-align:right;color:' + jrCol + ';font-weight:600">' + (jrs ? jrs.toLocaleString() : '0') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (sdu ? sdu.toLocaleString() : '\u2014') + '</td>';
                 h += '<td style="text-align:right;font-variant-numeric:tabular-nums">' + (smax ? smax.toLocaleString() : '\u2014') + '</td>';
@@ -5495,8 +5505,8 @@
                              Ser_dilution_2ml:'sd2', Ser_dilution_5ml:'sd5', Ser_dilution_6ml:'sd6',
                              Adaptateurs:'Adp', Compte_goutte:'Cgt', R_ceptacles:'Rec' };
                 var cols = LOGIST_FIELDS;
-                var thS = 'background:#1a237e;color:#fff;padding:3px 5px;border:1px solid #1d4ed8;font-weight:600;text-align:center;white-space:nowrap';
-                var thOU = 'background:#1a237e;color:#fff;padding:3px 7px;border:1px solid #1d4ed8;font-weight:600;text-align:left;position:sticky;left:0;z-index:2';
+                var thS = 'background:#1a237e;color:#fff;padding:3px 5px;border:1px solid #3f6fc2;font-weight:600;text-align:center;white-space:nowrap';
+                var thOU = 'background:#1a237e;color:#fff;padding:3px 7px;border:1px solid #3f6fc2;font-weight:600;text-align:left;position:sticky;left:0;z-index:2';
                 var tdS = 'border:1px solid #e4e7f2;padding:3px 5px;text-align:center;white-space:nowrap;font-size:10px';
 
                 function _cc(val, type, normLoss) {
@@ -6886,7 +6896,7 @@
                         _rowCellsCmp(recsC, tC, recsP, tP, tableAgs) + '</tr>';
                 });
                 tH += '</tbody></table></div>';
-                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque colonne-antigène affiche deux sous-colonnes : <strong style="color:#1d4ed8">' + prevLbl + '</strong> et <strong style="color:#dc2626">' + curLbl + '</strong>. ' +
+                tH += '<p style="font-size:10px;color:#888;margin:6px 0 0"><em>Chaque colonne-antigène affiche deux sous-colonnes : <strong style="color:#3f6fc2">' + prevLbl + '</strong> et <strong style="color:#dc2626">' + curLbl + '</strong>. ' +
                     'Couleurs CV : ■ &gt;100% bleu · ■ 90–100% vert · ■ 60–89% jaune · ■ &lt;60% rouge.</em></p>';
                 tblBox.innerHTML += tH;
                 c.appendChild(tblBox);
@@ -6955,7 +6965,7 @@
                         pH += _sessRowCmp(recsC, recsP, tr(ouName, 30), bg);
                     });
                     pH += '</tbody></table></div>';
-                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. Chaque indicateur affiche deux sous-colonnes : <strong style="color:#1d4ed8">' + prevLbl + '</strong> et <strong style="color:#dc2626">' + curLbl + '</strong>. ' +
+                    pH += '<p style="font-size:10px;color:#666;margin:6px 0 0"><em>Population et cibles dédupliquées par ' + (gi.dedupKey === '_AS' ? 'AS' : 'ZS') + '. Chaque indicateur affiche deux sous-colonnes : <strong style="color:#3f6fc2">' + prevLbl + '</strong> et <strong style="color:#dc2626">' + curLbl + '</strong>. ' +
                         (sessAvailable ? 'Séances : seuils ≥80% vert, ≥50% jaune, &lt;50% rouge.' : 'Séances non disponibles dans les données chargées.') + '</em></p>';
                     popBox.innerHTML += pH;
                     c.appendChild(popBox);
@@ -7089,7 +7099,7 @@
                             '</div></div>';
                     }
                     var winH = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px">' +
-                        _winCard('Cat. 4 ' + prevLbl, '#1d4ed8', prev4) +
+                        _winCard('Cat. 4 ' + prevLbl, '#3f6fc2', prev4) +
                         _winCard('Cat. 4 ' + curLbl, '#dc2626', cur4) +
                         '</div>';
                     ajBox.innerHTML += winH;
@@ -7811,8 +7821,11 @@
                     c.appendChild(dbBox);
                 })();
 
-                /* ── Cartes choroplèthes Vega-Lite : CV DTC3 par ZS (admin vs ajustée) ── */
-                if (typeof vegaEmbed !== 'undefined') {
+                /* ── Cartes choroplèthes Vega-Lite : CV DTC3 par ZS (admin vs ajustée) ──
+                   Bloc TOUJOURS rendu : si la bibliothèque Vega (CDN) n'est pas encore
+                   disponible, elle est rechargée à la volée avec message d'attente —
+                   la carte ne disparaît plus silencieusement. */
+                {
                     /* Construire le dataset inline : une ligne par ZS avec les couvertures */
                     var mapData = [];
                     var zsMapG = {};
@@ -7877,7 +7890,7 @@
                                 format: { type: 'topojson', feature: 'Zone de SantéRDC' }
                             },
                             projection: { type: 'mercator' },
-                            title: { text: title, fontSize: 13, dy: 8 },
+                            title: { text: title, fontSize: 13, dy: 8, color: '#1f2545', fontWeight: 700, font: 'Segoe UI' },
                             transform: [
                                 /* Filtre par scope : ne garder que les ZS du scope actuel.
                                    Vega-Lite auto-ajuste la projection à l'étendue des features restantes. */
@@ -7897,9 +7910,9 @@
                                 }
                             ],
                             layer: [
-                                { mark: { type: 'geoshape', fill: '#f7f7f7', stroke: '#bdbdbd', strokeWidth: 0.3 } },
+                                { mark: { type: 'geoshape', fill: '#f4f6fb', stroke: '#c7cde0', strokeWidth: 0.4 } },
                                 {
-                                    mark: { type: 'geoshape', stroke: '#555', strokeWidth: 0.5 },
+                                    mark: { type: 'geoshape', stroke: '#fff', strokeWidth: 0.8 },
                                     encoding: {
                                         color: {
                                             field: 'tranche', type: 'nominal',
@@ -7929,16 +7942,32 @@
                             makeMapSpec('CV DTC3 % (mois) ajustée', 'CV DTC3 — Cibles ajustées', 'CV DTC3 ajustée')
                         ],
                         resolve: { scale: { color: 'independent' } },
-                        config: { view: { stroke: null } }
+                        config: {
+                            view: { stroke: null }, font: 'Segoe UI',
+                            legend: { labelColor: '#1f2545', titleColor: '#1a237e', labelFont: 'Segoe UI', titleFont: 'Segoe UI' }
+                        }
                     };
 
                     setTimeout(function () {
                         var el = document.getElementById(mapId);
-                        if (el) {
-                            vegaEmbed(el, vlSpec, { actions: false, renderer: 'svg' }).catch(function (err) {
-                                el.innerHTML = '<p style="color:#dc2626;font-size:12px">⚠️ Impossible de charger les cartes : ' + err.message + '</p>';
-                            });
+                        if (!el) return;
+                        function _mapFail(msg) {
+                            el.innerHTML = '<p style="color:#d62728;font-size:12px;padding:14px">⚠️ Impossible de charger les cartes : ' + msg + ' — vérifiez la connexion puis revenez sur cette page.</p>';
                         }
+                        function _doEmbed() {
+                            vegaEmbed(el, vlSpec, { actions: false, renderer: 'svg' }).catch(function (err) { _mapFail(err.message); });
+                        }
+                        if (window.vegaEmbed) { _doEmbed(); return; }
+                        el.innerHTML = '<div style="text-align:center;padding:36px;color:#6E7B79;font-size:13px">⏳ Chargement du fond de carte…</div>';
+                        var _vUrls = ['https://cdn.jsdelivr.net/npm/vega@5', 'https://cdn.jsdelivr.net/npm/vega-lite@5', 'https://cdn.jsdelivr.net/npm/vega-embed@6'];
+                        (function _vLoad(i) {
+                            if (window.vegaEmbed) return _doEmbed();
+                            if (i >= _vUrls.length) return _mapFail('bibliothèque cartographique inaccessible (CDN)');
+                            var s = document.createElement('script'); s.src = _vUrls[i];
+                            s.onload = function () { _vLoad(i + 1); };
+                            s.onerror = function () { _mapFail('bibliothèque cartographique inaccessible (CDN)'); };
+                            document.head.appendChild(s);
+                        })(0);
                     }, 200);
                 }
 
@@ -8202,7 +8231,8 @@
                     var m = TAB_META[t.id] || { ic: '📊', d: '' };
                     var card = document.createElement('div'); card.className = 'ph-card';
                     card.onclick = function () { window.pevOpenTab(i); };
-                    card.innerHTML = '<div class="ph-ic">' + m.ic + '</div><h3>' + t.lb + '</h3><p>' + m.d + '</p>';
+                    var icH = (window.PEV_ICO && window.PEV_ICO(m.ic, t.id)) || m.ic;
+                    card.innerHTML = '<div class="ph-ic">' + icH + '</div><h3>' + t.lb + '</h3><p>' + m.d + '</p>';
                     grid.appendChild(card);
                 });
             }
@@ -8210,10 +8240,12 @@
                 var side = document.getElementById('pevSide'); if (!side || typeof TABS === 'undefined') return;
                 var tab = TABS[t]; if (!tab) return;
                 var m = TAB_META[tab.id] || { ic: '📊' };
+                var tabIc = (window.PEV_ICO && window.PEV_ICO(m.ic, tab.id)) || m.ic;
                 var h = '<button class="ps-home" onclick="pevShowHome()">‹ Accueil</button>' +
-                    '<div class="ps-tab"><div class="ps-k">Onglet</div><div class="ps-n">' + m.ic + ' ' + tab.lb + '</div></div>';
+                    '<div class="ps-tab"><div class="ps-k">Onglet</div><div class="ps-n">' + tabIc + ' ' + tab.lb + '</div></div>';
                 tab.pp.forEach(function (p, i) {
-                    h += '<div class="ps-pg' + (i === S.pg ? ' act' : '') + '" onclick="navTo(' + t + ',' + i + ')"><span class="ps-ic">' + (p.ic || '•') + '</span><span>' + p.t + '</span></div>';
+                    var pgIc = (window.PEV_ICO && window.PEV_ICO(p.ic)) || p.ic || '•';
+                    h += '<div class="ps-pg' + (i === S.pg ? ' act' : '') + '" onclick="navTo(' + t + ',' + i + ')"><span class="ps-ic">' + pgIc + '</span><span>' + p.t + '</span></div>';
                 });
                 h += '<div class="ps-src">Source : DHIS2 (SNIS)</div>';
                 side.innerHTML = h;
@@ -8249,6 +8281,41 @@
         /* ═══════════ PEV — Habillage type plateforme Shiny : heatmap, bandeaux, menu de DL ═══════════ */
         (function () {
             'use strict';
+
+            /* ---------- 0. Icônes SVG infographiques (remplacent les emojis — design only) ----------
+               Trait 2px arrondi type Lucide, colorées par currentColor (or dans les bandeaux
+               et la barre latérale, indigo dans les pastilles d'accueil). Aucune dépendance CDN. */
+            var _SVG_OPEN = '<svg class="pev-ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+            var PEV_ICONS = {
+                'db-check': '<ellipse cx="10.5" cy="5.5" rx="7.5" ry="3"/><path d="M3 5.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6"/><path d="M3 11.5v6c0 1.66 3.36 3 7.5 3 1.28 0 2.5-.13 3.55-.36"/><path class="pev-ok" d="m15.5 18.5 2 2 4.5-4.5"/>',
+                '📋': '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+                '📈': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
+                '📉': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 15-5-5-4 4-3-3"/>',
+                '🔗': '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/>',
+                '⚠': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+                '🏆': '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+                '💉': '<path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/>',
+                '📊': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M13 17V9"/><path d="M18 17V5"/><path d="M8 17v-3"/>',
+                '🔁': '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+                '⚖': '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+                '📦': '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+                '📄': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+                '📥': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+                '🗺': '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
+                '🎯': '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+                '🔍': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+                '⏱': '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+                '📌': '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+                '💊': '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+                '❄': '<line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/>',
+                '🧾': '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>'
+            };
+            window.PEV_ICO = function (emoji, tabId) {
+                if (tabId === 'oqd') return _SVG_OPEN + PEV_ICONS['db-check'] + '</svg>';
+                if (!emoji) return null;
+                var k = String(emoji).replace(/[️‍]/g, '').trim();
+                return PEV_ICONS[k] ? _SVG_OPEN + PEV_ICONS[k] + '</svg>' : null;
+            };
 
             /* ---------- 1. Heatmap des cellules de couverture ---------- */
             var COL_RE = /%|compl[ée]tude|promptitude|couv|\bcv\b|ajust|taux|atteint|performance/i;
@@ -8358,6 +8425,7 @@
                         h.dataset.pevbanner = '1';
                         h.classList.add('pev-banner');
                         h.style.color = '#fff';
+                        swapLeadIcon(h);
                     });
                 } catch (e) { }
             }
@@ -8481,10 +8549,22 @@
             });
 
             /* ---------- Balayage + observation des rendus dynamiques ---------- */
+            /* Remplace l'emoji de tête d'un élément par son icône SVG (idempotent :
+               une fois remplacé, plus d'emoji en tête). Design uniquement. */
+            function swapLeadIcon(el) {
+                try {
+                    if (!el || !window.PEV_ICO) return;
+                    var m = (el.textContent || '').match(/^\s*([\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}][\u{FE0F}\u{200D}]*)/u);
+                    if (!m) return;
+                    var sv = window.PEV_ICO(m[1]);
+                    if (sv) el.innerHTML = el.innerHTML.replace(m[1], sv + ' ');
+                } catch (e) { }
+            }
             function sweep() {
                 document.querySelectorAll('table.dt:not([data-pevhm])').forEach(heatTable);
                 bannerize(document);
                 coupleBanners(document);
+                swapLeadIcon(document.getElementById('LS'));
                 document.querySelectorAll('.pev-dl:not([data-pev-menu])').forEach(buildChartMenu);
             }
             var tick = null;
