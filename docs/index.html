@@ -1055,6 +1055,17 @@
             box-shadow:0 1px 3px rgba(15,23,42,.10);transition:all .15s ease}
         .pev-tbtn:hover{background:var(--tn);color:#fff;border-color:var(--tn);transform:translateY(-1px);
             box-shadow:0 6px 16px -6px rgba(26,35,126,.5)}
+        /* Bloc de texte des bandeaux : un seul item flex → le titre ne se disperse plus */
+        .pev-banner .pev-btxt{flex:1 1 auto;min-width:0;display:block;line-height:1.35}
+        .pev-btxt .pev-ic-svg{margin-right:8px}
+        /* Pagination des graphiques très fournis (ZS / AS / FOSA) */
+        .pev-pgnav{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 2px}
+        .pev-pgnav button{border:1px solid #d9def5;background:#fff;color:#1a237e;font-size:12px;font-weight:700;
+            width:32px;height:26px;border-radius:8px;cursor:pointer;transition:.15s;line-height:1}
+        .pev-pgnav button:hover:not(:disabled){background:#1a237e;color:#fff;border-color:#1a237e}
+        .pev-pgnav button:disabled{opacity:.35;cursor:default}
+        .pev-pgnav span{font-size:11.5px;font-weight:700;color:#6E7B79}
+        @media print{.pev-pgnav{display:none!important}}
         /* Cellules heatmap couverture */
         /* Échelle heatmap = celle de Supervision conjointe :
            <50 rouge · 50–80 jaune · 80–90 vert clair · 90–100 vert · >100 bleu (à vérifier) */
@@ -1270,6 +1281,58 @@
                         var cv = chart && chart.canvas;
                         return !cv || (cv.id && cv.id.indexOf('crb_') === 0);
                     }
+                    /* ── Pagination dynamique des graphiques à barres très fournis ──
+                       Lisibilité uniquement : ne s'active que si le niveau d'org units
+                       affiché contient beaucoup de catégories (ex. ZS, Aires de Santé,
+                       FOSA : ≥ 26). Les données restent calculées à l'identique — on
+                       n'en AFFICHE qu'une tranche de 25 à la fois avec navigation ◀ ▶.
+                       Les canvases crb_* (Courbe de suivi des CV) sont exemptés. */
+                    var PEV_PG_MIN = 26, PEV_PG_SIZE = 25;
+                    Chart.register({
+                        id: 'pevPaginate',
+                        afterInit: function (chart) {
+                            try {
+                                if (_pevExempt(chart)) return;
+                                var cfg = chart.config;
+                                var dss = (cfg.data && cfg.data.datasets) || [];
+                                var hasBar = dss.some(function (d) { return (d.type || cfg.type) === 'bar'; });
+                                if (!hasBar) return;
+                                var labels = (cfg.data && cfg.data.labels) || [];
+                                if (labels.length < PEV_PG_MIN) return;
+                                var host = chart.canvas && chart.canvas.parentNode; if (!host || !host.parentNode) return;
+                                var full = {
+                                    labels: labels.slice(),
+                                    data: dss.map(function (d) { return (d.data || []).slice(); }),
+                                    bg: dss.map(function (d) { return Array.isArray(d.backgroundColor) ? d.backgroundColor.slice() : null; }),
+                                    bc: dss.map(function (d) { return Array.isArray(d.borderColor) ? d.borderColor.slice() : null; })
+                                };
+                                var nPg = Math.ceil(full.labels.length / PEV_PG_SIZE), pg = 0;
+                                if (host.__pevNav && host.__pevNav.parentNode) host.__pevNav.parentNode.removeChild(host.__pevNav);
+                                var nav = document.createElement('div'); nav.className = 'pev-pgnav';
+                                var bPrev = document.createElement('button'); bPrev.type = 'button'; bPrev.textContent = '◀';
+                                var lbl = document.createElement('span');
+                                var bNext = document.createElement('button'); bNext.type = 'button'; bNext.textContent = '▶';
+                                nav.appendChild(bPrev); nav.appendChild(lbl); nav.appendChild(bNext);
+                                host.parentNode.insertBefore(nav, host.nextSibling);
+                                host.__pevNav = nav;
+                                function apply() {
+                                    var s = pg * PEV_PG_SIZE, e2 = Math.min(s + PEV_PG_SIZE, full.labels.length);
+                                    chart.data.labels = full.labels.slice(s, e2);
+                                    chart.data.datasets.forEach(function (d, i) {
+                                        d.data = full.data[i].slice(s, e2);
+                                        if (full.bg[i]) d.backgroundColor = full.bg[i].slice(s, e2);
+                                        if (full.bc[i]) d.borderColor = full.bc[i].slice(s, e2);
+                                    });
+                                    lbl.textContent = (s + 1) + '–' + e2 + ' sur ' + full.labels.length;
+                                    bPrev.disabled = (pg === 0); bNext.disabled = (pg >= nPg - 1);
+                                    chart.update('none');
+                                }
+                                bPrev.onclick = function (ev) { ev.preventDefault(); if (pg > 0) { pg--; apply(); } };
+                                bNext.onclick = function (ev) { ev.preventDefault(); if (pg < nPg - 1) { pg++; apply(); } };
+                                apply();
+                            } catch (_) { }
+                        }
+                    });
                     Chart.register({
                         id: 'pevPolish',
                         beforeInit: function (chart) {
@@ -1282,7 +1345,8 @@
                                     if (ds.borderColor !== undefined) ds.borderColor = _pevCol(ds.borderColor);
                                     var t = ds.type || cfg.type;
                                     if (t === 'bar') {
-                                        if (ds.borderRadius === undefined) ds.borderRadius = 4;
+                                        /* Extrémités CARRÉES façon Plotly/Shiny (demande design) */
+                                        ds.borderRadius = 0;
                                         if (ds.maxBarThickness === undefined) ds.maxBarThickness = 46;
                                     }
                                 });
@@ -4107,8 +4171,8 @@
                 var bMP = E('div','cb');
                 bMP.id = 'missPropCard';
                 bMP.innerHTML =
-                    '<h4 id="missPropTitle">📊 Proportion des <span id="mpChildLbl">Aire de Santé</span>'
-                    + ' avec données manquantes (=0) en BCG, DTC1 (0-11m), DTC3 (0-11m), VAR1 (0-11m), VAR2 (15m)'
+                    '<h4 id="missPropTitle">📊 Proportion des <span id="mpChildLbl">Aires de Santé</span>'
+                    + ' avec données manquantes (=0) en BCG, DTC1, DTC3, VAR1 &amp; VAR2'
                     + ' — par <span id="mpParentLbl">Antenne PEV</span></h4>'
                     + '<div id="mpChartWrap"></div>';
                 c.appendChild(bMP);
@@ -5505,9 +5569,9 @@
                              Ser_dilution_2ml:'sd2', Ser_dilution_5ml:'sd5', Ser_dilution_6ml:'sd6',
                              Adaptateurs:'Adp', Compte_goutte:'Cgt', R_ceptacles:'Rec' };
                 var cols = LOGIST_FIELDS;
-                var thS = 'background:#1a237e;color:#fff;padding:3px 5px;border:1px solid #3f6fc2;font-weight:600;text-align:center;white-space:nowrap';
-                var thOU = 'background:#1a237e;color:#fff;padding:3px 7px;border:1px solid #3f6fc2;font-weight:600;text-align:left;position:sticky;left:0;z-index:2';
-                var tdS = 'border:1px solid #e4e7f2;padding:3px 5px;text-align:center;white-space:nowrap;font-size:10px';
+                var thS = 'background:linear-gradient(135deg,#1a237e,#0d47a1);color:#fff;padding:5px 6px;border:1px solid rgba(255,255,255,.35);font-weight:700;text-align:center;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px';
+                var thOU = 'background:linear-gradient(135deg,#1a237e,#0d47a1);color:#fff;padding:5px 8px;border:1px solid rgba(255,255,255,.35);font-weight:700;text-align:left;position:sticky;left:0;z-index:2;text-transform:uppercase;letter-spacing:.3px';
+                var tdS = 'border:1px solid #eef1f6;padding:4px 6px;text-align:center;white-space:nowrap;font-size:10px;color:#1e293b';
 
                 function _cc(val, type, normLoss) {
                     if (val === null || val === undefined || !isFinite(val)) return '#f8fafc';
@@ -5525,9 +5589,9 @@
                     return (val === null || val === undefined || !isFinite(val)) ? '—' : val.toFixed(0) + '%';
                 }
 
-                var ph = '<h4 style="color:#1a237e;margin:0 0 8px">📊 Synthèse pivot logistique par ' + ol.l + ' — ' + perLblKL + '</h4>';
+                var ph = '<h4 style="color:#1a237e;margin:0 0 8px">📊 Synthèse indicateurs logistiques par ' + ol.l + ' — ' + perLblKL + '</h4>';
                 ph += '<p style="font-size:10px;color:#666;margin:0 0 8px">Tp = Taux de perte · Td = Taux de disponibilité · Ts = Taux de satisfaction — couleurs par rapport aux normes WHO/PEV</p>';
-                ph += '<div style="overflow-x:auto;overflow-y:auto;max-height:500px"><table style="border-collapse:collapse;font-size:10px">';
+                ph += '<div style="overflow-x:auto;overflow-y:auto;max-height:500px;border-radius:10px"><table style="border-collapse:collapse;font-size:10px;width:100%">';
                 ph += '<thead><tr><th style="' + thOU + '" rowspan="2">' + ol.l + '</th>';
                 cols.forEach(function(it) {
                     ph += '<th style="' + thS + '" colspan="3">' + (abbr[it.pfx] || it.pfx) + '</th>';
@@ -5542,7 +5606,8 @@
 
                 _ouKeys.forEach(function(ou, idx) {
                     var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                    var ouCell = 'position:sticky;left:0;background:' + bg + ';z-index:1;border:1px solid #e4e7f2;padding:3px 7px;font-weight:600;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis';
+                    /* Colonne org unit en NAVY texte blanc, comme les autres tableaux (charte Shiny) */
+                    var ouCell = 'position:sticky;left:0;background:#2b3583;color:#fff;z-index:1;border:1px solid rgba(255,255,255,.22);padding:4px 8px;font-weight:700;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis';
                     ph += '<tr style="background:' + bg + '"><td style="' + ouCell + '" title="' + ou + '">' + tr(ou, 25) + '</td>';
                     cols.forEach(function(it) {
                         var d = _hmData[ou] && _hmData[ou][it.pfx];
@@ -7951,23 +8016,32 @@
                     setTimeout(function () {
                         var el = document.getElementById(mapId);
                         if (!el) return;
-                        function _mapFail(msg) {
-                            el.innerHTML = '<p style="color:#d62728;font-size:12px;padding:14px">⚠️ Impossible de charger les cartes : ' + msg + ' — vérifiez la connexion puis revenez sur cette page.</p>';
-                        }
+                        var _vUrls = ['https://cdn.jsdelivr.net/npm/vega@5', 'https://cdn.jsdelivr.net/npm/vega-lite@5', 'https://cdn.jsdelivr.net/npm/vega-embed@6'];
                         function _doEmbed() {
                             vegaEmbed(el, vlSpec, { actions: false, renderer: 'svg' }).catch(function (err) { _mapFail(err.message); });
                         }
-                        if (window.vegaEmbed) { _doEmbed(); return; }
-                        el.innerHTML = '<div style="text-align:center;padding:36px;color:#6E7B79;font-size:13px">⏳ Chargement du fond de carte…</div>';
-                        var _vUrls = ['https://cdn.jsdelivr.net/npm/vega@5', 'https://cdn.jsdelivr.net/npm/vega-lite@5', 'https://cdn.jsdelivr.net/npm/vega-embed@6'];
-                        (function _vLoad(i) {
+                        function _mapFail(msg) {
+                            el.innerHTML = '<p style="color:#d62728;font-size:12px;padding:12px 14px 8px">⚠️ Impossible de charger les cartes : ' + msg + '</p>';
+                            var rb = document.createElement('button');
+                            rb.type = 'button'; rb.className = 'pev-tbtn'; rb.textContent = '↻ Réessayer';
+                            rb.style.margin = '0 14px 14px';
+                            rb.onclick = function (ev) { ev.preventDefault(); _vStart(); };
+                            el.appendChild(rb);
+                        }
+                        function _vLoad(i) {
                             if (window.vegaEmbed) return _doEmbed();
                             if (i >= _vUrls.length) return _mapFail('bibliothèque cartographique inaccessible (CDN)');
                             var s = document.createElement('script'); s.src = _vUrls[i];
                             s.onload = function () { _vLoad(i + 1); };
                             s.onerror = function () { _mapFail('bibliothèque cartographique inaccessible (CDN)'); };
                             document.head.appendChild(s);
-                        })(0);
+                        }
+                        function _vStart() {
+                            if (window.vegaEmbed) return _doEmbed();
+                            el.innerHTML = '<div style="text-align:center;padding:36px;color:#6E7B79;font-size:13px">⏳ Chargement du fond de carte…</div>';
+                            _vLoad(0);
+                        }
+                        _vStart();
                     }, 200);
                 }
 
@@ -8426,6 +8500,16 @@
                         h.classList.add('pev-banner');
                         h.style.color = '#fff';
                         swapLeadIcon(h);
+                        /* Regroupe icône + texte dans UN SEUL bloc flex : le titre ne se
+                           disperse plus en fragments espacés dans le bandeau. */
+                        if (!h.querySelector('.pev-btxt')) {
+                            var btxt = document.createElement('span'); btxt.className = 'pev-btxt';
+                            while (h.firstChild) {
+                                if (h.firstChild.classList && h.firstChild.classList.contains('pev-tbar')) break;
+                                btxt.appendChild(h.firstChild);
+                            }
+                            h.insertBefore(btxt, h.firstChild);
+                        }
                     });
                 } catch (e) { }
             }
