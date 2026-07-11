@@ -1553,7 +1553,7 @@
             },
             { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
             { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] },
-            { id: 'ia', lb: 'Génération des analyses', fl: [], pp: [{ t: 'Assistant IA — analyses à la demande', ic: '🤖' }] }
+            { id: 'ia', lb: 'Génération des analyses et rapports', fl: [], pp: [{ t: '1. Analyses à la demande', ic: '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em" fill="none" stroke="#d97757" stroke-width="2.6" stroke-linecap="round"><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5M5.3 5.3l3.5 3.5M15.2 15.2l3.5 3.5M18.7 5.3l-3.5 3.5M8.8 15.2l-3.5 3.5"/></svg>' }, { t: '2. Génération de rapports (PDF · Word · PPTX)', ic: '📄' }] }
         ];
 
         /* ═══ STATE ═══ */
@@ -2757,6 +2757,7 @@
             Object.values(S.charts).forEach(function (c) { try { c.destroy(); } catch (e) { } }); S.charts = {};
             var db = document.getElementById('DB'); db.innerHTML = '';
             var tab = TABS[S.tab], pg = tab.pp[S.pg];
+            db.classList.toggle('ia-mode', tab.id === 'ia');
             var _ctxParts = ['Province: ' + S.filters.province];
             if (S.filters.antenne.length === 1) _ctxParts.push('Antenne: ' + S.filters.antenne[0]);
             if (S.filters.zs.length === 1) _ctxParts.push('ZS: ' + S.filters.zs[0]);
@@ -8290,7 +8291,7 @@
                 vacc: { ic: '💉', d: 'Données de vaccination, couvertures vaccinales, comparatives CV & courbes de suivi.' },
                 log: { ic: '📦', d: 'Gestion des intrants : stocks, pertes, ruptures et disponibilité des vaccins.' },
                 dl: { ic: '📥', d: 'Canevas de revue formative — PPTX éditable, diapos 10–12 renseignées depuis DHIS2.' },
-                ia: { ic: '🤖', d: 'Assistant IA : demandez n\'importe quelle analyse des données DHIS2 — réponse en tableau, graphique ou carte, téléchargeable.' }
+                ia: { ic: '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em" fill="none" stroke="#d97757" stroke-width="2.6" stroke-linecap="round"><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5M5.3 5.3l3.5 3.5M15.2 15.2l3.5 3.5M18.7 5.3l-3.5 3.5M8.8 15.2l-3.5 3.5"/></svg>', d: 'Assistant IA : n\'importe quelle analyse des données DHIS2 (tableau, graphique, carte) et génération automatique de rapports professionnels PDF, Word ou PPTX.' }
             };
             function go() {
                 var load = document.getElementById('pevLoad');
@@ -8728,6 +8729,47 @@
         .ia-radio input { display: none; }
         .ia-radio label.on { border-color: #1a237e; background: #f0f2fa; color: #1a237e; font-weight: 700; }
     </style>
+    <style>
+        /* ── Peau « Claude.ai » de l'onglet IA : fond crème, serif, accent corail ── */
+        .ia-mode { background: #F5F4EF !important; }
+        .ia-mode .st { display: none !important; }
+        .ia-wrap { max-width: 860px; }
+        .ia-top .ia-ttl { color: #73716c; font-weight: 600; font-size: 12.5px; }
+        .ia-btn { background: #fff; border: 1px solid #e2dfd5; color: #3d3929; border-radius: 10px; }
+        .ia-btn:hover { background: #f0eee6; }
+        .ia-hero { padding: 60px 20px 30px; }
+        .ia-hero h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; color: #29261f; font-size: 38px; letter-spacing: -0.5px; margin: 0 0 12px; }
+        .ia-hero h2 .ia-star { font-size: 30px; color: #d97757; vertical-align: middle; margin-right: 12px; display: inline-block; }
+        .ia-hero p { color: #73716c; font-size: 14px; }
+        .ia-chip { background: #fff; border: 1px solid #e2dfd5; color: #57544a; border-radius: 12px; }
+        .ia-chip:hover { border-color: #d97757; color: #c86846; background: #fff; }
+        .ia-mu { background: #eceae0; color: #29261f; border-radius: 18px 18px 6px 18px; }
+        .ia-mu .ia-att { color: #73716c; opacity: 1; }
+        .ia-ma-txt { background: transparent; border: none; padding: 2px 4px; color: #29261f; font-size: 14.5px; }
+        .ia-ma-txt h1, .ia-ma-txt h2, .ia-ma-txt h3 { color: #29261f; font-family: Georgia, 'Times New Roman', serif; }
+        .ia-ma-txt code { background: #eceae0; }
+        .ia-card { border: 1px solid #e8e6dc; border-radius: 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, .05); }
+        .ia-card h4 { color: #29261f; }
+        .ia-tblwrap { border-color: #eceae0; }
+        .ia-tbl th { background: #efede3; color: #3d3929; }
+        .ia-tbl td { border-bottom-color: #f0eee6; }
+        .ia-tbl tr:nth-child(even) td { background: #faf9f5; }
+        .ia-note { color: #8a877e; }
+        .ia-work { color: #a09d94; }
+        .ia-comp { border: 1px solid #e2dfd5; border-radius: 26px; box-shadow: 0 6px 24px rgba(60, 50, 30, .08); padding: 14px 16px; }
+        .ia-comp textarea { color: #29261f; font-size: 15px; }
+        .ia-comp textarea::placeholder { color: #a09d94; }
+        .ia-plus { border: 1px solid #e2dfd5; color: #57544a; background: #fff; }
+        .ia-plus:hover { background: #f0eee6; }
+        .ia-model { color: #a09d94; }
+        .ia-send { background: #d97757; }
+        .ia-send:hover { background: #c86846; }
+        .ia-send:disabled { background: #e8cbbb; }
+        .ia-attchip { background: #eceae0; color: #3d3929; }
+        .ia-modal h3 { color: #29261f; }
+        .ia-modal #iaSave { background: #d97757 !important; border-color: #d97757 !important; }
+        .ia-radio label.on { border-color: #d97757; background: #fdf3ee; color: #c86846; }
+    </style>
     <script>
         (function () {
             'use strict';
@@ -8741,6 +8783,7 @@
             var IA_TOOL_RESULT_MAX = 25000; /* caractères renvoyés à l'IA par outil */
 
             var IA = { msgs: [], busy: false, files: [], seq: 0 };
+            var IA_LOGO = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em" fill="none" stroke="#d97757" stroke-width="2.6" stroke-linecap="round"><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5M5.3 5.3l3.5 3.5M15.2 15.2l3.5 3.5M18.7 5.3l-3.5 3.5M8.8 15.2l-3.5 3.5"/></svg>';
 
             function cfg(k, v) { try { if (v === undefined) return localStorage.getItem('pev_ia_' + k) || ''; localStorage.setItem('pev_ia_' + k, v); } catch (e) { return ''; } }
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -8793,6 +8836,7 @@
                     "5. Réponds TOUJOURS en français, de façon claire et synthétique : commence par la conclusion, puis le détail. Mentionne la source (DHIS2/SNIS) et la période analysée.",
                     "6. Pour les cartes sans fond GeoJSON disponible, propose un graphique à barres classé par zone comme alternative fiable.",
                     "7. Les tableaux et figures affichés sont téléchargeables par l'utilisateur (CSV/PNG) — inutile de coller les grandes tables dans ta réponse texte.",
+                    "8. RAPPORTS (PDF / Word / PPTX) : quand l'utilisateur demande un rapport ou une présentation, produis un document impeccable, clair, net et concis. Démarche : calcule d'abord TOUTES les analyses (executer_js / requete_dhis2), puis appelle generer_rapport avec des sections bien rédigées — contexte/introduction, méthodologie brève, sections d'analyse (texte concis + tableau et/ou figure Plotly), conclusions et recommandations concrètes et actionnables. Respecte le style demandé par le client (couleurs, ton, structure, format) ; sinon applique le style par défaut charte PEV (bleu marine #1a237e, accents sobres). Format par défaut : PDF. Rédige les contenus en français professionnel de santé publique.",
                     "",
                     "Contexte de filtre actuel du dashboard : " + JSON.stringify(S.filters || {})
                 ].join('\n');
@@ -8823,6 +8867,31 @@
                             figure: { type: 'object', description: 'Figure Plotly {data, layout}' },
                             note: { type: 'string' }
                         }, required: ['titre', 'type']
+                    }
+                },
+                {
+                    name: 'generer_rapport',
+                    description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word ou PPTX. À utiliser quand l'utilisateur demande un rapport, un bulletin ou une présentation. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau et/ou figure Plotly) → conclusions et recommandations. Style par défaut : charte PEV (bleu marine #1a237e) ; adapter style.couleur_principale/police si le client le demande.",
+                    input_schema: {
+                        type: 'object',
+                        properties: {
+                            titre: { type: 'string' },
+                            format: { type: 'string', enum: ['pdf', 'word', 'pptx'] },
+                            sous_titre: { type: 'string' },
+                            periode: { type: 'string', description: "Période analysée, ex. 'Janvier – Juin 2026'" },
+                            auteur: { type: 'string' },
+                            style: { type: 'object', properties: { couleur_principale: { type: 'string', description: 'hex, défaut #1a237e' }, police: { type: 'string' } } },
+                            sections: {
+                                type: 'array', items: {
+                                    type: 'object', properties: {
+                                        titre: { type: 'string' },
+                                        contenu: { type: 'string', description: 'Texte de la section (markdown simple : **gras**, listes -)' },
+                                        tableau: { type: 'object', properties: { colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } } } },
+                                        figure: { type: 'object', description: 'Figure Plotly {data, layout}' }
+                                    }, required: ['titre']
+                                }
+                            }
+                        }, required: ['titre', 'format', 'sections']
                     }
                 }
             ];
@@ -8864,6 +8933,10 @@
                     return tt;
                 }
                 if (name === 'afficher_resultat') { iaRenderResult(input, msgsEl); return 'OK : résultat affiché à l\'utilisateur avec boutons de téléchargement.'; }
+                if (name === 'generer_rapport') {
+                    var fmtDone = await iaGenReport(input, msgsEl);
+                    return 'OK : rapport ' + fmtDone.toUpperCase() + ' (' + ((input.sections || []).length) + ' sections) généré et téléchargé chez l\'utilisateur.';
+                }
                 throw new Error('Outil inconnu : ' + name);
             }
 
@@ -9039,6 +9112,143 @@
 
             function iaScroll(el) { try { el.lastElementChild && el.lastElementChild.scrollIntoView({ block: 'end' }); } catch (e) { } }
 
+            /* ═══ GÉNÉRATION DE RAPPORTS (PDF · Word · PPTX) ═══ */
+            function iaLoadScript(src) {
+                return new Promise(function (res, rej) {
+                    var s = document.createElement('script'); s.src = src;
+                    s.onload = res; s.onerror = function () { rej(new Error('Chargement impossible : ' + src)); };
+                    document.head.appendChild(s);
+                });
+            }
+            function iaEnsurePdf() { return window.html2pdf ? Promise.resolve() : iaLoadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js'); }
+            function iaEnsurePptx() { return window.PptxGenJS ? Promise.resolve() : iaLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'); }
+
+            async function iaFigPng(fig) {
+                return await Plotly.toImage({
+                    data: fig.data || [],
+                    layout: Object.assign({ paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 12 }, margin: { t: 40, r: 20, b: 60, l: 60 }, colorway: ['#1a237e', '#d97757', '#2e7d32', '#f9a825', '#6a1b9a', '#00838f', '#c62828', '#546e7a'] }, fig.layout || {})
+                }, { format: 'png', width: 1000, height: 560, scale: 2 });
+            }
+
+            /* HTML commun (PDF + Word). forWord=true → images référencées en
+               fichiers MHTML ; sinon dataURL inline. */
+            function iaRepHtml(inp, forWord) {
+                var C = (inp.style && inp.style.couleur_principale) || '#1a237e';
+                var font = (inp.style && inp.style.police) || "'Segoe UI', Arial, sans-serif";
+                var date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                var images = [];
+                var h = '<div style="font-family:' + font + ';color:#222;font-size:13px;line-height:1.6">';
+                h += '<div style="text-align:center;padding:130px 30px 40px;page-break-after:always">' +
+                    '<div style="font-size:12px;letter-spacing:3px;color:#8a877e;text-transform:uppercase">Programme Élargi de Vaccination — RDC</div>' +
+                    '<h1 style="font-size:32px;color:' + C + ';margin:26px 0 10px">' + esc(inp.titre || 'Rapport d\'analyse') + '</h1>' +
+                    (inp.sous_titre ? '<div style="font-size:16px;color:#555">' + esc(inp.sous_titre) + '</div>' : '') +
+                    (inp.periode ? '<div style="margin-top:26px;font-size:14px;color:#444"><b>Période :</b> ' + esc(inp.periode) + '</div>' : '') +
+                    '<div style="margin-top:60px;color:#8a877e;font-size:11px">' + (inp.auteur ? esc(inp.auteur) + ' · ' : '') + 'Généré le ' + date + ' · Source : DHIS2 (SNIS)</div>' +
+                    '</div>';
+                (inp.sections || []).forEach(function (sec, i) {
+                    h += '<div style="' + (i > 0 ? 'page-break-before:always;' : '') + 'padding:6px 0">' +
+                        '<h2 style="color:' + C + ';border-bottom:2px solid ' + C + ';padding-bottom:6px;font-size:19px">' + (i + 1) + '. ' + esc(sec.titre || '') + '</h2>';
+                    if (sec.contenu) h += '<div>' + md(sec.contenu) + '</div>';
+                    if (sec.tableau && sec.tableau.colonnes) {
+                        h += '<table style="border-collapse:collapse;width:100%;font-size:11.5px;margin:12px 0"><tr>' +
+                            sec.tableau.colonnes.map(function (c) { return '<th style="background:' + C + ';color:#fff;padding:6px 8px;border:1px solid ' + C + ';text-align:left">' + esc(c) + '</th>'; }).join('') + '</tr>';
+                        (sec.tableau.lignes || []).forEach(function (l, ri) {
+                            h += '<tr>' + l.map(function (v) { return '<td style="border:1px solid #ddd;padding:5px 8px;' + (ri % 2 ? 'background:#f7f8fc' : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>';
+                        });
+                        h += '</table>';
+                    }
+                    if (sec._png) {
+                        if (forWord) { var nm = 'fig' + i + '.png'; images.push({ name: nm, b64: String(sec._png).split(',')[1] }); h += '<div style="text-align:center;margin:12px 0"><img src="file:///C:/rapport/' + nm + '" width="620"></div>'; }
+                        else h += '<div style="text-align:center;margin:12px 0"><img src="' + sec._png + '" style="width:100%;max-width:680px"></div>';
+                    }
+                    h += '</div>';
+                });
+                h += '<div style="margin-top:24px;color:#8a877e;font-size:10.5px;border-top:1px solid #e0e0e0;padding-top:8px">Rapport généré automatiquement par l\'assistant IA du Dashboard PEV de routine — données DHIS2 (SNIS RDC), sujettes à validation.</div></div>';
+                return { html: h, images: images };
+            }
+
+            async function iaRepPdf(inp, safe) {
+                await iaEnsurePdf();
+                var r = iaRepHtml(inp, false);
+                var host = document.createElement('div');
+                host.style.cssText = 'position:absolute;left:-10000px;top:0;width:794px;background:#fff';
+                host.innerHTML = r.html; document.body.appendChild(host);
+                try {
+                    await html2pdf().set({
+                        margin: [12, 12, 16, 12], filename: safe + '.pdf',
+                        image: { type: 'jpeg', quality: 0.95 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['css', 'legacy'] }
+                    }).from(host).save();
+                } finally { host.remove(); }
+            }
+
+            function iaRepWord(inp, safe) {
+                var r = iaRepHtml(inp, true);
+                var B = '----=_RapportPEV_' + Date.now();
+                var m = 'MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary="' + B + '"\r\n\r\n' +
+                    '--' + B + '\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Location: file:///C:/rapport/doc.htm\r\n\r\n' +
+                    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">' +
+                    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--></head><body>' + r.html + '</body></html>\r\n\r\n';
+                r.images.forEach(function (im) {
+                    m += '--' + B + '\r\nContent-Location: file:///C:/rapport/' + im.name + '\r\nContent-Transfer-Encoding: base64\r\nContent-Type: image/png\r\n\r\n' + im.b64 + '\r\n\r\n';
+                });
+                m += '--' + B + '--';
+                iaDlBlob(safe + '.doc', 'application/msword', m);
+            }
+
+            async function iaRepPptx(inp, safe) {
+                await iaEnsurePptx();
+                var C = ((inp.style && inp.style.couleur_principale) || '#1a237e').replace('#', '');
+                var p = new PptxGenJS(); p.layout = 'LAYOUT_16x9';
+                var s = p.addSlide(); s.background = { color: C };
+                s.addText('PROGRAMME ÉLARGI DE VACCINATION — RDC', { x: 0.5, y: 0.7, w: 9, h: 0.4, fontSize: 12, color: 'E8E6DC', charSpacing: 3, align: 'center' });
+                s.addText(inp.titre || 'Rapport', { x: 0.5, y: 1.6, w: 9, h: 1.6, fontSize: 30, bold: true, color: 'FFFFFF', align: 'center' });
+                if (inp.sous_titre) s.addText(inp.sous_titre, { x: 0.5, y: 3.2, w: 9, h: 0.6, fontSize: 16, color: 'F0EEE6', align: 'center' });
+                s.addText((inp.periode ? inp.periode + ' · ' : '') + 'Source : DHIS2 (SNIS) · ' + new Date().toLocaleDateString('fr-FR'), { x: 0.5, y: 4.6, w: 9, h: 0.4, fontSize: 11, color: 'D5D2C8', align: 'center' });
+                (inp.sections || []).forEach(function (sec, i) {
+                    var sl = p.addSlide(); sl.background = { color: 'FFFFFF' };
+                    sl.addText((i + 1) + '. ' + (sec.titre || ''), { x: 0.4, y: 0.25, w: 9.2, h: 0.6, fontSize: 20, bold: true, color: C });
+                    var hasVis = !!(sec._png || (sec.tableau && sec.tableau.colonnes));
+                    if (sec.contenu) {
+                        var bullets = String(sec.contenu).replace(/\*\*/g, '').split(/\n+/).filter(function (t) { return t.trim(); }).slice(0, 9)
+                            .map(function (t) { return { text: t.replace(/^[-•]\s*/, ''), options: { bullet: true, fontSize: 12.5, color: '363636', breakLine: true } }; });
+                        sl.addText(bullets, { x: 0.45, y: 1.1, w: hasVis ? 4.3 : 9.1, h: 4.2, valign: 'top' });
+                    }
+                    if (sec._png) {
+                        sl.addImage({ data: sec._png, x: sec.contenu ? 5.0 : 0.9, y: 1.2, w: sec.contenu ? 4.5 : 8.2, h: sec.contenu ? 2.52 : 4.59 });
+                    } else if (sec.tableau && sec.tableau.colonnes) {
+                        var rows = [sec.tableau.colonnes.map(function (c) { return { text: String(c), options: { bold: true, color: 'FFFFFF', fill: { color: C }, fontSize: 10 } }; })]
+                            .concat((sec.tableau.lignes || []).slice(0, 13).map(function (l) { return l.map(function (v) { return { text: String(v == null ? '' : v), options: { fontSize: 9.5, color: '333333' } }; }); }));
+                        sl.addTable(rows, { x: sec.contenu ? 5.0 : 0.4, y: 1.15, w: sec.contenu ? 4.6 : 9.2, border: { pt: 0.5, color: 'CCCCCC' } });
+                    }
+                });
+                await p.writeFile({ fileName: safe + '.pptx' });
+            }
+
+            async function iaGenReport(inp, msgsEl) {
+                var safe = (inp.titre || 'rapport').replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_') || 'rapport';
+                var secs = inp.sections || [];
+                for (var i = 0; i < secs.length; i++) {
+                    if (secs[i].figure && !secs[i]._png) { try { secs[i]._png = await iaFigPng(secs[i].figure); } catch (e) { } }
+                }
+                var fmt = String(inp.format || 'pdf').toLowerCase();
+                if (fmt.indexOf('ppt') === 0) { await iaRepPptx(inp, safe); fmt = 'pptx'; }
+                else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { iaRepWord(inp, safe); fmt = 'word'; }
+                else { await iaRepPdf(inp, safe); fmt = 'pdf'; }
+                if (msgsEl) {
+                    var card = E('div', 'ia-card');
+                    card.appendChild(E('h4', '', '📄 Rapport généré — ' + esc(inp.titre || '')));
+                    card.appendChild(E('div', 'ia-note', 'Format ' + fmt.toUpperCase() + ' · ' + secs.length + ' section(s) · le téléchargement a démarré automatiquement.'));
+                    var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
+                    b.onclick = function () { iaGenReport(inp, null); };
+                    dl.appendChild(b); card.appendChild(dl);
+                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                }
+                return fmt;
+            }
+
             /* ── Envoi d'un message utilisateur ── */
             async function iaSend(msgsEl, ta, sendBtn) {
                 if (IA.busy) return;
@@ -9123,7 +9333,7 @@
             window.rIA = function (ct) {
                 var wrap = E('div', 'ia-wrap'); ct.appendChild(wrap);
                 var top = E('div', 'ia-top');
-                top.appendChild(E('div', 'ia-ttl', '🤖 Génération des analyses — Assistant IA (données DHIS2/SNIS)'));
+                top.appendChild(E('div', 'ia-ttl', IA_LOGO + ' Génération des analyses et rapports — Assistant IA (données DHIS2/SNIS)'));
                 var bNew = E('button', 'ia-btn', '🗑 Nouvelle conversation');
                 var bSet = E('button', 'ia-btn', '⚙ Accès');
                 top.appendChild(bNew); top.appendChild(bSet); wrap.appendChild(top);
@@ -9133,12 +9343,20 @@
                 function hero() {
                     var h = parseInt(new Date().getHours(), 10);
                     var greet = h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir';
+                    var isRep = S.pg === 1;
                     var hv = E('div', 'ia-hero'); hv.id = 'iaHero';
-                    hv.innerHTML = '<div class="ia-star">✳</div><h2>' + greet + ' !</h2>' +
-                        '<p>Demandez n\'importe quelle analyse des données de vaccination DHIS2 : l\'assistant calcule sur les données réelles du dashboard et répond en <b>tableau</b>, <b>graphique</b> ou <b>carte</b>, téléchargeables. Vous pouvez aussi joindre un fichier ou une image.</p>' +
+                    hv.innerHTML = '<h2><span class="ia-star">' + IA_LOGO + '</span>' + (isRep ? 'Quel rapport préparons-nous ?' : greet + ' !') + '</h2>' +
+                        '<p>' + (isRep
+                            ? 'Décrivez le rapport souhaité — contenu, période, zone, format <b>PDF</b>, <b>Word</b> ou <b>PPTX</b>, et style éventuel : l\'assistant analyse les données DHIS2 puis génère un document professionnel téléchargeable.'
+                            : 'Demandez n\'importe quelle analyse des données de vaccination DHIS2 : l\'assistant calcule sur les données réelles et répond en <b>tableau</b>, <b>graphique</b> ou <b>carte</b>, téléchargeables. Vous pouvez aussi joindre un fichier ou une image.') + '</p>' +
                         '<div class="ia-chips" id="iaChips"></div>';
                     msgsEl.appendChild(hv);
-                    var chips = [
+                    var chips = isRep ? [
+                        'Rapport PDF complet : couverture vaccinale et taux d\'abandon de ma province en 2026',
+                        'Rapport Word : complétude et promptitude par zone de santé au dernier trimestre',
+                        'Présentation PPTX pour la revue mensuelle : indicateurs clés du mois dernier',
+                        'Rapport PDF logistique : ruptures de stock et pertes par antenne'
+                    ] : [
                         'Couverture vaccinale DTC3 par zone de santé sur les 12 derniers mois, en tableau',
                         'Graphique de la tendance mensuelle des doses VAR1 par province en 2026',
                         'Taux d\'abandon DTC1–DTC3 par antenne : classe du plus élevé au plus faible',
@@ -9171,7 +9389,7 @@
 
                 var comp = E('div', 'ia-comp'); wrap.appendChild(comp);
                 attRowRef = E('div', 'ia-attrow'); attRowRef.style.display = 'none'; comp.appendChild(attRowRef);
-                var ta = document.createElement('textarea'); ta.rows = 1; ta.placeholder = 'Décrivez l\'analyse souhaitée… (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)';
+                var ta = document.createElement('textarea'); ta.rows = 1; ta.placeholder = 'Comment puis-je vous aider ?';
                 comp.appendChild(ta);
                 var row = E('div', 'ia-comprow'); comp.appendChild(row);
                 var plus = E('button', 'ia-plus', '+'); plus.title = 'Joindre un fichier ou une image (image, PDF, CSV, Excel, TXT)';
