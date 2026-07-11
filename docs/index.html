@@ -8825,6 +8825,7 @@
                     "",
                     "## ACCÈS COMPLET AU DHIS2 NATIONAL (SNIS RDC) — source principale",
                     "Tu disposes d'un accès COMPLET, en lecture, à l'API Web du DHIS2 national : TOUTES les données de vaccination y sont accessibles (tous les éléments de données, indicateurs, datasets PEV, toutes les unités d'organisation du pays à tous les niveaux, toutes les périodes disponibles) — bien au-delà du périmètre des fichiers locaux ci-dessus. Ne réponds JAMAIS qu'une donnée de vaccination est indisponible sans avoir d'abord cherché dans le DHIS2.",
+                    "IMPORTANT — ANNÉES HISTORIQUES : les fichiers locaux du dashboard ne couvrent que 2025–2026. Pour TOUTE autre année (2024, 2020, 2015…) ou toute comparaison pluriannuelle, va DIRECTEMENT dans le DHIS2 : pe:2019 (année), pe:201901;201902;… (mois explicites), pe:LAST_5_YEARS / LAST_10_YEARS, ou une liste 2018;2019;2020. L'historique DHIS2 remonte bien avant 2025 — exploite-le selon la demande de l'utilisateur.",
                     "Deux façons d'y accéder :",
                     "- Outil requete_dhis2 (endpoint, params) : pour les métadonnées et les réponses de taille modérée — le JSON t'est renvoyé directement.",
                     "- ctx.dhis2(endpoint, params) DANS executer_js : pour les GROS volumes (analytics massifs, longues listes) — la réponse arrive dans ton code JavaScript où tu agrèges/filtres, et tu ne retournes que le résultat compact. PRÉFÈRE cette voie dès que la réponse dépasse quelques dizaines de lignes.",
