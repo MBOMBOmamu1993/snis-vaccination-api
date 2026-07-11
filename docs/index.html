@@ -1552,7 +1552,8 @@
                 pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }]
             },
             { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
-            { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] }
+            { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] },
+            { id: 'ia', lb: 'Génération des analyses', fl: [], pp: [{ t: 'Assistant IA — analyses à la demande', ic: '🤖' }] }
         ];
 
         /* ═══ STATE ═══ */
@@ -2771,6 +2772,7 @@
             else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV][S.pg](ct); }
             else if (tab.id === 'log') { rLog(ct, S.pg); }
             else if (tab.id === 'dl') { rDownload(ct); }
+            else if (tab.id === 'ia') { window.rIA(ct); }
             else { ct.innerHTML = '<div style="text-align:center;padding:70px;color:#888"><h3>' + tab.lb + ' \u2014 En construction</h3></div>'; }
             var bar = document.getElementById('PG');
             if (tab.pp.length > 1) { bar.style.display = 'flex'; document.getElementById('PI').textContent = 'Page ' + (S.pg + 1) + ' sur ' + tab.pp.length; document.getElementById('BP').disabled = S.pg === 0; document.getElementById('BN').disabled = S.pg >= tab.pp.length - 1; }
@@ -8287,7 +8289,8 @@
                 oqd: { ic: '📋', d: 'Complétude & promptitude, cohérence-temps, cohérence-donnée, valeurs atypiques & score qualité.' },
                 vacc: { ic: '💉', d: 'Données de vaccination, couvertures vaccinales, comparatives CV & courbes de suivi.' },
                 log: { ic: '📦', d: 'Gestion des intrants : stocks, pertes, ruptures et disponibilité des vaccins.' },
-                dl: { ic: '📥', d: 'Canevas de revue formative — PPTX éditable, diapos 10–12 renseignées depuis DHIS2.' }
+                dl: { ic: '📥', d: 'Canevas de revue formative — PPTX éditable, diapos 10–12 renseignées depuis DHIS2.' },
+                ia: { ic: '🤖', d: 'Assistant IA : demandez n\'importe quelle analyse des données DHIS2 — réponse en tableau, graphique ou carte, téléchargeable.' }
             };
             function go() {
                 var load = document.getElementById('pevLoad');
@@ -8661,6 +8664,538 @@
                 try { mo.observe(document.body, { childList: true, subtree: true }); } catch (e) { }
             }
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+        })();
+    </script>
+
+    <!-- ═══════════════ ONGLET IA : GÉNÉRATION DES ANALYSES ═══════════════
+         Chat IA (Claude) avec compétences d'analyse des données DHIS2 du
+         dashboard. Deux modes d'accès : code d'accès (proxy Cloudflare) ou
+         clé API Anthropic personnelle (appel direct navigateur).
+         Design only ailleurs : ce module n'altère aucun calcul existant. -->
+    <style>
+        .ia-wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; min-height: 62vh; }
+        .ia-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .ia-top .ia-ttl { font-weight: 700; color: #1a237e; font-size: 15px; margin-right: auto; }
+        .ia-btn { border: 1px solid #d8dbe8; background: #fff; color: #1a237e; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; font-weight: 600; }
+        .ia-btn:hover { background: #f0f2fa; }
+        .ia-msgs { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 6px 2px 18px; }
+        .ia-hero { text-align: center; padding: 48px 20px 30px; }
+        .ia-hero .ia-star { font-size: 34px; color: #d97757; }
+        .ia-hero h2 { font-size: 26px; color: #1a237e; margin: 10px 0 6px; font-weight: 800; }
+        .ia-hero p { color: #666; font-size: 13.5px; max-width: 560px; margin: 0 auto; }
+        .ia-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+        .ia-chip { border: 1px solid #d8dbe8; background: #fff; border-radius: 18px; padding: 7px 14px; font-size: 12.5px; color: #333; cursor: pointer; }
+        .ia-chip:hover { border-color: #1a237e; color: #1a237e; }
+        .ia-mu { align-self: flex-end; max-width: 78%; background: #1a237e; color: #fff; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; }
+        .ia-mu .ia-att { font-size: 11.5px; opacity: .85; display: block; margin-top: 4px; }
+        .ia-ma { align-self: flex-start; max-width: 96%; width: 96%; }
+        .ia-ma-txt { background: #fff; border: 1px solid #e6e8f0; border-radius: 4px 16px 16px 16px; padding: 12px 16px; font-size: 13.5px; color: #222; line-height: 1.55; word-break: break-word; }
+        .ia-ma-txt p { margin: 6px 0; } .ia-ma-txt ul, .ia-ma-txt ol { margin: 6px 0 6px 20px; } .ia-ma-txt code { background: #f0f2fa; border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+        .ia-ma-txt h1,.ia-ma-txt h2,.ia-ma-txt h3 { color:#1a237e; margin:10px 0 4px; font-size:15px; }
+        .ia-card { background: #fff; border: 1px solid #e6e8f0; border-radius: 12px; padding: 14px; margin-top: 10px; box-shadow: 0 1px 4px rgba(26,35,126,.06); }
+        .ia-card h4 { color: #1a237e; margin: 0 0 8px; font-size: 14px; }
+        .ia-card .ia-dl { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .ia-tblwrap { overflow: auto; max-height: 460px; border: 1px solid #eef0f6; border-radius: 8px; }
+        .ia-tbl { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+        .ia-tbl th { background: #1a237e; color: #fff; padding: 7px 10px; text-align: left; position: sticky; top: 0; white-space: nowrap; }
+        .ia-tbl td { padding: 6px 10px; border-bottom: 1px solid #f0f1f7; white-space: nowrap; }
+        .ia-tbl tr:nth-child(even) td { background: #f8f9fd; }
+        .ia-note { font-size: 12px; color: #777; margin-top: 8px; font-style: italic; }
+        .ia-work { display: flex; align-items: center; gap: 8px; color: #888; font-size: 12.5px; padding: 4px 2px; }
+        .ia-work i { width: 7px; height: 7px; border-radius: 50%; background: #d97757; display: inline-block; animation: iaBl 1.2s infinite; font-style: normal; }
+        .ia-work i:nth-child(2) { animation-delay: .2s; } .ia-work i:nth-child(3) { animation-delay: .4s; }
+        @keyframes iaBl { 0%, 80%, 100% { opacity: .25 } 40% { opacity: 1 } }
+        .ia-comp { position: sticky; bottom: 10px; background: #fff; border: 1px solid #dfe2ee; border-radius: 22px; box-shadow: 0 6px 24px rgba(26,35,126,.10); padding: 10px 12px; margin-top: 8px; }
+        .ia-attrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+        .ia-attchip { display: flex; align-items: center; gap: 6px; background: #f0f2fa; border-radius: 10px; padding: 4px 10px; font-size: 12px; color: #1a237e; }
+        .ia-attchip b { cursor: pointer; color: #d62728; }
+        .ia-comp textarea { width: 100%; border: none; outline: none; resize: none; font-size: 14px; font-family: inherit; max-height: 160px; background: transparent; color: #222; }
+        .ia-comprow { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .ia-plus { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #d8dbe8; background: #fff; font-size: 19px; color: #444; cursor: pointer; line-height: 1; }
+        .ia-plus:hover { background: #f0f2fa; }
+        .ia-model { font-size: 11.5px; color: #999; margin-left: auto; }
+        .ia-send { width: 36px; height: 36px; border-radius: 50%; border: none; background: #1a237e; color: #fff; font-size: 17px; cursor: pointer; }
+        .ia-send:disabled { background: #c3c8dd; cursor: default; }
+        .ia-err { background: #fdecea; border: 1px solid #f5c6c3; color: #a12622; border-radius: 10px; padding: 10px 14px; font-size: 13px; align-self: flex-start; max-width: 90%; }
+        .ia-modal-bg { position: fixed; inset: 0; background: rgba(20,25,60,.45); z-index: 9000; display: flex; align-items: center; justify-content: center; }
+        .ia-modal { background: #fff; border-radius: 14px; padding: 22px 24px; width: min(480px, 92vw); max-height: 88vh; overflow: auto; }
+        .ia-modal h3 { color: #1a237e; margin: 0 0 12px; }
+        .ia-modal label { font-size: 13px; font-weight: 600; color: #333; display: block; margin: 12px 0 4px; }
+        .ia-modal input[type=text], .ia-modal input[type=password] { width: 100%; border: 1px solid #d8dbe8; border-radius: 8px; padding: 8px 10px; font-size: 13px; box-sizing: border-box; }
+        .ia-modal .ia-hint { font-size: 11.5px; color: #888; margin-top: 4px; }
+        .ia-radio { display: flex; gap: 10px; margin-top: 6px; }
+        .ia-radio label { flex: 1; border: 1px solid #d8dbe8; border-radius: 10px; padding: 10px; cursor: pointer; font-weight: 500; margin: 0; text-align: center; }
+        .ia-radio input { display: none; }
+        .ia-radio label.on { border-color: #1a237e; background: #f0f2fa; color: #1a237e; font-weight: 700; }
+    </style>
+    <script>
+        (function () {
+            'use strict';
+            /* ── Configuration ──
+               IA_PROXY_URL : URL du proxy Cloudflare Worker (mode "code d'accès",
+               paiement en ligne). Laisser '' tant que le Worker n'est pas déployé
+               → seul le mode "clé API personnelle" est proposé. */
+            var IA_PROXY_URL = 'https://pev-ia-proxy.pev-rdc.workers.dev';
+            var IA_MODEL = 'claude-opus-4-8';
+            var IA_MAX_TOOL_TURNS = 15;
+            var IA_TOOL_RESULT_MAX = 25000; /* caractères renvoyés à l'IA par outil */
+
+            var IA = { msgs: [], busy: false, files: [], seq: 0 };
+
+            function cfg(k, v) { try { if (v === undefined) return localStorage.getItem('pev_ia_' + k) || ''; localStorage.setItem('pev_ia_' + k, v); } catch (e) { return ''; } }
+            function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+            /* Markdown minimal → HTML (échappé d'abord) */
+            function md(t) {
+                var h = esc(t);
+                h = h.replace(/```([\s\S]*?)```/g, function (m, c) { return '<pre style="background:#f0f2fa;border-radius:8px;padding:10px;overflow:auto;font-size:12px">' + c.replace(/^\w*\n/, '') + '</pre>'; });
+                h = h.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+                h = h.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>');
+                h = h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+                h = h.replace(/^[ \t]*[-•] (.*)$/gm, '<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>');
+                h = h.replace(/^[ \t]*(\d+)\. (.*)$/gm, '<li>$2</li>');
+                h = h.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+                return '<p>' + h + '</p>';
+            }
+
+            /* ── Prompt système : construit dynamiquement selon les données chargées ── */
+            function iaSystem() {
+                var keys = (S.data && S.data[0]) ? Object.keys(S.data[0]) : [];
+                var provs = (S.vals && S.vals.province) ? S.vals.province : [];
+                var pers = (S.vals && S.vals.period) ? S.vals.period : [];
+                return [
+                    "Tu es l'assistant d'analyse du Dashboard PEV de routine (Programme Élargi de Vaccination, OMS — RDC).",
+                    "Tu réalises à la demande TOUTES les analyses possibles des données de vaccination DHIS2 (SNIS RDC) : couvertures vaccinales, taux d'abandon (ex. DTC1→DTC3, BCG→VAR), complétude/promptitude du rapportage, cohérence des données, tendances, comparaisons entre périodes/zones, logistique (stocks, pertes, ruptures, MSD), classements, etc.",
+                    "",
+                    "## Données disponibles (déjà chargées dans le navigateur ou téléchargeables)",
+                    "- ctx.data : lignes FOSA×mois de la province sélectionnée (" + ((S.data || []).length) + " lignes). Champs : org2=Province, antenne=Antenne PEV, org3=Zone de Santé (ZS), org4=Aire de Santé (AS), org5=FOSA, period='YYYYMM', + colonnes de doses par antigène.",
+                    "- Clés du 1er enregistrement : " + JSON.stringify(keys.slice(0, 80)),
+                    "- ctx.AG (antigènes suivis) : " + JSON.stringify(typeof AG !== 'undefined' ? AG : []),
+                    "- Provinces disponibles : " + JSON.stringify(provs),
+                    "- Périodes disponibles : " + (pers.length ? pers[0] + " à " + pers[pers.length - 1] : "inconnues"),
+                    "- Fichiers agrégés téléchargeables via ctx.load(chemin) :",
+                    "  * './data/dashboard/by_province.json.gz' : agrégats mensuels par province (toutes provinces). Champs : _Province, _YM, n (FOSA attendues), rap (rapportantes), comp, prompt, puis doses par antigène (ex. BCG_0_11, DTC1_0_11, VAR1_0_11...) et variantes _fixe.",
+                    "  * './data/dashboard/by_zs.json.gz' : idem par Zone de Santé (_ZS, _Province, _YM).",
+                    "  * './data/cibles_ajustees/2025.json' et './data/cibles_ajustees/2026.json' : cibles (population cible) — inspecte la structure avant usage.",
+                    "  * './data/ou_map.json.gz' : référentiel des ~25 000 FOSA (hiérarchie org. DHIS2, UID).",
+                    "- ctx.loadUrl(url) : télécharger une ressource externe publique (ex. fond de carte GeoJSON des provinces/ZS de la RDC) pour les cartes.",
+                    "",
+                    "## Accès DHIS2 en direct (outil requete_dhis2)",
+                    "Pour TOUTE analyse hors du périmètre des fichiers ci-dessus (autres programmes, maladies, indicateurs, datasets, années anciennes…), utilise l'outil requete_dhis2 qui interroge l'API Web du DHIS2 national (SNIS RDC) en lecture seule.",
+                    "Démarche type : 1) chercher les UID via les endpoints de métadonnées (dataElements.json / indicators.json / dataSets.json / organisationUnits.json avec filter=name:ilike:… & fields=id,name & pageSize=50) ; 2) requêter analytics.json avec dimension=dx:…&dimension=pe:…&dimension=ou:… ; 3) calculer/mettre en forme avec executer_js si besoin ; 4) présenter avec afficher_resultat.",
+                    "Périodes DHIS2 : 202501, 2025, LAST_12_MONTHS, THIS_YEAR… Unités d'org. : ou:LEVEL-2 (provinces), LEVEL-3 (ZS), LEVEL-4 (AS), LEVEL-5 (FOSA), ou UID;UID. Toujours &displayProperty=NAME&skipMeta=false pour avoir les libellés.",
+                    "",
+                    "## Méthode de travail (OBLIGATOIRE)",
+                    "1. Utilise l'outil executer_js pour TOUS les calculs (filtres, agrégations, formules). N'invente JAMAIS de chiffres : chaque valeur présentée doit provenir d'un résultat d'executer_js. Si une donnée est indisponible, dis-le.",
+                    "2. Explore d'abord la structure si tu as un doute (ex. Object.keys, .slice(0,3)).",
+                    "3. Présente les résultats avec l'outil afficher_resultat : type 'table' (tableau), 'graphique' ou 'carte' (figure Plotly {data, layout}). Choisis selon la demande de l'utilisateur ; s'il ne précise pas, choisis le plus pertinent.",
+                    "4. Formules PEV usuelles : CV(%) = doses administrées cumulées / cible cumulée × 100 (cible mensuelle = cible annuelle/12) ; taux d'abandon DTC1-DTC3(%) = (DTC1−DTC3)/DTC1×100 ; complétude = rapports reçus/attendus×100.",
+                    "5. Réponds TOUJOURS en français, de façon claire et synthétique : commence par la conclusion, puis le détail. Mentionne la source (DHIS2/SNIS) et la période analysée.",
+                    "6. Pour les cartes sans fond GeoJSON disponible, propose un graphique à barres classé par zone comme alternative fiable.",
+                    "7. Les tableaux et figures affichés sont téléchargeables par l'utilisateur (CSV/PNG) — inutile de coller les grandes tables dans ta réponse texte.",
+                    "",
+                    "Contexte de filtre actuel du dashboard : " + JSON.stringify(S.filters || {})
+                ].join('\n');
+            }
+
+            /* ── Outils exposés à l'IA ── */
+            var IA_TOOLS = [
+                {
+                    name: 'executer_js',
+                    description: "Exécute du code JavaScript asynchrone dans le navigateur pour analyser les données du dashboard. Le code reçoit un objet ctx : ctx.data (lignes FOSA×mois de la province chargée), ctx.flt (lignes après filtres utilisateur), ctx.AG (liste des antigènes), ctx.load(chemin) → JSON d'un fichier de données du site (gère .gz), ctx.loadUrl(url) → JSON d'une URL publique, ctx.mL(ym) → libellé du mois. Termine par `return <valeur>` ; la valeur (JSON) t'est renvoyée, tronquée à " + IA_TOOL_RESULT_MAX + " caractères. Fais les agrégations dans le code et retourne des résultats compacts.",
+                    input_schema: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
+                },
+                {
+                    name: 'requete_dhis2',
+                    description: "Interroge EN DIRECT l'API Web du DHIS2 (SNIS RDC) — pour toute donnée absente des fichiers du dashboard : n'importe quel élément de données, indicateur, dataset, niveau d'organisation, période. Requêtes GET en lecture seule via proxy sécurisé. endpoint = chemin après /api/ (ex. 'analytics.json', 'dataElements.json', 'indicators.json', 'organisationUnits.json', 'dataValueSets.json'). params = query string SANS '?' (ex. 'dimension=dx:UID1;UID2&dimension=pe:LAST_12_MONTHS&dimension=ou:LEVEL-2&displayProperty=NAME'). Cherche d'abord les UID par métadonnées : dataElements.json?filter=name:ilike:rougeole&fields=id,name&pageSize=50. Réponse JSON tronquée à " + IA_TOOL_RESULT_MAX + " caractères — filtre et pagine.",
+                    input_schema: { type: 'object', properties: { endpoint: { type: 'string' }, params: { type: 'string' } }, required: ['endpoint'] }
+                },
+                {
+                    name: 'afficher_resultat',
+                    description: "Affiche un résultat final à l'utilisateur dans la conversation (avec boutons de téléchargement automatiques). type='table' : fournir colonnes (array de libellés) et lignes (array de arrays). type='graphique' ou 'carte' : fournir figure = objet Plotly {data:[...], layout:{...}} (le layout reçoit automatiquement la charte du dashboard). Un titre est obligatoire. note = source/lecture facultative.",
+                    input_schema: {
+                        type: 'object',
+                        properties: {
+                            titre: { type: 'string' },
+                            type: { type: 'string', enum: ['table', 'graphique', 'carte'] },
+                            colonnes: { type: 'array', items: { type: 'string' } },
+                            lignes: { type: 'array', items: { type: 'array' } },
+                            figure: { type: 'object', description: 'Figure Plotly {data, layout}' },
+                            note: { type: 'string' }
+                        }, required: ['titre', 'type']
+                    }
+                }
+            ];
+
+            async function iaLoadPath(p) {
+                p = String(p || '');
+                if (!/^\.?\/?(data|data_as|data_zs)\//.test(p.replace(/^\.\//, './').replace(/^\//, ''))) {
+                    if (!/^\.\/(data|data_as|data_zs)\//.test(p) && !/^(data|data_as|data_zs)\//.test(p)) throw new Error('Chemin non autorisé : ' + p + ' (seuls ./data, ./data_as, ./data_zs)');
+                }
+                return await fetchGzip(p.charAt(0) === '.' ? p : './' + p.replace(/^\//, ''));
+            }
+            async function iaLoadUrl(u) {
+                if (!/^https:\/\//i.test(u)) throw new Error('Seules les URLs https:// sont autorisées');
+                var r = await fetch(u); if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + u);
+                var ct2 = (r.headers.get('content-type') || '');
+                return ct2.indexOf('json') >= 0 || /\.(geo)?json($|\?)/i.test(u) ? await r.json() : await r.text();
+            }
+
+            async function iaRunTool(name, input, msgsEl) {
+                if (name === 'executer_js') {
+                    var ctx = { S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, mL: mL };
+                    var fn = new Function('ctx', '"use strict";return (async function(){' + input.code + '\n})();');
+                    var out = await fn(ctx);
+                    var s = (out === undefined) ? 'undefined (le code doit se terminer par return)' : JSON.stringify(out);
+                    if (s.length > IA_TOOL_RESULT_MAX) s = s.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ à ' + IA_TOOL_RESULT_MAX + ' caractères — agrège davantage dans le code]';
+                    return s;
+                }
+                if (name === 'requete_dhis2') {
+                    if (!IA_PROXY_URL) throw new Error("L'accès DHIS2 en direct nécessite le proxy sécurisé (pas encore déployé). Utilise les fichiers du dashboard via executer_js, ou informe l'utilisateur que cette analyse sera disponible quand le proxy sera activé.");
+                    var ep = String(input.endpoint || '').replace(/^\/?api\/?/, '').replace(/^\/+/, '');
+                    if (!/^[\w./-]+\.json$/i.test(ep) && !/^[\w./-]+$/.test(ep)) throw new Error('Endpoint invalide : ' + ep);
+                    var qs = String(input.params || '').replace(/^\?/, '');
+                    var hdrs = { 'anthropic-version': '2023-06-01' };
+                    var codeV = cfg('code'); if (codeV) hdrs['x-access-code'] = codeV;
+                    var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), { headers: hdrs });
+                    var tt = await rr.text();
+                    if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 500));
+                    if (tt.length > IA_TOOL_RESULT_MAX) tt = tt.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ — utilise des filtres/fields/pageSize plus stricts]';
+                    return tt;
+                }
+                if (name === 'afficher_resultat') { iaRenderResult(input, msgsEl); return 'OK : résultat affiché à l\'utilisateur avec boutons de téléchargement.'; }
+                throw new Error('Outil inconnu : ' + name);
+            }
+
+            /* ── Rendu des résultats (table / graphique / carte) ── */
+            function iaDlBlob(name, mime, content) {
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+                a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+            }
+            function iaRenderResult(inp, msgsEl) {
+                var card = E('div', 'ia-card');
+                card.appendChild(E('h4', '', esc(inp.titre || 'Résultat')));
+                var safe = (inp.titre || 'resultat').replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_');
+                if (inp.type === 'table' && inp.colonnes && inp.lignes) {
+                    var wrap = E('div', 'ia-tblwrap');
+                    var html = '<table class="ia-tbl"><thead><tr>' + inp.colonnes.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+                    inp.lignes.forEach(function (l) { html += '<tr>' + l.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; });
+                    wrap.innerHTML = html + '</tbody></table>'; card.appendChild(wrap);
+                    var dl = E('div', 'ia-dl'); card.appendChild(dl);
+                    var b1 = E('button', 'ia-btn', '⬇ Télécharger CSV (Excel)');
+                    b1.onclick = function () {
+                        var csv = '﻿' + inp.colonnes.join(';') + '\n' + inp.lignes.map(function (l) { return l.map(function (v) { return String(v == null ? '' : v).replace(/;/g, ','); }).join(';'); }).join('\n');
+                        iaDlBlob(safe + '.csv', 'text/csv;charset=utf-8', csv);
+                    };
+                    dl.appendChild(b1);
+                } else if ((inp.type === 'graphique' || inp.type === 'carte') && inp.figure && window.Plotly) {
+                    var gd = E('div', ''); gd.style.minHeight = '380px'; card.appendChild(gd);
+                    var lay = Object.assign({ font: { family: 'inherit', size: 12 }, margin: { t: 30, r: 20, b: 60, l: 60 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', colorway: ['#1a237e', '#d97757', '#2e7d32', '#f9a825', '#6a1b9a', '#00838f', '#c62828', '#546e7a'] }, inp.figure.layout || {});
+                    try { Plotly.newPlot(gd, inp.figure.data || [], lay, { responsive: true, displaylogo: false }); } catch (e) { gd.innerHTML = '<div class="ia-err">Figure invalide : ' + esc(e.message) + '</div>'; }
+                    var dl2 = E('div', 'ia-dl'); card.appendChild(dl2);
+                    var b2 = E('button', 'ia-btn', '⬇ Télécharger PNG');
+                    b2.onclick = function () { Plotly.downloadImage(gd, { format: 'png', filename: safe, width: 1200, height: 700, scale: 2 }); };
+                    dl2.appendChild(b2);
+                } else {
+                    card.appendChild(E('div', 'ia-err', 'Résultat incomplet reçu de l\'IA (type=' + esc(inp.type) + ').'));
+                }
+                if (inp.note) card.appendChild(E('div', 'ia-note', esc(inp.note)));
+                msgsEl.appendChild(card); iaScroll(msgsEl);
+            }
+
+            /* ── Appel API (streaming SSE) — direct ou via proxy ── */
+            async function iaCallAPI(messages, onText, onThink) {
+                var mode = cfg('mode') || 'key';
+                var url, headers = { 'content-type': 'application/json', 'anthropic-version': '2023-06-01' };
+                if (mode === 'code' && IA_PROXY_URL) {
+                    url = IA_PROXY_URL.replace(/\/+$/, '') + '/v1/messages';
+                    headers['x-access-code'] = cfg('code');
+                } else {
+                    url = 'https://api.anthropic.com/v1/messages';
+                    headers['x-api-key'] = cfg('key');
+                    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+                }
+                var body = { model: IA_MODEL, max_tokens: 16000, stream: true, system: iaSystem(), thinking: { type: 'adaptive' }, tools: IA_TOOLS, messages: messages };
+                var resp = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+                if (!resp.ok) {
+                    var t = await resp.text(); var msg = t;
+                    try { msg = JSON.parse(t).error.message; } catch (e) { }
+                    if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre clé API (ou code d\'accès) dans ⚙ Accès. ' + msg;
+                    if (resp.status === 429) msg = 'Limite de requêtes atteinte — patientez quelques instants puis réessayez. ' + msg;
+                    throw new Error(msg);
+                }
+                var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
+                var blocks = [], stop = null;
+                while (true) {
+                    var chunk = await reader.read(); if (chunk.done) break;
+                    buf += dec.decode(chunk.value, { stream: true });
+                    var parts = buf.split('\n\n'); buf = parts.pop();
+                    for (var i = 0; i < parts.length; i++) {
+                        var lines = parts[i].split('\n'), data = '';
+                        for (var j = 0; j < lines.length; j++) if (lines[j].indexOf('data:') === 0) data += lines[j].slice(5).trim();
+                        if (!data) continue;
+                        var ev; try { ev = JSON.parse(data); } catch (e) { continue; }
+                        if (ev.type === 'error') throw new Error(ev.error && ev.error.message || 'Erreur API');
+                        if (ev.type === 'content_block_start') {
+                            var cb = ev.content_block;
+                            if (cb.type === 'text') blocks[ev.index] = { type: 'text', text: '' };
+                            else if (cb.type === 'tool_use') blocks[ev.index] = { type: 'tool_use', id: cb.id, name: cb.name, _json: '' };
+                            else if (cb.type === 'thinking') { blocks[ev.index] = { type: 'thinking', thinking: '', _sig: null }; if (onThink) onThink(); }
+                            else blocks[ev.index] = { type: cb.type };
+                        } else if (ev.type === 'content_block_delta') {
+                            var b = blocks[ev.index]; if (!b) continue;
+                            if (ev.delta.type === 'text_delta') { b.text += ev.delta.text; if (onText) onText(ev.delta.text); }
+                            else if (ev.delta.type === 'input_json_delta') b._json += ev.delta.partial_json;
+                            else if (ev.delta.type === 'thinking_delta') b.thinking += (ev.delta.thinking || '');
+                            else if (ev.delta.type === 'signature_delta') b._sig = (b._sig || '') + ev.delta.signature;
+                        } else if (ev.type === 'message_delta') {
+                            if (ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
+                        }
+                    }
+                }
+                var content = blocks.filter(Boolean).map(function (b) {
+                    if (b.type === 'tool_use') { var inp = {}; try { inp = b._json ? JSON.parse(b._json) : {}; } catch (e) { } return { type: 'tool_use', id: b.id, name: b.name, input: inp }; }
+                    if (b.type === 'thinking') { var tb = { type: 'thinking', thinking: b.thinking || '' }; if (b._sig) tb.signature = b._sig; return tb; }
+                    return { type: 'text', text: b.text || '' };
+                });
+                return { content: content, stop_reason: stop };
+            }
+
+            /* ── Boucle agentique ── */
+            async function iaAgentLoop(msgsEl) {
+                var turns = 0;
+                while (turns++ < IA_MAX_TOOL_TURNS) {
+                    var work = E('div', 'ia-work', '<i></i><i></i><i></i> <span>Analyse en cours…</span>');
+                    msgsEl.appendChild(work); iaScroll(msgsEl);
+                    var txtDiv = null;
+                    var resp;
+                    try {
+                        resp = await iaCallAPI(IA.msgs, function (delta) {
+                            if (!txtDiv) { var ma = E('div', 'ia-ma'); txtDiv = E('div', 'ia-ma-txt'); txtDiv._raw = ''; ma.appendChild(txtDiv); msgsEl.insertBefore(ma, work); }
+                            txtDiv._raw += delta; txtDiv.innerHTML = md(txtDiv._raw); iaScroll(msgsEl);
+                        }, function () { work.querySelector('span').textContent = 'Réflexion en cours…'; });
+                    } finally { work.remove(); }
+                    IA.msgs.push({ role: 'assistant', content: resp.content });
+                    if (resp.stop_reason === 'refusal') { msgsEl.appendChild(E('div', 'ia-err', 'L\'IA a décliné cette demande (politique de sécurité). Reformulez votre question d\'analyse.')); return; }
+                    if (resp.stop_reason !== 'tool_use') return;
+                    var results = [];
+                    for (var i = 0; i < resp.content.length; i++) {
+                        var b = resp.content[i]; if (b.type !== 'tool_use') continue;
+                        var w2 = E('div', 'ia-work', '<i></i><i></i><i></i> <span>' + (b.name === 'executer_js' ? 'Calculs sur les données…' : 'Préparation du résultat…') + '</span>');
+                        msgsEl.appendChild(w2); iaScroll(msgsEl);
+                        try {
+                            var out = await iaRunTool(b.name, b.input || {}, msgsEl);
+                            results.push({ type: 'tool_result', tool_use_id: b.id, content: out });
+                        } catch (e) {
+                            results.push({ type: 'tool_result', tool_use_id: b.id, content: 'Erreur : ' + (e && e.message || e), is_error: true });
+                        } finally { w2.remove(); }
+                    }
+                    IA.msgs.push({ role: 'user', content: results });
+                }
+                msgsEl.appendChild(E('div', 'ia-err', 'Analyse interrompue : trop d\'étapes. Reformulez ou découpez votre demande.'));
+            }
+
+            /* ── Fichiers joints ── */
+            function iaReadFile(f) {
+                return new Promise(function (res, rej) {
+                    var ext = (f.name.split('.').pop() || '').toLowerCase();
+                    if (/^(png|jpg|jpeg|gif|webp)$/.test(ext) || /^image\//.test(f.type)) {
+                        var r = new FileReader();
+                        r.onload = function () { res({ type: 'image', source: { type: 'base64', media_type: f.type || 'image/png', data: String(r.result).split(',')[1] } }); };
+                        r.onerror = rej; r.readAsDataURL(f);
+                    } else if (ext === 'pdf') {
+                        var r2 = new FileReader();
+                        r2.onload = function () { res({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: String(r2.result).split(',')[1] } }); };
+                        r2.onerror = rej; r2.readAsDataURL(f);
+                    } else if (ext === 'xlsx' || ext === 'xls') {
+                        iaEnsureXLSX().then(function () {
+                            var r3 = new FileReader();
+                            r3.onload = function () {
+                                try {
+                                    var wb = XLSX.read(new Uint8Array(r3.result), { type: 'array' });
+                                    var txt = wb.SheetNames.slice(0, 5).map(function (n) { return '### Feuille: ' + n + '\n' + XLSX.utils.sheet_to_csv(wb.Sheets[n]).slice(0, 40000); }).join('\n\n');
+                                    res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + txt + '\n</fichier>' });
+                                } catch (e) { rej(e); }
+                            };
+                            r3.onerror = rej; r3.readAsArrayBuffer(f);
+                        }).catch(rej);
+                    } else {
+                        var r4 = new FileReader();
+                        r4.onload = function () { res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + String(r4.result).slice(0, 80000) + '\n</fichier>' }); };
+                        r4.onerror = rej; r4.readAsText(f);
+                    }
+                });
+            }
+            function iaEnsureXLSX() {
+                if (window.XLSX) return Promise.resolve();
+                return new Promise(function (res, rej) {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                    s.onload = res; s.onerror = function () { rej(new Error('Impossible de charger le lecteur Excel')); };
+                    document.head.appendChild(s);
+                });
+            }
+
+            function iaScroll(el) { try { el.lastElementChild && el.lastElementChild.scrollIntoView({ block: 'end' }); } catch (e) { } }
+
+            /* ── Envoi d'un message utilisateur ── */
+            async function iaSend(msgsEl, ta, sendBtn) {
+                if (IA.busy) return;
+                var q = ta.value.trim();
+                if (!q && !IA.files.length) return;
+                var mode = cfg('mode') || 'key';
+                if (mode === 'key' && !cfg('key')) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
+                if (mode === 'code' && !cfg('code')) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
+                var hero = document.getElementById('iaHero'); if (hero) hero.remove();
+
+                var content = [];
+                var attNames = IA.files.map(function (f) { return f.name; });
+                try {
+                    for (var i = 0; i < IA.files.length; i++) content.push(await iaReadFile(IA.files[i]));
+                } catch (e) { msgsEl.appendChild(E('div', 'ia-err', 'Fichier illisible : ' + esc(e.message || e))); return; }
+                content.push({ type: 'text', text: q || 'Analyse le(s) fichier(s) joint(s).' });
+
+                var bub = E('div', 'ia-mu', esc(q || '(fichier joint)') + (attNames.length ? '<span class="ia-att">📎 ' + esc(attNames.join(', ')) + '</span>' : ''));
+                msgsEl.appendChild(bub); iaScroll(msgsEl);
+                IA.msgs.push({ role: 'user', content: content });
+                IA.files = []; iaRenderAtts(); ta.value = ''; ta.style.height = 'auto';
+
+                IA.busy = true; sendBtn.disabled = true;
+                try { await iaAgentLoop(msgsEl); }
+                catch (e) { msgsEl.appendChild(E('div', 'ia-err', '⚠ ' + esc(e.message || e))); }
+                finally { IA.busy = false; sendBtn.disabled = false; iaScroll(msgsEl); }
+            }
+
+            /* ── Modal réglages accès ── */
+            function iaSettings(onDone) {
+                var bg = E('div', 'ia-modal-bg'); var m = E('div', 'ia-modal'); bg.appendChild(m);
+                var hasProxy = !!IA_PROXY_URL;
+                var mode = cfg('mode') || 'key';
+                m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
+                    (hasProxy ?
+                        '<div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
+                        '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
+                    '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
+                    '<div class="ia-hint">Achetez un code d\'accès en ligne (mobile money) — bouton « Obtenir un code » ci-dessous.</div>' +
+                    '<button class="ia-btn" style="margin-top:8px" id="iaBuy">💳 Obtenir un code</button></div>' +
+                    '<div id="iaPaneKey"><label>Clé API Anthropic</label><input type="password" id="iaKey" placeholder="sk-ant-...">' +
+                    '<div class="ia-hint">Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé reste <b>uniquement dans votre navigateur</b> (localStorage) — elle n\'est jamais envoyée ailleurs qu\'à Anthropic. Ne l\'utilisez pas sur un ordinateur partagé.</div></div>' +
+                    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px"><button class="ia-btn" id="iaCancel">Annuler</button><button class="ia-btn" id="iaSave" style="background:#1a237e;color:#fff;border-color:#1a237e">Enregistrer</button></div>';
+                document.body.appendChild(bg);
+                var kEl = m.querySelector('#iaKey'), cEl = m.querySelector('#iaCode');
+                kEl.value = cfg('key'); if (cEl) cEl.value = cfg('code');
+                function setMode(mo) {
+                    mode = mo;
+                    m.querySelector('#iaPaneKey').style.display = mo === 'key' ? '' : 'none';
+                    var pc = m.querySelector('#iaPaneCode'); if (pc) pc.style.display = mo === 'code' ? '' : 'none';
+                    var rk = m.querySelector('#iaRadKey'), rc = m.querySelector('#iaRadCode');
+                    if (rk) rk.classList.toggle('on', mo === 'key'); if (rc) rc.classList.toggle('on', mo === 'code');
+                }
+                if (hasProxy) {
+                    m.querySelector('#iaRadKey').onclick = function () { setMode('key'); };
+                    m.querySelector('#iaRadCode').onclick = function () { setMode('code'); };
+                    setMode(mode);
+                    var buy = m.querySelector('#iaBuy');
+                    if (buy) buy.onclick = function () { window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank'); };
+                } else setMode('key');
+                m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
+                m.querySelector('#iaSave').onclick = function () {
+                    cfg('mode', mode); cfg('key', kEl.value.trim()); if (cEl) cfg('code', cEl.value.trim());
+                    bg.remove(); if (onDone) onDone();
+                };
+            }
+
+            /* ── Pièces jointes : aperçu ── */
+            var attRowRef = null;
+            function iaRenderAtts() {
+                if (!attRowRef) return;
+                attRowRef.innerHTML = '';
+                IA.files.forEach(function (f, i) {
+                    var c = E('div', 'ia-attchip', '📎 ' + esc(f.name) + ' <b title="Retirer">✕</b>');
+                    c.querySelector('b').onclick = function () { IA.files.splice(i, 1); iaRenderAtts(); };
+                    attRowRef.appendChild(c);
+                });
+                attRowRef.style.display = IA.files.length ? 'flex' : 'none';
+            }
+
+            /* ── Rendu de l'onglet ── */
+            window.rIA = function (ct) {
+                var wrap = E('div', 'ia-wrap'); ct.appendChild(wrap);
+                var top = E('div', 'ia-top');
+                top.appendChild(E('div', 'ia-ttl', '🤖 Génération des analyses — Assistant IA (données DHIS2/SNIS)'));
+                var bNew = E('button', 'ia-btn', '🗑 Nouvelle conversation');
+                var bSet = E('button', 'ia-btn', '⚙ Accès');
+                top.appendChild(bNew); top.appendChild(bSet); wrap.appendChild(top);
+
+                var msgsEl = E('div', 'ia-msgs'); msgsEl.id = 'iaMsgs'; wrap.appendChild(msgsEl);
+
+                function hero() {
+                    var h = parseInt(new Date().getHours(), 10);
+                    var greet = h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir';
+                    var hv = E('div', 'ia-hero'); hv.id = 'iaHero';
+                    hv.innerHTML = '<div class="ia-star">✳</div><h2>' + greet + ' !</h2>' +
+                        '<p>Demandez n\'importe quelle analyse des données de vaccination DHIS2 : l\'assistant calcule sur les données réelles du dashboard et répond en <b>tableau</b>, <b>graphique</b> ou <b>carte</b>, téléchargeables. Vous pouvez aussi joindre un fichier ou une image.</p>' +
+                        '<div class="ia-chips" id="iaChips"></div>';
+                    msgsEl.appendChild(hv);
+                    var chips = [
+                        'Couverture vaccinale DTC3 par zone de santé sur les 12 derniers mois, en tableau',
+                        'Graphique de la tendance mensuelle des doses VAR1 par province en 2026',
+                        'Taux d\'abandon DTC1–DTC3 par antenne : classe du plus élevé au plus faible',
+                        'Quelles ZS ont une complétude < 80 % le mois dernier ?'
+                    ];
+                    var cc = hv.querySelector('#iaChips');
+                    chips.forEach(function (t) {
+                        var c = E('div', 'ia-chip', esc(t));
+                        c.onclick = function () { ta.value = t; ta.focus(); };
+                        cc.appendChild(c);
+                    });
+                }
+
+                /* Recharger la conversation existante (retour sur l'onglet) */
+                if (IA.msgs.length === 0) hero();
+                else {
+                    IA.msgs.forEach(function (msg) {
+                        if (msg.role === 'user') {
+                            var txts = (msg.content || []).filter(function (b) { return b.type === 'text' && !/^Erreur|^OK :/.test(b.text || ''); });
+                            var isToolRes = (msg.content || []).some(function (b) { return b.type === 'tool_result'; });
+                            if (!isToolRes && txts.length) msgsEl.appendChild(E('div', 'ia-mu', esc(txts.map(function (b) { return b.text; }).join('\n').replace(/<fichier[\s\S]*?<\/fichier>/g, '📎 (fichier)'))));
+                        } else {
+                            (msg.content || []).forEach(function (b) {
+                                if (b.type === 'text' && b.text) { var ma = E('div', 'ia-ma'); ma.appendChild(E('div', 'ia-ma-txt', md(b.text))); msgsEl.appendChild(ma); }
+                                if (b.type === 'tool_use' && b.name === 'afficher_resultat') iaRenderResult(b.input || {}, msgsEl);
+                            });
+                        }
+                    });
+                }
+
+                var comp = E('div', 'ia-comp'); wrap.appendChild(comp);
+                attRowRef = E('div', 'ia-attrow'); attRowRef.style.display = 'none'; comp.appendChild(attRowRef);
+                var ta = document.createElement('textarea'); ta.rows = 1; ta.placeholder = 'Décrivez l\'analyse souhaitée… (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)';
+                comp.appendChild(ta);
+                var row = E('div', 'ia-comprow'); comp.appendChild(row);
+                var plus = E('button', 'ia-plus', '+'); plus.title = 'Joindre un fichier ou une image (image, PDF, CSV, Excel, TXT)';
+                var fin = document.createElement('input'); fin.type = 'file'; fin.multiple = true; fin.style.display = 'none';
+                fin.accept = 'image/*,.pdf,.csv,.txt,.xlsx,.xls,.json';
+                plus.onclick = function () { fin.click(); };
+                fin.onchange = function () {
+                    Array.prototype.slice.call(fin.files).forEach(function (f) {
+                        if (f.size > 8 * 1024 * 1024) { alert('« ' + f.name + ' » dépasse 8 Mo — joignez un fichier plus léger.'); return; }
+                        IA.files.push(f);
+                    });
+                    fin.value = ''; iaRenderAtts();
+                };
+                row.appendChild(plus); row.appendChild(fin);
+                row.appendChild(E('span', 'ia-model', 'Claude Opus 4.8'));
+                var send = E('button', 'ia-send', '↑'); send.title = 'Soumettre la demande'; row.appendChild(send);
+
+                ta.oninput = function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
+                ta.onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); iaSend(msgsEl, ta, send); } };
+                send.onclick = function () { iaSend(msgsEl, ta, send); };
+                bSet.onclick = function () { iaSettings(); };
+                bNew.onclick = function () { if (IA.busy) return; IA.msgs = []; IA.files = []; msgsEl.innerHTML = ''; iaRenderAtts(); hero(); };
+                iaRenderAtts();
+            };
         })();
     </script>
 

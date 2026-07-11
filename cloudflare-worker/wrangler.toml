@@ -1,0 +1,14 @@
+name = "pev-ia-proxy"
+main = "worker.js"
+compatibility_date = "2026-06-01"
+
+# Namespace KV pour les codes d'accès et transactions.
+# Créez-le avec :  npx wrangler kv namespace create CODES
+# puis collez l'id généré ci-dessous.
+[[kv_namespaces]]
+binding = "CODES"
+id = "fb104235615740b9a9d117355f864751"
+
+[vars]
+# Origine(s) autorisée(s) à appeler le proxy (CORS)
+ALLOWED_ORIGIN = "https://mbombomamu1993.github.io"
