@@ -2214,15 +2214,7 @@
                     if (cb.checked) { if (S.filters[dimKey].indexOf(v) < 0) S.filters[dimKey].push(v); }
                     else { S.filters[dimKey] = S.filters[dimKey].filter(function (x) { return x !== v; }); }
 
-                    if (dimKey !== 'period') computeCascade(dimKey);
-                    apFlt();
-                    rFlt(); render();
-
-                    requestAnimationFrame(function () {
-                        var dd = document.getElementById('fd-' + dimKey);
-                        if (dd) dd.classList.add('sh');   // le menu reste ouvert
-                    });
-
+                    /* Mise à jour instantanée du libellé du bouton (sans re-rendu). */
                     var _bt2 = g.querySelector('.fbtn');
                     if (_bt2) {
                         var _nS2 = S.filters[dimKey].length, _nT2 = options.length;
@@ -2231,6 +2223,9 @@
                                 : _nS2 + '/' + _nT2;
                         _bt2.innerHTML = '<span>' + _lb2 + '</span><span class="cn">' + _nS2 + '</span><span>▼</span>';
                     }
+
+                    /* Recalcul + rendu regroupés (anti-rebond) → filtrage instantané. */
+                    debRender(dimKey !== 'period' ? dimKey : null);
                 };
                 it.appendChild(cb);
                 var sp2 = document.createElement('span'); sp2.textContent = dimKey === 'period' ? mL(v) : v;
@@ -2753,6 +2748,23 @@
         }
 
         /* ═══ RENDER ═══ */
+        /* Recalcul + rendu lourd regroupés (anti-rebond) : cocher plusieurs cases
+           d'affilée ne déclenche qu'UN seul render() après la dernière action,
+           au lieu d'un rendu complet par clic → filtrage ressenti instantané.
+           _pendCasc mémorise la/les dimension(s) à recascader. */
+        var _debTimer = null, _pendCasc = {};
+        function debRender(cascDim) {
+            if (cascDim) _pendCasc[cascDim] = 1;
+            if (_debTimer) clearTimeout(_debTimer);
+            var db = document.getElementById('DB'); if (db) db.classList.add('ia-updating');
+            _debTimer = setTimeout(function () {
+                _debTimer = null;
+                for (var k in _pendCasc) { if (typeof computeCascade === 'function') computeCascade(k); }
+                _pendCasc = {};
+                apFlt(); rFlt(); render();
+                var d2 = document.getElementById('DB'); if (d2) d2.classList.remove('ia-updating');
+            }, 220);
+        }
         function render() {
             Object.values(S.charts).forEach(function (c) { try { c.destroy(); } catch (e) { } }); S.charts = {};
             var db = document.getElementById('DB'); db.innerHTML = '';
@@ -8731,6 +8743,7 @@
     </style>
     <style>
         /* ── Peau « Claude.ai » de l'onglet IA : fond crème, serif, accent corail ── */
+        #DB.ia-updating #PC { opacity: .45; transition: opacity .12s; pointer-events: none; }
         .ia-mode { background: #F5F4EF !important; }
         .ia-mode .st { display: none !important; }
         .ia-wrap { max-width: 860px; }
