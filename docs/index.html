@@ -1549,7 +1549,7 @@
             },
             {
                 id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'],
-                pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }, { t: '6. Évolution annuelle par antigène (2020→)', ic: '📅' }]
+                pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }]
             },
             { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
             { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] },
@@ -2748,131 +2748,6 @@
         }
 
         /* ═══ RENDER ═══ */
-        /* ═══ ÉVOLUTION ANNUELLE PAR ANTIGÈNE (2020 → aujourd'hui) ═══
-           Source : docs/data/annual/evolution.json (indicateurs de couverture
-           DHIS2, pré-calculés par le workflow annual_evolution). Autonome :
-           sélecteurs Province / Zone de santé propres, filtre antigènes,
-           un graphique d'évolution année par année par antigène. */
-        var _EVOL = null, _evolState = { scope: 'national', prov: '', zs: '', ags: null };
-        function rEvolAnnuelle(c) {
-            c.appendChild(E('div', 'note', '📅 Évolution annuelle des <b>couvertures vaccinales (%)</b> par antigène, de 2020 à aujourd\'hui — source : DHIS2 (SNIS RDC), indicateurs officiels de couverture. Sélectionnez le périmètre et les antigènes ci-dessous ; chaque graphique montre l\'évolution année par année.'));
-            var host = E('div', ''); host.id = 'evolHost'; c.appendChild(host);
-            host.innerHTML = '<div style="text-align:center;padding:40px;color:#888">⏳ Chargement des données historiques…</div>';
-            if (_EVOL) { _evolBuild(host); return; }
-            fetchGzip('./data/annual/evolution.json').then(function (d) {
-                _EVOL = d; _evolBuild(host);
-            }).catch(function () {
-                host.innerHTML = '<div style="text-align:center;padding:50px 20px;color:#888;max-width:640px;margin:0 auto">' +
-                    '<h3 style="color:#1a237e">Données historiques en préparation</h3>' +
-                    '<p>L\'évolution annuelle (2020→) est générée par un traitement dédié qui interroge tout l\'historique DHIS2. ' +
-                    'Elle apparaîtra ici dès la première exécution du workflow <b>« Build annual evolution »</b> (onglet Actions du dépôt, ou automatiquement le 5 de chaque mois).</p></div>';
-            });
-        }
-        function _evolBuild(host) {
-            var D = _EVOL; if (!D || !D.provinces) { host.innerHTML = '<div style="padding:30px;color:#888">Données indisponibles.</div>'; return; }
-            if (!_evolState.ags) _evolState.ags = D.antigens.map(function (a) { return a.key; });
-            host.innerHTML = '';
-            /* ── Barre de sélection : périmètre + antigènes ── */
-            var bar = E('div', ''); bar.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:10px 0 6px';
-            /* Province */
-            var gP = E('div', ''); gP.innerHTML = '<div style="font-size:11px;font-weight:700;color:#1a237e;margin-bottom:3px">PROVINCE</div>';
-            var selP = document.createElement('select'); selP.style.cssText = 'padding:7px 10px;border:1px solid #cfd3e6;border-radius:8px;font-size:13px;min-width:200px';
-            selP.innerHTML = '<option value="">Toutes (national)</option>' + D.provinces.map(function (p) { return '<option value="' + esc0(p.id) + '"' + (p.id === _evolState.prov ? ' selected' : '') + '>' + esc0(p.name) + '</option>'; }).join('');
-            gP.appendChild(selP); bar.appendChild(gP);
-            /* Zone de santé */
-            var gZ = E('div', ''); gZ.innerHTML = '<div style="font-size:11px;font-weight:700;color:#1a237e;margin-bottom:3px">ZONE DE SANTÉ</div>';
-            var selZ = document.createElement('select'); selZ.style.cssText = 'padding:7px 10px;border:1px solid #cfd3e6;border-radius:8px;font-size:13px;min-width:200px';
-            function fillZ() {
-                var prov = D.provinces.filter(function (p) { return p.id === _evolState.prov; })[0];
-                var zss = prov ? prov.zs : [];
-                selZ.innerHTML = '<option value="">Toute la province</option>' + zss.map(function (z) { return '<option value="' + esc0(z.id) + '"' + (z.id === _evolState.zs ? ' selected' : '') + '>' + esc0(z.name) + '</option>'; }).join('');
-                selZ.disabled = !prov;
-            }
-            fillZ(); gZ.appendChild(selZ); bar.appendChild(gZ);
-            /* Antigènes (multi) */
-            var gA = E('div', ''); gA.style.cssText = 'flex:1;min-width:260px';
-            gA.innerHTML = '<div style="font-size:11px;font-weight:700;color:#1a237e;margin-bottom:3px">ANTIGÈNES</div>';
-            var chips = E('div', ''); chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px';
-            D.antigens.forEach(function (a) {
-                var on = _evolState.ags.indexOf(a.key) >= 0;
-                var ch = E('span', '', esc0(a.label));
-                ch.style.cssText = 'cursor:pointer;font-size:11.5px;padding:4px 9px;border-radius:14px;border:1px solid ' + (on ? '#1a237e' : '#cfd3e6') + ';background:' + (on ? '#1a237e' : '#fff') + ';color:' + (on ? '#fff' : '#555');
-                ch.onclick = function () {
-                    var i = _evolState.ags.indexOf(a.key);
-                    if (i >= 0) _evolState.ags.splice(i, 1); else _evolState.ags.push(a.key);
-                    _evolBuild(host);
-                };
-                chips.appendChild(ch);
-            });
-            gA.appendChild(chips); bar.appendChild(gA);
-            host.appendChild(bar);
-
-            selP.onchange = function () { _evolState.prov = selP.value; _evolState.zs = ''; _evolBuild(host); };
-            selZ.onchange = function () { _evolState.zs = selZ.value; _evolBuild(host); };
-
-            /* ── Série sélectionnée ── */
-            var node = null, scopeLbl = 'National (moyenne des provinces)';
-            if (_evolState.prov) {
-                var prov = D.provinces.filter(function (p) { return p.id === _evolState.prov; })[0];
-                if (prov) {
-                    scopeLbl = 'Province : ' + prov.name;
-                    node = prov;
-                    if (_evolState.zs) { var z = prov.zs.filter(function (x) { return x.id === _evolState.zs; })[0]; if (z) { node = z; scopeLbl = 'ZS : ' + z.name + ' (' + prov.name + ')'; } }
-                }
-            }
-            var dataMap = _evolState.prov ? (node ? node.data : {}) : D.national;
-            var ags = D.antigens.filter(function (a) { return _evolState.ags.indexOf(a.key) >= 0; });
-
-            var info = E('div', ''); info.style.cssText = 'font-size:12.5px;color:#444;margin:4px 0 10px'; info.innerHTML = '<b>Périmètre :</b> ' + esc0(scopeLbl) + ' · <b>Période :</b> ' + D.years[0] + '–' + D.years[D.years.length - 1];
-            host.appendChild(info);
-
-            if (!ags.length) { host.appendChild(E('div', '', '<div style="padding:24px;color:#888">Sélectionnez au moins un antigène.</div>')); return; }
-
-            /* ── Graphique combiné : lignes multi-antigènes ── */
-            var box = E('div', 'cb'); box.innerHTML = '<h4>📈 Évolution des couvertures (%) — ' + esc0(scopeLbl) + '</h4><div id="evolMain" style="min-height:380px"></div>'; host.appendChild(box);
-            var COLORS = ['#1a237e', '#d97757', '#2e7d32', '#f9a825', '#6a1b9a', '#00838f', '#c62828', '#546e7a', '#00695c', '#4527a0', '#ad1457', '#33691e', '#e65100', '#3e2723', '#01579b'];
-            var traces = ags.map(function (a, i) {
-                return {
-                    type: 'scatter', mode: 'lines+markers', name: a.label,
-                    x: D.years, y: D.years.map(function (y) { var v = dataMap[a.key] && dataMap[a.key][String(y)]; return (v === undefined ? null : v); }),
-                    line: { color: COLORS[i % COLORS.length], width: 2.5 }, marker: { size: 6 }, connectgaps: true
-                };
-            });
-            if (window.Plotly) Plotly.newPlot('evolMain', traces, {
-                margin: { t: 10, r: 20, b: 45, l: 50 }, font: { size: 12 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff',
-                xaxis: { dtick: 1, title: '' }, yaxis: { title: 'Couverture (%)', rangemode: 'tozero' },
-                legend: { orientation: 'h', y: -0.18 }, hovermode: 'x unified'
-            }, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
-
-            /* ── Petits graphiques par antigène (barres année par année) ── */
-            var grid = E('div', ''); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px';
-            host.appendChild(grid);
-            ags.forEach(function (a, i) {
-                var cell = E('div', 'cb'); var gid = 'evolAg' + i;
-                cell.innerHTML = '<h4 style="font-size:13px">' + esc0(a.label) + '</h4><div id="' + gid + '" style="min-height:210px"></div>';
-                grid.appendChild(cell);
-                var ys = D.years.map(function (y) { var v = dataMap[a.key] && dataMap[a.key][String(y)]; return (v === undefined ? null : v); });
-                if (window.Plotly) Plotly.newPlot(gid, [{
-                    type: 'bar', x: D.years, y: ys, marker: { color: COLORS[i % COLORS.length] },
-                    text: ys.map(function (v) { return v == null ? '' : v; }), textposition: 'outside', cliponaxis: false
-                }], { margin: { t: 8, r: 8, b: 30, l: 38 }, font: { size: 11 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', xaxis: { dtick: 1 }, yaxis: { rangemode: 'tozero', ticksuffix: '%' } }, { responsive: true, displaylogo: false, displayModeBar: false });
-            });
-
-            /* ── Téléchargement CSV ── */
-            var dlv = E('div', ''); dlv.style.cssText = 'margin-top:12px';
-            var b = E('button', 'ia-btn', '⬇ Télécharger les données (CSV)');
-            b.style.cssText = 'padding:8px 14px;border:1px solid #1a237e;background:#1a237e;color:#fff;border-radius:8px;cursor:pointer;font-size:12.5px';
-            b.onclick = function () {
-                var rows = [['Antigène'].concat(D.years)];
-                ags.forEach(function (a) { rows.push([a.label].concat(D.years.map(function (y) { var v = dataMap[a.key] && dataMap[a.key][String(y)]; return v == null ? '' : v; }))); });
-                var csv = '﻿' + rows.map(function (r) { return r.join(';'); }).join('\n');
-                var el = document.createElement('a'); el.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-                el.download = 'evolution_' + scopeLbl.replace(/[^\w]+/g, '_').slice(0, 40) + '.csv'; el.click();
-            };
-            dlv.appendChild(b); host.appendChild(dlv);
-        }
-        function esc0(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
         /* Recalcul + rendu lourd regroupés (anti-rebond) : cocher plusieurs cases
            d'affilée ne déclenche qu'UN seul render() après la dernière action,
            au lieu d'un rendu complet par clic → filtrage ressenti instantané.
@@ -2907,7 +2782,7 @@
             db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
-            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV, rEvolAnnuelle][S.pg](ct); }
+            else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV][S.pg](ct); }
             else if (tab.id === 'log') { rLog(ct, S.pg); }
             else if (tab.id === 'dl') { rDownload(ct); }
             else if (tab.id === 'ia') { window.rIA(ct); }
