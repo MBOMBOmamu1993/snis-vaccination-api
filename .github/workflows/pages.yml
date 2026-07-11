@@ -1,0 +1,55 @@
+# Déploiement GitHub Pages SANS les données brutes mensuelles.
+#
+# Pourquoi : le déploiement Pages classique (branche) embarque tout docs/,
+# or docs/data*/monthly/ (~10 Go de .ndjson bruts, intrants des pipelines
+# d'agrégation) a fait dépasser la limite de 1 Go de l'artefact Pages →
+# « Page build failed » depuis le 2026-07-11. Le site n'utilise jamais ces
+# fichiers à l'exécution (index.html ne lit que data*/dashboard, ou_map,
+# cibles_ajustees, config). Ce workflow publie docs/ en excluant monthly/.
+name: Deploy GitHub Pages (docs sans données brutes)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout (sans docs/*/monthly — économise ~10 Go)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /*
+            !/docs/data/monthly
+            !/docs/data_as/monthly
+            !/docs/data_zs/monthly
+          sparse-checkout-cone-mode: false
+
+      - name: Préparer le site
+        run: |
+          mkdir -p _site
+          rsync -a --exclude='monthly/' --exclude='*.ndjson' docs/ _site/
+          echo "Taille du site :" && du -sh _site
+
+      - name: Upload artifact Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
