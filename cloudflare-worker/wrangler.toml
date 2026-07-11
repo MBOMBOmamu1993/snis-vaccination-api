@@ -11,4 +11,4 @@ id = "fb104235615740b9a9d117355f864751"
 
 [vars]
 # Origine(s) autorisée(s) à appeler le proxy (CORS)
-ALLOWED_ORIGIN = "https://mbombomamu1993.github.io"
+ALLOWED_ORIGIN = "https://mbombomamu1993.github.io,https://snis-vaccination-dhis2.vercel.app"
