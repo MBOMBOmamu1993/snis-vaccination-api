@@ -8823,10 +8823,14 @@
                     "  * './data/ou_map.json.gz' : référentiel des ~25 000 FOSA (hiérarchie org. DHIS2, UID).",
                     "- ctx.loadUrl(url) : télécharger une ressource externe publique (ex. fond de carte GeoJSON des provinces/ZS de la RDC) pour les cartes.",
                     "",
-                    "## Accès DHIS2 en direct (outil requete_dhis2)",
-                    "Pour TOUTE analyse hors du périmètre des fichiers ci-dessus (autres programmes, maladies, indicateurs, datasets, années anciennes…), utilise l'outil requete_dhis2 qui interroge l'API Web du DHIS2 national (SNIS RDC) en lecture seule.",
-                    "Démarche type : 1) chercher les UID via les endpoints de métadonnées (dataElements.json / indicators.json / dataSets.json / organisationUnits.json avec filter=name:ilike:… & fields=id,name & pageSize=50) ; 2) requêter analytics.json avec dimension=dx:…&dimension=pe:…&dimension=ou:… ; 3) calculer/mettre en forme avec executer_js si besoin ; 4) présenter avec afficher_resultat.",
-                    "Périodes DHIS2 : 202501, 2025, LAST_12_MONTHS, THIS_YEAR… Unités d'org. : ou:LEVEL-2 (provinces), LEVEL-3 (ZS), LEVEL-4 (AS), LEVEL-5 (FOSA), ou UID;UID. Toujours &displayProperty=NAME&skipMeta=false pour avoir les libellés.",
+                    "## ACCÈS COMPLET AU DHIS2 NATIONAL (SNIS RDC) — source principale",
+                    "Tu disposes d'un accès COMPLET, en lecture, à l'API Web du DHIS2 national : TOUTES les données de vaccination y sont accessibles (tous les éléments de données, indicateurs, datasets PEV, toutes les unités d'organisation du pays à tous les niveaux, toutes les périodes disponibles) — bien au-delà du périmètre des fichiers locaux ci-dessus. Ne réponds JAMAIS qu'une donnée de vaccination est indisponible sans avoir d'abord cherché dans le DHIS2.",
+                    "Deux façons d'y accéder :",
+                    "- Outil requete_dhis2 (endpoint, params) : pour les métadonnées et les réponses de taille modérée — le JSON t'est renvoyé directement.",
+                    "- ctx.dhis2(endpoint, params) DANS executer_js : pour les GROS volumes (analytics massifs, longues listes) — la réponse arrive dans ton code JavaScript où tu agrèges/filtres, et tu ne retournes que le résultat compact. PRÉFÈRE cette voie dès que la réponse dépasse quelques dizaines de lignes.",
+                    "Démarche type : 1) trouver les UID via les métadonnées : dataElements.json?filter=name:ilike:<terme>&fields=id,name&pageSize=50 (aussi indicators.json, dataSets.json, dataElementGroups.json, organisationUnits.json, organisationUnitGroups.json, categoryOptionCombos.json) ; 2) extraire les valeurs via analytics.json?dimension=dx:UID1;UID2&dimension=pe:LAST_12_MONTHS&dimension=ou:LEVEL-3&displayProperty=NAME (ou dataValueSets.json?dataSet=UID&period=202506&orgUnit=UID&children=true pour les valeurs brutes) ; 3) agréger/calculer ; 4) présenter avec afficher_resultat ou generer_rapport.",
+                    "Périodes DHIS2 : 202501 (mois), 2025 (année), LAST_12_MONTHS, LAST_6_MONTHS, THIS_YEAR, LAST_YEAR, QUARTERS… Unités d'org. : ou:LEVEL-2 (provinces), LEVEL-3 (ZS), LEVEL-4 (AS), LEVEL-5 (FOSA), ou:UID;UID, ou OU_GROUP-UID. Ajoute &displayProperty=NAME pour les libellés. Pagine les métadonnées (page=, pageSize=).",
+                    "Astuce fiabilité : les noms d'éléments PEV RDC contiennent souvent des suffixes (ex. '0-11 mois', 'fixe', 'avancé') — liste d'abord les variantes avec ilike avant de choisir les UID.",
                     "",
                     "## Méthode de travail (OBLIGATOIRE)",
                     "1. Utilise l'outil executer_js pour TOUS les calculs (filtres, agrégations, formules). N'invente JAMAIS de chiffres : chaque valeur présentée doit provenir d'un résultat d'executer_js. Si une donnée est indisponible, dis-le.",
@@ -8846,7 +8850,7 @@
             var IA_TOOLS = [
                 {
                     name: 'executer_js',
-                    description: "Exécute du code JavaScript asynchrone dans le navigateur pour analyser les données du dashboard. Le code reçoit un objet ctx : ctx.data (lignes FOSA×mois de la province chargée), ctx.flt (lignes après filtres utilisateur), ctx.AG (liste des antigènes), ctx.load(chemin) → JSON d'un fichier de données du site (gère .gz), ctx.loadUrl(url) → JSON d'une URL publique, ctx.mL(ym) → libellé du mois. Termine par `return <valeur>` ; la valeur (JSON) t'est renvoyée, tronquée à " + IA_TOOL_RESULT_MAX + " caractères. Fais les agrégations dans le code et retourne des résultats compacts.",
+                    description: "Exécute du code JavaScript asynchrone dans le navigateur pour analyser les données. Le code reçoit un objet ctx : ctx.data (lignes FOSA×mois de la province chargée), ctx.flt (lignes après filtres utilisateur), ctx.AG (liste des antigènes), ctx.load(chemin) → JSON d'un fichier de données du site (gère .gz), ctx.dhis2(endpoint, params) → JSON de l'API DHIS2 nationale EN DIRECT (accès complet, sans troncature — idéal pour les gros volumes analytics à agréger en code), ctx.loadUrl(url) → JSON d'une URL publique, ctx.mL(ym) → libellé du mois. Termine par `return <valeur>` ; la valeur (JSON) t'est renvoyée, tronquée à " + IA_TOOL_RESULT_MAX + " caractères. Fais les agrégations dans le code et retourne des résultats compacts.",
                     input_schema: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                 },
                 {
@@ -8910,9 +8914,25 @@
                 return ct2.indexOf('json') >= 0 || /\.(geo)?json($|\?)/i.test(u) ? await r.json() : await r.text();
             }
 
+            /* Accès DHIS2 via le proxy sécurisé — partagé entre l'outil requete_dhis2
+               (réponse renvoyée à l'IA) et ctx.dhis2 dans executer_js (réponse
+               traitée en code, sans limite de taille). */
+            async function iaDhis2(endpoint, params) {
+                if (!IA_PROXY_URL) throw new Error("L'accès DHIS2 en direct nécessite le proxy sécurisé (non configuré).");
+                var ep = String(endpoint || '').replace(/^\/?api\/?/, '').replace(/^\/+/, '');
+                if (!/^[\w./-]+(\.json)?$/i.test(ep)) throw new Error('Endpoint invalide : ' + ep);
+                var qs = String(params || '').replace(/^\?/, '');
+                var hdrs = {};
+                var codeV = cfg('code'); if (codeV) hdrs['x-access-code'] = codeV;
+                var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), { headers: hdrs });
+                var tt = await rr.text();
+                if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 400));
+                try { return JSON.parse(tt); } catch (e) { return tt; }
+            }
+
             async function iaRunTool(name, input, msgsEl) {
                 if (name === 'executer_js') {
-                    var ctx = { S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, mL: mL };
+                    var ctx = { S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, mL: mL };
                     var fn = new Function('ctx', '"use strict";return (async function(){' + input.code + '\n})();');
                     var out = await fn(ctx);
                     var s = (out === undefined) ? 'undefined (le code doit se terminer par return)' : JSON.stringify(out);
@@ -8920,16 +8940,9 @@
                     return s;
                 }
                 if (name === 'requete_dhis2') {
-                    if (!IA_PROXY_URL) throw new Error("L'accès DHIS2 en direct nécessite le proxy sécurisé (pas encore déployé). Utilise les fichiers du dashboard via executer_js, ou informe l'utilisateur que cette analyse sera disponible quand le proxy sera activé.");
-                    var ep = String(input.endpoint || '').replace(/^\/?api\/?/, '').replace(/^\/+/, '');
-                    if (!/^[\w./-]+\.json$/i.test(ep) && !/^[\w./-]+$/.test(ep)) throw new Error('Endpoint invalide : ' + ep);
-                    var qs = String(input.params || '').replace(/^\?/, '');
-                    var hdrs = { 'anthropic-version': '2023-06-01' };
-                    var codeV = cfg('code'); if (codeV) hdrs['x-access-code'] = codeV;
-                    var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), { headers: hdrs });
-                    var tt = await rr.text();
-                    if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 500));
-                    if (tt.length > IA_TOOL_RESULT_MAX) tt = tt.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ — utilise des filtres/fields/pageSize plus stricts]';
+                    var out2 = await iaDhis2(input.endpoint, input.params);
+                    var tt = typeof out2 === 'string' ? out2 : JSON.stringify(out2);
+                    if (tt.length > IA_TOOL_RESULT_MAX) tt = tt.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ — pour de gros volumes, utilise ctx.dhis2(endpoint, params) dans executer_js et agrège en code]';
                     return tt;
                 }
                 if (name === 'afficher_resultat') { iaRenderResult(input, msgsEl); return 'OK : résultat affiché à l\'utilisateur avec boutons de téléchargement.'; }
