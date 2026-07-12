@@ -8774,8 +8774,11 @@
         .ia-tbl tr:nth-child(even) td { background: #faf9f5; }
         .ia-note { color: #8a877e; }
         .ia-work { color: #a09d94; }
-        .ia-comp { min-height: 154px; box-sizing: border-box; border: 1px solid #dedcd5; border-radius: 25px; box-shadow: 0 4px 18px rgba(42, 38, 30, .055); padding: 26px 26px 17px; margin-top: 0; }
-        .ia-comp:focus-within { border-color: #cbc7bd; box-shadow: 0 5px 22px rgba(42, 38, 30, .08); }
+        .ia-comp { min-height: 154px; box-sizing: border-box; border: 1px solid #dedcd5; border-radius: 25px; box-shadow: 0 4px 18px rgba(42, 38, 30, .055), 0 0 0 16px #f7f6f2; padding: 26px 26px 17px; margin-top: 0; }
+        .ia-comp:focus-within { border-color: #cbc7bd; box-shadow: 0 5px 22px rgba(42, 38, 30, .08), 0 0 0 16px #f7f6f2; }
+        /* La réponse en cours reste calée AU-DESSUS de la barre de saisie sticky
+           (scrollIntoView respecte scroll-margin-bottom = hauteur de la barre + marge) */
+        .ia-msgs > * { scroll-margin-bottom: 196px; }
         .ia-comp textarea { min-height: 55px; color: #292722; font-size: 18px; line-height: 1.45; }
         .ia-comp textarea::placeholder { color: #77736c; opacity: 1; }
         .ia-comprow { margin-top: 9px; gap: 5px; }
