@@ -8742,18 +8742,22 @@
         .ia-radio label.on { border-color: #1a237e; background: #f0f2fa; color: #1a237e; font-weight: 700; }
     </style>
     <style>
-        /* ── Peau « Claude.ai » de l'onglet IA : fond crème, serif, accent corail ── */
+        /* ── Interface conversationnelle inspirée de Claude Web ── */
         #DB.ia-updating #PC { opacity: .45; transition: opacity .12s; pointer-events: none; }
-        .ia-mode { background: #F5F4EF !important; }
+        .ia-mode { background: #f7f6f2 !important; }
         .ia-mode .st { display: none !important; }
-        .ia-wrap { max-width: 860px; }
-        .ia-top .ia-ttl { color: #73716c; font-weight: 600; font-size: 12.5px; }
-        .ia-btn { background: #fff; border: 1px solid #e2dfd5; color: #3d3929; border-radius: 10px; }
-        .ia-btn:hover { background: #f0eee6; }
-        .ia-hero { padding: 60px 20px 30px; }
-        .ia-hero h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; color: #29261f; font-size: 38px; letter-spacing: -0.5px; margin: 0 0 12px; }
-        .ia-hero h2 .ia-star { font-size: 30px; color: #d97757; vertical-align: middle; margin-right: 12px; display: inline-block; }
-        .ia-hero p { color: #73716c; font-size: 14px; }
+        .ia-wrap { max-width: 840px; min-height: 68vh; }
+        .ia-top { min-height: 42px; justify-content: flex-end; margin: 0; padding-top: 2px; }
+        .ia-top .ia-ttl { display: none; }
+        .ia-btn { display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 1px solid transparent; color: #67645d; border-radius: 9px; padding: 7px 10px; font-size: 12.5px; font-weight: 500; }
+        .ia-btn svg { width: 15px; height: 15px; }
+        .ia-btn:hover { background: #eeece5; border-color: #e4e1d8; color: #2f2c27; }
+        .ia-msgs { padding: 0 2px 18px; }
+        .ia-hero { padding: clamp(72px, 12vh, 132px) 12px 42px; }
+        .ia-hero h2 { display: flex; align-items: center; justify-content: center; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; color: #26241f; font-size: clamp(38px, 4vw, 52px); line-height: 1.08; letter-spacing: -1.65px; margin: 0; }
+        .ia-hero h2 .ia-star { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; color: #d97757; margin-right: 16px; }
+        .ia-hero h2 .ia-star svg { width: 38px !important; height: 38px !important; }
+        .ia-hero p, .ia-chips { display: none; }
         .ia-chip { background: #fff; border: 1px solid #e2dfd5; color: #57544a; border-radius: 12px; }
         .ia-chip:hover { border-color: #d97757; color: #c86846; background: #fff; }
         .ia-mu { background: #eceae0; color: #29261f; border-radius: 18px 18px 6px 18px; }
@@ -8769,19 +8773,34 @@
         .ia-tbl tr:nth-child(even) td { background: #faf9f5; }
         .ia-note { color: #8a877e; }
         .ia-work { color: #a09d94; }
-        .ia-comp { border: 1px solid #e2dfd5; border-radius: 26px; box-shadow: 0 6px 24px rgba(60, 50, 30, .08); padding: 14px 16px; }
-        .ia-comp textarea { color: #29261f; font-size: 15px; }
-        .ia-comp textarea::placeholder { color: #a09d94; }
-        .ia-plus { border: 1px solid #e2dfd5; color: #57544a; background: #fff; }
-        .ia-plus:hover { background: #f0eee6; }
-        .ia-model { color: #a09d94; }
-        .ia-send { background: #d97757; }
+        .ia-comp { min-height: 154px; box-sizing: border-box; border: 1px solid #dedcd5; border-radius: 25px; box-shadow: 0 4px 18px rgba(42, 38, 30, .055); padding: 26px 26px 17px; margin-top: 0; }
+        .ia-comp:focus-within { border-color: #cbc7bd; box-shadow: 0 5px 22px rgba(42, 38, 30, .08); }
+        .ia-comp textarea { min-height: 55px; color: #292722; font-size: 18px; line-height: 1.45; }
+        .ia-comp textarea::placeholder { color: #77736c; opacity: 1; }
+        .ia-comprow { margin-top: 9px; }
+        .ia-plus { width: 36px; height: 36px; border: none; color: #272521; background: transparent; font-size: 27px; font-weight: 300; }
+        .ia-plus:hover { background: #f0eee8; }
+        .ia-model { color: #8d8982; font-size: 13px; }
+        .ia-send { width: 40px; height: 40px; background: #d97757; font-size: 20px; }
         .ia-send:hover { background: #c86846; }
-        .ia-send:disabled { background: #e8cbbb; }
+        .ia-send:disabled { background: #e7c4b4; }
         .ia-attchip { background: #eceae0; color: #3d3929; }
         .ia-modal h3 { color: #29261f; }
         .ia-modal #iaSave { background: #d97757 !important; border-color: #d97757 !important; }
         .ia-radio label.on { border-color: #d97757; background: #fdf3ee; color: #c86846; }
+        @media (max-width: 700px) {
+            .ia-wrap { min-height: 60vh; }
+            .ia-top { padding: 0 4px; }
+            .ia-btn { padding: 7px; font-size: 0; }
+            .ia-btn svg { width: 18px; height: 18px; }
+            .ia-hero { padding: 68px 8px 32px; }
+            .ia-hero h2 { align-items: flex-start; font-size: 34px; letter-spacing: -1px; text-align: left; }
+            .ia-hero h2 .ia-star { width: 30px; height: 30px; margin-right: 11px; margin-top: 3px; }
+            .ia-hero h2 .ia-star svg { width: 30px !important; height: 30px !important; }
+            .ia-comp { min-height: 138px; border-radius: 22px; padding: 21px 19px 15px; }
+            .ia-comp textarea { min-height: 50px; font-size: 16px; }
+            .ia-model { font-size: 11.5px; }
+        }
     </style>
     <script>
         (function () {
@@ -8796,7 +8815,7 @@
             var IA_TOOL_RESULT_MAX = 25000; /* caractères renvoyés à l'IA par outil */
 
             var IA = { msgs: [], busy: false, files: [], seq: 0 };
-            var IA_LOGO = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em" fill="none" stroke="#d97757" stroke-width="2.6" stroke-linecap="round"><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5M5.3 5.3l3.5 3.5M15.2 15.2l3.5 3.5M18.7 5.3l-3.5 3.5M8.8 15.2l-3.5 3.5"/></svg>';
+            var IA_LOGO = '<svg viewBox="0 0 32 32" style="width:1em;height:1em;vertical-align:-0.12em" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"><path d="M16 2.2v8.2M16 21.6v8.2M2.2 16h8.2M21.6 16h8.2M6.25 6.25l5.8 5.8M19.95 19.95l5.8 5.8M25.75 6.25l-5.8 5.8M12.05 19.95l-5.8 5.8M10.7 3.8l3.15 7.55M18.15 20.65l3.15 7.55M3.8 10.7l7.55 3.15M20.65 18.15l7.55 3.15M21.3 3.8l-3.15 7.55M13.85 20.65L10.7 28.2M28.2 10.7l-7.55 3.15M11.35 18.15L3.8 21.3"/></svg>';
 
             function cfg(k, v) { try { if (v === undefined) return localStorage.getItem('pev_ia_' + k) || ''; localStorage.setItem('pev_ia_' + k, v); } catch (e) { return ''; } }
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -9361,8 +9380,8 @@
                 var wrap = E('div', 'ia-wrap'); ct.appendChild(wrap);
                 var top = E('div', 'ia-top');
                 top.appendChild(E('div', 'ia-ttl', IA_LOGO + ' Génération des analyses et rapports — Assistant IA (données DHIS2/SNIS)'));
-                var bNew = E('button', 'ia-btn', '🗑 Nouvelle conversation');
-                var bSet = E('button', 'ia-btn', '⚙ Accès');
+                var bNew = E('button', 'ia-btn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg><span>Nouvelle conversation</span>');
+                var bSet = E('button', 'ia-btn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.83 2.83-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21h-4v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06-2.83-2.83.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3v-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.83-2.83.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3h4v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06 2.83 2.83-.06.06A1.65 1.65 0 0 0 19.4 9c.12.6.64 1.03 1.25 1.03H21v4h-.35c-.61 0-1.13.43-1.25 1Z"/></svg><span>Accès</span>');
                 top.appendChild(bNew); top.appendChild(bSet); wrap.appendChild(top);
 
                 var msgsEl = E('div', 'ia-msgs'); msgsEl.id = 'iaMsgs'; wrap.appendChild(msgsEl);
@@ -9372,7 +9391,7 @@
                     var greet = h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir';
                     var isRep = S.pg === 1;
                     var hv = E('div', 'ia-hero'); hv.id = 'iaHero';
-                    hv.innerHTML = '<h2><span class="ia-star">' + IA_LOGO + '</span>' + (isRep ? 'Quel rapport préparons-nous ?' : greet + ' !') + '</h2>' +
+                    hv.innerHTML = '<h2><span class="ia-star">' + IA_LOGO + '</span>' + (isRep ? 'Quel rapport préparons-nous ?' : (greet === 'Bonjour' ? 'Que souhaitez-vous analyser ?' : 'Que souhaitez-vous analyser ce soir ?')) + '</h2>' +
                         '<p>' + (isRep
                             ? 'Décrivez le rapport souhaité — contenu, période, zone, format <b>PDF</b>, <b>Word</b> ou <b>PPTX</b>, et style éventuel : l\'assistant analyse les données DHIS2 puis génère un document professionnel téléchargeable.'
                             : 'Demandez n\'importe quelle analyse des données de vaccination DHIS2 : l\'assistant calcule sur les données réelles et répond en <b>tableau</b>, <b>graphique</b> ou <b>carte</b>, téléchargeables. Vous pouvez aussi joindre un fichier ou une image.') + '</p>' +
