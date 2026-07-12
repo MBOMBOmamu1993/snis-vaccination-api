@@ -1114,7 +1114,7 @@
     <!-- ÉCRAN DE CHARGEMENT (design Tshuapa) -->
     <div id="pevLoad">
         <div class="pl-logos">
-            <img src="oms-white.png" alt="OMS">
+            <img src="pev-logo.svg" alt="PEV">
             <img src="pev-transparent.png" alt="PEV">
         </div>
         <h2>Téléchargement Dashboard PEV de routine en cours</h2>
@@ -1126,10 +1126,10 @@
     <div id="pevWelcome">
         <div class="pw-card">
             <div class="pw-head">
-                <img src="oms-white.png" alt="OMS">
+                <img src="pev-logo.svg" alt="PEV">
                 <div>
                     <h1>Dashboard PEV de routine</h1>
-                    <p>Vaccination de routine — Programme Élargi de Vaccination · OMS — RDC</p>
+                    <p>Vaccination de routine — Programme Élargi de Vaccination · RD Congo</p>
                 </div>
             </div>
             <div class="pw-body">
@@ -1162,9 +1162,9 @@
     <!-- ACCUEIL : onglets en cards plein écran (style Tshuapa) -->
     <div id="pevHome">
         <div class="ph-top">
-            <img src="oms-white.png" alt="OMS">
+            <img src="pev-logo.svg" alt="PEV">
             <div class="ph-mid">
-                <div class="ph-k">Programme Élargi de Vaccination · OMS — RDC</div>
+                <div class="ph-k">Programme Élargi de Vaccination · RD Congo</div>
                 <h1>Dashboard PEV de routine</h1>
             </div>
             <img class="pev" src="pev-transparent.png" alt="PEV">
@@ -1183,7 +1183,7 @@
 
     <div class="hdr">
         <div class="logo oms">
-            <img src="oms-white.png" alt="OMS">
+            <img src="pev-logo.svg" alt="PEV">
         </div>
         <h1>Dashboard PEV de routine – RDC</h1>
         <div class="logo">
@@ -8850,7 +8850,7 @@
                 var provs = (S.vals && S.vals.province) ? S.vals.province : [];
                 var pers = (S.vals && S.vals.period) ? S.vals.period : [];
                 return [
-                    "Tu es l'assistant d'analyse du Dashboard PEV de routine (Programme Élargi de Vaccination, OMS — RDC).",
+                    "Tu es l'assistant d'analyse du Dashboard PEV de routine (Programme Élargi de Vaccination, RD Congo).",
                     "Tu réalises à la demande TOUTES les analyses possibles des données de vaccination DHIS2 (SNIS RDC) : couvertures vaccinales, taux d'abandon (ex. DTC1→DTC3, BCG→VAR), complétude/promptitude du rapportage, cohérence des données, tendances, comparaisons entre périodes/zones, logistique (stocks, pertes, ruptures, MSD), classements, etc.",
                     "",
                     "## Données disponibles (déjà chargées dans le navigateur ou téléchargeables)",
@@ -9034,6 +9034,29 @@
                 msgsEl.appendChild(card); iaScroll(msgsEl);
             }
 
+            /* ── Cache de prompt : marque le dernier bloc du dernier message.
+               Les tokens relus depuis le cache ne comptent pas dans la limite
+               ITPM et coûtent ~10 fois moins cher. ── */
+            function iaCacheMsgs(messages) {
+                var out = messages.slice();
+                var i = out.length - 1;
+                if (i < 0) return out;
+                var m = out[i];
+                if (typeof m.content === 'string') {
+                    out[i] = { role: m.role, content: [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }] };
+                } else if (Array.isArray(m.content) && m.content.length) {
+                    var blocks = m.content.slice();
+                    var last = blocks[blocks.length - 1];
+                    if (last && last.type !== 'thinking' && last.type !== 'redacted_thinking') {
+                        var nb = {}; for (var k in last) nb[k] = last[k];
+                        nb.cache_control = { type: 'ephemeral' };
+                        blocks[blocks.length - 1] = nb;
+                        out[i] = { role: m.role, content: blocks };
+                    }
+                }
+                return out;
+            }
+
             /* ── Appel API (streaming SSE) — direct ou via proxy ── */
             async function iaCallAPI(messages, onText, onThink) {
                 var mode = cfg('mode') || 'key';
@@ -9046,13 +9069,25 @@
                     headers['x-api-key'] = cfg('key');
                     headers['anthropic-dangerous-direct-browser-access'] = 'true';
                 }
-                var body = { model: IA_MODEL, max_tokens: 16000, stream: true, system: iaSystem(), thinking: { type: 'adaptive' }, tools: IA_TOOLS, messages: messages };
-                var resp = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+                /* Le point de rupture de cache sur system met en cache tools + system
+                   (rendus avant les messages) ; iaCacheMsgs met en cache l'historique. */
+                var body = { model: IA_MODEL, max_tokens: 16000, stream: true, system: [{ type: 'text', text: iaSystem(), cache_control: { type: 'ephemeral' } }], thinking: { type: 'adaptive' }, tools: IA_TOOLS, messages: iaCacheMsgs(messages) };
+                var resp, attempt = 0;
+                while (true) {
+                    resp = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+                    if (resp.status !== 429 || attempt >= 2) break;
+                    /* 429 : attendre (retry-after si dispo, sinon 15 s) puis réessayer */
+                    var ra = parseInt(resp.headers.get('retry-after') || '', 10);
+                    if (!(ra > 0)) ra = 15; if (ra > 60) ra = 60;
+                    attempt++;
+                    if (onThink) onThink();
+                    await new Promise(function (r) { setTimeout(r, ra * 1000); });
+                }
                 if (!resp.ok) {
                     var t = await resp.text(); var msg = t;
                     try { msg = JSON.parse(t).error.message; } catch (e) { }
                     if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre clé API (ou code d\'accès) dans ⚙ Accès. ' + msg;
-                    if (resp.status === 429) msg = 'Limite de requêtes atteinte — patientez quelques instants puis réessayez. ' + msg;
+                    if (resp.status === 429) msg = 'Limite de débit Anthropic atteinte (429) malgré plusieurs tentatives. Si cela survient dès la première requête, la limite « input tokens per minute » de votre organisation/workspace est trop basse : ouvrez console.anthropic.com → Settings → Limits et augmentez (ou supprimez) la limite personnalisée du workspace. ' + msg;
                     throw new Error(msg);
                 }
                 var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';

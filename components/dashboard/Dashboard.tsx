@@ -6,7 +6,7 @@ import { MODULES, moduleByKey, findPage, type ModuleDef, type PageDef } from "./
 import { PAGE_REGISTRY } from "./registry";
 import { FilterBar } from "./FilterBar";
 
-const OMS = "/logo/oms-white.png";
+const OMS = "/logo/pev-logo.svg";
 const PEV = "/logo/pev-transparent.png";
 
 function GradBox({ icon, tone, size = 40, radius = 11 }: { icon: string; tone: string; size?: number; radius?: number }) {
