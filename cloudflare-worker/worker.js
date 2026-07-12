@@ -113,6 +113,8 @@ async function proxyAnthropic(request, env, cors) {
   let auth;
   try { auth = await requireCode(request, env); }
   catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+  /* Les codes marqués dhis2_only n'ouvrent PAS l'accès Anthropic (crédits) */
+  if (auth.rec.dhis2_only) return json({ error: { type: 'auth', message: 'Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.' } }, 403, cors);
 
   const body = await request.json();
   if (!ALLOWED_MODELS.includes(body.model)) body.model = ALLOWED_MODELS[0];

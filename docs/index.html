@@ -8821,6 +8821,10 @@
                paiement en ligne). Laisser '' tant que le Worker n'est pas déployé
                → seul le mode "clé API personnelle" est proposé. */
             var IA_PROXY_URL = 'https://pev-ia-proxy.pev-rdc.workers.dev';
+            /* Code intégré donnant à l'IA l'accès DHIS2 via le proxy, sans configuration.
+               Marqué dhis2_only côté Worker : il est REFUSÉ sur la route Anthropic
+               (aucun accès aux crédits IA). Révocable en supprimant la clé KV. */
+            var IA_DHIS2_CODE = 'PEV-DHIS-7QK4XZ';
             var IA_MODEL = 'claude-opus-4-8';
             var IA_MAX_TOOL_TURNS = 15;
             var IA_TOOL_RESULT_MAX = 12000; /* caractères renvoyés à l'IA par outil — réduit tant que l'org est au niveau Free (10K tokens/min) ; remettre 25000 après hausse des limites */
@@ -8967,7 +8971,7 @@
                 if (!/^[\w./-]+(\.json)?$/i.test(ep)) throw new Error('Endpoint invalide : ' + ep);
                 var qs = String(params || '').replace(/^\?/, '');
                 var hdrs = {};
-                var codeV = cfg('code'); if (codeV) hdrs['x-access-code'] = codeV;
+                var codeV = cfg('code') || IA_DHIS2_CODE; if (codeV) hdrs['x-access-code'] = codeV;
                 var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), { headers: hdrs });
                 var tt = await rr.text();
                 if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 400));
@@ -9383,11 +9387,13 @@
                     '<div class="ia-hint">Achetez un code d\'accès en ligne (mobile money) — bouton « Obtenir un code » ci-dessous.</div>' +
                     '<button class="ia-btn" style="margin-top:8px" id="iaBuy">💳 Obtenir un code</button></div>' +
                     '<div id="iaPaneKey"><label>Clé API Anthropic</label><input type="password" id="iaKey" placeholder="sk-ant-...">' +
-                    '<div class="ia-hint">Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé reste <b>uniquement dans votre navigateur</b> (localStorage) — elle n\'est jamais envoyée ailleurs qu\'à Anthropic. Ne l\'utilisez pas sur un ordinateur partagé.</div></div>' +
+                    '<div class="ia-hint">Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé reste <b>uniquement dans votre navigateur</b> (localStorage) — elle n\'est jamais envoyée ailleurs qu\'à Anthropic. Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
+                    '<label style="margin-top:12px">Code d\'accès DHIS2 (optionnel)</label><input type="text" id="iaCode2" placeholder="ex. PEV-XXXX-XXXX">' +
+                    '<div class="ia-hint">Nécessaire pour que l\'IA interroge le <b>DHIS2 national</b> via le proxy sécurisé quand vous utilisez votre propre clé API.</div></div>' +
                     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px"><button class="ia-btn" id="iaCancel">Annuler</button><button class="ia-btn" id="iaSave" style="background:#1a237e;color:#fff;border-color:#1a237e">Enregistrer</button></div>';
                 document.body.appendChild(bg);
-                var kEl = m.querySelector('#iaKey'), cEl = m.querySelector('#iaCode');
-                kEl.value = cfg('key'); if (cEl) cEl.value = cfg('code');
+                var kEl = m.querySelector('#iaKey'), cEl = m.querySelector('#iaCode'), c2El = m.querySelector('#iaCode2');
+                kEl.value = cfg('key'); if (cEl) cEl.value = cfg('code'); if (c2El) c2El.value = cfg('code');
                 function setMode(mo) {
                     mode = mo;
                     m.querySelector('#iaPaneKey').style.display = mo === 'key' ? '' : 'none';
@@ -9404,7 +9410,9 @@
                 } else setMode('key');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {
-                    cfg('mode', mode); cfg('key', kEl.value.trim()); if (cEl) cfg('code', cEl.value.trim());
+                    cfg('mode', mode); cfg('key', kEl.value.trim());
+                    /* le code vient du panneau actif : champ dédié en mode clé, champ code en mode code */
+                    cfg('code', (mode === 'key' && c2El) ? c2El.value.trim() : (cEl ? cEl.value.trim() : ''));
                     bg.remove(); if (onDone) onDone();
                 };
             }
