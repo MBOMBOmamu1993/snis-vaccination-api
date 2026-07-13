@@ -9194,6 +9194,36 @@
                         var r2 = new FileReader();
                         r2.onload = function () { res({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: String(r2.result).split(',')[1] } }); };
                         r2.onerror = rej; r2.readAsDataURL(f);
+                    } else if (ext === 'docx' || ext === 'pptx') {
+                        iaEnsureZip().then(function () {
+                            var r5 = new FileReader();
+                            r5.onload = function () {
+                                JSZip.loadAsync(r5.result).then(function (zip) {
+                                    if (ext === 'docx') {
+                                        var doc = zip.file('word/document.xml');
+                                        if (!doc) throw new Error('Fichier Word invalide (document.xml absent)');
+                                        return doc.async('string').then(function (xml) {
+                                            var txt = iaXmlText(xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab[^>]*\/>/g, '\t').replace(/<[^>]+>/g, '')).replace(/\n{3,}/g, '\n\n').trim();
+                                            res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                                        });
+                                    }
+                                    var slides = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })
+                                        .sort(function (a, b) { return parseInt(a.match(/slide(\d+)/)[1], 10) - parseInt(b.match(/slide(\d+)/)[1], 10); });
+                                    if (!slides.length) throw new Error('Fichier PowerPoint invalide (aucune diapositive)');
+                                    return Promise.all(slides.map(function (n) { return zip.file(n).async('string'); })).then(function (xmls) {
+                                        var txt = xmls.map(function (xml, i) {
+                                            var runs = [], re = /<a:t>([^<]*)<\/a:t>/g, mm;
+                                            while ((mm = re.exec(xml))) runs.push(iaXmlText(mm[1]));
+                                            return '### Diapositive ' + (i + 1) + '\n' + runs.join('\n');
+                                        }).join('\n\n');
+                                        res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                                    });
+                                }).catch(rej);
+                            };
+                            r5.onerror = rej; r5.readAsArrayBuffer(f);
+                        }).catch(rej);
+                    } else if (ext === 'doc' || ext === 'ppt') {
+                        rej(new Error('Le format ancien .' + ext + ' n\'est pas supporté : réenregistrez le fichier en .' + ext + 'x (Word/PowerPoint moderne) ou en PDF, puis joignez-le à nouveau.'));
                     } else if (ext === 'xlsx' || ext === 'xls') {
                         iaEnsureXLSX().then(function () {
                             var r3 = new FileReader();
@@ -9221,6 +9251,21 @@
                     s.onload = res; s.onerror = function () { rej(new Error('Impossible de charger le lecteur Excel')); };
                     document.head.appendChild(s);
                 });
+            }
+
+            function iaEnsureZip() {
+                if (window.JSZip) return Promise.resolve();
+                return new Promise(function (res, rej) {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+                    s.onload = res; s.onerror = function () { rej(new Error('Impossible de charger le lecteur Word/PowerPoint')); };
+                    document.head.appendChild(s);
+                });
+            }
+
+            /* Texte brut d'un XML Office : entités décodées, balises retirées */
+            function iaXmlText(s) {
+                return String(s).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'");
             }
 
             function iaScroll(el) { try { el.lastElementChild && el.lastElementChild.scrollIntoView({ block: 'end' }); } catch (e) { } }
@@ -9543,7 +9588,7 @@
                 var row = E('div', 'ia-comprow'); comp.appendChild(row);
                 var plus = E('button', 'ia-plus', '+'); plus.title = 'Joindre un fichier ou une image (image, PDF, CSV, Excel, TXT)';
                 var fin = document.createElement('input'); fin.type = 'file'; fin.multiple = true; fin.style.display = 'none';
-                fin.accept = 'image/*,.pdf,.csv,.txt,.xlsx,.xls,.json';
+                fin.accept = 'image/*,.pdf,.csv,.txt,.xlsx,.xls,.json,.docx,.doc,.pptx,.ppt';
                 plus.onclick = function () { fin.click(); };
                 fin.onchange = function () {
                     Array.prototype.slice.call(fin.files).forEach(function (f) {
