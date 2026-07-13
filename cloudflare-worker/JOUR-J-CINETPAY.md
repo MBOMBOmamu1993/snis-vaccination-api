@@ -26,8 +26,19 @@ npx wrangler secret put CINETPAY_APIKEY    # coller l'API Key
 npx wrangler secret put CINETPAY_SITE_ID   # coller le Site ID
 ```
 
+⚠️ Piège connu sur ce PC : les `secret put` interactifs lancés depuis une
+session Claude (préfixe `!`) créent des secrets VIDES. Méthode fiable :
+créer un fichier `secrets.json` :
+
+```json
+{ "CINETPAY_APIKEY": "votre_api_key", "CINETPAY_SITE_ID": "votre_site_id" }
+```
+
+puis `npx wrangler secret bulk secrets.json` et supprimer `secrets.json`.
+Vérifier avec `npx wrangler secret list` (les 2 noms doivent apparaître).
+
 Aucun redéploiement nécessaire : la page /acheter bascule automatiquement
-de « bientôt disponible » aux 3 offres.
+de « bientôt disponible » aux offres.
 
 ## 4. Test réel (10 min)
 
