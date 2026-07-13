@@ -9223,7 +9223,13 @@
                             r5.onerror = rej; r5.readAsArrayBuffer(f);
                         }).catch(rej);
                     } else if (ext === 'doc' || ext === 'ppt') {
-                        rej(new Error('Le format ancien .' + ext + ' n\'est pas supporté : réenregistrez le fichier en .' + ext + 'x (Word/PowerPoint moderne) ou en PDF, puis joignez-le à nouveau.'));
+                        var r6 = new FileReader();
+                        r6.onload = function () {
+                            var txt = iaBinText(r6.result);
+                            if (txt.replace(/\s/g, '').length < 80) { rej(new Error('Texte introuvable dans ce fichier .' + ext + ' — réenregistrez-le en .' + ext + 'x ou en PDF puis joignez-le à nouveau.')); return; }
+                            res({ type: 'text', text: '<fichier nom="' + f.name + '" note="Texte extrait automatiquement d\'un ancien format Office binaire : le contenu utile est présent mais entouré de fragments techniques (noms de polices, styles, métadonnées) — ignore ces fragments sans le signaler.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                        };
+                        r6.onerror = rej; r6.readAsArrayBuffer(f);
                     } else if (ext === 'xlsx' || ext === 'xls') {
                         iaEnsureXLSX().then(function () {
                             var r3 = new FileReader();
@@ -9237,9 +9243,17 @@
                             r3.onerror = rej; r3.readAsArrayBuffer(f);
                         }).catch(rej);
                     } else {
+                        /* Tout autre type : texte si lisible, sinon extraction binaire */
                         var r4 = new FileReader();
-                        r4.onload = function () { res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + String(r4.result).slice(0, 80000) + '\n</fichier>' }); };
-                        r4.onerror = rej; r4.readAsText(f);
+                        r4.onload = function () {
+                            var s = '';
+                            try { s = new TextDecoder('utf-8').decode(r4.result); } catch (e) { }
+                            var bad = (s.slice(0, 20000).match(/\uFFFD|\u0000/g) || []).length;
+                            if (bad > 40) s = iaBinText(r4.result);
+                            if (s.replace(/\s/g, '').length < 20) { rej(new Error('Fichier vide ou illisible : ' + f.name)); return; }
+                            res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + s.slice(0, 80000) + '\n</fichier>' });
+                        };
+                        r4.onerror = rej; r4.readAsArrayBuffer(f);
                     }
                 });
             }
@@ -9266,6 +9280,30 @@
             /* Texte brut d'un XML Office : entités décodées, balises retirées */
             function iaXmlText(s) {
                 return String(s).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'");
+            }
+
+            /* Extraction du texte lisible d'un fichier binaire (vieux .doc/.ppt
+               Office 97-2003, ou tout format inconnu) : séquences de caractères
+               imprimables en 8 bits (CP1252) puis en UTF-16LE. Approximatif mais
+               suffisant pour que l'IA lise le contenu. */
+            function iaBinText(buf) {
+                var u8 = new Uint8Array(buf), parts = [], run = [], i, c;
+                var CP = { 130: '‚', 133: '…', 145: '‘', 146: '’', 147: '“', 148: '”', 150: '–', 151: '—' };
+                function flush() { if (run.length >= 6) parts.push(run.join('')); run = []; }
+                for (i = 0; i < u8.length; i++) {
+                    c = u8[i];
+                    if (c === 9 || c === 10 || c === 13 || (c >= 32 && c <= 126) || c >= 160) run.push(String.fromCharCode(c));
+                    else if (CP[c]) run.push(CP[c]);
+                    else flush();
+                }
+                flush();
+                for (i = 0; i + 1 < u8.length; i += 2) {
+                    c = u8[i] | (u8[i + 1] << 8);
+                    if (c === 9 || c === 10 || c === 13 || (c >= 32 && c <= 126) || (c >= 160 && c < 0xFFFE)) run.push(String.fromCharCode(c));
+                    else flush();
+                }
+                flush();
+                return parts.join('\n').replace(/(.)\1{9,}/g, '$1$1$1').replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n');
             }
 
             function iaScroll(el) { try { el.lastElementChild && el.lastElementChild.scrollIntoView({ block: 'end' }); } catch (e) { } }
@@ -9588,7 +9626,8 @@
                 var row = E('div', 'ia-comprow'); comp.appendChild(row);
                 var plus = E('button', 'ia-plus', '+'); plus.title = 'Joindre un fichier ou une image (image, PDF, CSV, Excel, TXT)';
                 var fin = document.createElement('input'); fin.type = 'file'; fin.multiple = true; fin.style.display = 'none';
-                fin.accept = 'image/*,.pdf,.csv,.txt,.xlsx,.xls,.json,.docx,.doc,.pptx,.ppt';
+                /* Pas de filtre : tous les types de fichiers sont acceptés
+                   (Word, PowerPoint, Excel, PDF, images, CSV, texte…) */
                 plus.onclick = function () { fin.click(); };
                 fin.onchange = function () {
                     Array.prototype.slice.call(fin.files).forEach(function (f) {
