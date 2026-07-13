@@ -98,9 +98,12 @@ Solde public d'un code : `GET /verifier?code=PEV-A7K2-9MQ4` (sans token).
 
 ## Tarifs
 
-Les offres (nombre de requêtes, prix CDF) se modifient en tête de `worker.js`
-(constante `OFFERS`). Repère : une analyse complète ≈ 3 à 6 requêtes IA ;
-une requête Opus 4.8 vous coûte ≈ 0,01–0,05 $. Fixez vos prix avec de la marge.
+Les offres se modifient en tête de `worker.js` (constante `OFFERS`) :
+5 $ / 10 $ / 20 $ (USD), plus un **montant libre** saisi par le client
+(`REQUESTS_PER_USD` requêtes par dollar, bornes `CUSTOM_MIN_USD`–`CUSTOM_MAX_USD`).
+Tarif : 0,10 $/requête ≈ 3× le coût API (vous encaissez le triple de votre
+dépense Anthropic). Repère : une analyse complète ≈ 3 à 6 requêtes IA ;
+une requête Opus 4.8 coûte ≈ 0,01–0,05 $.
 
 ## Sécurité
 

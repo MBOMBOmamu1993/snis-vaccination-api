@@ -29,11 +29,15 @@
 
 /* ── Offres de vente (à ajuster librement) ──
    requests = nombre de requêtes IA incluses. Une analyse complète consomme
-   en moyenne 3 à 6 requêtes (l'IA lit les données puis répond). */
+   en moyenne 3 à 6 requêtes (l'IA lit les données puis répond).
+   Tarif : 0,10 $/requête ≈ 3× le coût API Opus moyen (~0,033 $/requête). */
+const REQUESTS_PER_USD = 10;
+const CUSTOM_MIN_USD = 1;
+const CUSTOM_MAX_USD = 500;
 const OFFERS = [
-  { id: 'S', label: 'Découverte — ±20 analyses', requests: 100, amount: 15000, currency: 'CDF' },
-  { id: 'M', label: 'Standard — ±60 analyses', requests: 300, amount: 35000, currency: 'CDF' },
-  { id: 'L', label: 'Pro — ±150 analyses', requests: 750, amount: 70000, currency: 'CDF' },
+  { id: 'S', label: 'Découverte', analyses: '±12 analyses', requests: 50, amount: 5, currency: 'USD' },
+  { id: 'M', label: 'Standard', analyses: '±25 analyses', requests: 100, amount: 10, currency: 'USD' },
+  { id: 'L', label: 'Pro', analyses: '±50 analyses', requests: 200, amount: 20, currency: 'USD' },
 ];
 
 const ALLOWED_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
@@ -55,7 +59,18 @@ export default {
       if (url.pathname === '/acheter' && request.method === 'POST') {
         if (!env.CINETPAY_APIKEY) return buyPage(env, url);
         const form = await request.formData();
-        const offer = OFFERS.find(o => o.id === form.get('offer')) || OFFERS[0];
+        let offer;
+        if (form.get('offer') === 'C') {
+          const usd = Math.floor(Number(form.get('montant')));
+          if (!(usd >= CUSTOM_MIN_USD && usd <= CUSTOM_MAX_USD)) {
+            return htmlPage('Montant invalide',
+              `<h1>Montant invalide</h1><div class="err">Entrez un montant entier entre ${CUSTOM_MIN_USD} $ et ${CUSTOM_MAX_USD} $.</div>
+               <p style="margin-top:14px"><a href="/acheter">← Retour aux offres</a></p>`);
+          }
+          offer = { id: 'C', label: `Personnalisé — ${usd} $`, requests: usd * REQUESTS_PER_USD, amount: usd, currency: 'USD' };
+        } else {
+          offer = OFFERS.find(o => o.id === form.get('offer')) || OFFERS[0];
+        }
         const payUrl = await cinetpayInit(env, offer, url.origin);
         return Response.redirect(payUrl, 303);
       }
@@ -224,12 +239,23 @@ function buyPage(env, url) {
   const offers = OFFERS.map(o =>
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="${o.id}">
      <button type="submit" class="offer" style="background:#fff;color:#333;text-align:left">
-       <span><b>${o.label}</b><br><small>${o.requests} requêtes IA</small></span>
-       <span class="price">${o.amount.toLocaleString('fr-FR')} ${o.currency}</span></button></form>`).join('');
+       <span><b>${o.label}</b> — <b style="color:#1a237e">${o.analyses}</b><br><small>${o.requests} requêtes IA</small></span>
+       <span class="price">${o.amount.toLocaleString('fr-FR')} $</span></button></form>`).join('');
+  const custom =
+    `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="C">
+     <div class="offer" style="cursor:default;display:block">
+       <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — payez le montant de votre choix</small>
+       <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+         <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 7"
+           style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
+         <button type="submit" style="width:auto;padding:10px 18px">Payer</button>
+       </div>
+     </div></form>`;
   return htmlPage("Obtenir un code d'accès",
     `<h1>🎫 Obtenir un code d'accès</h1>
-     <p>Choisissez une offre — paiement par <b>mobile money</b> (M-Pesa, Orange Money, Airtel Money) ou carte.
-     Votre code s'affiche immédiatement après le paiement.</p>${offers}
+     <p>Choisissez une offre ou entrez le montant de votre choix — paiement par <b>mobile money</b>
+     (M-Pesa, Orange Money, Airtel Money) ou <b>carte bancaire</b>.
+     Votre code s'affiche immédiatement après le paiement.</p>${offers}${custom}
      <small>Assistant IA du Dashboard PEV de routine — RDC.</small>`);
 }
 
@@ -252,7 +278,7 @@ async function cinetpayInit(env, offer, origin) {
   });
   const data = await resp.json();
   if (!data || !data.data || !data.data.payment_url) throw new Error('Échec init CinetPay : ' + JSON.stringify(data).slice(0, 300));
-  await putTx(env, txId, { status: 'pending', offer: offer.id, created: new Date().toISOString() });
+  await putTx(env, txId, { status: 'pending', offer: offer.id, requests: offer.requests, created: new Date().toISOString() });
   return data.data.payment_url;
 }
 async function putTx(env, tx, data) { await env.CODES.put('tx:' + tx, JSON.stringify(data)); }
@@ -274,9 +300,9 @@ async function deliverCode(env, txId) {
   if (tx.code) return tx.code; // déjà délivré
   const ok = await cinetpayCheck(env, txId);
   if (!ok) return null;
-  const offer = OFFERS.find(o => o.id === tx.offer) || OFFERS[0];
+  const requests = tx.requests || (OFFERS.find(o => o.id === tx.offer) || OFFERS[0]).requests;
   const code = genCode();
-  await putCode(env, code, { total: offer.requests, remaining: offer.requests, created: new Date().toISOString(), tx: txId });
+  await putCode(env, code, { total: requests, remaining: requests, created: new Date().toISOString(), tx: txId });
   tx.status = 'paid'; tx.code = code;
   await putTx(env, txId, tx);
   return code;
