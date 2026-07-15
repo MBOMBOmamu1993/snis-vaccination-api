@@ -8768,10 +8768,15 @@
         .ia-ma-txt code { background: #eceae0; }
         .ia-card { border: 1px solid #e8e6dc; border-radius: 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, .05); }
         .ia-card h4 { color: #29261f; }
-        .ia-tblwrap { border-color: #eceae0; }
-        .ia-tbl th { background: #efede3; color: #3d3929; }
-        .ia-tbl td { border-bottom-color: #f0eee6; }
-        .ia-tbl tr:nth-child(even) td { background: #faf9f5; }
+        /* Résultats IA (tableaux/cartes) : charte du DASHBOARD (marine + or + zébrage),
+           comme les autres tableaux du site — la peau crème ne s'applique qu'au chat. */
+        .ia-tblwrap { border-color: #dfe2ee; }
+        .ia-tbl th { background: #1a237e; color: #fff; }
+        .ia-tbl th:not(:first-child), .ia-tbl td:not(:first-child) { text-align: right; }
+        .ia-tbl tbody td:first-child { background: #1a237e; color: #fff; font-weight: 600; }
+        .ia-tbl tr:nth-child(even) td:not(:first-child) { background: #f4f6fb; }
+        .ia-tbl td { border-bottom-color: #e8eaf2; }
+        .ia-card h4 { color: #1a237e; border-bottom: 2px solid #f9a825; padding-bottom: 6px; }
         .ia-note { color: #8a877e; }
         .ia-work { color: #a09d94; }
         .ia-comp { min-height: 154px; box-sizing: border-box; border: 1px solid #dedcd5; border-radius: 25px; box-shadow: 0 4px 18px rgba(42, 38, 30, .055), 0 0 0 16px #f7f6f2; padding: 26px 26px 17px; margin-top: 0; }
@@ -9076,11 +9081,19 @@
                 /* Le point de rupture de cache sur system met en cache tools + system
                    (rendus avant les messages) ; iaCacheMsgs met en cache l'historique. */
                 var body = { model: IA_MODEL, max_tokens: 16000, stream: true, system: [{ type: 'text', text: iaSystem(), cache_control: { type: 'ephemeral' } }], thinking: { type: 'adaptive' }, tools: IA_TOOLS, messages: iaCacheMsgs(messages) };
-                var resp, attempt = 0;
+                var resp, attempt = 0, netTries = 0;
                 while (true) {
-                    resp = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
-                    if (resp.status !== 429 || attempt >= 4) break;
-                    /* 429 : attendre (retry-after si dispo, sinon 15 s) puis réessayer */
+                    try {
+                        resp = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+                    } catch (eNet) {
+                        /* « fetch failed » : réseau instable / coupure — 3 tentatives espacées */
+                        if (netTries++ >= 3) throw new Error('Connexion impossible après plusieurs tentatives (réseau instable ou service momentanément inaccessible). Vérifiez votre connexion Internet puis renvoyez votre message.');
+                        if (onThink) onThink();
+                        await new Promise(function (r) { setTimeout(r, 4000 * netTries); });
+                        continue;
+                    }
+                    if ((resp.status !== 429 && resp.status !== 529) || attempt >= 4) break;
+                    /* 429 (limite de débit) / 529 (surcharge) : attendre (retry-after si dispo, sinon 15 s) puis réessayer */
                     var ra = parseInt(resp.headers.get('retry-after') || '', 10);
                     if (!(ra > 0)) ra = 15; if (ra > 60) ra = 60;
                     attempt++;
