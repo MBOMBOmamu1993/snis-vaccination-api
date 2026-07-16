@@ -195,8 +195,10 @@ def spot_check_raw(
                 break
         return chosen
 
-    prio = [c for c in cells if "12_23" in c[2] or "12-23" in c[2]]
-    rest = [c for c in cells if c not in prio]
+    prio: List[Tuple[float, str, str, str, str]] = []
+    rest: List[Tuple[float, str, str, str, str]] = []
+    for c in cells:
+        (prio if ("12_23" in c[2] or "12-23" in c[2]) else rest).append(c)
     sample = pick(prio, n_priority) + pick(rest, n_other)
 
     compared = mismatches = unknown = 0
