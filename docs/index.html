@@ -8681,9 +8681,10 @@
     </script>
 
     <!-- ═══════════════ ONGLET IA : GÉNÉRATION DES ANALYSES ═══════════════
-         Chat IA (Claude) avec compétences d'analyse des données DHIS2 du
-         dashboard. Deux modes d'accès : code d'accès (proxy Cloudflare) ou
-         clé API Anthropic personnelle (appel direct navigateur).
+         Chat IA (MiniMax M3 sur Ollama Cloud) avec compétences d'analyse des
+         données DHIS2 du dashboard. Deux modes d'accès, tous deux via le proxy
+         Cloudflare (ollama.com n'envoie pas d'en-têtes CORS) : code d'accès
+         (quota prépayé) ou clé API Ollama personnelle (simplement relayée).
          Design only ailleurs : ce module n'altère aucun calcul existant. -->
     <style>
         .ia-wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; min-height: 62vh; }
@@ -8742,7 +8743,7 @@
         .ia-radio label.on { border-color: #1a237e; background: #f0f2fa; color: #1a237e; font-weight: 700; }
     </style>
     <style>
-        /* ── Interface conversationnelle inspirée de Claude Web ── */
+        /* ── Interface conversationnelle ── */
         #DB.ia-updating #PC { opacity: .45; transition: opacity .12s; pointer-events: none; }
         .ia-mode { background: #f7f6f2 !important; }
         .ia-mode .st { display: none !important; }
@@ -8822,17 +8823,23 @@
         (function () {
             'use strict';
             /* ── Configuration ──
-               IA_PROXY_URL : URL du proxy Cloudflare Worker (mode "code d'accès",
-               paiement en ligne). Laisser '' tant que le Worker n'est pas déployé
-               → seul le mode "clé API personnelle" est proposé. */
+               IA_PROXY_URL : URL du proxy Cloudflare Worker. Il est INDISPENSABLE
+               dans les deux modes (code d'accès ET clé personnelle) : ollama.com ne
+               renvoie aucun en-tête CORS, un appel direct depuis le navigateur est
+               donc bloqué. En mode « clé personnelle », le proxy ne fait que relayer
+               la clé de l'utilisateur (aucun quota consommé). */
             var IA_PROXY_URL = 'https://pev-ia-proxy.pev-rdc.workers.dev';
             /* Code intégré donnant à l'IA l'accès DHIS2 via le proxy, sans configuration.
-               Marqué dhis2_only côté Worker : il est REFUSÉ sur la route Anthropic
-               (aucun accès aux crédits IA). Révocable en supprimant la clé KV. */
+               Marqué dhis2_only côté Worker : il est REFUSÉ sur la route IA
+               (aucun accès au quota). Révocable en supprimant la clé KV. */
             var IA_DHIS2_CODE = 'PEV-DHIS-7QK4XZ';
-            var IA_MODEL = 'claude-opus-4-8';
+            /* MiniMax M3 sur Ollama Cloud. Le tag « :cloud » est obligatoire : sans lui
+               Ollama cherche un modèle local et répond « model not found ». */
+            var IA_MODEL = 'minimax-m3:cloud';
+            var IA_MODEL_LABEL = 'MiniMax M3';
+            var IA_THINK = true; /* modèle à raisonnement — désactivé automatiquement si le serveur le refuse */
             var IA_MAX_TOOL_TURNS = 15;
-            var IA_TOOL_RESULT_MAX = 8000; /* caractères renvoyés à l'IA par outil — réduit tant que l'org est au niveau Free (10K tokens/min) ; remettre 25000 après hausse des limites */
+            var IA_TOOL_RESULT_MAX = 8000; /* caractères renvoyés à l'IA par outil — retourner des résultats compacts */
 
             var IA = { msgs: [], busy: false, files: [], seq: 0, imgs: {} };
             var IA_LOGO = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em" fill="currentColor"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>';
@@ -8890,65 +8897,78 @@
                 ].join('\n');
             }
 
-            /* ── Outils exposés à l'IA ── */
+            /* ── Outils exposés à l'IA (format natif Ollama /api/chat = format OpenAI :
+               {type:'function', function:{name, description, parameters}}) ── */
             var IA_TOOLS = [
                 {
-                    name: 'executer_js',
-                    description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), loadUrl(url), mL(ym)→libellé du mois. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
-                    input_schema: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
-                },
-                {
-                    name: 'requete_dhis2',
-                    description: "GET en lecture seule sur l'API Web du DHIS2 (SNIS RDC) via proxy sécurisé. endpoint = chemin après /api/ (ex. 'analytics.json', 'dataElements.json') ; params = query string SANS '?'. Réponse tronquée à " + IA_TOOL_RESULT_MAX + " caractères — filtre/pagine ; gros volumes → ctx.dhis2 dans executer_js.",
-                    input_schema: { type: 'object', properties: { endpoint: { type: 'string' }, params: { type: 'string' } }, required: ['endpoint'] }
-                },
-                {
-                    name: 'afficher_resultat',
-                    description: "Affiche un résultat final à l'utilisateur dans la conversation (avec boutons de téléchargement automatiques). type='table' : fournir colonnes (array de libellés) et lignes (array de arrays). type='graphique' ou 'carte' : fournir figure = objet Plotly {data:[...], layout:{...}} (le layout reçoit automatiquement la charte du dashboard). Un titre est obligatoire. note = source/lecture facultative.",
-                    input_schema: {
-                        type: 'object',
-                        properties: {
-                            titre: { type: 'string' },
-                            type: { type: 'string', enum: ['table', 'graphique', 'carte'] },
-                            colonnes: { type: 'array', items: { type: 'string' } },
-                            lignes: { type: 'array', items: { type: 'array' } },
-                            figure: { type: 'object', description: 'Figure Plotly {data, layout}' },
-                            note: { type: 'string' }
-                        }, required: ['titre', 'type']
+                    type: 'function',
+                    function: {
+                        name: 'executer_js',
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), loadUrl(url), mL(ym)→libellé du mois. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
+                        parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
                 {
-                    name: 'generer_rapport',
-                    description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word ou PPTX. À utiliser quand l'utilisateur demande un rapport, un bulletin ou une présentation. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau et/ou figure Plotly) → conclusions et recommandations. Exigence : document impeccable et captivant — titres de sections qui énoncent le constat, chaque section d'analyse accompagnée d'un tableau ou d'une figure, page de garde générée automatiquement. Style par défaut : charte PEV (bleu marine #1a237e) ; adapter style.couleur_principale/police si le client le demande.",
-                    input_schema: {
-                        type: 'object',
-                        properties: {
-                            titre: { type: 'string' },
-                            format: { type: 'string', enum: ['pdf', 'word', 'pptx'] },
-                            sous_titre: { type: 'string' },
-                            periode: { type: 'string', description: "Période analysée, ex. 'Janvier – Juin 2026'" },
-                            auteur: { type: 'string' },
-                            style: {
-                                type: 'object', properties: {
-                                    couleur_principale: { type: 'string', description: 'hex, défaut #1a237e' },
-                                    couleur_secondaire: { type: 'string', description: 'hex, accents (soulignés de titres…)' },
-                                    police: { type: 'string' },
-                                    entete: { type: 'string', description: "Texte institutionnel de la page de garde, ex. 'Ministère de la Santé — DPS Kasaï' (défaut : Programme Élargi de Vaccination — RDC)" },
-                                    pied_de_page: { type: 'string', description: 'Mention personnalisée en bas de document' },
-                                    logo: { type: 'string', description: "Nom EXACT d'un fichier image joint par l'utilisateur dans la conversation (ex. 'logo_dps.png') → repris sur la page de garde et les diapositives" }
-                                }
-                            },
-                            sections: {
-                                type: 'array', items: {
+                    type: 'function',
+                    function: {
+                        name: 'requete_dhis2',
+                        description: "GET en lecture seule sur l'API Web du DHIS2 (SNIS RDC) via proxy sécurisé. endpoint = chemin après /api/ (ex. 'analytics.json', 'dataElements.json') ; params = query string SANS '?'. Réponse tronquée à " + IA_TOOL_RESULT_MAX + " caractères — filtre/pagine ; gros volumes → ctx.dhis2 dans executer_js.",
+                        parameters: { type: 'object', properties: { endpoint: { type: 'string' }, params: { type: 'string' } }, required: ['endpoint'] }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'afficher_resultat',
+                        description: "Affiche un résultat final à l'utilisateur dans la conversation (avec boutons de téléchargement automatiques). type='table' : fournir colonnes (array de libellés) et lignes (array de arrays). type='graphique' ou 'carte' : fournir figure = objet Plotly {data:[...], layout:{...}} (le layout reçoit automatiquement la charte du dashboard). Un titre est obligatoire. note = source/lecture facultative.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                titre: { type: 'string' },
+                                type: { type: 'string', enum: ['table', 'graphique', 'carte'] },
+                                colonnes: { type: 'array', items: { type: 'string' } },
+                                lignes: { type: 'array', items: { type: 'array' } },
+                                figure: { type: 'object', description: 'Figure Plotly {data, layout}' },
+                                note: { type: 'string' }
+                            }, required: ['titre', 'type']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'generer_rapport',
+                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word ou PPTX. À utiliser quand l'utilisateur demande un rapport, un bulletin ou une présentation. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau et/ou figure Plotly) → conclusions et recommandations. Exigence : document impeccable et captivant — titres de sections qui énoncent le constat, chaque section d'analyse accompagnée d'un tableau ou d'une figure, page de garde générée automatiquement. Style par défaut : charte PEV (bleu marine #1a237e) ; adapter style.couleur_principale/police si le client le demande.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                titre: { type: 'string' },
+                                format: { type: 'string', enum: ['pdf', 'word', 'pptx'] },
+                                sous_titre: { type: 'string' },
+                                periode: { type: 'string', description: "Période analysée, ex. 'Janvier – Juin 2026'" },
+                                auteur: { type: 'string' },
+                                style: {
                                     type: 'object', properties: {
-                                        titre: { type: 'string' },
-                                        contenu: { type: 'string', description: 'Texte de la section (markdown simple : **gras**, listes -)' },
-                                        tableau: { type: 'object', properties: { colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } } } },
-                                        figure: { type: 'object', description: 'Figure Plotly {data, layout}' }
-                                    }, required: ['titre']
+                                        couleur_principale: { type: 'string', description: 'hex, défaut #1a237e' },
+                                        couleur_secondaire: { type: 'string', description: 'hex, accents (soulignés de titres…)' },
+                                        police: { type: 'string' },
+                                        entete: { type: 'string', description: "Texte institutionnel de la page de garde, ex. 'Ministère de la Santé — DPS Kasaï' (défaut : Programme Élargi de Vaccination — RDC)" },
+                                        pied_de_page: { type: 'string', description: 'Mention personnalisée en bas de document' },
+                                        logo: { type: 'string', description: "Nom EXACT d'un fichier image joint par l'utilisateur dans la conversation (ex. 'logo_dps.png') → repris sur la page de garde et les diapositives" }
+                                    }
+                                },
+                                sections: {
+                                    type: 'array', items: {
+                                        type: 'object', properties: {
+                                            titre: { type: 'string' },
+                                            contenu: { type: 'string', description: 'Texte de la section (markdown simple : **gras**, listes -)' },
+                                            tableau: { type: 'object', properties: { colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } } } },
+                                            figure: { type: 'object', description: 'Figure Plotly {data, layout}' }
+                                        }, required: ['titre']
+                                    }
                                 }
-                            }
-                        }, required: ['titre', 'format', 'sections']
+                            }, required: ['titre', 'format', 'sections']
+                        }
                     }
                 }
             ];
@@ -8981,6 +9001,16 @@
                 var tt = await rr.text();
                 if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 400));
                 try { return JSON.parse(tt); } catch (e) { return tt; }
+            }
+
+            /* Un tool_call Ollama a la forme {function:{name, arguments}}. `arguments`
+               est un objet dans l'API native, une chaîne JSON en mode compatible
+               OpenAI : les deux cas sont acceptés. */
+            function iaToolName(tc) { return (tc && tc.function && tc.function.name) || ''; }
+            function iaToolArgs(tc) {
+                var a = (tc && tc.function) ? tc.function.arguments : null;
+                if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { a = {}; } }
+                return a || {};
             }
 
             async function iaRunTool(name, input, msgsEl) {
@@ -9043,44 +9073,29 @@
                 msgsEl.appendChild(card); iaScroll(msgsEl);
             }
 
-            /* ── Cache de prompt : marque le dernier bloc du dernier message.
-               Les tokens relus depuis le cache ne comptent pas dans la limite
-               ITPM et coûtent ~10 fois moins cher. ── */
-            function iaCacheMsgs(messages) {
-                var out = messages.slice();
-                var i = out.length - 1;
-                if (i < 0) return out;
-                var m = out[i];
-                if (typeof m.content === 'string') {
-                    out[i] = { role: m.role, content: [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }] };
-                } else if (Array.isArray(m.content) && m.content.length) {
-                    var blocks = m.content.slice();
-                    var last = blocks[blocks.length - 1];
-                    if (last && last.type !== 'thinking' && last.type !== 'redacted_thinking') {
-                        var nb = {}; for (var k in last) nb[k] = last[k];
-                        nb.cache_control = { type: 'ephemeral' };
-                        blocks[blocks.length - 1] = nb;
-                        out[i] = { role: m.role, content: blocks };
-                    }
-                }
-                return out;
-            }
-
-            /* ── Appel API (streaming SSE) — direct ou via proxy ── */
+            /* ── Appel API Ollama Cloud (/api/chat, streaming NDJSON) ──
+               Toujours via le proxy : ollama.com ne renvoie aucun en-tête CORS,
+               un appel direct depuis le navigateur serait bloqué par celui-ci.
+                 mode 'code' → x-access-code (quota décompté par le proxy)
+                 mode 'key'  → x-ollama-key : clé personnelle simplement relayée. */
             async function iaCallAPI(messages, onText, onThink) {
                 var mode = cfg('mode') || 'key';
-                var url, headers = { 'content-type': 'application/json', 'anthropic-version': '2023-06-01' };
-                if (mode === 'code' && IA_PROXY_URL) {
-                    url = IA_PROXY_URL.replace(/\/+$/, '') + '/v1/messages';
-                    headers['x-access-code'] = cfg('code');
-                } else {
-                    url = 'https://api.anthropic.com/v1/messages';
-                    headers['x-api-key'] = cfg('key');
-                    headers['anthropic-dangerous-direct-browser-access'] = 'true';
-                }
-                /* Le point de rupture de cache sur system met en cache tools + system
-                   (rendus avant les messages) ; iaCacheMsgs met en cache l'historique. */
-                var body = { model: IA_MODEL, max_tokens: 16000, stream: true, system: [{ type: 'text', text: iaSystem(), cache_control: { type: 'ephemeral' } }], thinking: { type: 'adaptive' }, tools: IA_TOOLS, messages: iaCacheMsgs(messages) };
+                if (!IA_PROXY_URL) throw new Error("L'assistant IA nécessite le proxy sécurisé, qui n'est pas configuré.");
+                var url = IA_PROXY_URL.replace(/\/+$/, '') + '/api/chat';
+                var headers = { 'content-type': 'application/json' };
+                if (mode === 'code') headers['x-access-code'] = cfg('code');
+                else headers['x-ollama-key'] = cfg('key');
+
+                /* Format natif Ollama : le prompt système est un message ordinaire en
+                   tête de liste (pas de champ `system` séparé ni de cache_control). */
+                var body = {
+                    model: IA_MODEL,
+                    stream: true,
+                    messages: [{ role: 'system', content: iaSystem() }].concat(messages),
+                    tools: IA_TOOLS
+                };
+                if (IA_THINK) body.think = true;
+
                 var resp, attempt = 0, netTries = 0;
                 while (true) {
                     try {
@@ -9092,8 +9107,8 @@
                         await new Promise(function (r) { setTimeout(r, 4000 * netTries); });
                         continue;
                     }
-                    if ((resp.status !== 429 && resp.status !== 529) || attempt >= 4) break;
-                    /* 429 (limite de débit) / 529 (surcharge) : attendre (retry-after si dispo, sinon 15 s) puis réessayer */
+                    if ((resp.status !== 429 && resp.status !== 503 && resp.status !== 529) || attempt >= 4) break;
+                    /* 429 (limite de débit) / 503-529 (surcharge) : attendre puis réessayer */
                     var ra = parseInt(resp.headers.get('retry-after') || '', 10);
                     if (!(ra > 0)) ra = 15; if (ra > 60) ra = 60;
                     attempt++;
@@ -9102,46 +9117,48 @@
                 }
                 if (!resp.ok) {
                     var t = await resp.text(); var msg = t;
-                    try { msg = JSON.parse(t).error.message; } catch (e) { }
-                    if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre clé API (ou code d\'accès) dans ⚙ Accès. ' + msg;
-                    if (resp.status === 429) msg = 'Limite de débit Anthropic atteinte (429) malgré plusieurs tentatives. Si cela survient dès la première requête, la limite « input tokens per minute » de votre organisation/workspace est trop basse : ouvrez console.anthropic.com → Settings → Limits et augmentez (ou supprimez) la limite personnalisée du workspace. ' + msg;
+                    /* Ollama renvoie {"error":"…"} ; le proxy {"error":{"message":"…"}} */
+                    try { var j = JSON.parse(t); msg = (j.error && (j.error.message || j.error)) || t; } catch (e) { }
+                    msg = String(msg);
+                    /* Le serveur refuse le mode raisonnement : réessayer sans, une seule fois. */
+                    if (resp.status === 400 && IA_THINK && /think/i.test(msg)) {
+                        IA_THINK = false;
+                        return await iaCallAPI(messages, onText, onThink);
+                    }
+                    if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre clé API Ollama (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
+                    if (resp.status === 402) msg = 'Quota Ollama Cloud épuisé sur ce compte. Vérifiez votre abonnement sur ollama.com. ' + msg;
+                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + IA_MODEL + ' » introuvable sur Ollama Cloud. Vérifiez que le tag « :cloud » est présent et que le modèle est disponible sur votre compte. ' + msg;
+                    if (resp.status === 429) msg = 'Limite de débit Ollama Cloud atteinte (429) malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message ; si cela persiste, votre abonnement Ollama a atteint sa limite horaire. ' + msg;
                     throw new Error(msg);
                 }
+
+                /* Flux NDJSON : une ligne JSON par événement.
+                   {"message":{"role":"assistant","content":"…","thinking":"…","tool_calls":[…]},"done":false}
+                   puis une ligne finale {"done":true,"done_reason":"stop"}. */
                 var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
-                var blocks = [], stop = null;
+                var text = '', thinking = '', toolCalls = [], doneReason = null;
+                function handleLine(line) {
+                    line = line.trim(); if (!line) return;
+                    var ev; try { ev = JSON.parse(line); } catch (e) { return; }
+                    if (ev.error) throw new Error(typeof ev.error === 'string' ? ev.error : (ev.error.message || 'Erreur API'));
+                    var m = ev.message;
+                    if (m) {
+                        if (m.thinking) { thinking += m.thinking; if (onThink) onThink(); }
+                        if (m.content) { text += m.content; if (onText) onText(m.content); }
+                        if (m.tool_calls && m.tool_calls.length) {
+                            for (var k = 0; k < m.tool_calls.length; k++) toolCalls.push(m.tool_calls[k]);
+                        }
+                    }
+                    if (ev.done) doneReason = ev.done_reason || 'stop';
+                }
                 while (true) {
                     var chunk = await reader.read(); if (chunk.done) break;
                     buf += dec.decode(chunk.value, { stream: true });
-                    var parts = buf.split('\n\n'); buf = parts.pop();
-                    for (var i = 0; i < parts.length; i++) {
-                        var lines = parts[i].split('\n'), data = '';
-                        for (var j = 0; j < lines.length; j++) if (lines[j].indexOf('data:') === 0) data += lines[j].slice(5).trim();
-                        if (!data) continue;
-                        var ev; try { ev = JSON.parse(data); } catch (e) { continue; }
-                        if (ev.type === 'error') throw new Error(ev.error && ev.error.message || 'Erreur API');
-                        if (ev.type === 'content_block_start') {
-                            var cb = ev.content_block;
-                            if (cb.type === 'text') blocks[ev.index] = { type: 'text', text: '' };
-                            else if (cb.type === 'tool_use') blocks[ev.index] = { type: 'tool_use', id: cb.id, name: cb.name, _json: '' };
-                            else if (cb.type === 'thinking') { blocks[ev.index] = { type: 'thinking', thinking: '', _sig: null }; if (onThink) onThink(); }
-                            else blocks[ev.index] = { type: cb.type };
-                        } else if (ev.type === 'content_block_delta') {
-                            var b = blocks[ev.index]; if (!b) continue;
-                            if (ev.delta.type === 'text_delta') { b.text += ev.delta.text; if (onText) onText(ev.delta.text); }
-                            else if (ev.delta.type === 'input_json_delta') b._json += ev.delta.partial_json;
-                            else if (ev.delta.type === 'thinking_delta') b.thinking += (ev.delta.thinking || '');
-                            else if (ev.delta.type === 'signature_delta') b._sig = (b._sig || '') + ev.delta.signature;
-                        } else if (ev.type === 'message_delta') {
-                            if (ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
-                        }
-                    }
+                    var lines = buf.split('\n'); buf = lines.pop();
+                    for (var i = 0; i < lines.length; i++) handleLine(lines[i]);
                 }
-                var content = blocks.filter(Boolean).map(function (b) {
-                    if (b.type === 'tool_use') { var inp = {}; try { inp = b._json ? JSON.parse(b._json) : {}; } catch (e) { } return { type: 'tool_use', id: b.id, name: b.name, input: inp }; }
-                    if (b.type === 'thinking') { var tb = { type: 'thinking', thinking: b.thinking || '' }; if (b._sig) tb.signature = b._sig; return tb; }
-                    return { type: 'text', text: b.text || '' };
-                });
-                return { content: content, stop_reason: stop };
+                handleLine(buf); /* dernière ligne éventuellement sans saut final */
+                return { content: text, thinking: thinking, tool_calls: toolCalls, done_reason: doneReason };
             }
 
             /* ── Boucle agentique ── */
@@ -9158,38 +9175,85 @@
                             txtDiv._raw += delta; txtDiv.innerHTML = md(txtDiv._raw); iaScroll(msgsEl);
                         }, function () { work.querySelector('span').textContent = 'Réflexion en cours…'; });
                     } finally { work.remove(); }
-                    IA.msgs.push({ role: 'assistant', content: resp.content });
-                    if (resp.stop_reason === 'refusal') { msgsEl.appendChild(E('div', 'ia-err', 'L\'IA a décliné cette demande (politique de sécurité). Reformulez votre question d\'analyse.')); return; }
-                    if (resp.stop_reason !== 'tool_use') return;
-                    var results = [];
-                    for (var i = 0; i < resp.content.length; i++) {
-                        var b = resp.content[i]; if (b.type !== 'tool_use') continue;
-                        var w2 = E('div', 'ia-work', '<i></i><i></i><i></i> <span>' + (b.name === 'executer_js' ? 'Calculs sur les données…' : 'Préparation du résultat…') + '</span>');
+                    /* Message assistant au format Ollama : contenu texte + éventuels
+                       tool_calls ; le raisonnement est renvoyé tel quel au modèle. */
+                    var am = { role: 'assistant', content: resp.content || '' };
+                    if (resp.thinking) am.thinking = resp.thinking;
+                    if (resp.tool_calls.length) am.tool_calls = resp.tool_calls;
+                    IA.msgs.push(am);
+                    if (!resp.tool_calls.length) return;
+                    for (var i = 0; i < resp.tool_calls.length; i++) {
+                        var name = iaToolName(resp.tool_calls[i]);
+                        var args = iaToolArgs(resp.tool_calls[i]);
+                        var w2 = E('div', 'ia-work', '<i></i><i></i><i></i> <span>' + (name === 'executer_js' ? 'Calculs sur les données…' : 'Préparation du résultat…') + '</span>');
                         msgsEl.appendChild(w2); iaScroll(msgsEl);
                         try {
-                            var out = await iaRunTool(b.name, b.input || {}, msgsEl);
-                            results.push({ type: 'tool_result', tool_use_id: b.id, content: out });
+                            var out = await iaRunTool(name, args, msgsEl);
+                            IA.msgs.push({ role: 'tool', tool_name: name, content: out });
                         } catch (e) {
-                            results.push({ type: 'tool_result', tool_use_id: b.id, content: 'Erreur : ' + (e && e.message || e), is_error: true });
+                            IA.msgs.push({ role: 'tool', tool_name: name, content: 'Erreur : ' + (e && e.message || e) });
                         } finally { w2.remove(); }
                     }
-                    IA.msgs.push({ role: 'user', content: results });
                 }
                 msgsEl.appendChild(E('div', 'ia-err', 'Analyse interrompue : trop d\'étapes. Reformulez ou découpez votre demande.'));
             }
 
-            /* ── Fichiers joints ── */
+            /* ── PDF joints ──
+               Un message Ollama n'accepte que du texte (`content`) et des images
+               (`images`) : aucun champ document. Les PDF sont donc convertis ici,
+               sans perte de fonctionnalité pour l'utilisateur :
+                 • PDF texte  → texte extrait (précis, économe en tokens) ;
+                 • PDF scanné → pages rendues en images, lues par la vision de
+                   MiniMax M3 (modèle multimodal). */
+            async function iaReadPdf(f) {
+                await iaEnsurePdfJs();
+                var pdf;
+                try {
+                    var buf = await f.arrayBuffer();
+                    pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+                } catch (e) { throw new Error('Lecture du PDF impossible : ' + (e && e.message || e)); }
+
+                var pages = [], nmax = Math.min(pdf.numPages, 60), p, page;
+                for (p = 1; p <= nmax; p++) {
+                    page = await pdf.getPage(p);
+                    var tc = await page.getTextContent();
+                    pages.push(tc.items.map(function (it) { return it.str; }).join(' '));
+                }
+                var txt = pages.join('\n\n').replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+                if (txt.replace(/\s/g, '').length >= 40) {
+                    return { kind: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' };
+                }
+                /* Aucun texte : PDF scanné ou entièrement graphique → vision */
+                var imgs = [], nimg = Math.min(pdf.numPages, 10);
+                for (p = 1; p <= nimg; p++) {
+                    page = await pdf.getPage(p);
+                    var vp = page.getViewport({ scale: 1.6 });
+                    var cv = document.createElement('canvas');
+                    cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+                    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+                    imgs.push(cv.toDataURL('image/jpeg', 0.85).split(',')[1]);
+                }
+                if (!imgs.length) throw new Error('PDF vide ou illisible : ' + f.name);
+                return {
+                    kind: 'images', images: imgs,
+                    text: '<fichier nom="' + f.name + '" note="PDF sans texte extractible (scanné) : ' +
+                        nimg + ' page(s) jointe(s) en image' + (pdf.numPages > nimg ? ' sur ' + pdf.numPages + ' au total' : '') + ' — lis-les directement." />'
+                };
+            }
+
+            /* ── Fichiers joints ──
+               Renvoie { kind:'image', data } (→ champ `images`), { kind:'images',
+               images, text } ou { kind:'text', text } (→ `content`). Word, Excel et
+               PowerPoint sont extraits en texte côté navigateur (déjà le cas avant). */
             function iaReadFile(f) {
                 return new Promise(function (res, rej) {
                     var ext = (f.name.split('.').pop() || '').toLowerCase();
                     if (/^(png|jpg|jpeg|gif|webp)$/.test(ext) || /^image\//.test(f.type)) {
                         var r = new FileReader();
-                        r.onload = function () { IA.imgs[f.name] = String(r.result); res({ type: 'image', source: { type: 'base64', media_type: f.type || 'image/png', data: String(r.result).split(',')[1] } }); };
+                        r.onload = function () { IA.imgs[f.name] = String(r.result); res({ kind: 'image', data: String(r.result).split(',')[1] }); };
                         r.onerror = rej; r.readAsDataURL(f);
                     } else if (ext === 'pdf') {
-                        var r2 = new FileReader();
-                        r2.onload = function () { res({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: String(r2.result).split(',')[1] } }); };
-                        r2.onerror = rej; r2.readAsDataURL(f);
+                        iaReadPdf(f).then(res, rej);
                     } else if (ext === 'docx' || ext === 'pptx') {
                         iaEnsureZip().then(function () {
                             var r5 = new FileReader();
@@ -9200,7 +9264,7 @@
                                         if (!doc) throw new Error('Fichier Word invalide (document.xml absent)');
                                         return doc.async('string').then(function (xml) {
                                             var txt = iaXmlText(xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab[^>]*\/>/g, '\t').replace(/<[^>]+>/g, '')).replace(/\n{3,}/g, '\n\n').trim();
-                                            res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                                            res({ kind: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
                                         });
                                     }
                                     var slides = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })
@@ -9212,7 +9276,7 @@
                                             while ((mm = re.exec(xml))) runs.push(iaXmlText(mm[1]));
                                             return '### Diapositive ' + (i + 1) + '\n' + runs.join('\n');
                                         }).join('\n\n');
-                                        res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                                        res({ kind: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
                                     });
                                 }).catch(rej);
                             };
@@ -9223,7 +9287,7 @@
                         r6.onload = function () {
                             var txt = iaBinText(r6.result);
                             if (txt.replace(/\s/g, '').length < 80) { rej(new Error('Texte introuvable dans ce fichier .' + ext + ' — réenregistrez-le en .' + ext + 'x ou en PDF puis joignez-le à nouveau.')); return; }
-                            res({ type: 'text', text: '<fichier nom="' + f.name + '" note="Texte extrait automatiquement d\'un ancien format Office binaire : le contenu utile est présent mais entouré de fragments techniques (noms de polices, styles, métadonnées) — ignore ces fragments sans le signaler.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                            res({ kind: 'text', text: '<fichier nom="' + f.name + '" note="Texte extrait automatiquement d\'un ancien format Office binaire : le contenu utile est présent mais entouré de fragments techniques (noms de polices, styles, métadonnées) — ignore ces fragments sans le signaler.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
                         };
                         r6.onerror = rej; r6.readAsArrayBuffer(f);
                     } else if (ext === 'xlsx' || ext === 'xls') {
@@ -9233,7 +9297,7 @@
                                 try {
                                     var wb = XLSX.read(new Uint8Array(r3.result), { type: 'array' });
                                     var txt = wb.SheetNames.slice(0, 5).map(function (n) { return '### Feuille: ' + n + '\n' + XLSX.utils.sheet_to_csv(wb.Sheets[n]).slice(0, 40000); }).join('\n\n');
-                                    res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + txt + '\n</fichier>' });
+                                    res({ kind: 'text', text: '<fichier nom="' + f.name + '">\n' + txt + '\n</fichier>' });
                                 } catch (e) { rej(e); }
                             };
                             r3.onerror = rej; r3.readAsArrayBuffer(f);
@@ -9247,7 +9311,7 @@
                             var bad = (s.slice(0, 20000).match(/\uFFFD|\u0000/g) || []).length;
                             if (bad > 40) s = iaBinText(r4.result);
                             if (s.replace(/\s/g, '').length < 20) { rej(new Error('Fichier vide ou illisible : ' + f.name)); return; }
-                            res({ type: 'text', text: '<fichier nom="' + f.name + '">\n' + s.slice(0, 80000) + '\n</fichier>' });
+                            res({ kind: 'text', text: '<fichier nom="' + f.name + '">\n' + s.slice(0, 80000) + '\n</fichier>' });
                         };
                         r4.onerror = rej; r4.readAsArrayBuffer(f);
                     }
@@ -9260,6 +9324,16 @@
                     s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
                     s.onload = res; s.onerror = function () { rej(new Error('Impossible de charger le lecteur Excel')); };
                     document.head.appendChild(s);
+                });
+            }
+
+            /* pdf.js — extraction du texte des PDF joints (Ollama n'accepte pas les
+               documents binaires, seulement du texte et des images). */
+            function iaEnsurePdfJs() {
+                if (window.pdfjsLib) return Promise.resolve();
+                return iaLoadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js').then(function () {
+                    if (!window.pdfjsLib) throw new Error('Impossible de charger le lecteur PDF');
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
                 });
             }
 
@@ -9482,16 +9556,25 @@
                 if (mode === 'code' && !cfg('code')) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
                 var hero = document.getElementById('iaHero'); if (hero) hero.remove();
 
-                var content = [];
+                /* Message utilisateur au format Ollama : le texte des fichiers est
+                   concaténé au contenu, les images vont dans le champ `images`. */
+                var parts = [], images = [];
                 var attNames = IA.files.map(function (f) { return f.name; });
                 try {
-                    for (var i = 0; i < IA.files.length; i++) content.push(await iaReadFile(IA.files[i]));
+                    for (var i = 0; i < IA.files.length; i++) {
+                        var piece = await iaReadFile(IA.files[i]);
+                        if (piece.kind === 'image') images.push(piece.data);
+                        else if (piece.kind === 'images') { images = images.concat(piece.images); parts.push(piece.text); }
+                        else parts.push(piece.text);
+                    }
                 } catch (e) { msgsEl.appendChild(E('div', 'ia-err', 'Fichier illisible : ' + esc(e.message || e))); return; }
-                content.push({ type: 'text', text: q || 'Analyse le(s) fichier(s) joint(s).' });
+                parts.push(q || 'Analyse le(s) fichier(s) joint(s).');
 
                 var bub = E('div', 'ia-mu', esc(q || '(fichier joint)') + (attNames.length ? '<span class="ia-att">📎 ' + esc(attNames.join(', ')) + '</span>' : ''));
                 msgsEl.appendChild(bub); iaScroll(msgsEl);
-                IA.msgs.push({ role: 'user', content: content });
+                var um = { role: 'user', content: parts.join('\n\n') };
+                if (images.length) um.images = images;
+                IA.msgs.push(um);
                 IA.files = []; iaRenderAtts(); ta.value = ''; ta.style.height = 'auto';
                 try { ta.dispatchEvent(new Event('input')); } catch (e) { }
 
@@ -9513,8 +9596,8 @@
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
                     '<div class="ia-hint">Achetez un code d\'accès en ligne (mobile money) — bouton « Obtenir un code » ci-dessous.</div>' +
                     '<button class="ia-btn" style="margin-top:8px" id="iaBuy">💳 Obtenir un code</button></div>' +
-                    '<div id="iaPaneKey"><label>Clé API Anthropic</label><input type="password" id="iaKey" placeholder="sk-ant-...">' +
-                    '<div class="ia-hint">Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé reste <b>uniquement dans votre navigateur</b> (localStorage) — elle n\'est jamais envoyée ailleurs qu\'à Anthropic. Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
+                    '<div id="iaPaneKey"><label>Clé API Ollama Cloud</label><input type="password" id="iaKey" placeholder="votre clé ollama.com">' +
+                    '<div class="ia-hint">Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur. Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
                     '<label style="margin-top:12px">Code d\'accès DHIS2 (optionnel)</label><input type="text" id="iaCode2" placeholder="ex. PEV-XXXX-XXXX">' +
                     '<div class="ia-hint">Nécessaire pour que l\'IA interroge le <b>DHIS2 national</b> via le proxy sécurisé quand vous utilisez votre propre clé API.</div></div>' +
                     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px"><button class="ia-btn" id="iaCancel">Annuler</button><button class="ia-btn" id="iaSave" style="background:#1a237e;color:#fff;border-color:#1a237e">Enregistrer</button></div>';
@@ -9602,14 +9685,16 @@
                 if (IA.msgs.length === 0) hero();
                 else {
                     IA.msgs.forEach(function (msg) {
+                        if (msg.role === 'tool') return; /* résultats d'outils : non affichés */
                         if (msg.role === 'user') {
-                            var txts = (msg.content || []).filter(function (b) { return b.type === 'text' && !/^Erreur|^OK :/.test(b.text || ''); });
-                            var isToolRes = (msg.content || []).some(function (b) { return b.type === 'tool_result'; });
-                            if (!isToolRes && txts.length) msgsEl.appendChild(E('div', 'ia-mu', esc(txts.map(function (b) { return b.text; }).join('\n').replace(/<fichier[\s\S]*?<\/fichier>/g, '📎 (fichier)'))));
+                            var txt = String(msg.content || '')
+                                .replace(/<fichier[\s\S]*?<\/fichier>/g, '📎 (fichier)')
+                                .replace(/<fichier[^>]*\/>/g, '📎 (fichier)');
+                            if (txt.trim()) msgsEl.appendChild(E('div', 'ia-mu', esc(txt)));
                         } else {
-                            (msg.content || []).forEach(function (b) {
-                                if (b.type === 'text' && b.text) { var ma = E('div', 'ia-ma'); ma.appendChild(E('div', 'ia-ma-txt', md(b.text))); msgsEl.appendChild(ma); }
-                                if (b.type === 'tool_use' && b.name === 'afficher_resultat') iaRenderResult(b.input || {}, msgsEl);
+                            if (msg.content) { var ma = E('div', 'ia-ma'); ma.appendChild(E('div', 'ia-ma-txt', md(msg.content))); msgsEl.appendChild(ma); }
+                            (msg.tool_calls || []).forEach(function (tc) {
+                                if (iaToolName(tc) === 'afficher_resultat') iaRenderResult(iaToolArgs(tc), msgsEl);
                             });
                         }
                     });
@@ -9633,7 +9718,7 @@
                     fin.value = ''; iaRenderAtts(); syncComposer();
                 };
                 row.appendChild(plus); row.appendChild(fin);
-                row.appendChild(E('span', 'ia-model', 'Claude Opus 4.8'));
+                row.appendChild(E('span', 'ia-model', IA_MODEL_LABEL));
                 var mic = E('button', 'ia-iconbtn ia-mic', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>'); mic.title = 'Dicter une demande';
                 var voice = E('button', 'ia-iconbtn ia-voice', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 10v4M6 7v10M9 4v16M12 8v8M15 5v14M18 7v10M21 10v4"/></svg>'); voice.title = 'Lancer une requête vocale';
                 var send = E('button', 'ia-send', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5"/></svg>'); send.title = 'Soumettre la demande';
