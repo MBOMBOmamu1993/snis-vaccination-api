@@ -1201,13 +1201,25 @@ def _analytics_with_split(
 # 4) TRANSFORM
 # ============================================================
 
-def rows_to_records(analytics_json: dict) -> List[dict]:
+def rows_to_records(analytics_json: dict, allowed_dx: Optional[set] = None) -> List[dict]:
+    """Lignes analytics -> enregistrements longs.
+
+    allowed_dx : opérandes réellement demandés dans CE chunk. Au-delà d'un certain
+    nombre d'opérandes d'un même dataElement dans une requête, l'analytics du SNIS
+    cesse de filtrer par categoryOptionCombo et renvoie TOUTES les lignes du
+    dataElement — y compris des COC non demandés (« lignes fantômes »). Ces lignes
+    réapparaissent alors dans le chunk qui les demande vraiment, et pivot_records
+    les additionnait : d'où des valeurs ×2/×3 sur les colonnes 12-23 mois
+    (surestimation de la CV VAR2). On ne garde donc que ce qui a été demandé.
+    """
     rows = analytics_json.get("rows") or []
     recs: List[dict] = []
     for r in rows:
         try:
             dx, pe, ou, val = r[0], r[1], r[2], r[3]
         except Exception:
+            continue
+        if allowed_dx is not None and dx not in allowed_dx:
             continue
         try:
             v = float(val)
@@ -1232,12 +1244,11 @@ def pivot_records(
             row = {"ou": r["ou"], "pe": r["pe"]}
             idx[key] = row
 
-        old = row.get(r["dx"])
-        val = r["value"]
-        if old is None:
-            row[r["dx"]] = val
-        else:
-            row[r["dx"]] = (old or 0) + (val or 0)
+        # Une clé (ou, pe, dx) n'a qu'UNE valeur vraie : ne jamais additionner.
+        # Un même opérande peut revenir dans plusieurs chunks (lignes fantômes,
+        # cf. rows_to_records) avec la même valeur — l'additionner la doublait.
+        if r["dx"] not in row:
+            row[r["dx"]] = r["value"]
 
     for row in idx.values():
         for dx in dx_expected:
@@ -1280,7 +1291,7 @@ def fetch_period(
     for i, ch in enumerate(chunks, start=1):
         print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
         data = _analytics_with_split(client, pe, ch)
-        long_all.extend(rows_to_records(data))
+        long_all.extend(rows_to_records(data, allowed_dx=set(ch)))
         if sleep_s and sleep_s > 0:
             time.sleep(sleep_s)
 
