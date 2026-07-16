@@ -1,8 +1,12 @@
 name: Update DHIS2 vaccination data
 
 on:
-  schedule:
-    - cron: '30 1 * * *'  # quotidien 01:30 UTC
+  # ⚠️ Planification désactivée (2026-07-16) : ce workflow est redondant avec
+  # sync_dhis2.yml (job "Sync FOSA", 12:00 UTC) qui exécute le même script
+  # avec le garde-fou. Son ancien créneau nocturne (01:30 UTC) tombait dans
+  # la fenêtre où l'API analytics du SNIS renvoie des valeurs transitoires
+  # fausses (x2/x3 sur les combos « 12-23 mois ») — cause de la surestimation
+  # CV VAR2 de mars-juillet 2026. Conservé pour lancement manuel uniquement.
   workflow_dispatch:
 
 # ✅ Empêche deux workflows (update/backfill) d'écrire en même temps

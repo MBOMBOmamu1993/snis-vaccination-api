@@ -15,6 +15,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+import dhis2_guard
+
 # ============================================================
 # 1) CONFIG: AJOUTE TES INDICATEURS ICI
 # ============================================================
@@ -210,8 +212,6 @@ DX_LIST = """
           "c4VvzI5zTep.g6mIyKoGIh2;c4VvzI5zTep.Rby9Jdri29F;c4VvzI5zTep.FCXzheCQXtr;"
           "pak21wvkWJC.g6mIyKoGIh2;cTLKwfG8pSv.QRyK6yxKBU3;pak21wvkWJC.Rby9Jdri29F;"
           "cTLKwfG8pSv.Rby9Jdri29F;pak21wvkWJC.FCXzheCQXtr;cTLKwfG8pSv.VrEj0UVVGr4;"
-          "i5zmivDIHN8.g6mIyKoGIh2;i5zmivDIHN8.QRyK6yxKBU3;i5zmivDIHN8.Rby9Jdri29F;"
-          "i5zmivDIHN8.FCXzheCQXtr;i5zmivDIHN8.VrEj0UVVGr4;"
           "bzD4QxaNkJm.g6mIyKoGIh2;bzD4QxaNkJm.QRyK6yxKBU3;bzD4QxaNkJm.Rby9Jdri29F;"
           "bzD4QxaNkJm.FCXzheCQXtr;bzD4QxaNkJm.VrEj0UVVGr4;"
           "M2JQW0H44dI.QRyK6yxKBU3;M2JQW0H44dI.VrEj0UVVGr4;"
@@ -1387,6 +1387,8 @@ def main() -> int:
     ap.add_argument("--max_plain_bytes", type=int, default=800_000)
     ap.add_argument("--retry_failed", action="store_true")
     ap.add_argument("--retry_limit", type=int, default=2)
+    ap.add_argument("--skip_guard", action="store_true",
+                    help="Désactive le garde-fou de validation des données (à utiliser en connaissance de cause)")
 
     args = ap.parse_args()
 
@@ -1462,6 +1464,20 @@ def main() -> int:
                 dx_chunk_chars=args.dx_chunk_chars,
                 sleep_s=args.sleep,
             )
+            # Garde-fou : rejette le mois si analytics renvoie des valeurs
+            # transitoires (x2/x3 sur les combos 12-23, mois à zéro, …).
+            # Référence = données FOSA du même mois (validées contre le brut).
+            if not args.skip_guard:
+                dhis2_guard.check_month(
+                    client=client,
+                    records=records,
+                    pe=pe,
+                    month_folder=monthly_root / pe,
+                    rename_map_dx_to_label=RENAME_MAP,
+                    zoho_map_label_to_link=zoho_map,
+                    level="AS",
+                    reference_month_folder=Path("docs/data/monthly") / pe,
+                )
         except Exception as e:
             print(f"ERROR: fetch_period failed for {pe}: {e}", flush=True)
             print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)
