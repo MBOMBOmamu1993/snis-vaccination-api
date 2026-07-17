@@ -51,11 +51,14 @@ const OFFERS = [
   { id: 'L', label: 'Pro', analyses: '±50 analyses', requests: 200, amount: 20, currency: 'USD' },
 ];
 
-/* Modèles Ollama Cloud autorisés. Le tag « :cloud » est obligatoire — sans lui,
-   Ollama cherche un modèle local et renvoie « model not found ». */
-const ALLOWED_OLLAMA_MODELS = ['minimax-m3:cloud', 'glm-5.2:cloud', 'qwen3.5:cloud'];
+/* Modèles Ollama Cloud : la liste vit chez Ollama (route /api/tags relayée au
+   dashboard) — on ne fige donc PAS d'allowlist ici, seulement une validation de
+   forme + un défaut. Le tag « :cloud » (ou suffixe -cloud) est obligatoire —
+   sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
+const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
 const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
+const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const NUM_PREDICT_CAP = 16000; /* plafond de tokens générés (équiv. max_tokens) */
 const MAX_TOKENS_CAP = 16000;
@@ -70,6 +73,7 @@ export default {
 
     try {
       if (url.pathname === '/api/chat' && request.method === 'POST') return await proxyOllama(request, env, cors);
+      if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
@@ -182,7 +186,9 @@ async function proxyOllama(request, env, cors) {
   try { body = await request.json(); }
   catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
 
-  if (!ALLOWED_OLLAMA_MODELS.includes(body.model)) body.model = ALLOWED_OLLAMA_MODELS[0];
+  /* N'importe quel modèle Cloud du compte : validation de forme seulement.
+     Un modèle inconnu produit un « model not found » propre côté Ollama. */
+  if (typeof body.model !== 'string' || !/^[\w.\/:-]{1,80}$/.test(body.model)) body.model = DEFAULT_OLLAMA_MODEL;
   body.options = body.options || {};
   if (!body.options.num_predict || body.options.num_predict > NUM_PREDICT_CAP) body.options.num_predict = NUM_PREDICT_CAP;
 
@@ -196,6 +202,28 @@ async function proxyOllama(request, env, cors) {
     body: JSON.stringify(body),
   });
   return await finishIaResponse(env, upstream, resolved, cors, 'application/x-ndjson');
+}
+
+/* Liste des modèles Ollama Cloud du compte — permet au dashboard d'afficher
+   automatiquement les modèles ajoutés/mis à jour chez Ollama, sans redéployer.
+   Métadonnées non sensibles : tout code d'accès valide suffit (y compris les
+   codes dhis2_only), aucune requête n'est décomptée ; une clé personnelle
+   x-ollama-key liste les modèles de SON compte. */
+async function ollamaTags(request, env, cors) {
+  const ownKey = (request.headers.get('x-ollama-key') || '').trim();
+  let key = ownKey;
+  if (!key) {
+    try { await requireCode(request, env); }
+    catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+    if (!env.OLLAMA_API_KEY) return json({ error: { type: 'config', message: 'OLLAMA_API_KEY absent du proxy.' } }, 503, cors);
+    key = env.OLLAMA_API_KEY;
+  }
+  const upstream = await fetch(OLLAMA_TAGS_URL, { headers: { authorization: 'Bearer ' + key, accept: 'application/json' } });
+  const text = await upstream.text();
+  return new Response(text, {
+    status: upstream.status,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=600', ...cors },
+  });
 }
 
 async function proxyAnthropic(request, env, cors) {
