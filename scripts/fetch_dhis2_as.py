@@ -92,7 +92,7 @@ DX_LIST = """
           "Nyke8sWJbn9.dqydGQFHahb;"
           "bzD4QxaNkJm.dqydGQFHahb;bzD4QxaNkJm.NOHlOxLczjc;bzD4QxaNkJm.vbx8t4WAbR8;"
           "bzD4QxaNkJm.KPDzIsWq7JK;bzD4QxaNkJm.oSYTyzezWif;bzD4QxaNkJm.Dr4rWTqepnP;"
-          "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv;"
+          "RGW6llyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXstTq1MDSv;"
           "uAWIVDnGPGH.dxDQKDcTn6Z;uAWIVDnGPGH.XEN3ucCGa07;uAWIVDnGPGH.J8mw9rFkY4v;"
           "uAWIVDnGPGH.WZwmzIuRvwV;uAWIVDnGPGH.GSCwhT2SCCr;uAWIVDnGPGH.pdKyvaYRqCj;"
           "uAWIVDnGPGH.kOWsLrtvrhn;uAWIVDnGPGH.mZLRF4eSPIk;"
@@ -482,10 +482,10 @@ RENAME_MAP: Dict[str, str] = {
     "bzD4QxaNkJm.oSYTyzezWif": "VAA mobile1",
     "bzD4QxaNkJm.Dr4rWTqepnP": "VAA mobile2",
 
-    "RGW61lyyusM": "Td 2",
+    "RGW6llyyusM": "Td 2",
     "hGBtbI7kjvb": "Td 3",
     "bZDbSvdUcPC": "Td 4",
-    "lXsTq1MDSv": "Td 5",
+    "lXstTq1MDSv": "Td 5",
 
     # ============================================
     # LOGISTIQUES - RENAME MAP
