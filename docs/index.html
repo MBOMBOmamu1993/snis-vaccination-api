@@ -8909,7 +8909,7 @@
             var IA_MAX_TOOL_TURNS = 30;
             var IA_TOOL_RESULT_MAX = 8000; /* caractères renvoyés à l'IA par outil — retourner des résultats compacts */
 
-            var IA = { msgs: [], busy: false, files: [], seq: 0, imgs: {} };
+            var IA = { msgs: [], busy: false, files: [], seq: 0, imgs: {}, docs: {} };
             var IA_LOGO = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em" fill="currentColor"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>';
 
             function cfg(k, v) { try { if (v === undefined) return localStorage.getItem('pev_ia_' + k) || ''; localStorage.setItem('pev_ia_' + k, v); } catch (e) { return ''; } }
@@ -8973,11 +8973,17 @@
                     "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. Carte sans GeoJSON → barres classées par zone.",
                     "3. Formules : CV% = doses cumulées/cible cumulée×100 (cible mensuelle = annuelle/12) ; abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100 ; complétude = reçus/attendus×100.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",
-                    "5. RAPPORTS (PDF/Word/PPTX, défaut PDF) : calcule d'abord TOUT, puis generer_rapport avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations.",
+                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX) : calcule d'abord TOUT. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations.",
+                    "",
+                    "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
+                    "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
+                    "- Modèle .doc/.ppt/.pdf joint (non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle.",
+                    "- Chaque tableau de données est suivi d'un commentaire analytique chiffré (champ commentaire), comme dans les rapports PEV officiels.",
+                    "- Jamais de placeholder (« à compléter », « XX ») : toute valeur écrite provient d'un calcul executer_js/requete_dhis2 ; si une donnée est réellement indisponible après recherche DHIS2, écris « Non disponible » et signale-le.",
                     "",
                     "## Qualité, design, rédaction (exigence maximale)",
                     "Tu es analyste senior de santé publique, rédacteur pro et designer : chaque livrable doit être impeccable et captivant.",
-                    "- DESIGN par défaut = charte dashboard : marine #1a237e, accents sobres (corail #d97757, or #f9a825, vert #2e7d32, rouge #c62828 = alertes), fonds blancs. Si le client demande un autre style OU joint un modèle (image/PDF/ancien rapport), reproduis sa structure ET son design : style.couleur_principale/couleur_secondaire/police/entete/pied_de_page dans generer_rapport, layout Plotly pour les figures ; logo joint → style.logo = nom exact du fichier image.",
+                    "- DESIGN SYSTEM par défaut : TOUTES les analyses, visuels, graphiques et tableaux des rapports suivent le design system officiel PEV (référence : rapport de riposte rougeole ZS Masuika) — bleu principal #0b5e8e, bleu foncé #0b3a56, fonds clairs #eef5fa, filets de tableaux #c6d3dc, corps en Times New Roman, titres en Arial gras — appliqué automatiquement si aucun style n'est précisé. SEULE EXCEPTION : si le client demande son propre design OU joint un modèle (image/PDF/ancien rapport), reproduis SA structure ET SON design : style.couleur_principale/couleur_secondaire/police/entete_lignes/pied_de_page dans generer_rapport, layout Plotly pour les figures ; logo joint → style.logo = nom exact du fichier image. Résultats affichés dans le chat (afficher_resultat) : charte dashboard marine #1a237e.",
                     "- GRAPHIQUES : titre qui porte le message, axes avec unités, nombres au format français (12 345 · 85,3 %), barres triées, info clé en couleur d'accent, cible en pointillé (ex. CV 95 %), jamais de 3D.",
                     "- RÉDACTION : français pro de santé publique, zéro faute ; titres qui énoncent le constat (« La CV DTC3 gagne 8 points » et non « Analyse DTC3 ») ; chiffres clés en gras ; recommandations actionnables (qui, quoi, quand).",
                     "- ANALYSE : interprète toujours (tendance, écart à la cible, comparaison) ; signale les limites des données ; propose l'analyse complémentaire la plus utile.",
@@ -9027,7 +9033,7 @@
                     type: 'function',
                     function: {
                         name: 'generer_rapport',
-                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word ou PPTX. À utiliser quand l'utilisateur demande un rapport, un bulletin ou une présentation. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau et/ou figure Plotly) → conclusions et recommandations. Exigence : document impeccable et captivant — titres de sections qui énoncent le constat, chaque section d'analyse accompagnée d'un tableau ou d'une figure, page de garde générée automatiquement. Style par défaut : charte PEV (bleu marine #1a237e) ; adapter style.couleur_principale/police si le client le demande.",
+                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word (vrai fichier .docx natif, éditable dans Word) ou PPTX. À utiliser quand l'utilisateur demande un rapport, un bulletin ou une présentation — ou pour REPRODUIRE fidèlement un modèle joint non modifiable sur place (.doc/.ppt/PDF) : dans ce cas, reprendre TOUTES les sections du modèle dans l'ordre, recopier les textes inchangés, et n'actualiser que les données. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Sans modèle, structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau(x) et/ou figure Plotly + commentaire) → conclusions et recommandations. Exigence : document impeccable — titres de sections qui énoncent le constat, chaque tableau suivi d'un commentaire analytique, page de garde générée automatiquement (en-tête officiel multi-lignes possible via style.entete_lignes), bloc signature via signature. Style par défaut : design du rapport officiel type PEV — bleu #0b5e8e, corps Times New Roman, titres Arial gras ; adapter style.couleur_principale/police si le client le demande ou joint un modèle.",
                         parameters: {
                             type: 'object',
                             properties: {
@@ -9038,12 +9044,21 @@
                                 auteur: { type: 'string' },
                                 style: {
                                     type: 'object', properties: {
-                                        couleur_principale: { type: 'string', description: 'hex, défaut #1a237e' },
+                                        couleur_principale: { type: 'string', description: 'hex, défaut #0b5e8e (design rapport officiel PEV)' },
                                         couleur_secondaire: { type: 'string', description: 'hex, accents (soulignés de titres…)' },
                                         police: { type: 'string' },
                                         entete: { type: 'string', description: "Texte institutionnel de la page de garde, ex. 'Ministère de la Santé — DPS Kasaï' (défaut : Programme Élargi de Vaccination — RDC)" },
+                                        entete_lignes: { type: 'array', items: { type: 'string' }, description: "En-tête officiel multi-lignes de la page de garde (remplace entete), ex. ['RÉPUBLIQUE DÉMOCRATIQUE DU CONGO','MINISTÈRE DE LA SANTÉ PUBLIQUE','PROVINCE DU KASAÏ CENTRAL','DIVISION PROVINCIALE DE LA SANTÉ','PROGRAMME ÉLARGI DE VACCINATION','ANTENNE PEV DE LUIZA']" },
                                         pied_de_page: { type: 'string', description: 'Mention personnalisée en bas de document' },
                                         logo: { type: 'string', description: "Nom EXACT d'un fichier image joint par l'utilisateur dans la conversation (ex. 'logo_dps.png') → repris sur la page de garde et les diapositives" }
+                                    }
+                                },
+                                signature: {
+                                    type: 'object', description: "Bloc signature de fin de document (rapports officiels)", properties: {
+                                        lieu: { type: 'string', description: "ex. 'LUIZA'" },
+                                        date: { type: 'string', description: "ex. '15/07/2026'" },
+                                        fonction: { type: 'string', description: "ex. 'LE MÉDECIN CHEF D'ANTENNE'" },
+                                        nom: { type: 'string' }
                                     }
                                 },
                                 sections: {
@@ -9052,11 +9067,41 @@
                                             titre: { type: 'string' },
                                             contenu: { type: 'string', description: 'Texte de la section (markdown simple : **gras**, listes -)' },
                                             tableau: { type: 'object', properties: { colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } } } },
+                                            tableaux: { type: 'array', description: "Plusieurs tableaux dans la même section, chacun {titre, colonnes, lignes, commentaire}", items: { type: 'object', properties: { titre: { type: 'string' }, colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } }, commentaire: { type: 'string' } } } },
+                                            commentaire: { type: 'string', description: 'Commentaire analytique affiché sous le tableau/la figure' },
                                             figure: { type: 'object', description: 'Figure Plotly {data, layout}' }
                                         }, required: ['titre']
                                     }
                                 }
                             }, required: ['titre', 'format', 'sections']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'modifier_document',
+                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut). Le document modifié est téléchargé automatiquement chez l'utilisateur.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                fichier: { type: 'string', description: 'Nom EXACT du fichier .docx joint dans la conversation' },
+                                nom_sortie: { type: 'string', description: "Nom du fichier téléchargé, sans extension (défaut : nom d'origine + _MAJ)" },
+                                operations: {
+                                    type: 'array', items: {
+                                        type: 'object', properties: {
+                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'inserer_apres'] },
+                                            cherche: { type: 'string' },
+                                            remplace: { type: 'string' },
+                                            p: { type: 'integer', description: 'Numéro de paragraphe [P#]' },
+                                            t: { type: 'integer', description: 'Numéro de tableau [T#]' },
+                                            ligne: { type: 'integer' },
+                                            colonne: { type: 'integer' },
+                                            texte: { type: 'string', description: 'Nouveau texte (\\n = saut de ligne)' }
+                                        }, required: ['op']
+                                    }
+                                }
+                            }, required: ['fichier', 'operations']
                         }
                     }
                 }
@@ -9163,6 +9208,7 @@
                     var fmtDone = await iaGenReport(input, msgsEl);
                     return 'OK : rapport ' + fmtDone.toUpperCase() + ' (' + ((input.sections || []).length) + ' sections) généré et téléchargé chez l\'utilisateur.';
                 }
+                if (name === 'modifier_document') return await iaDocxModify(input, msgsEl);
                 throw new Error('Outil inconnu : ' + name);
             }
 
@@ -9643,8 +9689,11 @@
                                         var doc = zip.file('word/document.xml');
                                         if (!doc) throw new Error('Fichier Word invalide (document.xml absent)');
                                         return doc.async('string').then(function (xml) {
-                                            var txt = iaXmlText(xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab[^>]*\/>/g, '\t').replace(/<[^>]+>/g, '')).replace(/\n{3,}/g, '\n\n').trim();
-                                            res({ kind: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                                            IA.docs[f.name] = r5.result; /* fichier brut conservé pour modifier_document */
+                                            var txt;
+                                            try { txt = iaDocxOutline(xml); }
+                                            catch (e) { txt = iaXmlText(xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab[^>]*\/>/g, '\t').replace(/<[^>]+>/g, '')).replace(/\n{3,}/g, '\n\n').trim(); }
+                                            res({ kind: 'text', text: '<fichier nom="' + f.name + '" note="Document Word structuré. Chaque paragraphe est adressé [P#] et chaque cellule de tableau [T#:L#:C#] (les cellules d\'une ligne sont séparées par ¦). Pour actualiser ce document en préservant TOUTE sa mise en forme, utilise l\'outil modifier_document avec ces adresses — ne le régénère pas.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
                                         });
                                     }
                                     var slides = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })
@@ -9667,7 +9716,7 @@
                         r6.onload = function () {
                             var txt = iaBinText(r6.result);
                             if (txt.replace(/\s/g, '').length < 80) { rej(new Error('Texte introuvable dans ce fichier .' + ext + ' — réenregistrez-le en .' + ext + 'x ou en PDF puis joignez-le à nouveau.')); return; }
-                            res({ kind: 'text', text: '<fichier nom="' + f.name + '" note="Texte extrait automatiquement d\'un ancien format Office binaire : le contenu utile est présent mais entouré de fragments techniques (noms de polices, styles, métadonnées) — ignore ces fragments sans le signaler.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                            res({ kind: 'text', text: '<fichier nom="' + f.name + '" note="Texte extrait automatiquement d\'un ancien format Office binaire : le contenu utile est présent mais entouré de fragments techniques (noms de polices, styles, métadonnées) — ignore ces fragments sans le signaler. Ce format ne peut pas être modifié sur place : si l\'utilisateur demande une actualisation, reproduis le document COMPLET (toutes ses sections, dans l\'ordre, textes inchangés recopiés tels quels) avec generer_rapport, en n\'actualisant que les données demandées.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
                         };
                         r6.onerror = rej; r6.readAsArrayBuffer(f);
                     } else if (ext === 'xlsx' || ext === 'xls') {
@@ -9756,6 +9805,185 @@
                 return parts.join('\n').replace(/(.)\1{9,}/g, '$1$1$1').replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n');
             }
 
+            /* ═══ COMPÉTENCE DOCX : lecture structurée + modification sur place ═══
+               Un .docx est un zip OOXML ; on travaille sur word/document.xml via
+               DOMParser. Les paragraphes hors tableau sont adressés [P#], les
+               cellules [T#:L#:C#] (base 1) — la même promenade du corps du
+               document sert à l'extraction ET aux modifications, ce qui garantit
+               des adresses cohérentes. Tout ce qui n'est pas ciblé (styles,
+               images, en-têtes, mise en page) reste intact. */
+            var IA_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+
+            function iaDocxWalk(xmlDoc) {
+                var body = xmlDoc.getElementsByTagNameNS(IA_W, 'body')[0];
+                if (!body) throw new Error('Corps du document introuvable');
+                var paras = [], tables = [], seq = [];
+                (function walk(node) {
+                    for (var ch = node.firstChild; ch; ch = ch.nextSibling) {
+                        if (ch.nodeType !== 1) continue;
+                        var ln = ch.localName;
+                        if (ln === 'p') { paras.push(ch); seq.push({ k: 'p', n: ch }); }
+                        else if (ln === 'tbl') { tables.push(ch); seq.push({ k: 't', n: ch }); }
+                        else if (ln === 'sdt' || ln === 'sdtContent' || ln === 'customXml' || ln === 'smartTag') walk(ch);
+                    }
+                })(body);
+                return { paras: paras, tables: tables, seq: seq };
+            }
+            function iaParaText(p) {
+                var out = '';
+                (function rec(n) {
+                    for (var ch = n.firstChild; ch; ch = ch.nextSibling) {
+                        if (ch.nodeType !== 1) continue;
+                        var ln = ch.localName;
+                        if (ln === 't') out += ch.textContent;
+                        else if (ln === 'tab') out += '\t';
+                        else if (ln === 'br' || ln === 'cr') out += '\n';
+                        else if (ln !== 'pPr' && ln !== 'rPr') rec(ch);
+                    }
+                })(p);
+                return out;
+            }
+            function iaTblRows(tbl) {
+                var rows = [];
+                for (var ch = tbl.firstChild; ch; ch = ch.nextSibling) {
+                    if (ch.nodeType === 1 && ch.localName === 'tr') {
+                        var cells = [];
+                        for (var c = ch.firstChild; c; c = c.nextSibling) if (c.nodeType === 1 && c.localName === 'tc') cells.push(c);
+                        rows.push(cells);
+                    }
+                }
+                return rows;
+            }
+            function iaCellText(tc) {
+                var ps = [];
+                for (var ch = tc.firstChild; ch; ch = ch.nextSibling) {
+                    if (ch.nodeType === 1 && ch.localName === 'p') ps.push(iaParaText(ch));
+                    else if (ch.nodeType === 1 && ch.localName === 'tbl') ps.push('[tableau imbriqué]');
+                }
+                return ps.join('\n').trim();
+            }
+            /* Extraction adressée pour l'IA : [P#] paragraphes, [T#:L#] lignes de tableau */
+            function iaDocxOutline(xml) {
+                var xmlDoc = new DOMParser().parseFromString(xml, 'application/xml');
+                if (xmlDoc.getElementsByTagName('parsererror').length) throw new Error('XML Word illisible');
+                var w = iaDocxWalk(xmlDoc), out = [], pIdx = 0, tIdx = 0;
+                w.seq.forEach(function (it) {
+                    if (it.k === 'p') {
+                        pIdx++;
+                        var t = iaParaText(it.n).replace(/\s*\n\s*/g, ' ⏎ ').trim();
+                        if (t) out.push('[P' + pIdx + '] ' + t);
+                    } else {
+                        tIdx++;
+                        var rows = iaTblRows(it.n);
+                        out.push('[T' + tIdx + '] Tableau (' + rows.length + ' ligne(s))');
+                        rows.forEach(function (r, ri) {
+                            out.push('[T' + tIdx + ':L' + (ri + 1) + '] ' + r.map(function (tc) { return iaCellText(tc).replace(/\n/g, ' ⏎ ') || '∅'; }).join(' ¦ '));
+                        });
+                    }
+                });
+                out.push('(Les paragraphes vides ne sont pas listés mais comptent dans la numérotation [P#].)');
+                return out.join('\n');
+            }
+            /* Remplace le texte d'un paragraphe en conservant son style (pPr) et la
+               mise en forme du premier segment (rPr). \n → saut de ligne. */
+            function iaSetParaText(xmlDoc, pNode, texte) {
+                var rPr = null;
+                var runs = pNode.getElementsByTagNameNS(IA_W, 'r');
+                if (runs.length) { var r0 = runs[0].getElementsByTagNameNS(IA_W, 'rPr'); if (r0.length) rPr = r0[0].cloneNode(true); }
+                for (var ch = pNode.firstChild, next; ch; ch = next) { next = ch.nextSibling; if (!(ch.nodeType === 1 && ch.localName === 'pPr')) pNode.removeChild(ch); }
+                var run = xmlDoc.createElementNS(IA_W, 'w:r');
+                if (rPr) run.appendChild(rPr);
+                var parts = String(texte == null ? '' : texte).split('\n');
+                for (var i = 0; i < parts.length; i++) {
+                    if (i) run.appendChild(xmlDoc.createElementNS(IA_W, 'w:br'));
+                    var t = xmlDoc.createElementNS(IA_W, 'w:t');
+                    t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+                    t.textContent = parts[i];
+                    run.appendChild(t);
+                }
+                pNode.appendChild(run);
+            }
+            function iaSetCellText(xmlDoc, tc, texte) {
+                var first = null;
+                for (var ch = tc.firstChild, next; ch; ch = next) {
+                    next = ch.nextSibling;
+                    if (ch.nodeType === 1 && ch.localName === 'p') { if (!first) first = ch; else tc.removeChild(ch); }
+                }
+                if (!first) { first = xmlDoc.createElementNS(IA_W, 'w:p'); tc.appendChild(first); }
+                iaSetParaText(xmlDoc, first, texte);
+            }
+            /* Outil modifier_document : applique les opérations puis télécharge le
+               .docx modifié — la mise en forme d'origine est intégralement préservée. */
+            async function iaDocxModify(inp, msgsEl) {
+                var name = String(inp.fichier || '');
+                var buf = IA.docs[name];
+                if (!buf) {
+                    var known = Object.keys(IA.docs);
+                    throw new Error('Fichier .docx introuvable dans la conversation : « ' + name + ' »' + (known.length ? ' — disponibles : ' + known.join(', ') : ". Aucun .docx n'a été joint : demande à l'utilisateur de joindre le fichier .docx (un .doc doit d'abord être réenregistré en .docx dans Word)."));
+                }
+                await iaEnsureZip();
+                var zip = await JSZip.loadAsync(buf);
+                var f0 = zip.file('word/document.xml');
+                if (!f0) throw new Error('document.xml absent du fichier');
+                var xmlDoc = new DOMParser().parseFromString(await f0.async('string'), 'application/xml');
+                if (xmlDoc.getElementsByTagName('parsererror').length) throw new Error('XML Word illisible');
+                var ops = inp.operations || [], log = [], nOK = 0;
+                for (var i = 0; i < ops.length; i++) {
+                    var o = ops[i] || {};
+                    try {
+                        /* Adresses réévaluées à chaque opération (les insertions décalent la suite) */
+                        var w = iaDocxWalk(xmlDoc);
+                        if (o.op === 'remplacer_texte') {
+                            var cherche = String(o.cherche || ''); if (!cherche) throw new Error('champ « cherche » manquant');
+                            var remplace = String(o.remplace == null ? '' : o.remplace), n = 0;
+                            var all = w.paras.slice();
+                            w.tables.forEach(function (tbl) {
+                                iaTblRows(tbl).forEach(function (r) {
+                                    r.forEach(function (tc) { for (var c2 = tc.firstChild; c2; c2 = c2.nextSibling) if (c2.nodeType === 1 && c2.localName === 'p') all.push(c2); });
+                                });
+                            });
+                            all.forEach(function (p2) {
+                                var t2 = iaParaText(p2);
+                                if (t2.indexOf(cherche) >= 0) { n += t2.split(cherche).length - 1; iaSetParaText(xmlDoc, p2, t2.split(cherche).join(remplace)); }
+                            });
+                            if (!n) throw new Error('texte introuvable : « ' + cherche.slice(0, 80) + ' »');
+                            log.push('✔ remplacer_texte « ' + cherche.slice(0, 60) + ' » : ' + n + ' occurrence(s)'); nOK++;
+                        } else if (o.op === 'remplacer_paragraphe') {
+                            var p3 = w.paras[(o.p | 0) - 1]; if (!p3) throw new Error('[P' + o.p + '] inexistant (P1–P' + w.paras.length + ')');
+                            iaSetParaText(xmlDoc, p3, o.texte); log.push('✔ [P' + o.p + '] remplacé'); nOK++;
+                        } else if (o.op === 'remplacer_cellule') {
+                            var tb2 = w.tables[(o.t | 0) - 1]; if (!tb2) throw new Error('[T' + o.t + '] inexistant (T1–T' + w.tables.length + ')');
+                            var rows2 = iaTblRows(tb2), row2 = rows2[(o.ligne | 0) - 1];
+                            if (!row2) throw new Error('[T' + o.t + ':L' + o.ligne + '] inexistant (' + rows2.length + ' ligne(s))');
+                            var tc2 = row2[(o.colonne | 0) - 1];
+                            if (!tc2) throw new Error('[T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] inexistant (' + row2.length + ' colonne(s))');
+                            iaSetCellText(xmlDoc, tc2, o.texte); log.push('✔ [T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] remplacée'); nOK++;
+                        } else if (o.op === 'inserer_apres') {
+                            var p4 = w.paras[(o.p | 0) - 1]; if (!p4) throw new Error('[P' + o.p + '] inexistant (P1–P' + w.paras.length + ')');
+                            var np = p4.cloneNode(true);
+                            iaSetParaText(xmlDoc, np, o.texte);
+                            p4.parentNode.insertBefore(np, p4.nextSibling);
+                            log.push('✔ paragraphe inséré après [P' + o.p + ']'); nOK++;
+                        } else throw new Error('opération inconnue : ' + o.op);
+                    } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
+                }
+                if (!nOK) return 'AUCUNE opération appliquée — document non téléchargé.\n' + log.join('\n');
+                zip.file('word/document.xml', new XMLSerializer().serializeToString(xmlDoc));
+                var outName = (inp.nom_sortie ? String(inp.nom_sortie).replace(/\.docx$/i, '') : name.replace(/\.docx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.docx';
+                var blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
+                iaDlBlob(outName, blob.type, blob);
+                if (msgsEl) {
+                    var card = E('div', 'ia-card');
+                    card.appendChild(E('h4', '', '📝 Document actualisé — ' + esc(outName)));
+                    card.appendChild(E('div', 'ia-note', nOK + '/' + ops.length + ' modification(s) appliquée(s) · mise en forme d\'origine préservée · le téléchargement a démarré automatiquement.'));
+                    var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
+                    b.onclick = function () { iaDlBlob(outName, blob.type, blob); };
+                    dl.appendChild(b); card.appendChild(dl);
+                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                }
+                return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s), document « ' + outName + ' » téléchargé chez l\'utilisateur (mise en forme d\'origine préservée).\n' + log.join('\n');
+            }
+
             function iaScroll(el) { try { el.lastElementChild && el.lastElementChild.scrollIntoView({ block: 'end' }); } catch (e) { } }
 
             /* ═══ GÉNÉRATION DE RAPPORTS (PDF · Word · PPTX) ═══ */
@@ -9769,10 +9997,12 @@
             function iaEnsurePdf() { return window.html2pdf ? Promise.resolve() : iaLoadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js'); }
             function iaEnsurePptx() { return window.PptxGenJS ? Promise.resolve() : iaLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'); }
 
-            async function iaFigPng(fig) {
+            async function iaFigPng(fig, C) {
+                /* Figures des rapports : design system des documents (bleu #0b5e8e)
+                   par défaut ; C = couleur principale du style demandé par le client. */
                 return await Plotly.toImage({
                     data: fig.data || [],
-                    layout: Object.assign({ paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 12 }, margin: { t: 40, r: 20, b: 60, l: 60 }, colorway: ['#1a237e', '#d97757', '#2e7d32', '#f9a825', '#6a1b9a', '#00838f', '#c62828', '#546e7a'] }, fig.layout || {})
+                    layout: Object.assign({ paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 12 }, margin: { t: 40, r: 20, b: 60, l: 60 }, colorway: [C || '#0b5e8e', '#d97757', '#2e7d32', '#f9a825', '#0b3a56', '#00838f', '#c62828', '#546e7a'] }, fig.layout || {})
                 }, { format: 'png', width: 1000, height: 560, scale: 2 });
             }
 
@@ -9789,9 +10019,10 @@
                fichiers MHTML ; sinon dataURL inline. */
             function iaRepHtml(inp, forWord) {
                 var st = inp.style || {};
-                var C = st.couleur_principale || '#1a237e';
+                var C = st.couleur_principale || '#0b5e8e';
                 var C2 = st.couleur_secondaire || C;
-                var font = st.police || "'Segoe UI', Arial, sans-serif";
+                var font = st.police || "'Times New Roman', Georgia, serif";
+                var hfont = st.police || "Arial, Helvetica, sans-serif";
                 var entete = st.entete || 'Programme Élargi de Vaccination — RDC';
                 var pied = st.pied_de_page || 'Rapport généré automatiquement par l\'assistant IA du Dashboard PEV de routine — données DHIS2 (SNIS RDC), sujettes à validation.';
                 var logo = iaLogoData(st.logo);
@@ -9807,32 +10038,52 @@
                         logoTag = '<div style="margin-bottom:22px"><img src="' + logo + '" style="height:72px;max-width:240px;object-fit:contain"></div>';
                     }
                 }
+                var enteteHtml;
+                if (st.entete_lignes && st.entete_lignes.length) {
+                    enteteHtml = st.entete_lignes.map(function (l) { return '<div style="font-size:13px;font-weight:700;color:#1f1f1f;margin:2px 0">' + esc(l) + '</div>'; }).join('');
+                } else {
+                    enteteHtml = '<div style="font-size:12px;letter-spacing:3px;color:' + (st.couleur_secondaire ? C2 : '#8a877e') + ';text-transform:uppercase">' + esc(entete) + '</div>';
+                }
                 var h = '<div style="font-family:' + font + ';color:#222;font-size:13px;line-height:1.6">';
-                h += '<div style="text-align:center;padding:' + (logo ? '90px' : '130px') + ' 30px 40px;page-break-after:always">' + logoTag +
-                    '<div style="font-size:12px;letter-spacing:3px;color:' + (st.couleur_secondaire ? C2 : '#8a877e') + ';text-transform:uppercase">' + esc(entete) + '</div>' +
-                    '<h1 style="font-size:32px;color:' + C + ';margin:26px 0 10px">' + esc(inp.titre || 'Rapport d\'analyse') + '</h1>' +
+                h += '<div style="text-align:center;padding:' + (logo ? '60px' : '90px') + ' 30px 40px;page-break-after:always">' + logoTag +
+                    enteteHtml +
+                    '<h1 style="font-family:' + hfont + ';font-size:32px;color:' + C + ';margin:26px 0 10px">' + esc(inp.titre || 'Rapport d\'analyse') + '</h1>' +
                     (inp.sous_titre ? '<div style="font-size:16px;color:#555">' + esc(inp.sous_titre) + '</div>' : '') +
                     (inp.periode ? '<div style="margin-top:26px;font-size:14px;color:#444"><b>Période :</b> ' + esc(inp.periode) + '</div>' : '') +
                     '<div style="margin-top:60px;color:#8a877e;font-size:11px">' + (inp.auteur ? esc(inp.auteur) + ' · ' : '') + 'Généré le ' + date + ' · Source : DHIS2 (SNIS)</div>' +
                     '</div>';
                 (inp.sections || []).forEach(function (sec, i) {
                     h += '<div style="' + (i > 0 ? 'page-break-before:always;' : '') + 'padding:6px 0">' +
-                        '<h2 style="color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:19px">' + (i + 1) + '. ' + esc(sec.titre || '') + '</h2>';
+                        '<h2 style="font-family:' + hfont + ';color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:19px">' + (i + 1) + '. ' + esc(sec.titre || '') + '</h2>';
                     if (sec.contenu) h += '<div>' + md(sec.contenu) + '</div>';
-                    if (sec.tableau && sec.tableau.colonnes) {
-                        h += '<table style="border-collapse:collapse;width:100%;font-size:11.5px;margin:12px 0"><tr>' +
-                            sec.tableau.colonnes.map(function (c) { return '<th style="background:' + C + ';color:#fff;padding:6px 8px;border:1px solid ' + C + ';text-align:left">' + esc(c) + '</th>'; }).join('') + '</tr>';
-                        (sec.tableau.lignes || []).forEach(function (l, ri) {
-                            h += '<tr>' + l.map(function (v) { return '<td style="border:1px solid #ddd;padding:5px 8px;' + (ri % 2 ? 'background:#f7f8fc' : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>';
+                    var tbls = [];
+                    if (sec.tableau && sec.tableau.colonnes) tbls.push(sec.tableau);
+                    (sec.tableaux || []).forEach(function (tb) { if (tb && tb.colonnes) tbls.push(tb); });
+                    tbls.forEach(function (tb) {
+                        if (tb.titre) h += '<div style="font-weight:700;font-style:italic;color:#444;font-size:12px;margin:12px 0 4px">' + esc(tb.titre) + '</div>';
+                        h += '<table style="border-collapse:collapse;width:100%;font-size:11.5px;margin:6px 0 12px"><tr>' +
+                            tb.colonnes.map(function (c) { return '<th style="font-family:' + hfont + ';background:' + C + ';color:#fff;padding:6px 8px;border:1px solid ' + C + ';text-align:left">' + esc(c) + '</th>'; }).join('') + '</tr>';
+                        (tb.lignes || []).forEach(function (l, ri) {
+                            h += '<tr>' + (l || []).map(function (v) { return '<td style="border:1px solid #c6d3dc;padding:5px 8px;' + (ri % 2 ? 'background:#eef5fa' : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>';
                         });
                         h += '</table>';
-                    }
+                        if (tb.commentaire) h += '<div style="font-size:12px;margin:0 0 12px"><b>Commentaire :</b> ' + md(tb.commentaire) + '</div>';
+                    });
                     if (sec._png) {
                         if (forWord) { var nm = 'fig' + i + '.png'; images.push({ name: nm, b64: String(sec._png).split(',')[1] }); h += '<div style="text-align:center;margin:12px 0"><img src="file:///C:/rapport/' + nm + '" width="620"></div>'; }
                         else h += '<div style="text-align:center;margin:12px 0"><img src="' + sec._png + '" style="width:100%;max-width:680px"></div>';
                     }
+                    if (sec.commentaire) h += '<div style="font-size:12px;margin:8px 0 0"><b>Commentaire :</b> ' + md(sec.commentaire) + '</div>';
                     h += '</div>';
                 });
+                var sig = inp.signature;
+                if (sig && (sig.lieu || sig.fonction || sig.nom)) {
+                    h += '<div style="margin-top:40px;page-break-inside:avoid">' +
+                        '<div>Fait à ' + esc(sig.lieu || '') + (sig.date ? ', le ' + esc(sig.date) : '') + '.</div>' +
+                        (sig.fonction ? '<div style="text-align:right;font-weight:700;margin-top:22px">' + esc(sig.fonction) + '</div>' : '') +
+                        (sig.nom ? '<div style="text-align:right;font-weight:700;margin-top:52px">' + esc(sig.nom) + '</div>' : '') +
+                        '</div>';
+                }
                 h += '<div style="margin-top:24px;color:#8a877e;font-size:10.5px;border-top:1px solid #e0e0e0;padding-top:8px">' + esc(pied) + '</div></div>';
                 return { html: h, images: images };
             }
@@ -9854,24 +10105,213 @@
                 } finally { host.remove(); }
             }
 
-            function iaRepWord(inp, safe) {
-                var r = iaRepHtml(inp, true);
-                var B = '----=_RapportPEV_' + Date.now();
-                var m = 'MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary="' + B + '"\r\n\r\n' +
-                    '--' + B + '\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Location: file:///C:/rapport/doc.htm\r\n\r\n' +
-                    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">' +
-                    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--></head><body>' + r.html + '</body></html>\r\n\r\n';
-                r.images.forEach(function (im) {
-                    m += '--' + B + '\r\nContent-Location: file:///C:/rapport/' + im.name + '\r\nContent-Transfer-Encoding: base64\r\nContent-Type: ' + (im.mime || 'image/png') + '\r\n\r\n' + im.b64 + '\r\n\r\n';
+            /* ═══ COMPÉTENCE WORD : génération d'un VRAI .docx natif (OOXML) ═══
+               Remplace l'ancienne astuce MHTML (.doc) : le fichier produit est un
+               authentique document Word éditable — styles de titres, tableaux à
+               en-tête répétée, figures intégrées, page de garde officielle
+               (en-tête institutionnel multi-lignes), pied de page numéroté et
+               bloc signature. Construit à la main via JSZip (déjà utilisé). */
+            function iaOoxEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+            function iaOoxRPr(o) {
+                o = o || {};
+                var r = '';
+                if (o.font) r += '<w:rFonts w:ascii="' + iaOoxEsc(o.font) + '" w:hAnsi="' + iaOoxEsc(o.font) + '" w:cs="' + iaOoxEsc(o.font) + '"/>';
+                if (o.b) r += '<w:b/>';
+                if (o.i) r += '<w:i/>';
+                if (o.color) r += '<w:color w:val="' + o.color + '"/>';
+                if (o.sz) r += '<w:sz w:val="' + o.sz + '"/><w:szCs w:val="' + o.sz + '"/>';
+                if (o.spacing) r += '<w:spacing w:val="' + o.spacing + '"/>';
+                return r ? '<w:rPr>' + r + '</w:rPr>' : '';
+            }
+            function iaOoxRun(text, o) {
+                var parts = String(text == null ? '' : text).split('\n');
+                return '<w:r>' + iaOoxRPr(o) + parts.map(function (t) { return '<w:t xml:space="preserve">' + iaOoxEsc(t) + '</w:t>'; }).join('<w:br/>') + '</w:r>';
+            }
+            function iaOoxP(runs, o) {
+                o = o || {};
+                var pr = '';
+                if (o.style) pr += '<w:pStyle w:val="' + o.style + '"/>';
+                if (o.bullet) pr += '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr><w:ind w:left="425" w:hanging="212"/>';
+                if (o.spacingBefore || o.spacingAfter !== undefined) pr += '<w:spacing' + (o.spacingBefore ? ' w:before="' + o.spacingBefore + '"' : '') + (o.spacingAfter !== undefined ? ' w:after="' + o.spacingAfter + '"' : '') + '/>';
+                if (o.jc) pr += '<w:jc w:val="' + o.jc + '"/>';
+                return '<w:p>' + (pr ? '<w:pPr>' + pr + '</w:pPr>' : '') + (runs || '') + '</w:p>';
+            }
+            /* **gras** → segments alternés normal/gras */
+            function iaOoxMdRuns(text, base) {
+                var segs = String(text == null ? '' : text).split(/\*\*/), out = '';
+                for (var i = 0; i < segs.length; i++) {
+                    if (!segs[i]) continue;
+                    out += iaOoxRun(segs[i], i % 2 ? Object.assign({}, base, { b: true }) : base);
+                }
+                return out || iaOoxRun('', base);
+            }
+            /* Markdown simple → paragraphes : listes -, mini-titres #, texte */
+            function iaOoxMdBlock(text, base) {
+                var out = '';
+                String(text == null ? '' : text).replace(/\r/g, '').split('\n').forEach(function (ln) {
+                    var t = ln.trim(), m;
+                    if (!t) return;
+                    if ((m = t.match(/^#{1,4}\s+(.*)$/))) out += iaOoxP(iaOoxMdRuns(m[1], Object.assign({}, base, { b: true })), { spacingBefore: 120 });
+                    else if ((m = t.match(/^[-•*]\s+(.*)$/))) out += iaOoxP(iaOoxMdRuns(m[1], base), { bullet: true, spacingAfter: 40 });
+                    else out += iaOoxP(iaOoxMdRuns(t, base), {});
                 });
-                m += '--' + B + '--';
-                iaDlBlob(safe + '.doc', 'application/msword', m);
+                return out;
+            }
+            function iaOoxTable(cols, rows, C, font, hFont) {
+                var nc = (cols || []).length || 1;
+                var gw = Math.max(1, Math.floor(9638 / nc));
+                var bd = '<w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (s) { return '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="C6D3DC"/>'; }).join('') + '</w:tblBorders>';
+                var x = '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/>' + bd + '<w:tblLayout w:type="autofit"/><w:tblCellMar><w:left w:w="85" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar></w:tblPr>';
+                x += '<w:tblGrid>' + Array.apply(null, Array(nc)).map(function () { return '<w:gridCol w:w="' + gw + '"/>'; }).join('') + '</w:tblGrid>';
+                x += '<w:tr><w:trPr><w:tblHeader/></w:trPr>' + (cols || []).map(function (c) {
+                    return '<w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="' + C + '"/><w:vAlign w:val="center"/></w:tcPr>' + iaOoxP(iaOoxRun(String(c == null ? '' : c), { b: true, color: 'FFFFFF', sz: 19, font: hFont || font }), { spacingAfter: 0 }) + '</w:tc>';
+                }).join('') + '</w:tr>';
+                (rows || []).forEach(function (l, ri) {
+                    l = l || [];
+                    x += '<w:tr>' + (cols || []).map(function (c, ci) {
+                        var v = l[ci];
+                        return '<w:tc><w:tcPr>' + (ri % 2 ? '<w:shd w:val="clear" w:color="auto" w:fill="EEF5FA"/>' : '') + '<w:vAlign w:val="center"/></w:tcPr>' + iaOoxP(iaOoxRun(String(v == null ? '' : v), { sz: 19, font: font }), { spacingAfter: 0 }) + '</w:tc>';
+                    }).join('') + '</w:tr>';
+                });
+                return x + '</w:tbl>';
+            }
+            function iaOoxImage(relId, cx, cy, id) {
+                return '<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="' + id + '" name="Figure' + id + '"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="' + id + '" name="Figure' + id + '"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="' + relId + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+            }
+            function iaImgSize(dataURL) {
+                return new Promise(function (res) {
+                    var im = new Image();
+                    im.onload = function () { res({ w: im.naturalWidth || 1000, h: im.naturalHeight || 560 }); };
+                    im.onerror = function () { res({ w: 1000, h: 560 }); };
+                    im.src = dataURL;
+                });
+            }
+            async function iaRepDocx(inp, safe) {
+                await iaEnsureZip();
+                var st = inp.style || {};
+                var C = (st.couleur_principale || '#0b5e8e').replace('#', '').toUpperCase();
+                var font = String(st.police || 'Times New Roman').replace(/['"]/g, '').split(',')[0].trim() || 'Times New Roman';
+                var hFont = st.police ? font : 'Arial'; /* design de référence : corps serif, titres sans gras */
+                var pied = st.pied_de_page || 'Rapport généré par l\'assistant IA du Dashboard PEV de routine — données DHIS2 (SNIS RDC), sujettes à validation.';
+                var date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                var entetes = (st.entete_lignes && st.entete_lignes.length) ? st.entete_lignes : [st.entete || 'Programme Élargi de Vaccination — RDC'];
+                var media = [], imgRels = [], relN = 10, picN = 0;
+                function addImage(dataURL) {
+                    var m = /^data:image\/(png|jpe?g)/.exec(String(dataURL || ''));
+                    var ext = (m && m[1].charAt(0) === 'j') ? 'jpeg' : 'png';
+                    var nm = 'image' + (media.length + 1) + '.' + ext;
+                    media.push({ name: nm, b64: String(dataURL).split(',')[1] });
+                    var id = 'rId' + (relN++);
+                    imgRels.push('<Relationship Id="' + id + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + nm + '"/>');
+                    return id;
+                }
+                var base = { sz: 22, font: font };
+                var body = '';
+                /* — Page de garde — */
+                var logo = iaLogoData(st.logo);
+                if (logo) {
+                    var ls = await iaImgSize(logo);
+                    var lh = 914400, lw = Math.round(lh * ls.w / Math.max(1, ls.h));
+                    if (lw > 2743200) { lw = 2743200; lh = Math.round(lw * ls.h / Math.max(1, ls.w)); }
+                    body += iaOoxImage(addImage(logo), lw, lh, ++picN);
+                }
+                entetes.forEach(function (l) { body += iaOoxP(iaOoxRun(String(l), { b: true, sz: 24, color: '1F1F1F', font: hFont }), { jc: 'center', spacingAfter: 40 }); });
+                body += iaOoxP(iaOoxRun(inp.titre || 'Rapport d\'analyse', { b: true, sz: 56, color: C, font: hFont }), { jc: 'center', spacingBefore: 1400, spacingAfter: 240 });
+                if (inp.sous_titre) body += iaOoxP(iaOoxRun(inp.sous_titre, { sz: 30, color: '555555', font: font }), { jc: 'center', spacingAfter: 200 });
+                if (inp.periode) body += iaOoxP(iaOoxMdRuns('**Période :** ' + inp.periode, { sz: 26, font: font }), { jc: 'center', spacingBefore: 400 });
+                body += iaOoxP(iaOoxRun((inp.auteur ? inp.auteur + ' · ' : '') + 'Généré le ' + date + ' · Source : DHIS2 (SNIS)', { sz: 20, color: '8A877E', font: font }), { jc: 'center', spacingBefore: 1600 });
+                body += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+                /* — Sections — */
+                var secs = inp.sections || [];
+                for (var i = 0; i < secs.length; i++) {
+                    var sec = secs[i];
+                    body += iaOoxP(iaOoxRun((i + 1) + '. ' + (sec.titre || ''), { b: true, sz: 30, color: C, font: hFont }), { style: 'Heading1', spacingBefore: i ? 360 : 80, spacingAfter: 140 });
+                    if (sec.contenu) body += iaOoxMdBlock(sec.contenu, base);
+                    var tbls = [];
+                    if (sec.tableau && sec.tableau.colonnes) tbls.push(sec.tableau);
+                    (sec.tableaux || []).forEach(function (tb) { if (tb && tb.colonnes) tbls.push(tb); });
+                    for (var j = 0; j < tbls.length; j++) {
+                        var tb = tbls[j];
+                        if (tb.titre) body += iaOoxP(iaOoxRun(tb.titre, { b: true, i: true, sz: 21, color: '444444', font: font }), { spacingBefore: 180, spacingAfter: 60 });
+                        body += iaOoxTable(tb.colonnes, tb.lignes || [], C, font, hFont);
+                        body += iaOoxP('', { spacingAfter: 60 });
+                        if (tb.commentaire) body += iaOoxP(iaOoxRun('Commentaire : ', { b: true, sz: 21, font: font }) + iaOoxMdRuns(tb.commentaire, { sz: 21, font: font }), { spacingAfter: 180 });
+                    }
+                    if (sec._png) {
+                        var fs = await iaImgSize(sec._png);
+                        var cw = 5750000, chh = Math.round(cw * fs.h / Math.max(1, fs.w));
+                        body += iaOoxImage(addImage(sec._png), cw, chh, ++picN);
+                    }
+                    if (sec.commentaire) body += iaOoxP(iaOoxRun('Commentaire : ', { b: true, sz: 21, font: font }) + iaOoxMdRuns(sec.commentaire, { sz: 21, font: font }), { spacingBefore: 80 });
+                }
+                /* — Bloc signature — */
+                var sig = inp.signature;
+                if (sig && (sig.lieu || sig.fonction || sig.nom)) {
+                    body += iaOoxP(iaOoxRun('Fait à ' + (sig.lieu || '') + (sig.date ? ', le ' + sig.date : '') + '.', base), { spacingBefore: 600 });
+                    if (sig.fonction) body += iaOoxP(iaOoxRun(sig.fonction, { b: true, sz: 23, font: font }), { jc: 'right', spacingBefore: 300 });
+                    if (sig.nom) body += iaOoxP(iaOoxRun(sig.nom, Object.assign({}, base, { b: true })), { jc: 'right', spacingBefore: 700 });
+                }
+                var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>' + body +
+                    '<w:sectPr><w:footerReference w:type="default" r:id="rId3"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+                var stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+                    '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="' + iaOoxEsc(font) + '" w:hAnsi="' + iaOoxEsc(font) + '"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+                    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>' +
+                    '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="300" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:rFonts w:ascii="' + iaOoxEsc(hFont) + '" w:hAnsi="' + iaOoxEsc(hFont) + '"/><w:b/><w:color w:val="' + C + '"/><w:sz w:val="30"/></w:rPr></w:style>' +
+                    '<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:rFonts w:ascii="' + iaOoxEsc(hFont) + '" w:hAnsi="' + iaOoxEsc(hFont) + '"/><w:b/><w:color w:val="' + C + '"/><w:sz w:val="26"/></w:rPr></w:style>' +
+                    '</w:styles>';
+                var numberingXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+                    '<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="singleLevel"/><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="425" w:hanging="212"/></w:pPr></w:lvl></w:abstractNum>' +
+                    '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>';
+                var footerXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+                    '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
+                    '<w:r><w:rPr><w:sz w:val="15"/><w:color w:val="8A877E"/></w:rPr><w:t xml:space="preserve">' + iaOoxEsc(pied) + ' — Page </w:t></w:r>' +
+                    '<w:r><w:rPr><w:sz w:val="15"/><w:color w:val="8A877E"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r>' +
+                    '<w:r><w:rPr><w:sz w:val="15"/><w:color w:val="8A877E"/></w:rPr><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+                    '<w:r><w:rPr><w:sz w:val="15"/><w:color w:val="8A877E"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>' +
+                    '<w:r><w:rPr><w:sz w:val="15"/><w:color w:val="8A877E"/></w:rPr><w:t>1</w:t></w:r>' +
+                    '<w:r><w:rPr><w:sz w:val="15"/><w:color w:val="8A877E"/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>' +
+                    '</w:p></w:ftr>';
+                var ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+                    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+                    '<Default Extension="xml" ContentType="application/xml"/>' +
+                    '<Default Extension="png" ContentType="image/png"/>' +
+                    '<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+                    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+                    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+                    '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+                    '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' +
+                    '</Types>';
+                var rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+                var docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+                    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+                    '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' +
+                    imgRels.join('') + '</Relationships>';
+                var zip = new JSZip();
+                zip.file('[Content_Types].xml', ct);
+                zip.file('_rels/.rels', rootRels);
+                zip.file('word/document.xml', docXml);
+                zip.file('word/styles.xml', stylesXml);
+                zip.file('word/numbering.xml', numberingXml);
+                zip.file('word/footer1.xml', footerXml);
+                zip.file('word/_rels/document.xml.rels', docRels);
+                media.forEach(function (m2) { zip.file('word/media/' + m2.name, m2.b64, { base64: true }); });
+                var blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
+                iaDlBlob(safe + '.docx', blob.type, blob);
             }
 
             async function iaRepPptx(inp, safe) {
                 await iaEnsurePptx();
                 var st = inp.style || {};
-                var C = (st.couleur_principale || '#1a237e').replace('#', '');
+                var C = (st.couleur_principale || '#0b5e8e').replace('#', '');
                 var entete = st.entete || 'Programme Élargi de Vaccination — RDC';
                 var pied = st.pied_de_page || '';
                 var logo = iaLogoData(st.logo);
@@ -9887,7 +10327,8 @@
                     if (logo) sl.addImage({ data: logo, x: 9.35, y: 0.12, w: 0.45, h: 0.45, sizing: { type: 'contain', w: 0.45, h: 0.45 } });
                     if (pied) sl.addText(pied, { x: 0.4, y: 5.3, w: 9.2, h: 0.3, fontSize: 8, color: '999999', align: 'center' });
                     sl.addText((i + 1) + '. ' + (sec.titre || ''), { x: 0.4, y: 0.25, w: 8.8, h: 0.6, fontSize: 20, bold: true, color: C });
-                    var hasVis = !!(sec._png || (sec.tableau && sec.tableau.colonnes));
+                    var tbP = (sec.tableau && sec.tableau.colonnes) ? sec.tableau : ((sec.tableaux || []).filter(function (t2) { return t2 && t2.colonnes; })[0] || null);
+                    var hasVis = !!(sec._png || tbP);
                     if (sec.contenu) {
                         var bullets = String(sec.contenu).replace(/\*\*/g, '').split(/\n+/).filter(function (t) { return t.trim(); }).slice(0, 9)
                             .map(function (t) { return { text: t.replace(/^[-•]\s*/, ''), options: { bullet: true, fontSize: 12.5, color: '363636', breakLine: true } }; });
@@ -9895,9 +10336,9 @@
                     }
                     if (sec._png) {
                         sl.addImage({ data: sec._png, x: sec.contenu ? 5.0 : 0.9, y: 1.2, w: sec.contenu ? 4.5 : 8.2, h: sec.contenu ? 2.52 : 4.59 });
-                    } else if (sec.tableau && sec.tableau.colonnes) {
-                        var rows = [sec.tableau.colonnes.map(function (c) { return { text: String(c), options: { bold: true, color: 'FFFFFF', fill: { color: C }, fontSize: 10 } }; })]
-                            .concat((sec.tableau.lignes || []).slice(0, 13).map(function (l) { return l.map(function (v) { return { text: String(v == null ? '' : v), options: { fontSize: 9.5, color: '333333' } }; }); }));
+                    } else if (tbP) {
+                        var rows = [tbP.colonnes.map(function (c) { return { text: String(c), options: { bold: true, color: 'FFFFFF', fill: { color: C }, fontSize: 10 } }; })]
+                            .concat((tbP.lignes || []).slice(0, 13).map(function (l) { return l.map(function (v) { return { text: String(v == null ? '' : v), options: { fontSize: 9.5, color: '333333' } }; }); }));
                         sl.addTable(rows, { x: sec.contenu ? 5.0 : 0.4, y: 1.15, w: sec.contenu ? 4.6 : 9.2, border: { pt: 0.5, color: 'CCCCCC' } });
                     }
                 });
@@ -9906,6 +10347,8 @@
 
             async function iaGenReport(inp, msgsEl) {
                 var safe = (inp.titre || 'rapport').replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_') || 'rapport';
+                if (inp.style) { inp.style = iaParseMaybe(inp.style); if (inp.style && inp.style.entete_lignes) inp.style.entete_lignes = iaParseMaybe(inp.style.entete_lignes); }
+                if (inp.signature) inp.signature = iaParseMaybe(inp.signature);
                 var secs = iaParseMaybe(inp.sections) || [];
                 if (!Array.isArray(secs)) secs = [secs];
                 inp.sections = secs;
@@ -9920,11 +10363,22 @@
                             secs[i].tableau = (Array.isArray(tb.colonnes) && Array.isArray(tb.lignes)) ? tb : null;
                         } else secs[i].tableau = null;
                     }
-                    if (secs[i].figure && !secs[i]._png) { try { secs[i]._png = await iaFigPng(secs[i].figure); } catch (e) { } }
+                    if (secs[i].tableaux) {
+                        var tbx = iaParseMaybe(secs[i].tableaux);
+                        if (!Array.isArray(tbx)) tbx = tbx ? [tbx] : [];
+                        secs[i].tableaux = tbx.map(function (t0) {
+                            t0 = iaParseMaybe(t0);
+                            if (!t0 || typeof t0 !== 'object') return null;
+                            t0.colonnes = iaParseMaybe(t0.colonnes); t0.lignes = iaParseMaybe(t0.lignes);
+                            if (Array.isArray(t0.lignes)) t0.lignes = t0.lignes.map(function (l) { l = iaParseMaybe(l); return Array.isArray(l) ? l : (l && typeof l === 'object' ? Object.values(l) : [l]); });
+                            return (Array.isArray(t0.colonnes) && Array.isArray(t0.lignes)) ? t0 : null;
+                        }).filter(Boolean);
+                    }
+                    if (secs[i].figure && !secs[i]._png) { try { secs[i]._png = await iaFigPng(secs[i].figure, (inp.style || {}).couleur_principale); } catch (e) { } }
                 }
                 var fmt = String(inp.format || 'pdf').toLowerCase();
                 if (fmt.indexOf('ppt') === 0) { await iaRepPptx(inp, safe); fmt = 'pptx'; }
-                else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { iaRepWord(inp, safe); fmt = 'word'; }
+                else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { await iaRepDocx(inp, safe); fmt = 'word'; }
                 else { await iaRepPdf(inp, safe); fmt = 'pdf'; }
                 if (msgsEl) {
                     var card = E('div', 'ia-card');
@@ -10208,7 +10662,7 @@
                 mic.onclick = toggleSpeech;
                 voice.onclick = toggleSpeech;
                 bSet.onclick = function () { iaSettings(); };
-                bNew.onclick = function () { if (IA.busy) return; if (speechActive && speech) speech.stop(); IA.msgs = []; IA.files = []; ta.value = ''; msgsEl.innerHTML = ''; iaRenderAtts(); hero(); syncComposer(); };
+                bNew.onclick = function () { if (IA.busy) return; if (speechActive && speech) speech.stop(); IA.msgs = []; IA.files = []; IA.docs = {}; IA.imgs = {}; ta.value = ''; msgsEl.innerHTML = ''; iaRenderAtts(); hero(); syncComposer(); };
                 iaRenderAtts();
                 syncComposer();
             };
