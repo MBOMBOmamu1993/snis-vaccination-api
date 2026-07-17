@@ -8842,13 +8842,13 @@
             var IA_PROVIDERS = {
                 minimax: {
                     label: 'MiniMax M3', model: 'minimax-m3:cloud', kind: 'ollama',
-                    path: '/api/chat', keyHeader: 'x-ollama-key', think: true,
+                    path: '/api/chat', keyHeader: 'x-ollama-key', think: 'high',
                     keyLabel: 'Clé API Ollama Cloud', keyPlaceholder: 'votre clé ollama.com',
                     keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
                 },
                 claude: {
                     label: 'Claude Opus 4.8', model: 'claude-opus-4-8', kind: 'anthropic',
-                    path: '/v1/messages', keyHeader: 'x-anthropic-key', think: false,
+                    path: '/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
                     keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
                     keyHint: 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.'
                 }
@@ -9102,13 +9102,21 @@
                     if (m.role === 'user' && m.images && m.images.length) {
                         return { role: 'user', content: m.content || '', images: m.images.map(iaStripData) };
                     }
+                    if (m.role === 'assistant' && m._thinkBlocks) {
+                        /* les blocs signés Anthropic sont internes : ne pas les envoyer à Ollama */
+                        var c = {}; for (var k in m) if (k !== '_thinkBlocks') c[k] = m[k];
+                        return c;
+                    }
                     return m;
                 });
             }
             /* Ollama -> Anthropic : blocs de contenu, tool_use/tool_result appariés
                dans l'ordre (Ollama n'a pas d'identifiant de tool_call, on en forge un).
-               Le raisonnement n'est pas rejoué : sans signature Anthropic il serait
-               refusé — d'où think:false côté Claude, ce qui garde l'historique portable. */
+               Raisonnement : les blocs `thinking` SIGNÉS produits par Claude sont
+               conservés dans m._thinkBlocks et rejoués tels quels — l'API l'exige
+               quand le raisonnement étendu est actif et que le message assistant
+               contient un tool_use. Le raisonnement texte de MiniMax (sans
+               signature) n'est jamais envoyé à Anthropic. */
             function iaMsgsToAnthropic(messages) {
                 var out = [], ids = [];
                 for (var i = 0; i < messages.length; i++) {
@@ -9122,7 +9130,7 @@
                         if (m.content) blocks.push({ type: 'text', text: m.content });
                         out.push({ role: 'user', content: blocks.length ? blocks : [{ type: 'text', text: '(vide)' }] });
                     } else if (m.role === 'assistant') {
-                        var ab = [];
+                        var ab = (m._thinkBlocks || []).slice();
                         if (m.content) ab.push({ type: 'text', text: m.content });
                         ids = [];
                         (m.tool_calls || []).forEach(function (tc, k) {
@@ -9155,14 +9163,18 @@
                la clé du service doit rester côté serveur.
                  mode 'code' → x-access-code (quota décompté par le proxy)
                  mode 'key'  → clé personnelle du fournisseur, simplement relayée. */
-            async function iaCallAPI(messages, onText, onThink) {
+            async function iaCallAPI(messages, onText, onThink, provKey) {
                 var mode = cfg('mode') || 'key';
-                var prov = iaProv();
+                /* provKey : fournisseur figé par la boucle agentique — un changement
+                   dans ⚙ Accès ne s'applique qu'à la prochaine demande, jamais au
+                   milieu d'un enchaînement d'outils en cours. */
+                var pk = IA_PROVIDERS[provKey] ? provKey : iaProvKey();
+                var prov = IA_PROVIDERS[pk];
                 if (!IA_PROXY_URL) throw new Error("L'assistant IA nécessite le proxy sécurisé, qui n'est pas configuré.");
                 var url = IA_PROXY_URL.replace(/\/+$/, '') + prov.path;
                 var headers = { 'content-type': 'application/json' };
                 if (mode === 'code') headers['x-access-code'] = cfg('code');
-                else headers[prov.keyHeader] = iaUserKey(iaProvKey());
+                else headers[prov.keyHeader] = iaUserKey(pk);
 
                 var body;
                 if (prov.kind === 'anthropic') {
@@ -9172,15 +9184,22 @@
                         system: iaSystem(), tools: iaToolsAnthropic(),
                         messages: iaMsgsToAnthropic(messages)
                     };
+                    /* Raisonnement étendu adaptatif en effort high : analyses de
+                       meilleure qualité. Sur Opus 4.8, budget_tokens n'existe plus —
+                       la profondeur se règle via output_config.effort. Les blocs
+                       signés sont capturés puis rejoués (cf. iaMsgsToAnthropic). */
+                    if (prov.think) body.thinking = { type: 'adaptive' };
+                    if (prov.effort) body.output_config = { effort: prov.effort };
                 } else {
                     /* Format natif Ollama : le prompt système est un message ordinaire
-                       en tête de liste (pas de champ `system` séparé). */
+                       en tête de liste (pas de champ `system` séparé).
+                       think accepte un niveau ('low'|'medium'|'high'|'max') ou true. */
                     body = {
                         model: prov.model, stream: true,
                         messages: [{ role: 'system', content: iaSystem() }].concat(iaMsgsToOllama(messages)),
                         tools: IA_TOOLS
                     };
-                    if (prov.think) body.think = true;
+                    if (prov.think) body.think = prov.think;
                 }
 
                 var resp, attempt = 0, netTries = 0;
@@ -9210,9 +9229,9 @@
                     /* Le serveur refuse le mode raisonnement : réessayer sans, une seule fois. */
                     if (resp.status === 400 && prov.think && /think/i.test(msg)) {
                         prov.think = false;
-                        return await iaCallAPI(messages, onText, onThink);
+                        return await iaCallAPI(messages, onText, onThink, pk);
                     }
-                    var autre = iaProvKey() === 'minimax' ? IA_PROVIDERS.claude.label : IA_PROVIDERS.minimax.label;
+                    var autre = pk === 'minimax' ? IA_PROVIDERS.claude.label : IA_PROVIDERS.minimax.label;
                     var bascule = ' Vous pouvez aussi basculer sur ' + autre + ' dans ⚙ Accès.';
                     if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre ' + prov.keyLabel + ' (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
                     if (resp.status === 402) msg = 'Crédits épuisés sur ce compte (' + prov.label + ').' + bascule + ' ' + msg;
@@ -9258,7 +9277,9 @@
 
             /* Flux Anthropic — SSE à événements nommés. Le résultat est normalisé
                au même format que celui d'Ollama (tool_calls {function:{name,arguments}})
-               pour que la boucle agentique reste commune aux deux fournisseurs. */
+               pour que la boucle agentique reste commune aux deux fournisseurs.
+               Les blocs `thinking`/`redacted_thinking` sont capturés AVEC leur
+               signature (anthropic_thinking) pour être rejoués au tour suivant. */
             async function iaReadAnthropicStream(resp, onText, onThink) {
                 var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
                 var blocks = [], stop = null;
@@ -9276,30 +9297,45 @@
                             var cb = ev.content_block;
                             if (cb.type === 'text') blocks[ev.index] = { type: 'text', text: '' };
                             else if (cb.type === 'tool_use') blocks[ev.index] = { type: 'tool_use', name: cb.name, _json: '' };
+                            else if (cb.type === 'thinking') { blocks[ev.index] = { type: 'thinking', thinking: '', _sig: null }; if (onThink) onThink(); }
+                            else if (cb.type === 'redacted_thinking') blocks[ev.index] = { type: 'redacted_thinking', data: cb.data || '' };
                             else blocks[ev.index] = { type: cb.type };
                         } else if (ev.type === 'content_block_delta') {
                             var b = blocks[ev.index]; if (!b) continue;
                             if (ev.delta.type === 'text_delta') { b.text += ev.delta.text; if (onText) onText(ev.delta.text); }
                             else if (ev.delta.type === 'input_json_delta') b._json += ev.delta.partial_json;
+                            else if (ev.delta.type === 'thinking_delta') { b.thinking += (ev.delta.thinking || ''); if (onThink) onThink(); }
+                            else if (ev.delta.type === 'signature_delta') b._sig = (b._sig || '') + ev.delta.signature;
                         } else if (ev.type === 'message_delta') {
                             if (ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
                         }
                     }
                 }
-                var text = '', toolCalls = [];
+                var text = '', toolCalls = [], thinkBlocks = [], thinkTxt = '';
                 blocks.filter(Boolean).forEach(function (b) {
                     if (b.type === 'text') text += (b.text || '');
                     else if (b.type === 'tool_use') {
                         var inp = {}; try { inp = b._json ? JSON.parse(b._json) : {}; } catch (e) { }
                         toolCalls.push({ function: { name: b.name, arguments: inp } });
+                    } else if (b.type === 'thinking') {
+                        thinkTxt += (b.thinking || '');
+                        var tb = { type: 'thinking', thinking: b.thinking || '' };
+                        if (b._sig) tb.signature = b._sig;
+                        thinkBlocks.push(tb);
+                    } else if (b.type === 'redacted_thinking') {
+                        thinkBlocks.push({ type: 'redacted_thinking', data: b.data || '' });
                     }
                 });
-                return { content: text, thinking: '', tool_calls: toolCalls, done_reason: stop };
+                return { content: text, thinking: thinkTxt, tool_calls: toolCalls, done_reason: stop, anthropic_thinking: thinkBlocks };
             }
 
             /* ── Boucle agentique ── */
             async function iaAgentLoop(msgsEl) {
                 var turns = 0;
+                /* Fournisseur figé pour toute la boucle : un tour d'outils entamé
+                   avec un modèle se termine avec lui (le raisonnement signé de
+                   Claude n'est pas transférable à mi-parcours). */
+                var loopProv = iaProvKey();
                 while (turns++ < IA_MAX_TOOL_TURNS) {
                     var work = E('div', 'ia-work', '<i></i><i></i><i></i> <span>Analyse en cours…</span>');
                     msgsEl.appendChild(work); iaScroll(msgsEl);
@@ -9309,13 +9345,15 @@
                         resp = await iaCallAPI(IA.msgs, function (delta) {
                             if (!txtDiv) { var ma = E('div', 'ia-ma'); txtDiv = E('div', 'ia-ma-txt'); txtDiv._raw = ''; ma.appendChild(txtDiv); msgsEl.insertBefore(ma, work); }
                             txtDiv._raw += delta; txtDiv.innerHTML = md(txtDiv._raw); iaScroll(msgsEl);
-                        }, function () { work.querySelector('span').textContent = 'Réflexion en cours…'; });
+                        }, function () { work.querySelector('span').textContent = 'Réflexion en cours…'; }, loopProv);
                     } finally { work.remove(); }
                     /* Message assistant au format Ollama : contenu texte + éventuels
-                       tool_calls ; le raisonnement est renvoyé tel quel au modèle. */
+                       tool_calls ; le raisonnement est renvoyé tel quel au modèle.
+                       Les blocs signés Anthropic sont gardés à part (_thinkBlocks). */
                     var am = { role: 'assistant', content: resp.content || '' };
                     if (resp.thinking) am.thinking = resp.thinking;
                     if (resp.tool_calls.length) am.tool_calls = resp.tool_calls;
+                    if (resp.anthropic_thinking && resp.anthropic_thinking.length) am._thinkBlocks = resp.anthropic_thinking;
                     IA.msgs.push(am);
                     if (!resp.tool_calls.length) return;
                     for (var i = 0; i < resp.tool_calls.length; i++) {
@@ -9732,7 +9770,7 @@
                     '<label>Modèle</label>' +
                     '<div class="ia-radio"><label id="iaRadMinimax"><input type="radio" name="iaprov" value="minimax">⚡ ' + IA_PROVIDERS.minimax.label + '</label>' +
                     '<label id="iaRadClaude"><input type="radio" name="iaprov" value="claude">✦ ' + IA_PROVIDERS.claude.label + '</label></div>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Les deux modèles ont les mêmes compétences d\'analyse. Basculez librement — y compris en cours de conversation — selon la disponibilité ou les crédits restants de chaque API.</div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Les deux modèles ont les mêmes compétences d\'analyse et le <b>raisonnement étendu niveau HIGH</b> activé. Basculez librement — y compris en cours de conversation — selon la disponibilité ou les crédits restants de chaque API.</div>' +
                     (hasProxy ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
