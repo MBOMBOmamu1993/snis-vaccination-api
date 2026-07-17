@@ -8833,11 +8833,32 @@
                Marqué dhis2_only côté Worker : il est REFUSÉ sur la route IA
                (aucun accès au quota). Révocable en supprimant la clé KV. */
             var IA_DHIS2_CODE = 'PEV-DHIS-7QK4XZ';
-            /* MiniMax M3 sur Ollama Cloud. Le tag « :cloud » est obligatoire : sans lui
-               Ollama cherche un modèle local et répond « model not found ». */
-            var IA_MODEL = 'minimax-m3:cloud';
-            var IA_MODEL_LABEL = 'MiniMax M3';
-            var IA_THINK = true; /* modèle à raisonnement — désactivé automatiquement si le serveur le refuse */
+            /* ── Fournisseurs d'IA (bascule libre selon la disponibilité/les crédits) ──
+               L'historique de conversation est stocké au format Ollama et converti à la
+               volée pour Anthropic : on peut donc changer de modèle en cours de
+               conversation. Chaque fournisseur a sa propre clé.
+               Note : pour MiniMax, le tag « :cloud » est obligatoire — sans lui Ollama
+               cherche un modèle local et répond « model not found ». */
+            var IA_PROVIDERS = {
+                minimax: {
+                    label: 'MiniMax M3', model: 'minimax-m3:cloud', kind: 'ollama',
+                    path: '/api/chat', keyHeader: 'x-ollama-key', think: true,
+                    keyLabel: 'Clé API Ollama Cloud', keyPlaceholder: 'votre clé ollama.com',
+                    keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
+                },
+                claude: {
+                    label: 'Claude Opus 4.8', model: 'claude-opus-4-8', kind: 'anthropic',
+                    path: '/v1/messages', keyHeader: 'x-anthropic-key', think: false,
+                    keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
+                    keyHint: 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.'
+                }
+            };
+            var IA_DEFAULT_PROVIDER = 'minimax';
+            function iaProvKey() { var p = cfg('provider'); return IA_PROVIDERS[p] ? p : IA_DEFAULT_PROVIDER; }
+            function iaProv() { return IA_PROVIDERS[iaProvKey()]; }
+            /* Clé personnelle propre à chaque fournisseur (pev_ia_key_minimax / _claude).
+               Reprend l'ancienne clé unique (pev_ia_key) pour Claude : migration douce. */
+            function iaUserKey(pk) { return cfg('key_' + pk) || (pk === 'claude' ? cfg('key') : ''); }
             var IA_MAX_TOOL_TURNS = 15;
             var IA_TOOL_RESULT_MAX = 8000; /* caractères renvoyés à l'IA par outil — retourner des résultats compacts */
 
@@ -9073,28 +9094,94 @@
                 msgsEl.appendChild(card); iaScroll(msgsEl);
             }
 
-            /* ── Appel API Ollama Cloud (/api/chat, streaming NDJSON) ──
-               Toujours via le proxy : ollama.com ne renvoie aucun en-tête CORS,
-               un appel direct depuis le navigateur serait bloqué par celui-ci.
+            /* ── Conversion de l'historique (format interne = Ollama) ──
+               Permet de basculer de fournisseur en pleine conversation. */
+            function iaStripData(d) { return String(d).replace(/^data:[^,]+,/, ''); }
+            function iaMsgsToOllama(messages) {
+                return messages.map(function (m) {
+                    if (m.role === 'user' && m.images && m.images.length) {
+                        return { role: 'user', content: m.content || '', images: m.images.map(iaStripData) };
+                    }
+                    return m;
+                });
+            }
+            /* Ollama -> Anthropic : blocs de contenu, tool_use/tool_result appariés
+               dans l'ordre (Ollama n'a pas d'identifiant de tool_call, on en forge un).
+               Le raisonnement n'est pas rejoué : sans signature Anthropic il serait
+               refusé — d'où think:false côté Claude, ce qui garde l'historique portable. */
+            function iaMsgsToAnthropic(messages) {
+                var out = [], ids = [];
+                for (var i = 0; i < messages.length; i++) {
+                    var m = messages[i];
+                    if (m.role === 'user') {
+                        var blocks = [];
+                        (m.images || []).forEach(function (d) {
+                            var mt = /^data:([^;]+);base64,/.exec(d);
+                            blocks.push({ type: 'image', source: { type: 'base64', media_type: mt ? mt[1] : 'image/png', data: iaStripData(d) } });
+                        });
+                        if (m.content) blocks.push({ type: 'text', text: m.content });
+                        out.push({ role: 'user', content: blocks.length ? blocks : [{ type: 'text', text: '(vide)' }] });
+                    } else if (m.role === 'assistant') {
+                        var ab = [];
+                        if (m.content) ab.push({ type: 'text', text: m.content });
+                        ids = [];
+                        (m.tool_calls || []).forEach(function (tc, k) {
+                            var id = 'call_' + i + '_' + k;
+                            ids.push(id);
+                            ab.push({ type: 'tool_use', id: id, name: iaToolName(tc), input: iaToolArgs(tc) });
+                        });
+                        out.push({ role: 'assistant', content: ab.length ? ab : [{ type: 'text', text: '…' }] });
+                    } else if (m.role === 'tool') {
+                        /* Anthropic attend TOUS les résultats d'un tour dans un seul message */
+                        var res = [], k = 0;
+                        while (i < messages.length && messages[i].role === 'tool') {
+                            res.push({ type: 'tool_result', tool_use_id: ids[k] || ('call_' + i + '_' + k), content: String(messages[i].content || '') });
+                            i++; k++;
+                        }
+                        i--;
+                        out.push({ role: 'user', content: res });
+                    }
+                }
+                return out;
+            }
+            function iaToolsAnthropic() {
+                return IA_TOOLS.map(function (t) {
+                    return { name: t.function.name, description: t.function.description, input_schema: t.function.parameters };
+                });
+            }
+
+            /* ── Appel API — Ollama Cloud (NDJSON) ou Anthropic (SSE) ──
+               Toujours via le proxy : ollama.com ne renvoie aucun en-tête CORS et
+               la clé du service doit rester côté serveur.
                  mode 'code' → x-access-code (quota décompté par le proxy)
-                 mode 'key'  → x-ollama-key : clé personnelle simplement relayée. */
+                 mode 'key'  → clé personnelle du fournisseur, simplement relayée. */
             async function iaCallAPI(messages, onText, onThink) {
                 var mode = cfg('mode') || 'key';
+                var prov = iaProv();
                 if (!IA_PROXY_URL) throw new Error("L'assistant IA nécessite le proxy sécurisé, qui n'est pas configuré.");
-                var url = IA_PROXY_URL.replace(/\/+$/, '') + '/api/chat';
+                var url = IA_PROXY_URL.replace(/\/+$/, '') + prov.path;
                 var headers = { 'content-type': 'application/json' };
                 if (mode === 'code') headers['x-access-code'] = cfg('code');
-                else headers['x-ollama-key'] = cfg('key');
+                else headers[prov.keyHeader] = iaUserKey(iaProvKey());
 
-                /* Format natif Ollama : le prompt système est un message ordinaire en
-                   tête de liste (pas de champ `system` séparé ni de cache_control). */
-                var body = {
-                    model: IA_MODEL,
-                    stream: true,
-                    messages: [{ role: 'system', content: iaSystem() }].concat(messages),
-                    tools: IA_TOOLS
-                };
-                if (IA_THINK) body.think = true;
+                var body;
+                if (prov.kind === 'anthropic') {
+                    headers['anthropic-version'] = '2023-06-01';
+                    body = {
+                        model: prov.model, max_tokens: 16000, stream: true,
+                        system: iaSystem(), tools: iaToolsAnthropic(),
+                        messages: iaMsgsToAnthropic(messages)
+                    };
+                } else {
+                    /* Format natif Ollama : le prompt système est un message ordinaire
+                       en tête de liste (pas de champ `system` séparé). */
+                    body = {
+                        model: prov.model, stream: true,
+                        messages: [{ role: 'system', content: iaSystem() }].concat(iaMsgsToOllama(messages)),
+                        tools: IA_TOOLS
+                    };
+                    if (prov.think) body.think = true;
+                }
 
                 var resp, attempt = 0, netTries = 0;
                 while (true) {
@@ -9117,24 +9204,32 @@
                 }
                 if (!resp.ok) {
                     var t = await resp.text(); var msg = t;
-                    /* Ollama renvoie {"error":"…"} ; le proxy {"error":{"message":"…"}} */
+                    /* Ollama : {"error":"…"} · Anthropic et le proxy : {"error":{"message":"…"}} */
                     try { var j = JSON.parse(t); msg = (j.error && (j.error.message || j.error)) || t; } catch (e) { }
                     msg = String(msg);
                     /* Le serveur refuse le mode raisonnement : réessayer sans, une seule fois. */
-                    if (resp.status === 400 && IA_THINK && /think/i.test(msg)) {
-                        IA_THINK = false;
+                    if (resp.status === 400 && prov.think && /think/i.test(msg)) {
+                        prov.think = false;
                         return await iaCallAPI(messages, onText, onThink);
                     }
-                    if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre clé API Ollama (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
-                    if (resp.status === 402) msg = 'Quota Ollama Cloud épuisé sur ce compte. Vérifiez votre abonnement sur ollama.com. ' + msg;
-                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + IA_MODEL + ' » introuvable sur Ollama Cloud. Vérifiez que le tag « :cloud » est présent et que le modèle est disponible sur votre compte. ' + msg;
-                    if (resp.status === 429) msg = 'Limite de débit Ollama Cloud atteinte (429) malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message ; si cela persiste, votre abonnement Ollama a atteint sa limite horaire. ' + msg;
+                    var autre = iaProvKey() === 'minimax' ? IA_PROVIDERS.claude.label : IA_PROVIDERS.minimax.label;
+                    var bascule = ' Vous pouvez aussi basculer sur ' + autre + ' dans ⚙ Accès.';
+                    if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre ' + prov.keyLabel + ' (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
+                    if (resp.status === 402) msg = 'Crédits épuisés sur ce compte (' + prov.label + ').' + bascule + ' ' + msg;
+                    if (resp.status === 503) msg = prov.label + ' n\'est pas disponible actuellement.' + bascule + ' ' + msg;
+                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + prov.model + ' » introuvable chez ' + prov.label + '.' + (prov.kind === 'ollama' ? ' Vérifiez que le tag « :cloud » est présent et que le modèle est accessible sur votre compte.' : '') + ' ' + msg;
+                    if (resp.status === 429) msg = 'Limite de débit atteinte (429) chez ' + prov.label + ' malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message.' + bascule + ' ' + msg;
                     throw new Error(msg);
                 }
+                return prov.kind === 'anthropic'
+                    ? await iaReadAnthropicStream(resp, onText, onThink)
+                    : await iaReadOllamaStream(resp, onText, onThink);
+            }
 
-                /* Flux NDJSON : une ligne JSON par événement.
-                   {"message":{"role":"assistant","content":"…","thinking":"…","tool_calls":[…]},"done":false}
-                   puis une ligne finale {"done":true,"done_reason":"stop"}. */
+            /* Flux Ollama — NDJSON, une ligne JSON par événement :
+               {"message":{"role":"assistant","content":"…","thinking":"…","tool_calls":[…]},"done":false}
+               puis une ligne finale {"done":true,"done_reason":"stop"}. */
+            async function iaReadOllamaStream(resp, onText, onThink) {
                 var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
                 var text = '', thinking = '', toolCalls = [], doneReason = null;
                 function handleLine(line) {
@@ -9159,6 +9254,47 @@
                 }
                 handleLine(buf); /* dernière ligne éventuellement sans saut final */
                 return { content: text, thinking: thinking, tool_calls: toolCalls, done_reason: doneReason };
+            }
+
+            /* Flux Anthropic — SSE à événements nommés. Le résultat est normalisé
+               au même format que celui d'Ollama (tool_calls {function:{name,arguments}})
+               pour que la boucle agentique reste commune aux deux fournisseurs. */
+            async function iaReadAnthropicStream(resp, onText, onThink) {
+                var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
+                var blocks = [], stop = null;
+                while (true) {
+                    var chunk = await reader.read(); if (chunk.done) break;
+                    buf += dec.decode(chunk.value, { stream: true });
+                    var parts = buf.split('\n\n'); buf = parts.pop();
+                    for (var i = 0; i < parts.length; i++) {
+                        var lines = parts[i].split('\n'), data = '';
+                        for (var j = 0; j < lines.length; j++) if (lines[j].indexOf('data:') === 0) data += lines[j].slice(5).trim();
+                        if (!data) continue;
+                        var ev; try { ev = JSON.parse(data); } catch (e) { continue; }
+                        if (ev.type === 'error') throw new Error(ev.error && ev.error.message || 'Erreur API');
+                        if (ev.type === 'content_block_start') {
+                            var cb = ev.content_block;
+                            if (cb.type === 'text') blocks[ev.index] = { type: 'text', text: '' };
+                            else if (cb.type === 'tool_use') blocks[ev.index] = { type: 'tool_use', name: cb.name, _json: '' };
+                            else blocks[ev.index] = { type: cb.type };
+                        } else if (ev.type === 'content_block_delta') {
+                            var b = blocks[ev.index]; if (!b) continue;
+                            if (ev.delta.type === 'text_delta') { b.text += ev.delta.text; if (onText) onText(ev.delta.text); }
+                            else if (ev.delta.type === 'input_json_delta') b._json += ev.delta.partial_json;
+                        } else if (ev.type === 'message_delta') {
+                            if (ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
+                        }
+                    }
+                }
+                var text = '', toolCalls = [];
+                blocks.filter(Boolean).forEach(function (b) {
+                    if (b.type === 'text') text += (b.text || '');
+                    else if (b.type === 'tool_use') {
+                        var inp = {}; try { inp = b._json ? JSON.parse(b._json) : {}; } catch (e) { }
+                        toolCalls.push({ function: { name: b.name, arguments: inp } });
+                    }
+                });
+                return { content: text, thinking: '', tool_calls: toolCalls, done_reason: stop };
             }
 
             /* ── Boucle agentique ── */
@@ -9199,6 +9335,8 @@
             }
 
             /* ── PDF joints ──
+               Les images sont conservées en data URL (le type MIME est requis par
+               Anthropic ; il est retiré à l'envoi vers Ollama).
                Un message Ollama n'accepte que du texte (`content`) et des images
                (`images`) : aucun champ document. Les PDF sont donc convertis ici,
                sans perte de fonctionnalité pour l'utilisateur :
@@ -9231,7 +9369,7 @@
                     var cv = document.createElement('canvas');
                     cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
                     await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
-                    imgs.push(cv.toDataURL('image/jpeg', 0.85).split(',')[1]);
+                    imgs.push(cv.toDataURL('image/jpeg', 0.85));
                 }
                 if (!imgs.length) throw new Error('PDF vide ou illisible : ' + f.name);
                 return {
@@ -9250,7 +9388,7 @@
                     var ext = (f.name.split('.').pop() || '').toLowerCase();
                     if (/^(png|jpg|jpeg|gif|webp)$/.test(ext) || /^image\//.test(f.type)) {
                         var r = new FileReader();
-                        r.onload = function () { IA.imgs[f.name] = String(r.result); res({ kind: 'image', data: String(r.result).split(',')[1] }); };
+                        r.onload = function () { IA.imgs[f.name] = String(r.result); res({ kind: 'image', data: String(r.result) }); };
                         r.onerror = rej; r.readAsDataURL(f);
                     } else if (ext === 'pdf') {
                         iaReadPdf(f).then(res, rej);
@@ -9552,7 +9690,7 @@
                 var q = ta.value.trim();
                 if (!q && !IA.files.length) return;
                 var mode = cfg('mode') || 'key';
-                if (mode === 'key' && !cfg('key')) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
+                if (mode === 'key' && !iaUserKey(iaProvKey())) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
                 if (mode === 'code' && !cfg('code')) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
                 var hero = document.getElementById('iaHero'); if (hero) hero.remove();
 
@@ -9584,26 +9722,47 @@
                 finally { IA.busy = false; sendBtn.disabled = false; iaScroll(msgsEl); }
             }
 
-            /* ── Modal réglages accès ── */
+            /* ── Modal réglages accès (modèle + mode d'accès) ── */
             function iaSettings(onDone) {
                 var bg = E('div', 'ia-modal-bg'); var m = E('div', 'ia-modal'); bg.appendChild(m);
                 var hasProxy = !!IA_PROXY_URL;
                 var mode = cfg('mode') || 'key';
+                var pk = iaProvKey();
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
+                    '<label>Modèle</label>' +
+                    '<div class="ia-radio"><label id="iaRadMinimax"><input type="radio" name="iaprov" value="minimax">⚡ ' + IA_PROVIDERS.minimax.label + '</label>' +
+                    '<label id="iaRadClaude"><input type="radio" name="iaprov" value="claude">✦ ' + IA_PROVIDERS.claude.label + '</label></div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Les deux modèles ont les mêmes compétences d\'analyse. Basculez librement — y compris en cours de conversation — selon la disponibilité ou les crédits restants de chaque API.</div>' +
                     (hasProxy ?
-                        '<div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
+                        '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Achetez un code d\'accès en ligne (mobile money) — bouton « Obtenir un code » ci-dessous.</div>' +
+                    '<div class="ia-hint">Achetez un code d\'accès en ligne (mobile money) — bouton « Obtenir un code » ci-dessous. Un même code fonctionne avec les deux modèles.</div>' +
                     '<button class="ia-btn" style="margin-top:8px" id="iaBuy">💳 Obtenir un code</button></div>' +
-                    '<div id="iaPaneKey"><label>Clé API Ollama Cloud</label><input type="password" id="iaKey" placeholder="votre clé ollama.com">' +
-                    '<div class="ia-hint">Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur. Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
+                    '<div id="iaPaneKey"><label id="iaKeyLbl">Clé API</label><input type="password" id="iaKey" placeholder="">' +
+                    '<div class="ia-hint" id="iaKeyHint"></div>' +
+                    '<div class="ia-hint">Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
                     '<label style="margin-top:12px">Code d\'accès DHIS2 (optionnel)</label><input type="text" id="iaCode2" placeholder="ex. PEV-XXXX-XXXX">' +
                     '<div class="ia-hint">Nécessaire pour que l\'IA interroge le <b>DHIS2 national</b> via le proxy sécurisé quand vous utilisez votre propre clé API.</div></div>' +
                     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px"><button class="ia-btn" id="iaCancel">Annuler</button><button class="ia-btn" id="iaSave" style="background:#1a237e;color:#fff;border-color:#1a237e">Enregistrer</button></div>';
                 document.body.appendChild(bg);
                 var kEl = m.querySelector('#iaKey'), cEl = m.querySelector('#iaCode'), c2El = m.querySelector('#iaCode2');
-                kEl.value = cfg('key'); if (cEl) cEl.value = cfg('code'); if (c2El) c2El.value = cfg('code');
+                if (cEl) cEl.value = cfg('code'); if (c2El) c2El.value = cfg('code');
+
+                /* La clé affichée suit le modèle sélectionné ; on mémorise la saisie
+                   en cours pour ne pas la perdre en basculant de modèle. */
+                var keys = { minimax: iaUserKey('minimax'), claude: iaUserKey('claude') };
+                function setProv(np) {
+                    keys[pk] = kEl.value.trim(); /* garde la saisie du modèle quitté */
+                    pk = np;
+                    var p = IA_PROVIDERS[pk];
+                    m.querySelector('#iaKeyLbl').textContent = p.keyLabel;
+                    kEl.placeholder = p.keyPlaceholder;
+                    kEl.value = keys[pk] || '';
+                    m.querySelector('#iaKeyHint').innerHTML = p.keyHint;
+                    m.querySelector('#iaRadMinimax').classList.toggle('on', pk === 'minimax');
+                    m.querySelector('#iaRadClaude').classList.toggle('on', pk === 'claude');
+                }
                 function setMode(mo) {
                     mode = mo;
                     m.querySelector('#iaPaneKey').style.display = mo === 'key' ? '' : 'none';
@@ -9611,6 +9770,9 @@
                     var rk = m.querySelector('#iaRadKey'), rc = m.querySelector('#iaRadCode');
                     if (rk) rk.classList.toggle('on', mo === 'key'); if (rc) rc.classList.toggle('on', mo === 'code');
                 }
+                m.querySelector('#iaRadMinimax').onclick = function () { setProv('minimax'); };
+                m.querySelector('#iaRadClaude').onclick = function () { setProv('claude'); };
+                setProv(pk);
                 if (hasProxy) {
                     m.querySelector('#iaRadKey').onclick = function () { setMode('key'); };
                     m.querySelector('#iaRadCode').onclick = function () { setMode('code'); };
@@ -9620,15 +9782,20 @@
                 } else setMode('key');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {
-                    cfg('mode', mode); cfg('key', kEl.value.trim());
+                    keys[pk] = kEl.value.trim();
+                    cfg('mode', mode); cfg('provider', pk);
+                    cfg('key_minimax', keys.minimax || ''); cfg('key_claude', keys.claude || '');
                     /* le code vient du panneau actif : champ dédié en mode clé, champ code en mode code */
                     cfg('code', (mode === 'key' && c2El) ? c2El.value.trim() : (cEl ? cEl.value.trim() : ''));
-                    bg.remove(); if (onDone) onDone();
+                    bg.remove();
+                    if (iaModelLabelRef) iaModelLabelRef.textContent = iaProv().label;
+                    if (onDone) onDone();
                 };
             }
 
             /* ── Pièces jointes : aperçu ── */
             var attRowRef = null;
+            var iaModelLabelRef = null; /* pastille du modèle dans le composeur */
             function iaRenderAtts() {
                 if (!attRowRef) return;
                 attRowRef.innerHTML = '';
@@ -9718,7 +9885,9 @@
                     fin.value = ''; iaRenderAtts(); syncComposer();
                 };
                 row.appendChild(plus); row.appendChild(fin);
-                row.appendChild(E('span', 'ia-model', IA_MODEL_LABEL));
+                iaModelLabelRef = E('span', 'ia-model', iaProv().label);
+                iaModelLabelRef.title = 'Modèle utilisé — changez-le dans ⚙ Accès';
+                row.appendChild(iaModelLabelRef);
                 var mic = E('button', 'ia-iconbtn ia-mic', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>'); mic.title = 'Dicter une demande';
                 var voice = E('button', 'ia-iconbtn ia-voice', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 10v4M6 7v10M9 4v16M12 8v8M15 5v14M18 7v10M21 10v4"/></svg>'); voice.title = 'Lancer une requête vocale';
                 var send = E('button', 'ia-send', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5"/></svg>'); send.title = 'Soumettre la demande';

@@ -3,15 +3,14 @@
  *  PROXY IA — Dashboard PEV de routine (snis-vaccination-api)
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
- *   1. /api/chat           → proxy vers Ollama Cloud (MiniMax M3), clé cachée ici,
- *                            réservé aux codes d'accès valides (quota).
- *                            Alias /v1/messages conservé (anciens clients en cache).
- *                            Si l'appelant fournit sa PROPRE clé Ollama via
- *                            l'en-tête x-ollama-key, elle est utilisée telle quelle
- *                            et aucun quota n'est consommé (l'utilisateur paie
- *                            son propre usage). Ce relais est indispensable :
- *                            ollama.com ne renvoie aucun en-tête CORS, un appel
- *                            direct depuis le navigateur est donc impossible.
+ *   1. DEUX fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
+ *        /api/chat        → Ollama Cloud (MiniMax M3)   — clé OLLAMA_API_KEY
+ *        /v1/messages     → Anthropic (Claude)          — clé ANTHROPIC_API_KEY
+ *      Dans les deux cas : soit un code d'accès valide (quota décompté, clé du
+ *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
+ *      x-anthropic-key (relais pur, aucun quota consommé).
+ *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
+ *      CORS, un appel direct depuis le navigateur est donc impossible.
  *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
  *                            identifiants cachés ici, codes d'accès requis.
  *   3. /acheter            → page de paiement en ligne (CinetPay, mobile money)
@@ -22,6 +21,9 @@
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
+ *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
+ *                         (les deux sont facultatives : un fournisseur sans clé
+ *                          reste utilisable par les clients ayant leur propre clé)
  *   DHIS2_BASE_URL      — ex. https://snisrdc.com (sans /api)
  *   DHIS2_USERNAME      — compte DHIS2 (lecture seule recommandé)
  *   DHIS2_PASSWORD
@@ -51,9 +53,12 @@ const OFFERS = [
 
 /* Modèles Ollama Cloud autorisés. Le tag « :cloud » est obligatoire — sans lui,
    Ollama cherche un modèle local et renvoie « model not found ». */
-const ALLOWED_MODELS = ['minimax-m3:cloud', 'glm-5.2:cloud', 'qwen3.5:cloud'];
+const ALLOWED_OLLAMA_MODELS = ['minimax-m3:cloud', 'glm-5.2:cloud', 'qwen3.5:cloud'];
+const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const NUM_PREDICT_CAP = 16000; /* plafond de tokens générés (équiv. max_tokens) */
+const MAX_TOKENS_CAP = 16000;
 
 export default {
   async fetch(request, env) {
@@ -64,7 +69,8 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     try {
-      if ((url.pathname === '/api/chat' || url.pathname === '/v1/messages') && request.method === 'POST') return await proxyOllama(request, env, cors);
+      if (url.pathname === '/api/chat' && request.method === 'POST') return await proxyOllama(request, env, cors);
+      if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
       if (url.pathname.startsWith('/admin/codes')) return await adminCodes(request, env, url, cors);
@@ -103,7 +109,7 @@ function corsHeaders(env, origin) {
   return {
     'Access-Control-Allow-Origin': ok ? (origin || '*') : allowed[0],
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type,x-access-code,x-ollama-key',
+    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code,x-ollama-key,x-anthropic-key',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -135,32 +141,48 @@ async function requireCode(request, env) {
   return { code, rec };
 }
 
-/* ═══ 1. Proxy Ollama Cloud (MiniMax M3) ═══
-   Deux modes d'authentification :
-     • x-ollama-key : clé personnelle de l'appelant → relais pur, aucun quota
-       consommé (il paie son propre abonnement Ollama). Le relais est obligatoire
-       car ollama.com ne renvoie aucun en-tête CORS.
-     • x-access-code : code d'accès acheté → la clé du service (OLLAMA_API_KEY)
-       est utilisée et 1 requête est décomptée du solde.
-   Le corps est transmis tel quel (format natif Ollama /api/chat), y compris le
-   flux NDJSON de la réponse : aucune transformation. */
-async function proxyOllama(request, env, cors) {
-  const ownKey = (request.headers.get('x-ollama-key') || '').trim();
-  let auth = null;
+/* ═══ 1. Proxys IA (Ollama Cloud + Anthropic) ═══
+   Deux modes d'authentification, communs aux deux fournisseurs :
+     • clé personnelle de l'appelant (x-ollama-key / x-anthropic-key) → relais
+       pur, aucun quota consommé (il paie son propre usage) ;
+     • x-access-code : code d'accès acheté → la clé du service est utilisée et
+       1 requête est décomptée du solde.
+   Dans les deux cas le corps et le flux de réponse sont transmis tels quels. */
+async function resolveIaAuth(request, env, ownKeyHeader, serviceKeyName) {
+  const ownKey = (request.headers.get(ownKeyHeader) || '').trim();
+  if (ownKey) return { key: ownKey, auth: null };
 
-  if (!ownKey) {
-    try { auth = await requireCode(request, env); }
-    catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
-    /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
-    if (auth.rec.dhis2_only) return json({ error: { type: 'auth', message: 'Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.' } }, 403, cors);
-    if (!env.OLLAMA_API_KEY) return json({ error: { type: 'config', message: 'Service IA non configuré (OLLAMA_API_KEY absent du proxy).' } }, 503, cors);
+  const auth = await requireCode(request, env); /* lève une erreur si invalide */
+  /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
+  if (auth.rec.dhis2_only) throw Object.assign(new Error('Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.'), { status: 403 });
+  if (!env[serviceKeyName]) throw Object.assign(new Error('Ce fournisseur n\'est pas configuré sur le proxy (' + serviceKeyName + ' absent). Choisissez l\'autre fournisseur dans ⚙ Accès, ou utilisez votre propre clé.'), { status: 503 });
+  return { key: env[serviceKeyName], auth: auth };
+}
+
+/* Décompte : 1 requête réussie = 1 unité (les erreurs ne comptent pas).
+   Le mode « clé personnelle » ne touche jamais au quota. */
+async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
+  const headers = { 'content-type': upstream.headers.get('content-type') || defaultCt, ...cors };
+  if (resolved.auth) {
+    if (upstream.ok) {
+      resolved.auth.rec.remaining -= 1;
+      await putCode(env, resolved.auth.code, resolved.auth.rec);
+    }
+    headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
   }
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
+
+async function proxyOllama(request, env, cors) {
+  let resolved;
+  try { resolved = await resolveIaAuth(request, env, 'x-ollama-key', 'OLLAMA_API_KEY'); }
+  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
 
   let body;
   try { body = await request.json(); }
   catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
 
-  if (!ALLOWED_MODELS.includes(body.model)) body.model = ALLOWED_MODELS[0];
+  if (!ALLOWED_OLLAMA_MODELS.includes(body.model)) body.model = ALLOWED_OLLAMA_MODELS[0];
   body.options = body.options || {};
   if (!body.options.num_predict || body.options.num_predict > NUM_PREDICT_CAP) body.options.num_predict = NUM_PREDICT_CAP;
 
@@ -169,22 +191,35 @@ async function proxyOllama(request, env, cors) {
     headers: {
       'content-type': 'application/json',
       accept: 'application/x-ndjson',
-      authorization: 'Bearer ' + (ownKey || env.OLLAMA_API_KEY),
+      authorization: 'Bearer ' + resolved.key,
     },
     body: JSON.stringify(body),
   });
+  return await finishIaResponse(env, upstream, resolved, cors, 'application/x-ndjson');
+}
 
-  /* Décompte : 1 requête réussie = 1 unité (les erreurs ne comptent pas).
-     Le mode « clé personnelle » ne touche jamais au quota. */
-  const headers = { 'content-type': upstream.headers.get('content-type') || 'application/x-ndjson', ...cors };
-  if (auth) {
-    if (upstream.ok) {
-      auth.rec.remaining -= 1;
-      await putCode(env, auth.code, auth.rec);
-    }
-    headers['x-quota-restant'] = String(auth.rec.remaining);
-  }
-  return new Response(upstream.body, { status: upstream.status, headers });
+async function proxyAnthropic(request, env, cors) {
+  let resolved;
+  try { resolved = await resolveIaAuth(request, env, 'x-anthropic-key', 'ANTHROPIC_API_KEY'); }
+  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
+
+  if (!ALLOWED_ANTHROPIC_MODELS.includes(body.model)) body.model = ALLOWED_ANTHROPIC_MODELS[0];
+  if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
+
+  const upstream = await fetch(ANTHROPIC_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'anthropic-version': request.headers.get('anthropic-version') || '2023-06-01',
+      'x-api-key': resolved.key,
+    },
+    body: JSON.stringify(body),
+  });
+  return await finishIaResponse(env, upstream, resolved, cors, 'application/json');
 }
 
 /* ═══ 2. Proxy DHIS2 (GET, lecture seule) ═══ */
@@ -265,7 +300,7 @@ function buyPage(env, url) {
     return htmlPage('Paiement bientôt disponible',
       `<h1>💳 Paiement en ligne — bientôt disponible</h1>
        <p>Le paiement automatique par mobile money (M-Pesa, Orange Money, Airtel Money) est en cours d'activation.
-       Revenez bientôt, ou utilisez votre propre clé API Ollama Cloud dans ⚙ Accès en attendant.</p>`);
+       Revenez bientôt, ou utilisez votre propre clé API (Ollama Cloud ou Anthropic) dans ⚙ Accès en attendant.</p>`);
   }
   const offers = OFFERS.map(o =>
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="${o.id}">
