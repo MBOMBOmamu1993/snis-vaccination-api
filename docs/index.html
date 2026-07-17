@@ -8915,10 +8915,21 @@
             function cfg(k, v) { try { if (v === undefined) return localStorage.getItem('pev_ia_' + k) || ''; localStorage.setItem('pev_ia_' + k, v); } catch (e) { return ''; } }
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-            /* Markdown minimal → HTML (échappé d'abord) */
+            /* Markdown minimal → HTML (échappé d'abord), avec tableaux |...| */
             function md(t) {
                 var h = esc(t);
                 h = h.replace(/```([\s\S]*?)```/g, function (m, c) { return '<pre style="background:#f0f2fa;border-radius:8px;padding:10px;overflow:auto;font-size:12px">' + c.replace(/^\w*\n/, '') + '</pre>'; });
+                /* Tableaux markdown : lignes consécutives commençant par | */
+                h = h.replace(/(?:^\|.*\|[ \t]*$\n?){2,}/gm, function (block) {
+                    var rows = block.trim().split('\n').map(function (l) {
+                        return l.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(function (c) { return c.trim(); });
+                    }).filter(function (cells) { return !cells.every(function (c) { return /^:?-{2,}:?$/.test(c) || c === ''; }); });
+                    if (rows.length < 2) return block;
+                    var html = '<div class="ia-tblwrap" style="margin:8px 0"><table class="ia-tbl"><thead><tr>' +
+                        rows[0].map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+                    rows.slice(1).forEach(function (r) { html += '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; });
+                    return html + '</tbody></table></div>\n';
+                });
                 h = h.replace(/`([^`\n]+)`/g, '<code>$1</code>');
                 h = h.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>');
                 h = h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
@@ -8959,7 +8970,7 @@
                     "",
                     "## Méthode (OBLIGATOIRE)",
                     "1. TOUS les calculs via executer_js — n'invente JAMAIS un chiffre ; explore la structure en cas de doute ; si une donnée manque, dis-le.",
-                    "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables — ne recopie pas les grandes tables en texte). Carte sans GeoJSON → barres classées par zone.",
+                    "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. Carte sans GeoJSON → barres classées par zone.",
                     "3. Formules : CV% = doses cumulées/cible cumulée×100 (cible mensuelle = annuelle/12) ; abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100 ; complétude = reçus/attendus×100.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",
                     "5. RAPPORTS (PDF/Word/PPTX, défaut PDF) : calcule d'abord TOUT, puis generer_rapport avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations.",
@@ -8998,7 +9009,7 @@
                     type: 'function',
                     function: {
                         name: 'afficher_resultat',
-                        description: "Affiche un résultat final à l'utilisateur dans la conversation (avec boutons de téléchargement automatiques). type='table' : fournir colonnes (array de libellés) et lignes (array de arrays). type='graphique' ou 'carte' : fournir figure = objet Plotly {data:[...], layout:{...}} (le layout reçoit automatiquement la charte du dashboard). Un titre est obligatoire. note = source/lecture facultative.",
+                        description: "Affiche un résultat final à l'utilisateur dans la conversation (avec boutons de téléchargement automatiques). OBLIGATOIRE pour tout tableau, graphique ou carte — ne les écris JAMAIS en markdown dans ta réponse. type='table' : fournir colonnes (array de libellés) et lignes (array de arrays). type='graphique' ou 'carte' : fournir figure = objet Plotly {data:[...traces...], layout:{...}} où chaque trace a des ARRAYS x et y. Exemple complet : {\"titre\":\"CV VAR1 2020-2025\",\"type\":\"graphique\",\"figure\":{\"data\":[{\"x\":[2020,2021,2022],\"y\":[95.4,98.0,86.8],\"type\":\"scatter\",\"mode\":\"lines+markers\",\"name\":\"CV %\"}],\"layout\":{\"yaxis\":{\"title\":\"CV (%)\"}}}}. Fournis AUSSI colonnes+lignes en plus de figure quand c'est pertinent (repli automatique). Un titre est obligatoire. note = source/lecture facultative.",
                         parameters: {
                             type: 'object',
                             properties: {
@@ -9161,7 +9172,87 @@
                 a.href = URL.createObjectURL(new Blob([content], { type: mime }));
                 a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
             }
+            /* ── Normalisation des résultats d'affichage ──
+               Les modèles (surtout via Ollama) envoient parfois : des champs JSON en
+               chaîne, une figure sans enveloppe {data:[...]}, une trace unique nue,
+               un type absent… On répare tout ce qui est réparable au lieu d'afficher
+               « Résultat incomplet ». */
+            function iaParseMaybe(v) {
+                if (typeof v !== 'string') return v;
+                var s = v.trim();
+                if (!/^[\[{]/.test(s)) return v;
+                try { return JSON.parse(s); } catch (e) { return v; }
+            }
+            function iaFixFigure(fig) {
+                fig = iaParseMaybe(fig);
+                if (!fig || typeof fig !== 'object') return null;
+                if (Array.isArray(fig)) fig = { data: fig };                      /* [trace,…] nu */
+                var data = iaParseMaybe(fig.data);
+                if (!data && (fig.x || fig.y || fig.values || fig.labels)) {      /* trace unique nue */
+                    data = [fig]; fig = { data: data, layout: {} };
+                }
+                if (data && !Array.isArray(data)) data = [data];                  /* trace unique en objet */
+                if (!Array.isArray(data)) return null;
+                data = data.map(iaParseMaybe).filter(function (t) { return t && typeof t === 'object'; });
+                data.forEach(function (t) {
+                    ['x', 'y', 'values', 'labels', 'text'].forEach(function (k) {
+                        if (t[k] !== undefined) {
+                            t[k] = iaParseMaybe(t[k]);
+                            if (t[k] !== null && !Array.isArray(t[k]) && typeof t[k] === 'object') t[k] = Object.values(t[k]);
+                        }
+                    });
+                    if (!t.type && t.x && t.y) t.type = 'scatter';
+                    if (t.type === 'scatter' && !t.mode) t.mode = 'lines+markers';
+                });
+                data = data.filter(function (t) { return (t.x && t.y) || t.values || t.z || t.locations || t.r; });
+                if (!data.length) return null;
+                return { data: data, layout: iaParseMaybe(fig.layout) || {} };
+            }
+            /* Construit une figure de secours à partir d'un tableau colonnes/lignes :
+               1re colonne = X, chaque colonne numérique = une série. */
+            function iaFigureFromTable(colonnes, lignes) {
+                if (!Array.isArray(colonnes) || !Array.isArray(lignes) || !lignes.length) return null;
+                var x = lignes.map(function (l) { return Array.isArray(l) ? l[0] : l; });
+                var traces = [];
+                for (var c = 1; c < colonnes.length; c++) {
+                    var vals = lignes.map(function (l) {
+                        var v = Array.isArray(l) ? l[c] : null;
+                        var n = parseFloat(String(v == null ? '' : v).replace(/\s| |%/g, '').replace(',', '.'));
+                        return isFinite(n) ? n : null;
+                    });
+                    if (vals.some(function (v) { return v !== null; })) {
+                        traces.push({ x: x, y: vals, type: 'scatter', mode: 'lines+markers', name: String(colonnes[c]) });
+                    }
+                }
+                return traces.length ? { data: traces, layout: {} } : null;
+            }
+            function iaNormalizeResult(inp) {
+                inp = inp && typeof inp === 'object' ? inp : {};
+                inp.colonnes = iaParseMaybe(inp.colonnes);
+                inp.lignes = iaParseMaybe(inp.lignes);
+                if (Array.isArray(inp.lignes)) inp.lignes = inp.lignes.map(function (l) {
+                    l = iaParseMaybe(l);
+                    return Array.isArray(l) ? l : (l && typeof l === 'object' ? Object.values(l) : [l]);
+                });
+                var fig = iaFixFigure(inp.figure || (inp.data ? { data: inp.data, layout: inp.layout } : null));
+                inp.figure = fig;
+                /* type manquant ou incohérent : on l'infère */
+                var t = String(inp.type || '').toLowerCase();
+                if (t !== 'table' && t !== 'graphique' && t !== 'carte') t = '';
+                if (!t) t = fig ? 'graphique' : (inp.colonnes && inp.lignes ? 'table' : '');
+                if (t === 'graphique' || t === 'carte') {
+                    if (!fig) {
+                        var auto = iaFigureFromTable(inp.colonnes, inp.lignes);
+                        if (auto) inp.figure = auto; else if (inp.colonnes && inp.lignes) t = 'table';
+                    }
+                }
+                if (t === 'table' && !(Array.isArray(inp.colonnes) && Array.isArray(inp.lignes)) && inp.figure) t = 'graphique';
+                inp.type = t;
+                return inp;
+            }
+
             function iaRenderResult(inp, msgsEl) {
+                inp = iaNormalizeResult(inp);
                 var card = E('div', 'ia-card');
                 card.appendChild(E('h4', '', esc(inp.titre || 'Résultat')));
                 var safe = (inp.titre || 'resultat').replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_');
@@ -9180,13 +9271,29 @@
                 } else if ((inp.type === 'graphique' || inp.type === 'carte') && inp.figure && window.Plotly) {
                     var gd = E('div', ''); gd.style.minHeight = '380px'; card.appendChild(gd);
                     var lay = Object.assign({ font: { family: 'inherit', size: 12 }, margin: { t: 30, r: 20, b: 60, l: 60 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', colorway: ['#1a237e', '#d97757', '#2e7d32', '#f9a825', '#6a1b9a', '#00838f', '#c62828', '#546e7a'] }, inp.figure.layout || {});
-                    try { Plotly.newPlot(gd, inp.figure.data || [], lay, { responsive: true, displaylogo: false }); } catch (e) { gd.innerHTML = '<div class="ia-err">Figure invalide : ' + esc(e.message) + '</div>'; }
-                    var dl2 = E('div', 'ia-dl'); card.appendChild(dl2);
-                    var b2 = E('button', 'ia-btn', '⬇ Télécharger PNG');
-                    b2.onclick = function () { Plotly.downloadImage(gd, { format: 'png', filename: safe, width: 1200, height: 700, scale: 2 }); };
-                    dl2.appendChild(b2);
+                    var plotOk = true;
+                    try { Plotly.newPlot(gd, inp.figure.data || [], lay, { responsive: true, displaylogo: false }); }
+                    catch (e) {
+                        plotOk = false; gd.remove();
+                        /* repli : les mêmes données en tableau si disponibles */
+                        if (Array.isArray(inp.colonnes) && Array.isArray(inp.lignes)) {
+                            var w2 = E('div', 'ia-tblwrap');
+                            var h2 = '<table class="ia-tbl"><thead><tr>' + inp.colonnes.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+                            inp.lignes.forEach(function (l) { h2 += '<tr>' + l.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; });
+                            w2.innerHTML = h2 + '</tbody></table>'; card.appendChild(w2);
+                            card.appendChild(E('div', 'ia-note', 'Le graphique n\'a pas pu être tracé (' + esc(e.message) + ') — données affichées en tableau.'));
+                        } else {
+                            card.appendChild(E('div', 'ia-err', 'Figure invalide : ' + esc(e.message)));
+                        }
+                    }
+                    if (plotOk) {
+                        var dl2 = E('div', 'ia-dl'); card.appendChild(dl2);
+                        var b2 = E('button', 'ia-btn', '⬇ Télécharger PNG');
+                        b2.onclick = function () { Plotly.downloadImage(gd, { format: 'png', filename: safe, width: 1200, height: 700, scale: 2 }); };
+                        dl2.appendChild(b2);
+                    }
                 } else {
-                    card.appendChild(E('div', 'ia-err', 'Résultat incomplet reçu de l\'IA (type=' + esc(inp.type) + ').'));
+                    card.appendChild(E('div', 'ia-err', 'Résultat incomplet reçu de l\'IA — demandez simplement : « réaffiche le résultat ».'));
                 }
                 if (inp.note) card.appendChild(E('div', 'ia-note', esc(inp.note)));
                 msgsEl.appendChild(card); iaScroll(msgsEl);
@@ -9799,8 +9906,20 @@
 
             async function iaGenReport(inp, msgsEl) {
                 var safe = (inp.titre || 'rapport').replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_') || 'rapport';
-                var secs = inp.sections || [];
+                var secs = iaParseMaybe(inp.sections) || [];
+                if (!Array.isArray(secs)) secs = [secs];
+                inp.sections = secs;
                 for (var i = 0; i < secs.length; i++) {
+                    /* même tolérance que pour afficher_resultat : figures/tableaux réparés */
+                    if (secs[i].figure) secs[i].figure = iaFixFigure(secs[i].figure);
+                    if (secs[i].tableau) {
+                        var tb = iaParseMaybe(secs[i].tableau);
+                        if (tb && typeof tb === 'object') {
+                            tb.colonnes = iaParseMaybe(tb.colonnes); tb.lignes = iaParseMaybe(tb.lignes);
+                            if (Array.isArray(tb.lignes)) tb.lignes = tb.lignes.map(function (l) { l = iaParseMaybe(l); return Array.isArray(l) ? l : (l && typeof l === 'object' ? Object.values(l) : [l]); });
+                            secs[i].tableau = (Array.isArray(tb.colonnes) && Array.isArray(tb.lignes)) ? tb : null;
+                        } else secs[i].tableau = null;
+                    }
                     if (secs[i].figure && !secs[i]._png) { try { secs[i]._png = await iaFigPng(secs[i].figure); } catch (e) { } }
                 }
                 var fmt = String(inp.format || 'pdf').toLowerCase();
