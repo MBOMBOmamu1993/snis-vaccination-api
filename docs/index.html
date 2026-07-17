@@ -8859,7 +8859,9 @@
             /* Clé personnelle propre à chaque fournisseur (pev_ia_key_minimax / _claude).
                Reprend l'ancienne clé unique (pev_ia_key) pour Claude : migration douce. */
             function iaUserKey(pk) { return cfg('key_' + pk) || (pk === 'claude' ? cfg('key') : ''); }
-            var IA_MAX_TOOL_TURNS = 15;
+            /* 30 tours : MiniMax M3 procède par étapes plus petites que Claude ;
+               l'abonnement Ollama est forfaitaire, les tours ne coûtent rien de plus. */
+            var IA_MAX_TOOL_TURNS = 30;
             var IA_TOOL_RESULT_MAX = 8000; /* caractères renvoyés à l'IA par outil — retourner des résultats compacts */
 
             var IA = { msgs: [], busy: false, files: [], seq: 0, imgs: {} };
@@ -8899,6 +8901,16 @@
                     "Toutes les données de vaccination du SNIS te sont accessibles (tous éléments, indicateurs, datasets, niveaux, périodes). Ne réponds JAMAIS qu'une donnée est indisponible sans avoir cherché dans le DHIS2. Les fichiers locaux ne couvrent que 2025–2026 : pour toute autre année ou comparaison pluriannuelle, va au DHIS2 (pe:2019, pe:201901;…, LAST_5_YEARS/LAST_10_YEARS).",
                     "Deux voies : requete_dhis2 (métadonnées, réponses modérées) ; ctx.dhis2(endpoint,params) dans executer_js pour les GROS volumes — agrège en code, retourne un résultat compact.",
                     "Démarche : 1) UID via métadonnées : dataElements.json?filter=name:ilike:<terme>&fields=id,name&pageSize=50 (aussi indicators, dataSets, dataElementGroups, organisationUnits, categoryOptionCombos) — les noms PEV ont des variantes ('0-11 mois', 'fixe', 'avancé') : liste-les d'abord ; 2) analytics.json?dimension=dx:UID1;UID2&dimension=pe:LAST_12_MONTHS&dimension=ou:LEVEL-3&displayProperty=NAME (ou dataValueSets.json?dataSet=UID&period=202506&orgUnit=UID&children=true) ; 3) calcule ; 4) présente. Org : LEVEL-2=provinces, 3=ZS, 4=AS, 5=FOSA. Pagine (page=, pageSize=).",
+                    "STRATÉGIE (impératif) : regroupe plusieurs requêtes dans un même executer_js et vise ≤ 8 tours d'outils. Si une requête renvoie 0 ligne deux fois, NE répète PAS la même piste : change d'approche — formules officielles via indicators.json?filter=name:ilike:couverture&fields=id,name,numerator,denominator, autre niveau (LEVEL-5), ou les conventions ci-dessous.",
+                    "",
+                    "## Conventions PEV RDC — dénominateurs et UID clés (à utiliser directement, ne les recherche pas)",
+                    "- Population : élément WLSKVyA8LoY ('Pop. par AS'), valeur MENSUELLE RÉPÉTÉE (identique chaque mois) → prendre UNE valeur par unité et par an (ex. pe:<AAAA>01), JAMAIS la somme des 12 mois.",
+                    "- Cible naissances vivantes (BCG, Td) : Pop × 4,00 % par an (÷12 par mois). Cible nourrissons survivants (Penta, VPO, PCV, ROTA, VAR…) : Pop × 3,49 % par an.",
+                    "- CV% annuelle = doses de l'année ÷ (Pop × taux) × 100. Formule officielle SNIS (indicateur '2a-Taux de couverture en VAR 1') : numérateur pak21wvkWJC (fixe+avancé+mobile), dénominateur WLSKVyA8LoY × 0,0349.",
+                    "- UID doses (fixe1/fixe2 = deux formulaires, additionner ; ventilés par catégorie stratégie) : BCG=W25tOXS0rxS · Penta1=uNdFg1eymsa · Penta3=WWxqaHSeiwd · VPO3=SPGaDDw2JzG · VAR1=pak21wvkWJC+cTLKwfG8pSv · VAR2 (12-23 mois)=i5zmivDIHN8 · VAA=bzD4QxaNkJm. En analytics, dx:UID sans .COC = total toutes catégories (suffisant pour les doses totales).",
+                    "",
+                    "## Antennes PEV (⚠ n'existent PAS dans DHIS2)",
+                    "L'antenne est un regroupement de ZS propre à ce dashboard. Pour toute analyse par antenne : 1) charge ctx.load('./data/dashboard/by_zs.json.gz') et relève les _ZS de l'antenne demandée (champ _Antenne, ex. 'Luiza') ; 2) retrouve les UID de ces ZS dans DHIS2 (organisationUnits.json?filter=name:ilike:<zs>&filter=level:eq:3&fields=id,name) ; 3) agrège leurs valeurs. Pour 2025–2026, les données locales by_zs suffisent souvent directement.",
                     "",
                     "## Méthode (OBLIGATOIRE)",
                     "1. TOUS les calculs via executer_js — n'invente JAMAIS un chiffre ; explore la structure en cas de doute ; si une donnée manque, dis-le.",
@@ -8925,7 +8937,7 @@
                     type: 'function',
                     function: {
                         name: 'executer_js',
-                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), loadUrl(url), mL(ym)→libellé du mois. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), loadUrl(url), mL(ym)→libellé du mois. ⚠ ctx.dhis2, ctx.load et ctx.loadUrl sont ASYNCHRONES : écris TOUJOURS `const r = await ctx.dhis2(...)` — sans await tu reçois une Promise vide et tes résultats seront à 0. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
                         parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
@@ -9013,9 +9025,22 @@
                traitée en code, sans limite de taille). */
             async function iaDhis2(endpoint, params) {
                 if (!IA_PROXY_URL) throw new Error("L'accès DHIS2 en direct nécessite le proxy sécurisé (non configuré).");
+                /* Tolérance : endpoint peut contenir déjà sa query string ; params peut
+                   être une chaîne, un objet {clé:valeur} ou absent. */
                 var ep = String(endpoint || '').replace(/^\/?api\/?/, '').replace(/^\/+/, '');
+                var inline = '';
+                var qm = ep.indexOf('?');
+                if (qm >= 0) { inline = ep.slice(qm + 1); ep = ep.slice(0, qm); }
                 if (!/^[\w./-]+(\.json)?$/i.test(ep)) throw new Error('Endpoint invalide : ' + ep);
-                var qs = String(params || '').replace(/^\?/, '');
+                var qs;
+                if (params && typeof params === 'object') {
+                    qs = Object.keys(params).map(function (k) {
+                        var v = params[k];
+                        if (Array.isArray(v)) return v.map(function (x) { return k + '=' + x; }).join('&');
+                        return k + '=' + v;
+                    }).join('&');
+                } else qs = String(params || '').replace(/^\?/, '');
+                qs = [inline, qs].filter(Boolean).join('&');
                 var hdrs = {};
                 var codeV = cfg('code') || IA_DHIS2_CODE; if (codeV) hdrs['x-access-code'] = codeV;
                 var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), { headers: hdrs });
@@ -9028,10 +9053,36 @@
                est un objet dans l'API native, une chaîne JSON en mode compatible
                OpenAI : les deux cas sont acceptés. */
             function iaToolName(tc) { return (tc && tc.function && tc.function.name) || ''; }
+            /* Ollama encode parfois les tableaux imbriqués des arguments en
+               {"item":[...]} (artefact de sérialisation). On les déballe
+               récursivement, sinon les figures Plotly arrivent cassées. */
+            function iaUnwrapArrays(v) {
+                if (Array.isArray(v)) return v.map(iaUnwrapArrays);
+                if (v && typeof v === 'object') {
+                    var keys = Object.keys(v);
+                    if (keys.length === 1 && keys[0] === 'item' && Array.isArray(v.item)) return v.item.map(iaUnwrapArrays);
+                    var o = {};
+                    for (var k in v) o[k] = iaUnwrapArrays(v[k]);
+                    return o;
+                }
+                return v;
+            }
             function iaToolArgs(tc) {
                 var a = (tc && tc.function) ? tc.function.arguments : null;
                 if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { a = {}; } }
-                return a || {};
+                return iaUnwrapArrays(a || {});
+            }
+
+            /* Détecte les appels ctx.dhis2/load/loadUrl SANS await : erreur classique
+               qui renvoie une Promise vide (résultats à 0) et fait boucler le modèle.
+               On prévient le modèle dans le résultat pour qu'il corrige au tour suivant. */
+            function iaMissingAwait(code) {
+                var re = /ctx\s*\.\s*(dhis2|load|loadUrl)\s*\(/g, m, hits = [];
+                while ((m = re.exec(code))) {
+                    var before = code.slice(Math.max(0, m.index - 40), m.index);
+                    if (!/await\s*(\(\s*)?$/.test(before) && !/(Promise\s*\.\s*all|\.then|return)\s*[([]?\s*$/.test(before)) hits.push(m[1]);
+                }
+                return hits;
             }
 
             async function iaRunTool(name, input, msgsEl) {
@@ -9041,6 +9092,8 @@
                     var out = await fn(ctx);
                     var s = (out === undefined) ? 'undefined (le code doit se terminer par return)' : JSON.stringify(out);
                     if (s.length > IA_TOOL_RESULT_MAX) s = s.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ à ' + IA_TOOL_RESULT_MAX + ' caractères — agrège davantage dans le code]';
+                    var miss = iaMissingAwait(String(input.code || ''));
+                    if (miss.length) s = '⚠ BUG PROBABLE : ctx.' + miss[0] + '() appelé SANS await — tu as manipulé une Promise vide, ce qui explique des résultats à 0/vides. Réécris le code avec `await ctx.' + miss[0] + '(...)` avant de conclure.\n\n' + s;
                     return s;
                 }
                 if (name === 'requete_dhis2') {
