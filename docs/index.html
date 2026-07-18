@@ -3890,13 +3890,77 @@
 
 
         function _renderP4Chart() {
-            if (S.charts.atBChart) { try { S.charts.atBChart.destroy(); } catch (e) { } }
-            var x = document.getElementById('atBChart'); if (!x) return;
-            var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
-            (window._p4Det && window._p4Det.rows || []).forEach(function (r) { if (atB[r.ag]) { atB[r.ag].a += r.ac; atB[r.ag].t += r.ac + r.norm; } });
-            var agK = AG.filter(function (a) { return atB[a].t > 0; });
-            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#d62728', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#2ca02c', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+            /* M9c : grille org unit × antigène-mois de TOUTES les valeurs aberrantes
+               (atypiques statistiques + règles métier VAP/HPV/VAR2 — M10), cellules
+               rouges, ligne Total, pagination 10 lignes/page, export complet. */
+            var wrap = document.getElementById('atBWrap'); if (!wrap) return;
+            var det = window._p4Det || {}; var mos = det.mos || [];
+            var byOU = {}, colSet = {};
+            function addCell(ou, ag, per, val, why) {
+                if (!ou || !per || !(val > 0)) return;
+                var k = ag + '|' + per;
+                colSet[k] = { ag: ag, per: per };
+                var o = byOU[ou] || (byOU[ou] = { cells: {}, whys: {} });
+                o.cells[k] = (o.cells[k] || 0) + val;
+                o.whys[why] = 1;
+            }
+            var ml = _p4Method === 'var33' ? '±33% vs moyenne' : (_p4Method === 'sd2' ? '±2 SD' : '±3 SD');
+            (det.rows || []).forEach(function (r) {
+                (r.ia || []).forEach(function (f, i) {
+                    if (f === 'a') addCell(r.ou, r.lbl, mos[i], r.vals[i], 'Valeur atypique (' + ml + ')');
+                });
+            });
+            (window._p4RuleAberr || []).forEach(function (x) { addCell(x.ou, x.ag, x.per, x.val, x.why); });
+            /* Titre dynamique selon le niveau affiché (M9d) */
+            var tit = document.getElementById('atBTitle');
+            if (tit) tit.textContent = '⚠ Valeurs aberrantes par ' + (det.orgL || 'unité');
+            var ous = Object.keys(byOU).sort();
+            if (!ous.length) { wrap.innerHTML = '<p style="color:#16a34a;padding:16px;text-align:center;font-weight:600">✅ Aucune valeur aberrante détectée dans la sélection.</p>'; return; }
+            var cols = Object.keys(colSet).sort(function (a, b) { var A = colSet[a], B = colSet[b]; return A.ag < B.ag ? -1 : A.ag > B.ag ? 1 : (A.per < B.per ? -1 : 1); });
+            var PP = 10, nPg = Math.ceil(ous.length / PP);
+            if (!window._p4GridPg) window._p4GridPg = 0;
+            if (window._p4GridPg >= nPg) window._p4GridPg = nPg - 1;
+            var pg = window._p4GridPg, s = pg * PP, e = Math.min(s + PP, ous.length);
+            var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="atBTbl" data-pev-noheat="1"><thead><tr><th style="text-align:left;position:sticky;left:0;background:#1a237e;z-index:2;min-width:120px">' + (det.orgL || 'Unité') + '</th>';
+            cols.forEach(function (k) { var c2 = colSet[k]; h += '<th style="font-size:9px;white-space:nowrap">' + c2.ag + '<br>' + mL(c2.per) + '</th>'; });
+            h += '<th style="text-align:left">Motif(s)</th></tr></thead><tbody>';
+            ous.slice(s, e).forEach(function (ou) {
+                var o = byOU[ou];
+                h += '<tr><td style="position:sticky;left:0;background:#1a237e;color:#fff;font-weight:700;text-align:left;z-index:1">' + tr(ou, 26) + '</td>';
+                cols.forEach(function (k) {
+                    var v = o.cells[k];
+                    h += v !== undefined
+                        ? '<td style="background:#d62728;color:#fff;font-weight:700;text-align:right">' + v.toLocaleString('fr-FR') + '</td>'
+                        : '<td></td>';
+                });
+                h += '<td style="text-align:left;font-size:10px;color:#555">' + Object.keys(o.whys).join(' · ') + '</td></tr>';
+            });
+            /* Ligne Total : toutes les lignes (pas seulement la page affichée) */
+            h += '<tr style="background:linear-gradient(135deg,#1e293b,#334155);color:#fff;font-weight:800"><td style="text-align:left;position:sticky;left:0;background:#1e293b;z-index:1">Total</td>';
+            cols.forEach(function (k) {
+                var t = 0; ous.forEach(function (ou) { t += byOU[ou].cells[k] || 0; });
+                h += '<td style="text-align:right">' + t.toLocaleString('fr-FR') + '</td>';
+            });
+            h += '<td></td></tr></tbody></table></div>';
+            if (nPg > 1) {
+                h += '<div class="pev-pgnav"><button type="button" onclick="_p4GridPgGo(-1)"' + (pg === 0 ? ' disabled' : '') + '>◀</button><span>' + (s + 1) + '–' + e + ' sur ' + ous.length + '</span><button type="button" onclick="_p4GridPgGo(1)"' + (pg >= nPg - 1 ? ' disabled' : '') + '>▶</button></div>';
+            }
+            wrap.innerHTML = h;
+            /* Export CSV/Excel : la totalité des lignes */
+            try {
+                var tblG = document.getElementById('atBTbl');
+                if (tblG) tblG.__pevFull = function () {
+                    var head = [det.orgL || 'Unité'].concat(cols.map(function (k) { return colSet[k].ag + ' ' + mL(colSet[k].per); })).concat(['Motif(s)']);
+                    var out = [head];
+                    ous.forEach(function (ou) {
+                        var o = byOU[ou];
+                        out.push([ou].concat(cols.map(function (k) { return o.cells[k] !== undefined ? o.cells[k] : ''; })).concat([Object.keys(o.whys).join(' · ')]));
+                    });
+                    return out;
+                };
+            } catch (_) { }
         }
+        window._p4GridPgGo = function (d) { window._p4GridPg = (window._p4GridPg || 0) + d; if (window._p4GridPg < 0) window._p4GridPg = 0; _renderP4Chart(); };
 
         window._changeP4Method = function (method) {
             _p4Method = method;
@@ -3966,7 +4030,7 @@
 
                     /* ── Carte : Atypiques et Normales par antigène ── */
                     var b1 = E('div', 'cb');
-                    b1.innerHTML = '<h4>\u26a0 Atypiques et Normales par antig\u00e8ne</h4><div style="position:relative;height:320px"><canvas id="atBChart"></canvas></div>';
+                    b1.innerHTML = '<h4 id="atBTitle">\u26a0 Valeurs aberrantes</h4><div id="atBWrap"></div>';
                     _p4HeavyWrap.appendChild(b1);
 
                     /* ═══ TABLEAU DÉTAILLÉ VALEURS ATYPIQUES ═══ */
@@ -4174,33 +4238,37 @@
             var _VAP_COLS = ['VAP1_0_11', 'VAP2_0_11', 'VAP3_0_11', 'VAP4_12_23'];
             function _vapSum(r) { var t = 0; _VAP_COLS.forEach(function (c) { t += Number(r[c]) || 0; }); return t; }
             var _vapIntro = (function () {
+                /* Province « VAP introduite » détectée sur les données 2025-2026 (tout le
+                   jeu de données, pas la sélection) : encodage RÉGULIER par la quasi-
+                   totalité des ZS = ≥ 80 % des ZS avec VAP > 0 sur ≥ 3 mois récents. */
                 var byProv = {};
-                D.forEach(function (r) {
-                    var p = r.org2 || '', zs = r.org3 || '';
+                AD.forEach(function (r) {
+                    var p = r.org2 || '', zs = r.org3 || '', per = r.period || '';
                     if (!p || !zs) return;
-                    var o = byProv[p] || (byProv[p] = { all: {}, vap: {} });
+                    var o = byProv[p] || (byProv[p] = { all: {}, vapMos: {} });
                     o.all[zs] = 1;
-                    if (_vapSum(r) > 0) o.vap[zs] = 1;
+                    if (_vapSum(r) > 0) (o.vapMos[zs] || (o.vapMos[zs] = {}))[per] = 1;
                 });
                 var intro = {};
                 Object.keys(byProv).forEach(function (p) {
-                    var o = byProv[p], nAll = Object.keys(o.all).length, nVap = Object.keys(o.vap).length;
-                    if (nAll && nVap / nAll >= 0.5) intro[p] = 1; /* introduite = large déploiement */
+                    var o = byProv[p], nAll = Object.keys(o.all).length;
+                    var nReg = Object.keys(o.vapMos).filter(function (zs) { return Object.keys(o.vapMos[zs]).length >= 3; }).length;
+                    if (nAll && nReg / nAll >= 0.8) intro[p] = 1;
                 });
                 return intro;
             })();
 
             var _encOL2 = getOrgLevel(D), _encK = _encOL2.k;
             var _encAG_DEFS = [
-                { col: 'HPV_administr_es', lbl: 'HPV', why: 'HPV non introduit dans le pays', always: true },
-                { col: 'VAR2_0_11', lbl: 'VAR2 (0-11 mois)', why: 'VAR2 se donne à 12-23 mois, pas à 0-11', always: true },
-                { col: 'VAP1_0_11', lbl: 'VAP1', why: 'VAP non introduit dans cette province', vap: true },
-                { col: 'VAP2_0_11', lbl: 'VAP2', why: 'VAP non introduit dans cette province', vap: true },
-                { col: 'VAP3_0_11', lbl: 'VAP3', why: 'VAP non introduit dans cette province', vap: true },
-                { col: 'VAP4_12_23', lbl: 'VAP4', why: 'VAP non introduit dans cette province', vap: true }
+                { col: 'HPV_administr_es', lbl: 'HPV', why: 'HPV non introduit en RDC', always: true },
+                { col: 'VAR2_0_11', lbl: 'VAR2 (0-11 mois)', why: 'VAR2 rapportée en 0-11 mois — tranche attendue 12-23 mois', always: true },
+                { col: 'VAP1_0_11', lbl: 'VAP1', why: 'VAP encodée dans une province sans introduction VAP', vap: true },
+                { col: 'VAP2_0_11', lbl: 'VAP2', why: 'VAP encodée dans une province sans introduction VAP', vap: true },
+                { col: 'VAP3_0_11', lbl: 'VAP3', why: 'VAP encodée dans une province sans introduction VAP', vap: true },
+                { col: 'VAP4_12_23', lbl: 'VAP4', why: 'VAP encodée dans une province sans introduction VAP', vap: true }
             ];
             b3.innerHTML = '<h4>⚠ ' + _encOL2.l + ' avec valeurs aberrantes</h4>'
-                + '<p style="font-size:11px;color:#555;margin:2px 0 10px">Valeurs signalées comme aberrantes : <b>HPV</b> (non introduit dans le pays), <b>VAR2 en tranche 0-11 mois</b> (VAR2 se donne à 12-23 mois), et <b>VAP</b> dans les provinces où le vaccin n\'est pas encore introduit (détecté dynamiquement d\'après les données : introduction retenue si ≥ 50 % des ZS de la province encodent des doses VAP).</p>'
+                + '<p style="font-size:11px;color:#555;margin:2px 0 10px">Valeurs signalées comme aberrantes : <b>HPV</b> (non introduit en RDC), <b>VAR2 en tranche 0-11 mois</b> (tranche attendue 12-23 mois), et <b>VAP</b> dans les provinces sans introduction VAP (détection automatique d\'après les données 2025-2026 : introduction retenue si ≥ 80 % des ZS de la province encodent la VAP sur ≥ 3 mois récents).</p>'
                 + '<div id="encTblWrap"></div>';
             c.appendChild(b3);
 
@@ -4218,6 +4286,9 @@
                         aberr.push({ ou: ou, ag: d.lbl, per: per, val: v, why: d.why });
                     });
                 });
+                /* Alimente aussi la grille « Valeurs aberrantes par <niveau> » (M9c/M10) */
+                window._p4RuleAberr = aberr;
+                try { _renderP4Chart(); } catch (_) { }
                 if (!aberr.length) {
                     wrap.innerHTML = '<p style="color:#16a34a;padding:16px;text-align:center;font-weight:600">✅ Aucune valeur aberrante détectée dans la sélection.</p>';
                     return;
@@ -4379,9 +4450,9 @@
                     window._drawMissPropChart();
                 };
 
-                /* ── Rendu SVG du graphique ── */
+                /* ── Rendu TABLEAU (remplace le graphique SVG à points — M9) ── */
                 window._drawMissPropChart = function () {
-                    var PAGE  = 30;
+                    var PAGE  = 10;
                     var wrap  = document.getElementById('mpChartWrap');
                     if (!wrap) return;
 
@@ -4390,116 +4461,42 @@
                     if (_mpPage >= nPg) _mpPage = nPg - 1;
                     var slice = _mpRows.slice(_mpPage * PAGE, _mpPage * PAGE + PAGE);
 
-                    var LM = 200, RM = 20, TM = 22, RH = 22, BM = 70;
-                    var W  = Math.max(600, (wrap.clientWidth || 900) - 2);
-                    var PW = W - LM - RM;
-                    var H  = TM + slice.length * RH + BM;
+                    /* 0 % manquant = vert · < 50 % = jaune · ≥ 50 % = rouge */
+                    function cls(v) { if (v === null || v === undefined) return ''; if (v === 0) return 'cg'; if (v < 50) return 'cy'; return 'crd'; }
 
-                    function xp(v) { return LM + v / 100 * PW; }
-                    function yp(i) { return TM + i * RH + RH / 2; }
-                    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-                    var s = [];
-                    s.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" id="mpSvg">');
-
-                    /* Grille verticale + étiquettes X */
-                    [0,10,20,30,40,50,60,70,80,90,100].forEach(function (v) {
-                        var x = xp(v);
-                        s.push('<line x1="' + x + '" y1="' + TM + '" x2="' + x + '" y2="' + (TM + slice.length * RH) + '" stroke="#e5e7eb" stroke-width="1"/>');
-                        s.push('<text x="' + x + '" y="' + (TM - 5) + '" text-anchor="middle" fill="#555" font-size="10" font-family="sans-serif">' + v + '%</text>');
-                    });
-
-                    /* Lignes pointillées orange 50 % et 80 % */
-                    [50, 80].forEach(function (v) {
-                        var x = xp(v);
-                        s.push('<line x1="' + x + '" y1="' + TM + '" x2="' + x + '" y2="' + (TM + slice.length * RH)
-                            + '" stroke="orange" stroke-width="2" stroke-dasharray="6,4" opacity="0.85"/>');
-                    });
-
-                    /* Lignes et points par unité */
+                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="mpTbl" data-pev-noheat="1"><thead><tr>'
+                        + '<th style="text-align:left">' + _mpPL + '</th><th>Nb ' + _mpCL + '</th>';
+                    _mpAgs.forEach(function (ag) { h += '<th>% ' + _mpCL + '<br>' + ag + ' = 0</th>'; });
+                    h += '</tr></thead><tbody>';
                     slice.forEach(function (row, i) {
-                        var y  = yp(i);
-                        var bg = i % 2 === 0 ? '#f8fafc' : '#ffffff';
-                        s.push('<rect x="0" y="' + (TM + i * RH) + '" width="' + W + '" height="' + RH + '" fill="' + bg + '"/>');
-
-                        /* Étiquette Y */
-                        var lbl = row.name.length > 30 ? row.name.substring(0, 27) + '…' : row.name;
-                        s.push('<text x="' + (LM - 6) + '" y="' + (y + 4) + '" text-anchor="end" fill="#333" font-size="9.5" font-family="sans-serif">' + esc(lbl) + '</text>');
-
-                        /* Ligne grise reliant les points */
-                        var xs = _mpAgs.map(function (ag) { return row.vals[ag]; }).filter(function (v) { return v !== null; });
-                        if (xs.length >= 2) {
-                            s.push('<line x1="' + xp(Math.min.apply(null,xs)) + '" y1="' + y
-                                + '" x2="' + xp(Math.max.apply(null,xs)) + '" y2="' + y
-                                + '" stroke="#BDBDBD" stroke-width="1.2" opacity="0.7"/>');
-                        }
-
-                        /* Points par antigène */
+                        var ri = _mpPage * PAGE + i;
+                        h += '<tr><td style="background:#1a237e;color:#fff;font-weight:600;text-align:left">' + tr(row.name, 30) + '</td><td>' + row.total + '</td>';
                         _mpAgs.forEach(function (ag) {
                             var v = row.vals[ag];
-                            if (v === null || v === undefined) return;
-                            var ri = _mpPage * PAGE + i;
-                            var tip = esc(JSON.stringify({ n: row.name, ag: ag, v: v.toFixed(1), ri: ri }));
-                            s.push('<circle cx="' + xp(v) + '" cy="' + y
-                                + '" r="6" fill="' + _mpColors[ag] + '" stroke="white" stroke-width="1.5"'
-                                + ' class="mpDot" style="cursor:pointer"'
-                                + ' data-tip="' + tip + '"'
-                                + ' onclick="window._showMpModal(' + ri + ',\'' + ag + '\')"'
-                                + '/>');
+                            if (v === null || v === undefined) { h += '<td>—</td>'; return; }
+                            h += '<td class="' + cls(v) + '" style="cursor:pointer;font-weight:700" title="Cliquer pour afficher le détail" onclick="_showMpModal(' + ri + ',\'' + ag + '\')">' + v.toFixed(1) + '%</td>';
                         });
+                        h += '</tr>';
                     });
-
-                    /* Légende */
-                    var legY = TM + slice.length * RH + 18;
-                    s.push('<text x="' + LM + '" y="' + legY + '" fill="#444" font-size="10" font-weight="bold" font-family="sans-serif">Indicateur :</text>');
-                    _mpAgs.forEach(function (ag, idx) {
-                        var lx = LM + 75 + idx * 145;
-                        s.push('<circle cx="' + (lx + 5) + '" cy="' + (legY - 4) + '" r="5" fill="' + _mpColors[ag] + '"/>');
-                        s.push('<text x="' + (lx + 13) + '" y="' + legY + '" fill="#333" font-size="10" font-family="sans-serif">%' + _mpCL + ' avec ' + ag + '=0</text>');
-                    });
-
-                    /* Titre axe Y */
-                    s.push('<text transform="rotate(-90)" x="' + (-(TM + slice.length * RH / 2)) + '" y="12"'
-                        + ' text-anchor="middle" fill="#555" font-size="11" font-family="sans-serif">' + esc(_mpPL) + '</text>');
-
-                    s.push('</svg>');
-
-                    /* Pagination */
-                    function pagCtrl() {
-                        if (nPg <= 1) return '';
-                        return '<div style="display:flex;align-items:center;gap:8px;margin:4px 0">'
-                            + '<button onclick="window._mpPrev()" style="padding:3px 10px;border:1px solid #d1d5db;border-radius:5px;font-size:11px;cursor:pointer"'
-                            + (_mpPage === 0 ? ' disabled' : '') + '>◀ Préc.</button>'
-                            + '<span style="font-size:11px;color:#555">Page ' + (_mpPage+1) + '/' + nPg + ' — ' + total + ' ' + _mpPL + '</span>'
-                            + '<button onclick="window._mpNext(' + nPg + ')" style="padding:3px 10px;border:1px solid #d1d5db;border-radius:5px;font-size:11px;cursor:pointer"'
-                            + (_mpPage === nPg - 1 ? ' disabled' : '') + '>Suiv. ▶</button>'
-                            + '</div>';
+                    h += '</tbody></table></div>';
+                    if (nPg > 1) {
+                        h += '<div class="pev-pgnav"><button type="button" onclick="_mpPrev()"' + (_mpPage === 0 ? ' disabled' : '')
+                            + '>◀</button><span>' + (_mpPage * PAGE + 1) + '–' + Math.min(total, _mpPage * PAGE + PAGE) + ' sur ' + total + ' ' + _mpPL
+                            + '</span><button type="button" onclick="_mpNext(' + nPg + ')"' + (_mpPage === nPg - 1 ? ' disabled' : '') + '>▶</button></div>';
                     }
-                    wrap.innerHTML = pagCtrl() + s.join('') + (nPg > 1 ? pagCtrl() : '');
-
-                    /* Tooltips sur les points */
-                    wrap.querySelectorAll('.mpDot').forEach(function (dot) {
-                        dot.addEventListener('mouseenter', function (e) {
-                            dot.setAttribute('r','9');
-                            var d = JSON.parse(dot.getAttribute('data-tip'));
-                            var tip = document.createElement('div');
-                            tip.id = 'mpTip';
-                            tip.style.cssText = 'position:fixed;background:rgba(30,30,30,.92);color:white;font-size:11px;'
-                                + 'padding:6px 10px;border-radius:6px;pointer-events:none;z-index:9999;max-width:220px;text-align:center;line-height:1.4';
-                            tip.innerHTML = '<strong>' + esc(d.n) + '</strong><br>' + d.ag + ' : ' + d.v + '%<br>'
-                                + '<span style="font-size:10px;color:#ffd">👆 Cliquer pour afficher les détails</span>';
-                            document.body.appendChild(tip);
-                            function mv(ev) { tip.style.left=(ev.clientX+14)+'px'; tip.style.top=(ev.clientY-46)+'px'; }
-                            mv(e); dot._mpMv = mv;
-                            document.addEventListener('mousemove', mv);
-                        });
-                        dot.addEventListener('mouseleave', function () {
-                            dot.setAttribute('r','6');
-                            var tip = document.getElementById('mpTip');
-                            if (tip) tip.parentNode.removeChild(tip);
-                            if (dot._mpMv) document.removeEventListener('mousemove', dot._mpMv);
-                        });
-                    });
+                    wrap.innerHTML = h;
+                    /* Export CSV/Excel : toutes les lignes, pas seulement la page */
+                    try {
+                        var tblMp = document.getElementById('mpTbl');
+                        if (tblMp) tblMp.__pevFull = function () {
+                            var head = [_mpPL, 'Nb ' + _mpCL].concat(_mpAgs.map(function (ag) { return '% ' + _mpCL + ' ' + ag + ' = 0'; }));
+                            return [head].concat(_mpRows.map(function (row) {
+                                return [row.name, row.total].concat(_mpAgs.map(function (ag) {
+                                    var v = row.vals[ag]; return (v === null || v === undefined) ? '' : v.toFixed(1) + '%';
+                                }));
+                            }));
+                        };
+                    } catch (_) { }
                 };
 
                 window._mpPrev = function () { if (_mpPage > 0) { _mpPage--; window._drawMissPropChart(); } };
