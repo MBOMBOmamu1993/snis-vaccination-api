@@ -1264,6 +1264,17 @@
                         T.padding = 10; T.cornerRadius = 10; T.boxPadding = 6;
                         T.titleFont = { weight: '700' };
                     }
+                    /* Positionne le ≡ à droite, juste SOUS le bandeau bleu de titre de la
+                       carte (jamais dans le bandeau). Ré-appliqué par le sweep habillage. */
+                    window._pevPosDl = function (b) {
+                        try {
+                            var host = b.parentNode; if (!host) return;
+                            var ban = host.querySelector(':scope > h3, :scope > h4');
+                            var top = 8;
+                            if (ban && ban.offsetHeight) top = ban.offsetTop + ban.offsetHeight + 6;
+                            b.style.top = top + 'px'; b.style.right = '10px';
+                        } catch (_) { }
+                    };
                     Chart.register({
                         id: 'pevDl',
                         afterInit: function (chart) {
@@ -1279,6 +1290,7 @@
                                     try { var a = document.createElement('a'); a.href = chart.toBase64Image('image/png', 1); a.download = 'graphique_pev.png'; a.click(); } catch (_) { }
                                 };
                                 host.appendChild(b);
+                                window._pevPosDl(b);
                             } catch (_) { }
                         }
                     });
@@ -8758,6 +8770,8 @@
                     btn.onclick = function (e) {
                         e.preventDefault(); e.stopPropagation();
                         document.querySelectorAll('.pev-dlmenu.open').forEach(function (m) { if (m !== menu) m.classList.remove('open'); });
+                        /* Le menu s'ouvre sous le bouton ≡ (lui-même sous le bandeau) */
+                        try { menu.style.top = (btn.offsetTop + btn.offsetHeight + 6) + 'px'; } catch (_) { }
                         menu.classList.toggle('open');
                     };
                 } catch (e) { }
@@ -8784,6 +8798,7 @@
                 coupleBanners(document);
                 swapLeadIcon(document.getElementById('LS'));
                 document.querySelectorAll('.pev-dl:not([data-pev-menu])').forEach(buildChartMenu);
+                if (window._pevPosDl) document.querySelectorAll('.pev-dl').forEach(window._pevPosDl);
             }
             var tick = null;
             var mo = new MutationObserver(function () {
