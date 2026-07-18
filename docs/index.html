@@ -3083,7 +3083,7 @@
 
         function mkAlertTbl(D, AD, mos, N, thr) {
             var box = E('div', 'cb'); var lastM = mos[mos.length - 1];
-            box.innerHTML = '<h4>\u26a0 Comparaison des donn\u00e9es de vaccination par rapport \u00e0 la moyenne mobile des ' + N + ' derniers mois (\u00b1' + Math.round(thr * 100) + '%)</h4>';
+            box.innerHTML = '<h4>\u26a0 Comparaison des donn\u00e9es de vaccination par rapport \u00e0 la moyenne mobile des ' + N + ' derniers mois</h4>';
             if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donn\u00e9e.</p>'; return box; }
 
             var ol = getOrgLevel(D);
