@@ -3909,12 +3909,22 @@
 
 
 
+        function _renderP4Chart() {
+            if (S.charts.atBChart) { try { S.charts.atBChart.destroy(); } catch (e) { } }
+            var x = document.getElementById('atBChart'); if (!x) return;
+            var atB = {}; AG.forEach(function (ag) { atB[ag] = { t: 0, a: 0 }; });
+            (window._p4Det && window._p4Det.rows || []).forEach(function (r) { if (atB[r.ag]) { atB[r.ag].a += r.ac; atB[r.ag].t += r.ac + r.norm; } });
+            var agK = AG.filter(function (a) { return atB[a].t > 0; });
+            S.charts.atBChart = new Chart(x, { type: 'bar', data: { labels: agK.map(function (a) { return AG_LBL[a]; }), datasets: [{ label: 'Atypiques', data: agK.map(function (a) { return atB[a].a; }), backgroundColor: '#d62728', borderRadius: 3 }, { label: 'Normales', data: agK.map(function (a) { return atB[a].t - atB[a].a; }), backgroundColor: '#2ca02c', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+        }
+
         window._changeP4Method = function (method) {
             _p4Method = method;
             var rows = _buildP4Rows();
             window._p4Det.rows = rows; window._p4Det.flt = rows.slice(); window._p4Det.pg = 0;
             var ouCBs = document.querySelectorAll('#detDdOU .fi:not(.fa) input[type=checkbox]');
             if (ouCBs.length) { _fltDet(); } else { _renderDetPage(); }
+            _renderP4Chart();
             document.querySelectorAll('.p4ob').forEach(function (b) { b.style.background = '#e5e7eb'; b.style.color = '#333'; b.style.fontWeight = '600'; });
             var act = document.getElementById('p4o_' + method);
             if (act) { act.style.background = method === 'var33' ? '#1a237e' : (method === 'sd2' ? '#e2a33b' : '#d62728'); act.style.color = '#fff'; act.style.fontWeight = '700'; }
@@ -3973,6 +3983,11 @@
 
                     /* Retirer le placeholder "Calcul en cours" */
                     if (_p4Load && _p4Load.parentNode) _p4Load.parentNode.removeChild(_p4Load);
+
+                    /* ── Carte : Atypiques et Normales par antigène ── */
+                    var b1 = E('div', 'cb');
+                    b1.innerHTML = '<h4>\u26a0 Atypiques et Normales par antig\u00e8ne</h4><div style="position:relative;height:320px"><canvas id="atBChart"></canvas></div>';
+                    _p4HeavyWrap.appendChild(b1);
 
                     /* ═══ TABLEAU DÉTAILLÉ VALEURS ATYPIQUES ═══ */
                     window._p4Det = { rows: [], flt: [], pg: 0, pp: 15, mos: _last12, orgL: '' };
@@ -4040,6 +4055,7 @@
                     }
 
                     setTimeout(function () { _renderDetPage(); }, 60);
+                    setTimeout(function () { _renderP4Chart(); }, 120);
 
                     /* ── Tendance mensuelle (également différée) ── */
                     var _allMosAt = uv(AD, function (r) { return r.period; }).sort();
