@@ -872,6 +872,10 @@
         .fi:hover { background: #eef2ff !important; }
         .fi.fa { font-weight: 700; border-bottom: 1px solid #eef1f8; border-radius: 0; margin: 0 0 3px; }
         .fbtn .cn { background: #1a237e !important; border-radius: 10px !important; padding: 2px 7px !important; }
+        /* M11 — filtres : bord #c7d0e8, hover/focus #0d47a1, radius 8px, ombre douce */
+        .fbtn, .fg select { border-color: #c7d0e8 !important; border-radius: 8px !important; }
+        .fbtn:hover, .fg select:focus, .fg:has(.fd.sh) .fbtn, .fbtn:focus { border-color: #0d47a1 !important; }
+        .fd { border-radius: 8px !important; border-color: #c7d0e8 !important; box-shadow: 0 14px 38px rgba(13,71,161,.16) !important; }
 
         .dt {
             contain: layout style
@@ -3353,9 +3357,16 @@
             var el = document.getElementById(id);
             if (!el) return;
             el.classList.toggle('sh');
-            ['alertDdOU', 'alertDdAG', 'detDdOU', 'detDdAG'].forEach(function (oid) {
-                if (oid !== id) { var o = document.getElementById(oid); if (o) o.classList.remove('sh'); }
-            });
+            /* Hover-intent généralisé (M11) : attaché à la première ouverture —
+               le ruban reste affiché tant que le curseur est dessus et ne se
+               ferme que ~450 ms après l'avoir réellement quitté. */
+            if (!el.dataset.pevHov) {
+                el.dataset.pevHov = '1';
+                var g = el.closest('.fg');
+                if (g && typeof _pevHoverClose === 'function') _pevHoverClose(g, el);
+            }
+            /* Un seul dropdown ouvert à la fois, quel que soit le bloc de filtres */
+            document.querySelectorAll('.fd.sh').forEach(function (o) { if (o !== el) o.classList.remove('sh'); });
         };
 
         /* ── Recherche dans le dropdown ── */
