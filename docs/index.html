@@ -1658,7 +1658,7 @@
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques, aberrantes et données manquantes', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
             {
-                id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'],
+                id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'period', 'antigens'], /* pas de FOSA : pas de couverture vaccinale par FOSA */
                 pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }]
             },
             { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
@@ -6619,8 +6619,12 @@
                 }).join('');
                 /* Hauteur dynamique pour le graphique ZD/SV : ~24 px par org unit, min 380, max 1400 */
                 var zdsvH = Math.max(380, Math.min(1400, 80 + Math.max(orgNames.length, 1) * 24));
+                /* Pleine largeur (1 colonne) : la pagination ◀ ▶ de chaque graphique,
+                   insérée comme frère du conteneur du canvas, se retrouve ainsi
+                   directement centrée SOUS son graphique (en grille 2 colonnes elle
+                   atterrissait dans la cellule voisine). */
                 chartBox.innerHTML = '<h4 style="color:#1a237e;margin:0 0 10px">📈 Graphiques de couverture vaccinale</h4>' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">' +
+                    '<div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:20px">' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart1"></canvas></div>' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart2"></canvas></div>' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:380px;position:relative"><canvas id="cvChart3"></canvas></div>' +
@@ -6628,7 +6632,7 @@
                     '<h4 style="color:#1a237e;margin:0 0 10px">👶 Enfants zéro-dose et sous-vaccinés par ' + gi.label + '</h4>' +
                     '<div style="background:#fafbfc;border-radius:8px;padding:14px;height:' + zdsvH + 'px;position:relative;margin-bottom:20px"><canvas id="cvChart4"></canvas></div>' +
                     '<h4 style="color:#1a237e;margin:0 0 10px">📊 CV par antigène — ' + gi.label + ' (style Graphiques_Routine)</h4>' +
-                    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px">' + grCanvases + '</div>';
+                    '<div style="display:grid;grid-template-columns:1fr;gap:16px">' + grCanvases + '</div>';
                 c.appendChild(chartBox);
 
                 /* Plugin inline : trait d'objectif sur toute la largeur + étiquettes au-dessus des barres */
