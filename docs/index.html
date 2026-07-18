@@ -1102,6 +1102,14 @@
         /* Légende heatmap */
         .pev-hm-leg{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;font-size:11px;
             font-weight:700;color:var(--tn)}
+        /* M14 — légende « barre CV » : rectangles contigus, radius aux extrémités seulement */
+        .pev-cvleg{display:flex;align-items:flex-start;margin:0 0 10px}
+        .pev-cvleg .seg{display:flex;flex-direction:column;align-items:center;font-size:10px;font-weight:700;color:var(--tn)}
+        .pev-cvleg .seg i{display:block;width:100%;min-width:26px;height:14px}
+        .pev-cvleg .seg:first-child i{border-radius:3px 0 0 3px}
+        .pev-cvleg .seg:last-child i{border-radius:0 3px 3px 0}
+        .pev-cvleg .seg span{margin-top:3px;white-space:nowrap;padding:0 6px}
+        @media print{.pev-cvleg{display:none!important}}
         .pev-hm-leg .pev-hm-chip{display:inline-flex;align-items:center;color:#fff;padding:3px 11px;border-radius:20px;
             font-size:10.5px;font-weight:800}
         /* Menu de téléchargement graphique (type Highcharts) */
@@ -5601,11 +5609,12 @@
 
                 var ph = '<h4 style="color:#1a237e;margin:0 0 8px">📊 Résumé heatmap par antigène/intrant — ' + total + ' ' + ol.l + '(s)</h4>';
                 ph += '<p style="font-size:10.5px;color:#555;margin:0 0 6px">Nombre de ' + ol.l + 's hors norme pour chaque antigène/intrant (part du total) :</p>';
-                ph += '<div class="pev-hm-leg" style="margin:0 0 10px">'
-                    + '<span class="pev-hm-chip" style="background:#2ca02c">0 (aucun)</span>'
-                    + '<span class="pev-hm-chip" style="background:#8fd18f;color:#14532d">1 – 20 %</span>'
-                    + '<span class="pev-hm-chip" style="background:#f2c200;color:#5a4500">21 – 50 %</span>'
-                    + '<span class="pev-hm-chip" style="background:#d62728">&gt; 50 %</span></div>';
+                /* Légende type « CV » : barre de rectangles contigus, un intervalle par classe (M14) */
+                ph += '<div class="pev-cvleg" aria-label="Légende">'
+                    + '<span class="seg"><i style="background:#2ca02c"></i><span>0 (aucun)</span></span>'
+                    + '<span class="seg"><i style="background:#8fd18f"></i><span>1 – 20 %</span></span>'
+                    + '<span class="seg"><i style="background:#f2c200"></i><span>21 – 50 %</span></span>'
+                    + '<span class="seg"><i style="background:#d62728"></i><span>&gt; 50 %</span></span></div>';
                 ph += '<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:10px"><thead><tr>';
                 ph += '<th style="' + thR + '">Indicateur / ' + ol.l + ' hors norme</th>';
                 LOGIST_FIELDS.forEach(function(it) { ph += '<th style="' + thS + '">' + (abbr[it.pfx] || it.pfx) + '</th>'; });
@@ -8202,6 +8211,18 @@
                                     if (tt && tt.style.display === 'none') { tt.style.display = ''; tt.style.opacity = ''; }
                                 });
                                 window.addEventListener('scroll', _hideTip, { passive: true });
+                                /* M13 : jamais de tooltip épinglé — un clic sur un polygone ne
+                                   doit pas le faire persister, et s'il survit malgré tout, un
+                                   mousemove hors de la carte le masque (filet de sécurité). */
+                                el.addEventListener('click', function () { setTimeout(_hideTip, 0); });
+                                if (!document.body.dataset.pevTipGuard) {
+                                    document.body.dataset.pevTipGuard = '1';
+                                    document.addEventListener('mousemove', function (ev) {
+                                        var tt = document.getElementById('vg-tooltip-element');
+                                        if (!tt || !tt.classList.contains('visible')) return;
+                                        if (!ev.target || !ev.target.closest('.vega-embed, #vg-tooltip-element')) _hideTip();
+                                    }, { passive: true });
+                                }
                             }).catch(function (err) { _mapFail(err.message); });
                         }
                         function _mapFail(msg) {
