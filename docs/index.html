@@ -2238,6 +2238,7 @@
                 S.filters.province = S.vals.province[0] || '';
                 S.filters.antenne = []; S.filters.zs = []; S.filters.as = []; S.filters.fosa = [];
                 S.filters.period = getDefaultPeriod(S.vals.period);
+                S.filters.antigens = []; /* [] = tous les antigènes (état par défaut) */
 
                 sp(50, 'Réinitialisation...', ' ⏳');
                                 loadProvinceData(S.filters.province).then(function () {
