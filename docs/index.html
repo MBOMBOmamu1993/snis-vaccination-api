@@ -860,8 +860,18 @@
         }
 
         .fbtn {
-            transition: border-color .1s ease, background .1s ease
+            transition: border-color .1s ease, background .1s ease, box-shadow .15s ease
         }
+        /* ── Design filtres (Fable 5) : plus doux, accent indigo, ombre nette ── */
+        .fbtn { border-width: 1.5px !important; border-color: #cdd9ea !important; background: #fff !important; border-radius: 9px !important; box-shadow: 0 1px 2px rgba(26,35,126,.06); }
+        .fbtn:hover { border-color: #1a237e !important; background: #f5f8ff !important; box-shadow: 0 3px 10px rgba(26,35,126,.14); }
+        .fg:has(.fd.sh) .fbtn, .fbtn:focus { border-color: #1a237e !important; box-shadow: 0 0 0 3px rgba(26,35,126,.14); }
+        .fd { border-radius: 11px !important; border-color: #e4e7f2 !important; box-shadow: 0 16px 44px rgba(26,35,126,.18) !important; padding: 6px 0 !important; }
+        .fd .sr { border-radius: 8px !important; border-color: #dfe3ee !important; }
+        .fi { border-radius: 7px; margin: 1px 5px; padding: 6px 9px !important; }
+        .fi:hover { background: #eef2ff !important; }
+        .fi.fa { font-weight: 700; border-bottom: 1px solid #eef1f8; border-radius: 0; margin: 0 0 3px; }
+        .fbtn .cn { background: #1a237e !important; border-radius: 10px !important; padding: 2px 7px !important; }
 
         .dt {
             contain: layout style
@@ -938,8 +948,10 @@
         .kc [style*="rgba(255,255,255"] { color: var(--muted) !important; }
         /* Boutons de téléchargement (design only) : ⤓ sur chaque graphique, barre CSV/Excel sur chaque tableau. */
         /* Bouton hamburger d'options du graphique — façon toolbox ECharts (Supervision conjointe) */
-        .pev-dl { position: absolute; top: 6px; right: 8px; z-index: 20; width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #94a3b8; font-size: 19px; font-weight: 700; line-height: 1; cursor: pointer; transition: all .15s ease; }
-        .pev-dl:hover { background: #f1f5f9; color: #1a237e; }
+        /* Menu du graphique : bouton bien VISIBLE, positionné juste sous le bandeau
+           bleu de titre, côté droit (bordé, fond blanc, indigo). */
+        .pev-dl { position: absolute; top: 8px; right: 10px; z-index: 20; width: 32px; height: 30px; border-radius: 8px; border: 1px solid #cdd9ea; background: #fff; color: #1a237e; font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer; box-shadow: 0 2px 5px rgba(26,35,126,.12); transition: all .15s ease; }
+        .pev-dl:hover { background: #1a237e; color: #fff; border-color: #1a237e; }
         .pev-tbar { display: flex; justify-content: flex-end; gap: 8px; margin: 0 0 8px; }
         .pev-tbtn { border: 1px solid #cdd9ea; background: #fff; color: #1a237e; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 8px; cursor: pointer; transition: all .15s ease; }
         .pev-tbtn:hover { background: #1a237e; color: #fff; border-color: #1a237e; }
@@ -1093,6 +1105,14 @@
         .pev-dlmenu button:hover{background:#eef1fb;color:var(--tn)}
         .pev-dlmenu .pev-dlsep{height:1px;background:#eef1f5;margin:5px 4px}
         @media print{.pev-dlmenu,.pev-hm-leg{display:none!important}}
+        /* Barre de pagination des tableaux (10 lignes/page) */
+        .pev-tblpg{display:flex;align-items:center;justify-content:center;gap:14px;padding:2px 0}
+        .pev-tblpg button{border:1px solid #cdd9ea;background:#fff;color:#1a237e;font-size:13px;font-weight:700;width:34px;height:30px;border-radius:8px;cursor:pointer;transition:all .15s}
+        .pev-tblpg button:hover:not(:disabled){background:#1a237e;color:#fff;border-color:#1a237e}
+        .pev-tblpg button:disabled{opacity:.4;cursor:default}
+        .pev-tblpg span{font-size:12.5px;color:#334155;font-weight:600}
+        .pev-tblpg-row td{background:#f4f6fb!important}
+        @media print{.pev-tblpg{display:none!important}}
         /* Cellules de libellé d'organisation (Province / Antenne) — style plateforme */
         /* Première colonne (entité) marine plein, texte blanc — comme Supervision conjointe */
         .dt td.pev-rowlbl{background:#2b3583!important;color:#fff!important;font-weight:700;text-align:left}
@@ -1287,7 +1307,7 @@
                        FOSA : ≥ 26). Les données restent calculées à l'identique — on
                        n'en AFFICHE qu'une tranche de 25 à la fois avec navigation ◀ ▶.
                        Les canvases crb_* (Courbe de suivi des CV) sont exemptés. */
-                    var PEV_PG_MIN = 26, PEV_PG_SIZE = 25;
+                    var PEV_PG_MIN = 11, PEV_PG_SIZE = 10;
                     Chart.register({
                         id: 'pevPaginate',
                         afterInit: function (chart) {
@@ -1315,6 +1335,19 @@
                                 nav.appendChild(bPrev); nav.appendChild(lbl); nav.appendChild(bNext);
                                 host.parentNode.insertBefore(nav, host.nextSibling);
                                 host.__pevNav = nav;
+                                /* Avec seulement 10 org units par page, on agrandit la
+                                   police des noms et on force l'affichage de TOUS les
+                                   libellés de l'axe des catégories (jamais tronqués). */
+                                var _horiz = chart.options && chart.options.indexAxis === 'y';
+                                var _catAxis = _horiz ? 'y' : 'x';
+                                try {
+                                    chart.options.scales = chart.options.scales || {};
+                                    var _ax = chart.options.scales[_catAxis] = chart.options.scales[_catAxis] || {};
+                                    _ax.ticks = _ax.ticks || {};
+                                    _ax.ticks.autoSkip = false;
+                                    _ax.ticks.font = Object.assign({}, _ax.ticks.font, { size: 13 });
+                                    if (!_horiz) { _ax.ticks.maxRotation = 60; _ax.ticks.minRotation = 0; }
+                                } catch (_) { }
                                 function apply() {
                                     var s = pg * PEV_PG_SIZE, e2 = Math.min(s + PEV_PG_SIZE, full.labels.length);
                                     chart.data.labels = full.labels.slice(s, e2);
@@ -1340,6 +1373,7 @@
                                 if (_pevExempt(chart)) return;
                                 var cfg = chart.config;
                                 var dss = (cfg.data && cfg.data.datasets) || [];
+                                var _isBar = dss.some(function (d) { return (d.type || cfg.type) === 'bar'; });
                                 dss.forEach(function (ds) {
                                     if (ds.backgroundColor !== undefined) ds.backgroundColor = _pevCol(ds.backgroundColor);
                                     if (ds.borderColor !== undefined) ds.borderColor = _pevCol(ds.borderColor);
@@ -1350,6 +1384,18 @@
                                         if (ds.maxBarThickness === undefined) ds.maxBarThickness = 46;
                                     }
                                 });
+                                /* Afficher TOUS les libellés de l'axe des catégories
+                                   (jamais tronqués/sautés) sur les graphiques à barres. */
+                                if (_isBar) {
+                                    cfg.options = cfg.options || {};
+                                    var _hz = cfg.options.indexAxis === 'y';
+                                    var _ca = _hz ? 'y' : 'x';
+                                    cfg.options.scales = cfg.options.scales || {};
+                                    var _cax = cfg.options.scales[_ca] = cfg.options.scales[_ca] || {};
+                                    _cax.ticks = _cax.ticks || {};
+                                    if (_cax.ticks.autoSkip === undefined) _cax.ticks.autoSkip = false;
+                                    if (!_hz && _cax.ticks.maxRotation === undefined) _cax.ticks.maxRotation = 60;
+                                }
                             } catch (_) { }
                         },
                         afterDatasetsDraw: function (chart) {
@@ -1545,7 +1591,7 @@
         var TABS = [
             {
                 id: 'oqd', lb: 'Contrôle qualité des données', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'],
-                pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques et données manquantes', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
+                pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques, aberrantes et données manquantes', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
             {
                 id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'],
@@ -2233,10 +2279,10 @@
             });
 
             g.appendChild(dd);
-            /* Auto-close quand le curseur quitte le dropdown */
-            g.addEventListener('mouseleave', function () {
-                dd.classList.remove('sh');
-            });
+            /* Fermeture différée et annulable : on ne ferme qu'après un court délai
+               quand le curseur quitte réellement le filtre, et on annule si le
+               curseur y revient — plus de disparition prématurée pendant la sélection. */
+            _pevHoverClose(g, dd);
             container.appendChild(g);
         }
 
@@ -2450,7 +2496,7 @@
             refreshGrid();
 
             g.appendChild(dd);
-            g.addEventListener('mouseleave', function () { dd.classList.remove('sh'); });
+            _pevHoverClose(g, dd);
             container.appendChild(g);
         }
 
@@ -2546,7 +2592,7 @@
             });
 
             g.appendChild(dd);
-            g.addEventListener('mouseleave', function () { dd.classList.remove('sh'); });
+            _pevHoverClose(g, dd);
             container.appendChild(g);
         }
 
@@ -2779,7 +2825,7 @@
             if (S.filters.period.length === 1) { _perLbl = mL(S.filters.period[0]); }
             else if (S.filters.period.length > 1) { var _ps = S.filters.period.slice().sort(); _perLbl = mL(_ps[0]) + ' \u2013 ' + mL(_ps[_ps.length - 1]); }
             if (_perLbl) _ctxParts.push('P\u00e9riode: ' + _perLbl);
-            db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11px;font-weight:400;color:#555;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
+            db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11.5px;font-weight:400;color:#fff;opacity:.92;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
             else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV][S.pg](ct); }
@@ -2813,8 +2859,7 @@
                 '<div class="kc gn"><div class="kv">' + rep.length + '</div><div class="kl">FOSA rapportantes</div></div>' +
                 '<div class="kc rd"><div class="kv">' + nNR + '</div><div class="kl">FOSA non-rapportantes</div></div>' +
                 '<div class="kc bl"><div class="kv">' + pR.toFixed(1) + '%</div><div class="kl">% rapportage</div></div>' +
-                '<div class="kc or"><div class="kv">' + aE.toFixed(1) + '%</div><div class="kl">Complétude var. (' + AG.length + ' AG)</div></div>' +
-                '<div class="kc pu"><div class="kv">' + nF + '</div><div class="kl">FOSA' + ctxLbl() + '</div></div>'));
+                '<div class="kc or" title="Complétude des ' + AG.length + ' antigènes obligatoires rapportés : proportion moyenne de variables renseignées par les FOSA rapportantes."><div class="kv">' + aE.toFixed(1) + '%</div><div class="kl">Complétude des antigènes obligatoires rapportés (' + AG.length + ' AG)</div></div>'));
 
             [{ l: 'Antenne PEV', k: function (r) { return r.antenne; } }, { l: 'Zone de Santé', k: function (r) { return r.org3; } }, { l: 'Aire de Santé', k: function (r) { return r.org4; } }, { l: 'FOSA', k: function (r) { return r.org5; } }].forEach(function (lv, idx) {
                 var g = grp(D, lv.k), labs = Object.keys(g).filter(Boolean).sort(); if (!labs.length) return;
@@ -3001,7 +3046,7 @@
 
         function mkAlertTbl(D, AD, mos, N, thr) {
             var box = E('div', 'cb'); var lastM = mos[mos.length - 1];
-            box.innerHTML = '<h4>\u26a0 Alertes &amp; Situation compl\u00e8te (moy. mobile ' + N + ' mois, \u00b1' + Math.round(thr * 100) + '%)</h4>';
+            box.innerHTML = '<h4>\u26a0 Comparaison des donn\u00e9es de vaccination par rapport \u00e0 la moyenne mobile des ' + N + ' derniers mois (\u00b1' + Math.round(thr * 100) + '%)</h4>';
             if (!lastM) { box.innerHTML += '<p style="color:#888">Aucune donn\u00e9e.</p>'; return box; }
 
             var ol = getOrgLevel(D);
@@ -3159,18 +3204,26 @@
         }
 
         /* ── Rendu des lignes du tableau ── */
+        var _alertRows = [], _alertPage = 0, _ALERT_PP = 10;
+        window._alertPg = function (d) { _alertPage += d; _renderAlertTbl(null); };
         function _renderAlertTbl(rows) {
             var tb = document.getElementById('alertTBody');
             if (!tb) return;
+            if (rows !== null) { _alertRows = rows || []; _alertPage = 0; }
+            rows = _alertRows;
             if (!rows.length) {
                 tb.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;'
                     + 'color:#888;font-style:italic">Aucune donn\u00e9e correspondante.</td></tr>';
                 return;
             }
+            var _nPg = Math.ceil(rows.length / _ALERT_PP);
+            if (_alertPage >= _nPg) _alertPage = _nPg - 1;
+            if (_alertPage < 0) _alertPage = 0;
+            var _s = _alertPage * _ALERT_PP, _e = Math.min(_s + _ALERT_PP, rows.length);
             var h = '', cNA = 0, cOK = 0;
-            rows.forEach(function (r) {
+            rows.forEach(function (r) { if (r.acc === 'Non acceptable') cNA++; else cOK++; });
+            rows.slice(_s, _e).forEach(function (r) {
                 var vn = +r.var2, isNA = r.acc === 'Non acceptable';
-                if (isNA) cNA++; else cOK++;
                 var ac = isNA ? 'crd' : '';
                 var vc = vn > 0 ? '#d62728' : (vn < 0 ? '#0d47a1' : '#666');
                 /* Colonnes org unit + antigène en bleu navy (demande design) */
@@ -3182,6 +3235,11 @@
                     + '<td class="' + ac + '" style="font-weight:700">' + r.acc + '</td></tr>';
             });
             /* Ligne résumé */
+            h += '<tr class="pev-tblpg-row"><td colspan="6" style="padding:8px"><div class="pev-tblpg">'
+                + '<button type="button" onclick="_alertPg(-1)"' + (_alertPage === 0 ? ' disabled' : '') + '>◀</button>'
+                + '<span>' + (_s + 1) + '–' + _e + ' sur ' + rows.length + ' (page ' + (_alertPage + 1) + '/' + _nPg + ')</span>'
+                + '<button type="button" onclick="_alertPg(1)"' + (_alertPage >= _nPg - 1 ? ' disabled' : '') + '>▶</button>'
+                + '</div></td></tr>';
             h += '<tr style="background:linear-gradient(135deg,#1e293b,#334155);color:#fff;font-weight:700">'
                 + '<td colspan="3" style="padding:10px 8px">\ud83d\udcca Total affich\u00e9 : '
                 + rows.length + ' lignes</td>'
@@ -3209,6 +3267,21 @@
             _renderAlertTbl(f);
             _updABtn('alertDdOU', 'alertBtnOU');
             _updABtn('alertDdAG', 'alertBtnAG');
+        }
+
+        /* ── Fermeture différée et annulable des dropdowns de filtre ──
+           Ferme le ruban ~450 ms après que le curseur l'a réellement quitté, et
+           annule si le curseur y revient (hover intent). Évite les fermetures
+           prématurées pendant qu'on coche plusieurs éléments. */
+        function _pevHoverClose(g, dd) {
+            var t = null;
+            g.addEventListener('mouseleave', function () {
+                clearTimeout(t);
+                t = setTimeout(function () { dd.classList.remove('sh'); }, 450);
+            });
+            g.addEventListener('mouseenter', function () { clearTimeout(t); });
+            /* Ne pas fermer tant qu'on interagit à l'intérieur (clics cases, recherche) */
+            dd.addEventListener('mousedown', function () { clearTimeout(t); });
         }
 
         /* ── Toggle ouverture dropdown ── */
@@ -3348,8 +3421,8 @@
                 /* ── Tableau Triangulation ── */
                 var triBox = E('div', 'cb');
 
-                var trFH = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">';
-                trFH += '<h4 style="margin:0;border:none;padding:0;"> Triangulation données de vaccination et doses de vaccins disponibles au cours du mois</h4>';
+                var trFH = '<div style="display:flex;justify-content:space-between;align-items:center;margin:-2px -2px 12px;flex-wrap:wrap;gap:10px;background:linear-gradient(120deg,#1a237e,#0d47a1);padding:12px 16px;border-radius:12px;box-shadow:0 3px 8px rgba(26,35,126,.18)">';
+                trFH += '<h4 style="margin:0;border:none;padding:0;color:#fff;font-size:14.5px">Triangulation des données de vaccination et doses de vaccins disponibles au cours du mois</h4>';
                 trFH += '<div style="display:flex;gap:8px;">';
                 trFH += '<button onclick="_expTri(\'xls\')" style="background:#217346;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📥 Excel</button>';
                 trFH += '<button onclick="_expTri(\'pdf\')" style="background:#d62728;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 PDF</button>';
@@ -3383,7 +3456,7 @@
                     /* En-tête sur 2 lignes : 1 colonne org unit | colonnes groupées par antigène | 2 colonnes résumé */
 
                     // Ajout de l'ID id="triTbl" sur la table pour l'exportation
-                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="triTbl"><thead>';
+                    var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="triTbl" data-pev-noheat><thead>';
                     h += '<tr><th rowspan="2" style="position:sticky;left:0;background:#1a237e;z-index:2;min-width:120px">' + ol.l + '</th>';
                     fAgs.forEach(function (ag) { h += '<th colspan="3" style="text-align:center;border-bottom:1px solid #bbb">' + ag.lbl + '</th>'; });
                     h += '<th rowspan="2" style="white-space:nowrap">Proportion<br>écarts négatifs</th><th rowspan="2" style="white-space:nowrap">Cohérence<br>vaccinés-doses</th></tr>';
@@ -3394,7 +3467,8 @@
                     Object.keys(ouG).filter(Boolean).sort().forEach(function (ouName, idx) {
                         var bg = idx % 2 === 0 ? '#fff' : '#f8fafc';
                         var recs = ouG[ouName], neg = 0;
-                        h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:' + bg + ';z-index:1;font-size:10px;font-weight:700">' + tr(ouName, 22) + '</td>';
+                        /* Colonne org unit (ZS) en bleu marine, texte blanc — design uniforme */
+                        h += '<tr style="background:' + bg + '"><td style="position:sticky;left:0;background:#1a237e;color:#fff;z-index:1;font-size:10px;font-weight:700;text-align:left">' + tr(ouName, 22) + '</td>';
                         fAgs.forEach(function (ag) {
                             var st = recs.reduce(function (s, r) { return s + (Number(r[ag.stock]) || 0); }, 0);
                             var rv = recs.reduce(function (s, r) { return s + (Number(r[ag.recv]) || 0); }, 0);
@@ -4020,87 +4094,86 @@
             var _encOUs = uv(D, function (r) { return r[_encOL.k]; });
 
             var b3 = E('div', 'cb');
-            b3.innerHTML = '<h4>\ud83d\udcca ' + _encOL.l + ' encodant des donn\u00e9es non pr\u00e9vues</h4>';
+            /* ═══ Détection DYNAMIQUE de l'aberrance (demande client) ═══
+               - HPV : jamais introduit dans le pays → toute valeur HPV est aberrante.
+               - VAR2 0-11 mois : VAR2 se donne à 12-23 mois → une valeur VAR2 en
+                 tranche 0-11 est aberrante.
+               - VAP : aberrant uniquement là où la province n'a PAS introduit le
+                 vaccin. Introduction déduite des DONNÉES (pas d'une liste figée,
+                 l'introduction étant encore dynamique) : une province est réputée
+                 avoir introduit VAP si la MAJORITÉ (≥ 50 %) de ses ZS encodent des
+                 doses VAP ; sinon, les ZS isolées qui en encodent sont aberrantes. */
+            var _VAP_COLS = ['VAP1_0_11', 'VAP2_0_11', 'VAP3_0_11', 'VAP4_12_23'];
+            function _vapSum(r) { var t = 0; _VAP_COLS.forEach(function (c) { t += Number(r[c]) || 0; }); return t; }
+            var _vapIntro = (function () {
+                var byProv = {};
+                D.forEach(function (r) {
+                    var p = r.org2 || '', zs = r.org3 || '';
+                    if (!p || !zs) return;
+                    var o = byProv[p] || (byProv[p] = { all: {}, vap: {} });
+                    o.all[zs] = 1;
+                    if (_vapSum(r) > 0) o.vap[zs] = 1;
+                });
+                var intro = {};
+                Object.keys(byProv).forEach(function (p) {
+                    var o = byProv[p], nAll = Object.keys(o.all).length, nVap = Object.keys(o.vap).length;
+                    if (nAll && nVap / nAll >= 0.5) intro[p] = 1; /* introduite = large déploiement */
+                });
+                return intro;
+            })();
 
-            var _encFH = '<div style="display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap;align-items:flex-start">';
-            /* Filtre AG avec reset */
-            _encFH += '<div class="fg" style="min-width:180px"><label style="text-transform:uppercase;font-size:9px">Antig\u00e8ne <button class="frst" onclick="_rstEncAG()" title="R\u00e9initialiser">\u21ba</button></label>';
-            _encFH += '<button class="fbtn" id="encBtnAG" onclick="_togADD(\'encDdAG\')"><span>Tout (' + _encAGs.length + ')</span><span class="cn">' + _encAGs.length + '</span><span>\u25bc</span></button>';
-            _encFH += '<div class="fd" id="encDdAG">';
-            _encFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllEnc(this,\'encDdAG\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
-            _encAGs.forEach(function (a) { _encFH += '<div class="fi"><input type="checkbox" checked value="' + a + '" onchange="_renderEncChart()"><span>' + (_encLbls[a] || a) + '</span></div>'; });
-            _encFH += '</div></div>';
-            /* Filtre OU avec reset */
-            _encFH += '<div class="fg" style="min-width:200px"><label style="text-transform:uppercase;font-size:9px">' + _encOL.l + ' <button class="frst" onclick="_rstEncOU()" title="R\u00e9initialiser">\u21ba</button></label>';
-            _encFH += '<button class="fbtn" id="encBtnOU" onclick="_togADD(\'encDdOU\')"><span>Tout (' + _encOUs.length + ')</span><span class="cn">' + _encOUs.length + '</span><span>\u25bc</span></button>';
-            _encFH += '<div class="fd" id="encDdOU"><input class="sr" type="text" placeholder="Rechercher..." oninput="_srchA(this,\'encDdOU\')">';
-            _encFH += '<div class="fi fa"><input type="checkbox" checked onchange="_togAllEnc(this,\'encDdOU\')"><span style="font-weight:700">Tout s\u00e9lectionner</span></div>';
-            _encOUs.forEach(function (ou) { _encFH += '<div class="fi"><input type="checkbox" checked value="' + ou.replace(/"/g, '&quot;') + '" onchange="_renderEncChart()"><span>' + tr(ou, 30) + '</span></div>'; });
-            _encFH += '</div></div></div>';
-            b3.innerHTML += _encFH;
-            b3.innerHTML += '<div id="encChartWrap"><canvas id="v2h" height="60"></canvas></div>';
+            var _encOL2 = getOrgLevel(D), _encK = _encOL2.k;
+            var _encAG_DEFS = [
+                { col: 'HPV_administr_es', lbl: 'HPV', why: 'HPV non introduit dans le pays', always: true },
+                { col: 'VAR2_0_11', lbl: 'VAR2 (0-11 mois)', why: 'VAR2 se donne à 12-23 mois, pas à 0-11', always: true },
+                { col: 'VAP1_0_11', lbl: 'VAP1', why: 'VAP non introduit dans cette province', vap: true },
+                { col: 'VAP2_0_11', lbl: 'VAP2', why: 'VAP non introduit dans cette province', vap: true },
+                { col: 'VAP3_0_11', lbl: 'VAP3', why: 'VAP non introduit dans cette province', vap: true },
+                { col: 'VAP4_12_23', lbl: 'VAP4', why: 'VAP non introduit dans cette province', vap: true }
+            ];
+            b3.innerHTML = '<h4>⚠ ' + _encOL2.l + ' avec valeurs aberrantes</h4>'
+                + '<p style="font-size:11px;color:#555;margin:2px 0 10px">Valeurs signalées comme aberrantes : <b>HPV</b> (non introduit dans le pays), <b>VAR2 en tranche 0-11 mois</b> (VAR2 se donne à 12-23 mois), et <b>VAP</b> dans les provinces où le vaccin n\'est pas encore introduit (détecté dynamiquement d\'après les données : introduction retenue si ≥ 50 % des ZS de la province encodent des doses VAP).</p>'
+                + '<div id="encTblWrap"></div>';
             c.appendChild(b3);
 
-            window._togAllEnc = function (cb, ddId) {
-                document.querySelectorAll('#' + ddId + ' .fi:not(.fa) input[type=checkbox]').forEach(function (c2) { c2.checked = cb.checked; });
-                _renderEncChart();
-            };
-            window._rstEncAG = function () { document.querySelectorAll('#encDdAG .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; }); _renderEncChart(); };
-            window._rstEncOU = function () { document.querySelectorAll('#encDdOU .fi input[type=checkbox]').forEach(function (cb) { cb.checked = true; }); _renderEncChart(); };
-
             window._renderEncChart = function () {
-                if (S.charts.v2h) { try { S.charts.v2h.destroy(); } catch (e) { } }
-                var selAGs = [], selOUs = [];
-                document.querySelectorAll('#encDdAG .fi:not(.fa) input:checked').forEach(function (cb) { selAGs.push(cb.value); });
-                document.querySelectorAll('#encDdOU .fi:not(.fa) input:checked').forEach(function (cb) { selOUs.push(cb.value); });
-                if (!selAGs.length || !selOUs.length) {
-                    var w3 = document.getElementById('encChartWrap');
-                    if (w3) w3.innerHTML = '<p style="color:#888;padding:16px;text-align:center">S\u00e9lectionnez au moins un antig\u00e8ne et un ' + _encOL.l + '</p>';
+                var wrap = document.getElementById('encTblWrap'); if (!wrap) return;
+                /* Construire la liste plate des valeurs aberrantes (org unit × antigène × mois) */
+                var aberr = [];
+                D.forEach(function (r) {
+                    var prov = r.org2 || '', ou = r[_encK] || '', per = r.period || '';
+                    if (!ou) return;
+                    _encAG_DEFS.forEach(function (d) {
+                        var v = Number(r[d.col]) || 0;
+                        if (v <= 0) return;
+                        if (d.vap && _vapIntro[prov]) return; /* VAP attendu dans cette province → non aberrant */
+                        aberr.push({ ou: ou, ag: d.lbl, per: per, val: v, why: d.why });
+                    });
+                });
+                if (!aberr.length) {
+                    wrap.innerHTML = '<p style="color:#16a34a;padding:16px;text-align:center;font-weight:600">✅ Aucune valeur aberrante détectée dans la sélection.</p>';
                     return;
                 }
-                var filtD = D.filter(function (r) { return selOUs.indexOf(r[_encOL.k]) >= 0; });
-                var orgG = grp(filtD, function (r) { return r[_encOL.k]; });
-                /* Collecter toutes les OU qui ont au moins 1 AG > 0 */
-                var ouSet = {};
-                selAGs.forEach(function (ag) {
-                    Object.keys(orgG).filter(Boolean).forEach(function (ou) {
-                        var v = orgG[ou].reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
-                        if (v > 0) ouSet[ou] = true;
-                    });
+                /* Trier : org unit, puis antigène, puis mois */
+                aberr.sort(function (a, b) {
+                    return a.ou < b.ou ? -1 : a.ou > b.ou ? 1 : (a.ag < b.ag ? -1 : a.ag > b.ag ? 1 : (a.per < b.per ? -1 : 1));
                 });
-                var ouList = Object.keys(ouSet).sort();
-                /* Trier par total décroissant */
-                ouList.sort(function (a, b) {
-                    var ta = 0, tb = 0;
-                    selAGs.forEach(function (ag) {
-                        ta += (orgG[a] || []).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
-                        tb += (orgG[b] || []).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0);
-                    });
-                    return tb - ta;
+                var totV = aberr.reduce(function (s, x) { return s + x.val; }, 0);
+                var h = '<div class="tw" style="overflow-x:auto"><table class="dt" id="encTbl" data-pev-noheat>'
+                    + '<thead><tr><th style="text-align:left">' + _encOL2.l + '</th><th>Antigène aberrant</th><th>Mois</th><th>Valeur</th><th style="text-align:left">Motif</th></tr></thead><tbody>';
+                aberr.forEach(function (x) {
+                    h += '<tr>'
+                        + '<td style="background:#1a237e;color:#fff;font-weight:600;text-align:left">' + tr(x.ou, 28) + '</td>'
+                        + '<td style="font-weight:700">' + x.ag + '</td>'
+                        + '<td>' + mL(x.per) + '</td>'
+                        + '<td style="background:#d62728;color:#fff;font-weight:700">' + x.val.toLocaleString('fr-FR') + '</td>'
+                        + '<td style="text-align:left;font-size:10px;color:#555">' + x.why + '</td></tr>';
                 });
-                ouList = ouList.slice(0, 40);
-                var w3 = document.getElementById('encChartWrap');
-                if (!ouList.length) { if (w3) w3.innerHTML = '<p style="color:#888;padding:16px;text-align:center">Aucun ' + _encOL.l + ' n\'encode ces donn\u00e9es</p>'; return; }
-                if (w3) w3.innerHTML = '<canvas id="v2h" height="' + Math.max(60, ouList.length * 22) + '"></canvas>';
-                var x2 = document.getElementById('v2h'); if (!x2) return;
-                /* Créer un dataset PAR antigène */
-                var datasets = selAGs.map(function (ag) {
-                    return {
-                        label: _encLbls[ag] || ag,
-                        data: ouList.map(function (ou) { return (orgG[ou] || []).reduce(function (s, r) { return s + (Number(r[ag]) || 0); }, 0); }),
-                        backgroundColor: _encColors[ag] || '#999',
-                        borderRadius: 3
-                    };
-                });
-                S.charts.v2h = new Chart(x2, {
-                    type: 'bar', data: { labels: ouList.map(function (ou) { return tr(ou, 28); }), datasets: datasets },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 10 } } }, title: { display: true, text: _encOL.l + ' encodant des donn\u00e9es non pr\u00e9vues', font: { size: 13, weight: 'bold' }, color: '#1a237e' } }, scales: { x: { stacked: true, beginAtZero: true }, y: { stacked: true, ticks: { font: { size: 9 } } } } }
-                });
-                /* Update boutons */
-                var btnAG = document.getElementById('encBtnAG');
-                if (btnAG) { var n1 = selAGs.length, t1 = _encAGs.length; btnAG.innerHTML = '<span>' + (n1 === t1 ? 'Tout (' + t1 + ')' : n1 + '/' + t1) + '</span><span class="cn">' + n1 + '</span><span>\u25bc</span>'; }
-                var btnOU = document.getElementById('encBtnOU');
-                if (btnOU) { var n2 = selOUs.length, t2 = _encOUs.length; btnOU.innerHTML = '<span>' + (n2 === t2 ? 'Tout (' + t2 + ')' : n2 + '/' + t2) + '</span><span class="cn">' + n2 + '</span><span>\u25bc</span>'; }
+                h += '<tr style="background:linear-gradient(135deg,#1e293b,#334155);color:#fff;font-weight:700">'
+                    + '<td colspan="3" style="text-align:left;padding:10px 8px">📊 Total : ' + aberr.length + ' valeur(s) aberrante(s)</td>'
+                    + '<td style="background:#b91c1c;color:#fff">' + totV.toLocaleString('fr-FR') + '</td><td></td></tr>';
+                h += '</tbody></table></div>';
+                wrap.innerHTML = h;
             };
             setTimeout(function () { _renderEncChart(); }, 240);
 
@@ -5451,7 +5524,12 @@
                 }
 
                 var ph = '<h4 style="color:#1a237e;margin:0 0 8px">📊 Résumé heatmap par antigène/intrant — ' + total + ' ' + ol.l + '(s)</h4>';
-                ph += '<p style="font-size:10px;color:#666;margin:0 0 8px">Nombre de ' + ol.l + 's hors norme pour chaque antigène/intrant · 🟢 0 · 🟡 1-20% · 🟠 21-50% · 🔴 >50%</p>';
+                ph += '<p style="font-size:10.5px;color:#555;margin:0 0 6px">Nombre de ' + ol.l + 's hors norme pour chaque antigène/intrant (part du total) :</p>';
+                ph += '<div class="pev-hm-leg" style="margin:0 0 10px">'
+                    + '<span class="pev-hm-chip" style="background:#2ca02c">0 (aucun)</span>'
+                    + '<span class="pev-hm-chip" style="background:#8fd18f;color:#14532d">1 – 20 %</span>'
+                    + '<span class="pev-hm-chip" style="background:#f2c200;color:#5a4500">21 – 50 %</span>'
+                    + '<span class="pev-hm-chip" style="background:#d62728">&gt; 50 %</span></div>';
                 ph += '<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:10px"><thead><tr>';
                 ph += '<th style="' + thR + '">Indicateur / ' + ol.l + ' hors norme</th>';
                 LOGIST_FIELDS.forEach(function(it) { ph += '<th style="' + thS + '">' + (abbr[it.pfx] || it.pfx) + '</th>'; });
@@ -8033,7 +8111,22 @@
                         if (!el) return;
                         var _vUrls = ['https://cdn.jsdelivr.net/npm/vega@5', 'https://cdn.jsdelivr.net/npm/vega-lite@5', 'https://cdn.jsdelivr.net/npm/vega-embed@6'];
                         function _doEmbed() {
-                            vegaEmbed(el, vlSpec, { actions: false, renderer: 'svg' }).catch(function (err) { _mapFail(err.message); });
+                            vegaEmbed(el, vlSpec, { actions: false, renderer: 'svg' }).then(function () {
+                                /* Vega-tooltip laisse parfois son infobulle affichée quand le
+                                   curseur quitte vite la carte : on la masque de force dès qu'on
+                                   sort de la carte (ou au défilement). Elle réapparaît normalement
+                                   au survol suivant d'un polygone. */
+                                var _hideTip = function () {
+                                    var tt = document.getElementById('vg-tooltip-element');
+                                    if (tt) { tt.classList.remove('visible'); tt.style.opacity = '0'; tt.style.display = 'none'; }
+                                };
+                                el.addEventListener('mouseleave', _hideTip);
+                                el.addEventListener('mousemove', function () {
+                                    var tt = document.getElementById('vg-tooltip-element');
+                                    if (tt && tt.style.display === 'none') { tt.style.display = ''; tt.style.opacity = ''; }
+                                });
+                                window.addEventListener('scroll', _hideTip, { passive: true });
+                            }).catch(function (err) { _mapFail(err.message); });
                         }
                         function _mapFail(msg) {
                             el.innerHTML = '<p style="color:#d62728;font-size:12px;padding:12px 14px 8px">⚠️ Impossible de charger les cartes : ' + msg + '</p>';
