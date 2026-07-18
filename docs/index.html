@@ -1063,6 +1063,10 @@
             font-size:15px!important;letter-spacing:.2px;display:flex;align-items:center;gap:10px;border:none!important;
             border-bottom:3px solid #ffd700!important;
             box-shadow:0 8px 22px -10px rgba(26,35,126,.55)!important;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+        /* Sous-titres sur fond bleu : toujours blanc simple (jamais vert, jamais gras) */
+        .pev-banner small,.pev-banner .sub,.pev-banner [style*="color:#2ca02c"],.pev-banner [style*="color: #2ca02c"],
+        .st small,.st [style*="color:#2ca02c"],
+        h4[style*="1a237e"] small,h3[style*="1a237e"] small{color:#fff!important;font-weight:400!important}
         /* Boutons d'export tableaux — style plateforme */
         .pev-tbar{gap:10px;align-items:center}
         .pev-tbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid #cdd9ea;background:#fff;
@@ -2859,7 +2863,7 @@
                 '<div class="kc gn"><div class="kv">' + rep.length + '</div><div class="kl">FOSA rapportantes</div></div>' +
                 '<div class="kc rd"><div class="kv">' + nNR + '</div><div class="kl">FOSA non-rapportantes</div></div>' +
                 '<div class="kc bl"><div class="kv">' + pR.toFixed(1) + '%</div><div class="kl">% rapportage</div></div>' +
-                '<div class="kc or" title="Complétude des ' + AG.length + ' antigènes obligatoires rapportés : proportion moyenne de variables renseignées par les FOSA rapportantes."><div class="kv">' + aE.toFixed(1) + '%</div><div class="kl">Complétude des antigènes obligatoires rapportés (' + AG.length + ' AG)</div></div>'));
+                '<div class="kc or" title="Complétude des ' + AG.length + ' antigènes obligatoires rapportés : proportion moyenne de variables renseignées par les FOSA rapportantes."><div class="kv">' + aE.toFixed(1) + '%</div><div class="kl">Complétude des antigènes obligatoires rapportés</div></div>'));
 
             [{ l: 'Antenne PEV', k: function (r) { return r.antenne; } }, { l: 'Zone de Santé', k: function (r) { return r.org3; } }, { l: 'Aire de Santé', k: function (r) { return r.org4; } }, { l: 'FOSA', k: function (r) { return r.org5; } }].forEach(function (lv, idx) {
                 var g = grp(D, lv.k), labs = Object.keys(g).filter(Boolean).sort(); if (!labs.length) return;
