@@ -1143,6 +1143,21 @@
             font-weight:700;font-size:11px;padding:6px 12px;border-radius:6px;box-shadow:none!important}
         .pev-banner .pev-tbtn:hover{background:rgba(255,255,255,.16)!important;border-color:#fff!important;color:#fff!important;transform:none!important}
 
+        /* ═══ Bloc filtres en carte arrondie avec bandeau « FILTRES » (design only) ═══ */
+        .fs:empty{display:none!important}
+        .fs{background:#fff!important;margin:14px 18px 6px;padding:14px 24px 20px!important;border-radius:16px!important;
+            border:1px solid #edf1f8!important;border-bottom:1px solid #edf1f8!important;
+            box-shadow:0 8px 22px -12px rgba(26,35,126,.18)!important;column-gap:26px}
+        body.tabmode .fs{margin-left:262px}
+        .fs .pev-fhead{flex:0 0 100%;display:flex;align-items:center;gap:8px;color:#1a237e;font-weight:800;
+            font-size:13.5px;letter-spacing:.8px;text-transform:uppercase;margin:0 0 8px}
+        .fs .pev-fhead svg{flex:0 0 auto}
+        .fs .fg label{font-size:11px!important;font-weight:800!important;color:#1a237e!important;letter-spacing:.7px!important;margin-bottom:6px!important}
+        .fs .fg select,.fs .fbtn{min-width:225px;padding:10px 14px!important;font-size:13px!important;
+            border:1px solid #e3e7f0!important;border-radius:10px!important;background:#fff!important;
+            box-shadow:0 1px 3px rgba(15,23,42,.06)!important;color:#1f2937}
+        .fs .fg select:focus,.fs .fbtn:hover,.fs .fg:has(.fd.sh) .fbtn,.fs .fbtn:focus{border-color:#0d47a1!important;
+            box-shadow:0 0 0 3px rgba(13,71,161,.13)!important}
         </style>
 </head>
 
@@ -2138,6 +2153,13 @@
         function rFlt() {
             var c = document.getElementById('FS'); c.innerHTML = '';
             var tab = TABS[S.tab];
+
+            /* Bandeau titre du bloc filtres (design only) — seulement si l'onglet a des filtres */
+            if (tab.fl && tab.fl.length) {
+                var fhead = E('div', 'pev-fhead');
+                fhead.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.63L15 12.4V19a1 1 0 0 1-1.45.9l-4-2A1 1 0 0 1 9 17v-4.6L3.22 5.63A1 1 0 0 1 3 5z"/></svg> FILTRES';
+                c.appendChild(fhead);
+            }
 
             /* 1) PROVINCE - choix unique (select) */
             if (tab.fl.indexOf('province') >= 0) {
