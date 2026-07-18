@@ -2156,12 +2156,14 @@
             var c = document.getElementById('FS'); c.innerHTML = '';
             var tab = TABS[S.tab];
 
-            /* Bandeau titre du bloc filtres (design only) — seulement si l'onglet a des filtres */
-            if (tab.fl && tab.fl.length) {
-                var fhead = E('div', 'pev-fhead');
-                fhead.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.63L15 12.4V19a1 1 0 0 1-1.45.9l-4-2A1 1 0 0 1 9 17v-4.6L3.22 5.63A1 1 0 0 1 3 5z"/></svg> FILTRES';
-                c.appendChild(fhead);
-            }
+            /* Onglet sans filtres (ex. IA, qui accède à tout le dashboard et à DHIS2
+               directement) : aucune carte filtres, ni bandeau, ni reset global. */
+            if (!tab.fl || !tab.fl.length) return;
+
+            /* Bandeau titre du bloc filtres (design only) */
+            var fhead = E('div', 'pev-fhead');
+            fhead.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.63L15 12.4V19a1 1 0 0 1-1.45.9l-4-2A1 1 0 0 1 9 17v-4.6L3.22 5.63A1 1 0 0 1 3 5z"/></svg> FILTRES';
+            c.appendChild(fhead);
 
             /* 1) PROVINCE - choix unique (select) */
             if (tab.fl.indexOf('province') >= 0) {
