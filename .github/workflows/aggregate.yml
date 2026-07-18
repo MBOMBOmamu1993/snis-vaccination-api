@@ -12,10 +12,15 @@ on:
 permissions:
   contents: write
 
-# 🔒 Empêche les lancements en double si plusieurs synchronisations finissent en même temps
+# 🔒 Sérialise les agrégations : une nouvelle attend la fin de la précédente au
+# lieu de la TUER en cours de route. cancel-in-progress:true provoquait des
+# annulations en boucle (chaque backfill FOSA/AS/ZS déclenche une agrégation, qui
+# tuait la précédente à ~11 min avant qu'elle ait pu finir ~15-20 min et publier)
+# → le dashboard ne se mettait jamais à jour. En file d'attente, chaque agrégation
+# va à son terme.
 concurrency:
   group: dashboard-aggregation
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   aggregate-all:
