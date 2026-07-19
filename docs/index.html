@@ -1390,7 +1390,7 @@
                                     var _ax = chart.options.scales[_catAxis] = chart.options.scales[_catAxis] || {};
                                     _ax.ticks = _ax.ticks || {};
                                     _ax.ticks.autoSkip = false;
-                                    _ax.ticks.font = Object.assign({}, _ax.ticks.font, { size: 14 });
+                                    _ax.ticks.font = Object.assign({}, _ax.ticks.font, { size: 16 });
                                     if (!_horiz) { _ax.ticks.maxRotation = 60; _ax.ticks.minRotation = 0; }
                                 } catch (_) { }
                                 function apply() {
@@ -2968,7 +2968,7 @@
                 setTimeout(function () {
                     var x = document.getElementById('cp' + idx); if (!x) return;
                     /* Complétude = VERT · Promptitude = BLEU (demande design) — rendu net et lisse */
-                    S.charts['cp' + idx] = new Chart(x, { type: 'bar', data: { labels: labs.map(function (l) { return tr(l, 24); }), datasets: [{ label: 'Complétude (%)', data: cd, backgroundColor: '#2ca02c', hoverBackgroundColor: '#178a4b', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }, { label: 'Promptitude (%)', data: pd, backgroundColor: '#0d47a1', hoverBackgroundColor: '#0080ba', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }] }, options: { indexAxis: labs.length > 12 ? 'y' : 'x', responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: labs.length > 25 ? 7 : 9 } } } } } });
+                    S.charts['cp' + idx] = new Chart(x, { type: 'bar', data: { labels: labs.map(function (l) { return tr(l, 34); }), datasets: [{ label: 'Complétude (%)', data: cd, backgroundColor: '#2ca02c', hoverBackgroundColor: '#178a4b', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }, { label: 'Promptitude (%)', data: pd, backgroundColor: '#0d47a1', hoverBackgroundColor: '#0080ba', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }] }, options: { indexAxis: labs.length > 12 ? 'y' : 'x', responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: 13 } } } } } });
                 }, 60 + idx * 30);
             });
 
