@@ -14,6 +14,7 @@ const DIST = path.join(ROOT, "dist");
 const FILES = [
   ["docs/index.html", "dist/index.html"],
   ["docs/pev-logo.svg", "dist/pev-logo.svg"],
+  ["docs/pev-logo-officiel.png", "dist/pev-logo-officiel.png"],
   ["docs/canevas_revue_formative_pev.pptx", "dist/canevas_revue_formative_pev.pptx"],
   ["docs/.nojekyll", "dist/.nojekyll"],
 ];
