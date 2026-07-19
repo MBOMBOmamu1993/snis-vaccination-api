@@ -2888,7 +2888,13 @@
                 _debTimer = null;
                 for (var k in _pendCasc) { if (typeof computeCascade === 'function') computeCascade(k); }
                 _pendCasc = {};
+                /* rFlt() reconstruit la barre : mémoriser le ruban ouvert et le
+                   ré-ouvrir après, pour qu'un clic sur une case ne le ferme pas —
+                   il ne se ferme que quand le curseur quitte le ruban (hover-intent). */
+                var _openFd = document.querySelector('#FS .fd.sh');
+                var _openId = _openFd ? _openFd.id : null;
                 apFlt(); rFlt(); render();
+                if (_openId) { var _od = document.getElementById(_openId); if (_od) _od.classList.add('sh'); }
                 var d2 = document.getElementById('DB'); if (d2) d2.classList.remove('ia-updating');
             }, 220);
         }
