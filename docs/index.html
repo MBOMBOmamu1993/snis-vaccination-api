@@ -1658,7 +1658,7 @@
                 pp: [{ t: '1. Complétude et Promptitude', ic: '📋' }, { t: '2. Cohérence-temps', ic: '📈' }, { t: '3. Cohérence-donnée', ic: '🔗' }, { t: '4. Valeurs atypiques, aberrantes et données manquantes', ic: '⚠️' }, { t: '5. Score qualité des données', ic: '🏆' }]
             },
             {
-                id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'period', 'antigens'], /* pas de FOSA : pas de couverture vaccinale par FOSA */
+                id: 'vacc', lb: 'Données de vaccination', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period', 'antigens'], /* FOSA visible seulement sur la 1re page (voir rFlt) */
                 pp: [{ t: '1. Données de vaccination', ic: '💉' }, { t: '2. Analyses couvertures vaccinales', ic: '📊' }, { t: '3. Analyses comparatives des CV avec l\'année précédente', ic: '🔁' }, { t: '4. Analyse comparative cible admin et cible ajustée', ic: '⚖️' }, { t: '5. Courbe de suivi des CV', ic: '📈' }]
             },
             { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
@@ -2160,13 +2160,20 @@
                directement) : aucune carte filtres, ni bandeau, ni reset global. */
             if (!tab.fl || !tab.fl.length) return;
 
+            /* Filtres dépendant de la page : sur l'onglet Données de vaccination,
+               FOSA n'apparaît que sur la 1re page (nombre de vaccinés par FOSA) —
+               pas de FOSA sur les pages Analyses des CV et Courbes de suivi
+               (pas de couverture vaccinale par FOSA). */
+            var fl = tab.fl.slice();
+            if (tab.id === 'vacc' && S.pg > 0) fl = fl.filter(function (k) { return k !== 'fosa'; });
+
             /* Bandeau titre du bloc filtres (design only) */
             var fhead = E('div', 'pev-fhead');
             fhead.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.63L15 12.4V19a1 1 0 0 1-1.45.9l-4-2A1 1 0 0 1 9 17v-4.6L3.22 5.63A1 1 0 0 1 3 5z"/></svg> FILTRES';
             c.appendChild(fhead);
 
             /* 1) PROVINCE - choix unique (select) */
-            if (tab.fl.indexOf('province') >= 0) {
+            if (fl.indexOf('province') >= 0) {
                 var fg = E('div', 'fg');
                 var plbl = document.createElement('label'); plbl.textContent = 'Province';
                 var prst = document.createElement('button'); prst.className = 'frst'; prst.innerHTML = '↺'; prst.title = 'Réinitialiser Province';
@@ -2207,7 +2214,7 @@
                 { dim: 'fosa', l: 'FOSA', k: 'fosa' }
             ];
             cascDims.forEach(function (info) {
-                if (tab.fl.indexOf(info.dim) < 0) return;
+                if (fl.indexOf(info.dim) < 0) return;
                 var avail = S.cascaded[info.k] || [];
                 if (!avail.length) return;
                 var selArr = S.filters[info.k];
@@ -2215,12 +2222,12 @@
             });
 
             /* 6) PÉRIODE - calendrier multi-mois / multi-années */
-            if (tab.fl.indexOf('period') >= 0) {
+            if (fl.indexOf('period') >= 0) {
                 buildPeriodCalendarFilter(c, S.vals.period, S.filters.period);
             }
 
             /* 6bis) ANTIGÈNES - multi-sélection (par défaut tout sélectionné = []) */
-            if (tab.fl.indexOf('antigens') >= 0) {
+            if (fl.indexOf('antigens') >= 0) {
                 buildAntigenFilter(c);
             }
 
@@ -2738,7 +2745,7 @@
             var dd = document.getElementById('dd-' + TABS[t].id); if (dd) dd.querySelectorAll('.di').forEach(function (el, i) { el.classList.toggle('as', i === p); });
             rFlt(); apFlt(); render(); window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-        function chPg(d) { var tab = TABS[S.tab], np = S.pg + d; if (np >= 0 && np < tab.pp.length) { S.pg = np; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+        function chPg(d) { var tab = TABS[S.tab], np = S.pg + d; if (np >= 0 && np < tab.pp.length) { S.pg = np; rFlt(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
 
         /* ═══ TÉLÉCHARGEMENT — CANEVAS DE REVUE FORMATIVE (PPTX éditable) ═══
            Remplit les diapos 10 à 12 du canevas officiel avec les données DHIS2
