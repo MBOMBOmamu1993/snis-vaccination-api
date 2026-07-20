@@ -940,10 +940,37 @@ async function uploadProof(request, env) {
   return Response.redirect(new URL(request.url).origin + '/suivre?id=' + id + '&key=' + key, 303);
 }
 
-/* ═══ E-mail transactionnel (Brevo — 300 e-mails/jour gratuits) ═══
-   Actif seulement si BREVO_API_KEY + MAIL_FROM (expéditeur vérifié) sont posés. */
+/* ═══ E-mail transactionnel ═══
+   Deux prestataires, dans l'ordre :
+   1. EMAILJS (emailjs.com, 200 e-mails/mois gratuits) — les e-mails partent
+      DEPUIS le vrai compte Gmail du vendeur (connexion OAuth gérée par EmailJS)
+      → authentifiés, donc livrés même chez Gmail. Secrets : EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY (+ EMAILJS_PRIVATE_KEY si le compte
+      exige la clé privée pour les appels serveur). Modèle attendu : variables
+      {{to_email}}, {{to_name}}, {{subject}} et {{{message_html}}} (HTML brut).
+   2. BREVO (secours — 300/jour) si BREVO_API_KEY + MAIL_FROM sont posés.
+      ⚠️ Un expéditeur @gmail.com via Brevo est jeté silencieusement par Gmail. */
 async function sendMail(env, toEmail, toName, subject, html) {
-  if (!env.BREVO_API_KEY || !env.MAIL_FROM || !toEmail) return false;
+  if (!toEmail) return false;
+  if (env.EMAILJS_SERVICE_ID && env.EMAILJS_TEMPLATE_ID && env.EMAILJS_PUBLIC_KEY) {
+    try {
+      const body = {
+        service_id: env.EMAILJS_SERVICE_ID, template_id: env.EMAILJS_TEMPLATE_ID,
+        user_id: env.EMAILJS_PUBLIC_KEY,
+        template_params: { to_email: toEmail, to_name: toName || toEmail, subject, message_html: html },
+      };
+      if (env.EMAILJS_PRIVATE_KEY) body.accessToken = env.EMAILJS_PRIVATE_KEY;
+      const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+      });
+      const ok = r.status === 200;
+      await env.CODES.put('notif:last-mail', JSON.stringify({ at: new Date().toISOString(), ch: 'emailjs', status: r.status, ok, to: toEmail, body: (await r.text()).slice(0, 200) }), { expirationTtl: 86400 });
+      if (ok) return true; /* sinon : on bascule sur Brevo */
+    } catch (e) {
+      await env.CODES.put('notif:last-mail', JSON.stringify({ at: new Date().toISOString(), ch: 'emailjs', status: 0, ok: false, to: toEmail, body: String(e && e.message || e) }), { expirationTtl: 86400 });
+    }
+  }
+  if (!env.BREVO_API_KEY || !env.MAIL_FROM) return false;
   try {
     const r = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',

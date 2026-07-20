@@ -20,9 +20,14 @@ Contexte permanent :
   Anthropic Claude Opus 4.8 (usage). Clés perso : pev_ia_key_ollama / key_kimi / key_claude.
 - Worker Kimi : base https://api.moonshot.ai (surcharge KIMI_API_BASE pour .cn),
   route /kimi/v1/chat/completions, DEFAULT_KIMI_MODEL=kimi-k3.
-- E-mails Brevo : envoi OK (201). Réservés au RAPPORT QUOTIDIEN (MAIL_TO_ADMIN)
-  + e-mails CLIENTS (validation commande, livraison du code). Plus d'e-mail
-  admin à chaque commande (demande utilisateur 20/07 soir).
+- E-mails : sendMail accepte 2 prestataires dans l'ordre — 1) EMAILJS (priorité,
+  e-mails partant du VRAI Gmail du vendeur via OAuth → livrés chez Gmail ;
+  secrets EMAILJS_SERVICE_ID/TEMPLATE_ID/PUBLIC_KEY À POSER par l'utilisateur,
+  modèle {{to_email}}/{{to_name}}/{{subject}}/{{{message_html}}} + « Allow
+  non-browser applications » à activer) ; 2) BREVO en secours (accepté 201 mais
+  Gmail jette silencieusement l'expéditeur @gmail.com relayé — inutilisable seul).
+  Réservés au RAPPORT QUOTIDIEN (MAIL_TO_ADMIN) + e-mails CLIENTS (validation,
+  livraison du code = preuve écrite).
 - WhatsApp CallMeBot : 2 pièges documentés (20/07) —
   1) 403 = réf « (CMD-xxx) » entre parenthèses sur sa propre ligne (WAF) →
      format « Réf CMD-xxx » en ligne, validé en direct.
