@@ -10,9 +10,18 @@ Il remplit 3 fonctions :
 2. **Proxy DHIS2 (lecture seule)** — l'IA peut interroger l'API Web du SNIS RDC
    (n'importe quel élément de données/indicateur) sans jamais exposer vos
    identifiants DHIS2.
-3. **Vente automatique de codes** — page `/acheter` avec paiement **CinetPay**
-   (M-Pesa, Orange Money, Airtel Money, carte). Le code s'affiche automatiquement
-   après paiement : personne n'a besoin de vous contacter.
+3. **Vente de codes d'accès** — page `/acheter` avec 2 modes :
+   - **WhatsApp (manuel, actif par défaut)** : boutons « 💬 Commander » par offre
+     → le client paie par mobile money sur votre numéro dédié, vous générez son
+     code en 10 s depuis votre téléphone via la mini-console **`/admin`**.
+     Voir `JOUR-J-WHATSAPP.md`.
+   - **CinetPay (automatique, après obtention du RCCM)** : paiement en ligne
+     (M-Pesa, Orange Money, Airtel Money, carte) → le code s'affiche tout seul
+     après paiement. Bascule automatique dès que les clés CinetPay sont posées.
+     Voir `JOUR-J-CINETPAY.md`.
+4. **Essai gratuit 1 mois** — endpoint `/essai` : 50 requêtes IA valables 31 jours,
+   1 par appareil (empreinte IP + navigateur). À expiration, l'utilisateur est
+   renvoyé vers l'achat d'un code.
 
 ---
 
@@ -24,7 +33,8 @@ Il remplit 3 fonctions :
 |---|---|---|
 | Anthropic Console | https://console.anthropic.com | Clé API + crédits (min 5–10 $) |
 | Cloudflare (gratuit) | https://dash.cloudflare.com | Héberger ce proxy |
-| CinetPay (marchand) | https://cinetpay.com | Paiement mobile money (KYC : pièce d'identité + infos bancaires). *Peut se faire plus tard — tout le reste fonctionne sans.* |
+| Numéro WhatsApp dédié | SIM séparée (quelques $) | Recevoir les commandes des clients. *Une SIM dédiée préserve votre numéro personnel.* |
+| CinetPay (marchand) | https://cinetpay.com | Paiement automatique (KYC : pièce d'identité + RCCM). *Plus tard — tout fonctionne sans.* |
 
 ### Étape 1 — Installer wrangler et se connecter
 
@@ -50,7 +60,8 @@ npx wrangler secret put DHIS2_BASE_URL        # ex. https://snisrdc.com
 npx wrangler secret put DHIS2_USERNAME        # compte DHIS2 (lecture seule conseillé)
 npx wrangler secret put DHIS2_PASSWORD
 npx wrangler secret put ADMIN_TOKEN           # inventez un long mot de passe (30+ caractères)
-# Plus tard, quand le compte CinetPay est validé :
+npx wrangler secret put WHATSAPP_NUMBER       # numéro dédié, format international SANS « + » (ex. 243812345678)
+# Plus tard, quand le compte CinetPay est validé (RCCM obtenu) :
 npx wrangler secret put CINETPAY_APIKEY
 npx wrangler secret put CINETPAY_SITE_ID
 ```
@@ -82,7 +93,14 @@ et le bouton « 💳 Obtenir un code ».
 
 ---
 
-## Créer des codes manuellement (avant/à côté du paiement en ligne)
+## Créer des codes manuellement (vente WhatsApp, partenaires, tests)
+
+**Depuis votre téléphone (recommandé)** : ouvrez `https://pev-ia-proxy.<compte>.workers.dev/admin`
+(mettez-la en favori), entrez le token admin + le nombre de requêtes → le code
+`PEV-XXXX-XXXX` s'affiche, prêt à copier dans WhatsApp. Mettez une note
+(client, offre, paiement reçu) pour le suivi.
+
+**Depuis un terminal** :
 
 ```bash
 curl -X POST https://pev-ia-proxy.<compte>.workers.dev/admin/codes \
@@ -99,8 +117,9 @@ Solde public d'un code : `GET /verifier?code=PEV-A7K2-9MQ4` (sans token).
 ## Tarifs
 
 Les offres se modifient en tête de `worker.js` (constante `OFFERS`) :
-5 $ / 10 $ / 20 $ (USD), plus un **montant libre** saisi par le client
-(`REQUESTS_PER_USD` requêtes par dollar, bornes `CUSTOM_MIN_USD`–`CUSTOM_MAX_USD`).
+**5 $ / 10 $ / 20 $ / 30 $** (≈ 12 / 25 / 50 / 75 analyses), plus un **montant
+libre** saisi par le client (`REQUESTS_PER_USD` requêtes par dollar, bornes
+`CUSTOM_MIN_USD`–`CUSTOM_MAX_USD`).
 Tarif : 0,10 $/requête ≈ 3× le coût API (vous encaissez le triple de votre
 dépense Anthropic). Repère : une analyse complète ≈ 3 à 6 requêtes IA ;
 une requête Opus 4.8 coûte ≈ 0,01–0,05 $.

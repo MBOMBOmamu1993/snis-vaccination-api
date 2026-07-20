@@ -65,7 +65,9 @@
             width: auto;
             max-width: 220px;
             object-fit: contain;
-            background: transparent
+            background: #fff;
+            border-radius: 8px;
+            padding: 3px 8px
         }
 
         .hdr .logo svg {
@@ -964,7 +966,7 @@
         /* ── Écran de chargement (logos OMS + PEV) ── */
         #pevLoad { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; background: #0f174e; transition: opacity .5s ease; }
         #pevLoad .pl-logos { display: flex; align-items: center; gap: 28px; }
-        #pevLoad .pl-logos img { height: 78px; width: auto; }
+        #pevLoad .pl-logos img { height: 78px; width: auto; background: #fff; border-radius: 12px; padding: 6px 14px; }
         #pevLoad h2 { color: #fff; font-size: 28px; font-weight: 800; text-align: center; max-width: 760px; }
         #pevLoad .pl-sub { color: rgba(255,255,255,.66); font-size: 15px; }
         #pevLoad .pl-dots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
@@ -975,7 +977,7 @@
         #pevWelcome { position: fixed; inset: 0; z-index: 99998; display: none; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 36px 16px; background: rgba(15,23,78,.55); backdrop-filter: blur(3px); }
         #pevWelcome .pw-card { width: 100%; max-width: 960px; background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(15,23,78,.7); }
         #pevWelcome .pw-head { display: flex; align-items: center; gap: 16px; padding: 22px 30px; color: #fff; background: linear-gradient(120deg, #1a237e, #0d47a1); border-bottom: 5px solid var(--ty); }
-        #pevWelcome .pw-head img { height: 50px; }
+        #pevWelcome .pw-head img { height: 50px; background: #fff; border-radius: 10px; padding: 4px 10px; }
         #pevWelcome .pw-head h1 { font-size: 27px; font-weight: 800; }
         #pevWelcome .pw-head p { font-size: 15px; color: #bcd6f5; margin-top: 3px; }
         #pevWelcome .pw-body { padding: 24px 30px 30px; }
@@ -993,7 +995,7 @@
         /* ── Accueil : onglets présentés en cards plein écran (style Tshuapa) ── */
         #pevHome { position: fixed; inset: 0; z-index: 1300; display: none; flex-direction: column; overflow-y: auto; background: var(--tsurf); }
         #pevHome .ph-top { display: flex; align-items: center; gap: 20px; padding: 0 28px; height: 88px; color: #fff; background: #1a237e; border-bottom: 3px solid var(--tb); position: sticky; top: 0; z-index: 2; }
-        #pevHome .ph-top img { height: 48px; }
+        #pevHome .ph-top img { height: 48px; background: #fff; border-radius: 10px; padding: 4px 10px; }
         #pevHome .ph-top .ph-mid { flex: 1; text-align: center; }
         #pevHome .ph-top .ph-mid .ph-k { font-size: 11px; font-weight: 700; letter-spacing: .2em; color: rgba(255,255,255,.62); text-transform: uppercase; }
         #pevHome .ph-top .ph-mid h1 { font-size: 22px; font-weight: 800; margin-top: 2px; }
@@ -1114,7 +1116,7 @@
     <!-- ÉCRAN DE CHARGEMENT (design Tshuapa) -->
     <div id="pevLoad">
         <div class="pl-logos">
-            <img src="pev-logo.svg" alt="PEV">
+            <img src="pev-logo.png" alt="PEV">
         </div>
         <h2>Téléchargement Dashboard PEV de routine en cours</h2>
         <div class="pl-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -1125,7 +1127,7 @@
     <div id="pevWelcome">
         <div class="pw-card">
             <div class="pw-head">
-                <img src="pev-logo.svg" alt="PEV">
+                <img src="pev-logo.png" alt="PEV">
                 <div>
                     <h1>Dashboard PEV de routine</h1>
                     <p>Vaccination de routine — Programme Élargi de Vaccination · RD Congo</p>
@@ -1161,7 +1163,7 @@
     <!-- ACCUEIL : onglets en cards plein écran (style Tshuapa) -->
     <div id="pevHome">
         <div class="ph-top">
-            <img src="pev-logo.svg" alt="PEV">
+            <img src="pev-logo.png" alt="PEV">
             <div class="ph-mid">
                 <div class="ph-k">Programme Élargi de Vaccination · RD Congo</div>
                 <h1>Dashboard PEV de routine</h1>
@@ -1182,7 +1184,7 @@
 
     <div class="hdr">
         <div class="logo oms">
-            <img src="pev-logo.svg" alt="PEV">
+            <img src="pev-logo.png" alt="PEV">
         </div>
         <h1>Dashboard PEV de routine – RDC</h1>
         <div class="logo" aria-hidden="true"></div>
@@ -9949,8 +9951,9 @@
                         '<div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Achetez un code d\'accès en ligne (mobile money) — bouton « Obtenir un code » ci-dessous.</div>' +
-                    '<button class="ia-btn" style="margin-top:8px" id="iaBuy">💳 Obtenir un code</button></div>' +
+                    '<div class="ia-hint">Nouveau ? <b>1 mois d\'essai gratuit</b> — bouton « Essai gratuit » ci-dessous. Ensuite, achetez un code (mobile money) via « Obtenir un code ».</div>' +
+                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 1 mois</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
+                    '<div class="ia-hint" id="iaTrialMsg" style="margin-top:6px"></div></div>' +
                     '<div id="iaPaneKey"><label>Clé API Anthropic</label><input type="password" id="iaKey" placeholder="sk-ant-...">' +
                     '<div class="ia-hint">Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé reste <b>uniquement dans votre navigateur</b> (localStorage) — elle n\'est jamais envoyée ailleurs qu\'à Anthropic. Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
                     '<label style="margin-top:12px">Code d\'accès DHIS2 (optionnel)</label><input type="text" id="iaCode2" placeholder="ex. PEV-XXXX-XXXX">' +
@@ -9972,6 +9975,26 @@
                     setMode(mode);
                     var buy = m.querySelector('#iaBuy');
                     if (buy) buy.onclick = function () { window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank'); };
+                    /* Essai gratuit : récupère (ou retrouve) le code d'essai de cet appareil */
+                    var tr = m.querySelector('#iaTrial'), trMsg = m.querySelector('#iaTrialMsg');
+                    if (tr) tr.onclick = function () {
+                        tr.disabled = true; if (trMsg) trMsg.textContent = 'Activation en cours…';
+                        fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/essai', { method: 'POST' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) {
+                                if (!j || !j.code) throw new Error((j && j.error && j.error.message) || (j && j.error) || 'Essai indisponible pour le moment.');
+                                if (cEl) cEl.value = j.code;
+                                if (trMsg) {
+                                    var d = j.expire ? new Date(j.expire).toLocaleDateString('fr-FR') : '';
+                                    trMsg.innerHTML = (j.deja
+                                        ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (reste <b>' + j.restant + '</b> requêtes, jusqu\'au <b>' + d + '</b>) a été replacé dans le champ.'
+                                        : '🎉 <b>1 mois gratuit activé</b> : ' + j.restant + ' requêtes IA, valables jusqu\'au <b>' + d + '</b>.') +
+                                        ' Cliquez « Enregistrer » pour terminer.';
+                                }
+                            })
+                            .catch(function (e) { if (trMsg) trMsg.textContent = '⚠ ' + (e.message || e); })
+                            .finally(function () { tr.disabled = false; });
+                    };
                 } else setMode('key');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {

@@ -7,11 +7,19 @@
  *                            réservé aux codes d'accès valides (quota).
  *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
  *                            identifiants cachés ici, codes d'accès requis.
- *   3. /acheter            → page de paiement en ligne (CinetPay, mobile money)
- *      /webhook/cinetpay   → notification de paiement → création auto du code
+ *   3. /acheter            → page d'obtention d'un code. Deux modes :
+ *        • WhatsApp (manuel, défaut) : boutons « Commander sur WhatsApp » par
+ *          offre ; paiement mobile money manuel, code livré dans la conversation.
+ *        • CinetPay (automatique) : actif si CINETPAY_APIKEY + SITE_ID posés —
+ *          paiement en ligne (mobile money, carte), code auto après paiement.
+ *        Forcer un mode : variable PAYMENT_PROVIDER = whatsapp | cinetpay.
+ *      /webhook/cinetpay   → notification CinetPay → création auto du code
  *      /retour             → page où l'acheteur récupère son code
- *   4. /admin/codes        → création/consultation de codes (token admin)
+ *   4. /admin              → mini-console protégée : créer un code en 10 s
+ *                            depuis un téléphone. /admin/codes → API JSON.
  *   5. /verifier?code=     → solde restant d'un code
+ *   6. /essai              → code d'essai gratuit : 1 mois / 50 requêtes,
+ *                            1 par appareil (empreinte IP+UA), puis paiement
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
@@ -19,8 +27,11 @@
  *   DHIS2_USERNAME      — compte DHIS2 (lecture seule recommandé)
  *   DHIS2_PASSWORD
  *   ADMIN_TOKEN         — long mot de passe pour /admin/*
+ *   WHATSAPP_NUMBER     — numéro WhatsApp dédié, format international SANS « + »
+ *                         (ex. 243812345678) : reçoit les commandes des clients
  *   CINETPAY_APIKEY     — (après création compte marchand CinetPay)
  *   CINETPAY_SITE_ID
+ *  Variable d'env optionnelle : PAYMENT_PROVIDER = whatsapp | cinetpay
  *
  *  Binding KV requis : CODES
  *  Variable d'env  : ALLOWED_ORIGIN = https://mbombomamu1993.github.io
@@ -38,10 +49,17 @@ const OFFERS = [
   { id: 'S', label: 'Découverte', analyses: '±12 analyses', requests: 50, amount: 5, currency: 'USD' },
   { id: 'M', label: 'Standard', analyses: '±25 analyses', requests: 100, amount: 10, currency: 'USD' },
   { id: 'L', label: 'Pro', analyses: '±50 analyses', requests: 200, amount: 20, currency: 'USD' },
+  { id: 'XL', label: 'Expert', analyses: '±75 analyses', requests: 300, amount: 30, currency: 'USD' },
 ];
 
 const ALLOWED_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const MAX_TOKENS_CAP = 16000;
+
+/* ── Essai gratuit : TRIAL_DAYS jours (ou TRIAL_REQUESTS requêtes, la 1re
+   échéance compte) PAR APPAREIL. Empreinte = hash(IP + User-Agent) ;
+   un nouvel appui sur « Essai gratuit » rend le même code. ── */
+const TRIAL_DAYS = 31;
+const TRIAL_REQUESTS = 50;
 
 export default {
   async fetch(request, env) {
@@ -55,9 +73,10 @@ export default {
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
+      if (url.pathname === '/essai') return await trialGrant(request, env, cors);
       if (url.pathname.startsWith('/admin/codes')) return await adminCodes(request, env, url, cors);
       if (url.pathname === '/acheter' && request.method === 'POST') {
-        if (!env.CINETPAY_APIKEY) return buyPage(env, url);
+        if (payProvider(env) !== 'cinetpay') return buyPage(env, url);
         const form = await request.formData();
         let offer;
         if (form.get('offer') === 'C') {
@@ -75,6 +94,7 @@ export default {
         return Response.redirect(payUrl, 303);
       }
       if (url.pathname === '/acheter') return buyPage(env, url);
+      if (url.pathname === '/admin') return await adminPage(request, env);
       if (url.pathname === '/webhook/cinetpay' && request.method === 'POST') return await cinetpayWebhook(request, env);
       if (url.pathname === '/retour') return await returnPage(env, url);
       return json({ error: 'Introuvable' }, 404, cors);
@@ -119,8 +139,36 @@ async function requireCode(request, env) {
   const code = (request.headers.get('x-access-code') || '').trim().toUpperCase();
   const rec = await getCode(env, code);
   if (!rec) throw Object.assign(new Error("Code d'accès invalide. Achetez un code sur la page « Obtenir un code »."), { status: 401 });
+  if (rec.expires && Date.now() > Date.parse(rec.expires)) {
+    throw Object.assign(new Error(rec.trial
+      ? "Votre mois d'essai gratuit est terminé. Achetez un code (⚙ Accès → « Obtenir un code ») pour continuer à utiliser l'assistant."
+      : 'Code expiré. Achetez un nouveau code.'), { status: 402 });
+  }
   if (rec.remaining <= 0) throw Object.assign(new Error('Code épuisé (' + rec.total + ' requêtes consommées). Achetez un nouveau code.'), { status: 402 });
   return { code, rec };
+}
+
+/* ═══ Essai gratuit : 1 mois (ou TRIAL_REQUESTS requêtes) par appareil ═══
+   Empreinte = hash SHA-256(IP + User-Agent). Idempotent : un nouvel appel
+   depuis le même appareil rend le même code (pratique si l'utilisateur l'a
+   perdu), sans jamais créer de second essai. */
+async function trialGrant(request, env, cors) {
+  if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
+  const ip = request.headers.get('cf-connecting-ip') || 'x';
+  const ua = request.headers.get('user-agent') || '';
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip + '|' + ua));
+  const fp = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  const prev = await env.CODES.get('trial:' + fp);
+  if (prev) {
+    const t = JSON.parse(prev);
+    const rec = await getCode(env, t.code);
+    return json({ code: t.code, essai: true, deja: true, restant: rec ? rec.remaining : 0, expire: t.expires }, 200, cors);
+  }
+  const code = genCode();
+  const expires = new Date(Date.now() + TRIAL_DAYS * 864e5).toISOString();
+  await putCode(env, code, { total: TRIAL_REQUESTS, remaining: TRIAL_REQUESTS, created: new Date().toISOString(), tx: 'essai', trial: true, expires });
+  await env.CODES.put('trial:' + fp, JSON.stringify({ code, expires }));
+  return json({ code, essai: true, restant: TRIAL_REQUESTS, expire: expires }, 200, cors);
 }
 
 /* ═══ 1. Proxy Anthropic ═══ */
@@ -182,7 +230,8 @@ async function proxyDhis2(request, env, cors, url) {
 async function checkCode(env, url, cors) {
   const rec = await getCode(env, url.searchParams.get('code') || '');
   if (!rec) return json({ valide: false }, 200, cors);
-  return json({ valide: true, total: rec.total, restant: rec.remaining }, 200, cors);
+  const expire = !!rec.expires && Date.now() > Date.parse(rec.expires);
+  return json({ valide: true, total: rec.total, restant: rec.remaining, essai: !!rec.trial, expire: rec.expires || null, expire_passé: expire }, 200, cors);
 }
 
 /* ═══ 4. Admin ═══ */
@@ -212,7 +261,51 @@ async function adminCodes(request, env, url, cors) {
   return json(out, 200, cors);
 }
 
-/* ═══ 5. Paiement CinetPay ═══ */
+/* Mini-console web protégée : générer un code en 10 s depuis un téléphone.
+   (L'API JSON /admin/codes ci-dessus reste disponible pour curl/scripts.) */
+async function adminPage(request, env) {
+  if (request.method === 'POST') {
+    const f = await request.formData().catch(() => null);
+    const tok = f ? String(f.get('token') || '') : '';
+    if (!env.ADMIN_TOKEN || tok !== env.ADMIN_TOKEN) {
+      return htmlPage('Non autorisé', `<h1>🔐 Admin</h1><div class="err">Token invalide.</div>
+        <p style="margin-top:14px"><a href="/admin">← Retour</a></p>`);
+    }
+    const requests = Math.max(1, Math.min(100000, Math.floor(Number(f.get('requests')) || 0)));
+    const note = String(f.get('note') || '').slice(0, 120);
+    const code = genCode();
+    await putCode(env, code, { total: requests, remaining: requests, created: new Date().toISOString(), tx: note || 'whatsapp' });
+    return htmlPage('Code créé',
+      `<h1>✅ Code créé</h1>
+       <div class="code">${code}</div>
+       <p><b>${requests} requêtes IA</b>${note ? ' — ' + esc(note) : ''}</p>
+       <p>Envoyez ce code au client sur WhatsApp.</p>
+       <p style="margin-top:14px"><a href="/admin">← Créer un autre code</a></p>`);
+  }
+  const inp = 'width:100%;box-sizing:border-box;margin:8px 0;padding:11px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px';
+  return htmlPage('Admin — créer un code',
+    `<h1>🔐 Créer un code d'accès</h1>
+     <form method="POST" action="/admin">
+       <input type="password" name="token" required placeholder="Token admin" style="${inp}">
+       <input type="number" name="requests" required min="1" max="100000" placeholder="Nombre de requêtes (ex. 100)" style="${inp}">
+       <input type="text" name="note" placeholder="Note (client, offre, paiement…)" style="${inp}">
+       <button type="submit">Générer le code</button>
+     </form>
+     <small>Repères : 5 $ = 50 requêtes · 10 $ = 100 · 20 $ = 200 · 30 $ = 300.</small>`);
+}
+
+/* ═══ 5. Vente de codes : WhatsApp (manuel) ou CinetPay (automatique) ═══ */
+/* Mode actif : PAYMENT_PROVIDER (env) sinon auto —
+   CinetPay si ses clés sont posées, à défaut WhatsApp (WHATSAPP_NUMBER). */
+function payProvider(env) {
+  const forced = (env.PAYMENT_PROVIDER || '').trim().toLowerCase();
+  if (forced === 'cinetpay' || forced === 'whatsapp') return forced;
+  if (env.CINETPAY_APIKEY && env.CINETPAY_SITE_ID) return 'cinetpay';
+  if (env.WHATSAPP_NUMBER) return 'whatsapp';
+  return null;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 function htmlPage(title, body) {
   return new Response(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
@@ -230,32 +323,74 @@ small{color:#999}</style></head><body><div class="card">${body}</div></body></ht
 }
 
 function buyPage(env, url) {
-  if (!env.CINETPAY_APIKEY || !env.CINETPAY_SITE_ID) {
+  const provider = payProvider(env);
+  if (provider === 'whatsapp') return whatsappBuyPage(env);
+  if (provider !== 'cinetpay') {
     return htmlPage('Paiement bientôt disponible',
-      `<h1>💳 Paiement en ligne — bientôt disponible</h1>
-       <p>Le paiement automatique par mobile money (M-Pesa, Orange Money, Airtel Money) est en cours d'activation.
+      `<h1>💳 Codes d'accès — bientôt disponibles</h1>
+       <p>La vente de codes d'accès (paiement mobile money : M-Pesa, Orange Money, Airtel Money) est en cours d'activation.
        Revenez bientôt, ou utilisez votre propre clé API Anthropic dans ⚙ Accès en attendant.</p>`);
   }
   const offers = OFFERS.map(o =>
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="${o.id}">
-     <button type="submit" class="offer" style="background:#fff;color:#333;text-align:left">
-       <span><b>${o.label}</b> — <b style="color:#1a237e">${o.analyses}</b><br><small>${o.requests} requêtes IA</small></span>
-       <span class="price">${o.amount.toLocaleString('fr-FR')} $</span></button></form>`).join('');
+      <button type="submit" class="offer" style="background:#fff;color:#333;text-align:left">
+        <span><b>${o.label}</b> — <b style="color:#1a237e">${o.analyses}</b><br><small>${o.requests} requêtes IA</small></span>
+        <span class="price">${o.amount.toLocaleString('fr-FR')} $</span></button></form>`).join('');
   const custom =
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="C">
-     <div class="offer" style="cursor:default;display:block">
-       <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — payez le montant de votre choix</small>
-       <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-         <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 7"
-           style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
-         <button type="submit" style="width:auto;padding:10px 18px">Payer</button>
-       </div>
-     </div></form>`;
+      <div class="offer" style="cursor:default;display:block">
+        <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — payez le montant de votre choix</small>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+          <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 7"
+            style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
+          <button type="submit" style="width:auto;padding:10px 18px">Payer</button>
+        </div>
+      </div></form>`;
   return htmlPage("Obtenir un code d'accès",
     `<h1>🎫 Obtenir un code d'accès</h1>
-     <p>Choisissez une offre ou entrez le montant de votre choix — paiement par <b>mobile money</b>
-     (M-Pesa, Orange Money, Airtel Money) ou <b>carte bancaire</b>.
-     Votre code s'affiche immédiatement après le paiement.</p>${offers}${custom}
+      <p>Choisissez une offre ou entrez le montant de votre choix — paiement par <b>mobile money</b>
+      (M-Pesa, Orange Money, Airtel Money) ou <b>carte bancaire</b>.
+      Votre code s'affiche immédiatement après le paiement.</p>${offers}${custom}
+      <small>Assistant IA du Dashboard PEV de routine — RDC.</small>`);
+}
+
+/* ── Mode WhatsApp : chaque offre ouvre une conversation (numéro dédié) avec un
+      message pré-rempli. Paiement mobile money manuel → le vendeur crée le code
+      via /admin et l'envoie dans la conversation. ── */
+function waLink(num, text) {
+  return 'https://wa.me/' + num + '?text=' + encodeURIComponent(text);
+}
+const WA_BTN = 'display:inline-block;margin-top:6px;background:#25d366;color:#fff;font-weight:700;font-size:12px;border-radius:8px;padding:7px 12px;text-decoration:none;border:none;cursor:pointer';
+function whatsappBuyPage(env) {
+  const num = String(env.WHATSAPP_NUMBER || '').replace(/[^0-9]/g, '');
+  const offers = OFFERS.map(o =>
+    `<div class="offer" style="cursor:default">
+      <span><b>${o.label}</b> — <b style="color:#1a237e">${o.analyses}</b><br><small>${o.requests} requêtes IA</small></span>
+      <span style="text-align:right;white-space:nowrap"><span class="price">${o.amount.toLocaleString('fr-FR')} $</span><br>
+      <a href="${waLink(num, `Bonjour, je souhaite acheter l’offre ${o.label} (${o.analyses} — ${o.amount} $) pour l’assistant IA du Dashboard PEV.`)}" target="_blank" rel="noopener" style="${WA_BTN}">💬 Commander</a></span></div>`).join('');
+  const custom =
+    `<div class="offer" style="cursor:default;display:block">
+      <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — choisissez le montant de votre choix</small>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <input type="number" id="mt" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" placeholder="ex. 7"
+          style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
+        <button onclick="var v=Math.floor(Number(document.getElementById('mt').value));if(!(v>=${CUSTOM_MIN_USD}&&v<=${CUSTOM_MAX_USD})){alert('Montant entre ${CUSTOM_MIN_USD} et ${CUSTOM_MAX_USD} $');return false;}window.open('https://wa.me/${num}?text='+encodeURIComponent('Bonjour, je souhaite acheter un code personnalisé de '+v+' $ ('+(v*${REQUESTS_PER_USD})+' requêtes IA) pour l’assistant IA du Dashboard PEV.'),'_blank');return false;"
+          style="${WA_BTN}margin-top:0;padding:10px 18px;font-size:14px">💬 Commander</button>
+      </div>
+    </div>`;
+  return htmlPage("Obtenir un code d'accès",
+    `<h1>🎫 Obtenir un code d'accès</h1>
+     <p>Choisissez une offre : <b>WhatsApp s'ouvre avec un message prêt à envoyer</b>.
+     Vous payez par <b>mobile money</b> (M-Pesa, Orange Money, Airtel Money) et votre
+     code vous est envoyé dans la conversation dès réception du paiement.</p>
+     ${offers}${custom}
+     <div style="background:#f0f2fa;border-radius:10px;padding:12px;margin:14px 0;font-size:12.5px;color:#444;line-height:1.5">
+       <b>Comment ça marche ?</b><br>
+       1. Cliquez « 💬 Commander » → envoyez le message WhatsApp pré-rempli.<br>
+       2. Le numéro mobile money à créditer vous est confirmé dans la conversation.<br>
+       3. Payez, puis envoyez la capture du paiement.<br>
+       4. Vous recevez immédiatement votre code — à coller dans l'onglet
+       « Génération des analyses » → ⚙ Accès → Code d'accès.</div>
      <small>Assistant IA du Dashboard PEV de routine — RDC.</small>`);
 }
 
@@ -278,7 +413,7 @@ async function cinetpayInit(env, offer, origin) {
   });
   const data = await resp.json();
   if (!data || !data.data || !data.data.payment_url) throw new Error('Échec init CinetPay : ' + JSON.stringify(data).slice(0, 300));
-  await putTx(env, txId, { status: 'pending', offer: offer.id, requests: offer.requests, created: new Date().toISOString() });
+  await putTx(env, txId, { status: 'pending', provider: 'cinetpay', offer: offer.id, requests: offer.requests, amount: offer.amount, currency: offer.currency, created: new Date().toISOString() });
   return data.data.payment_url;
 }
 async function putTx(env, tx, data) { await env.CODES.put('tx:' + tx, JSON.stringify(data)); }

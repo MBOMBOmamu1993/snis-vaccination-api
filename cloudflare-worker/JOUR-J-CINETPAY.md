@@ -1,6 +1,23 @@
 # Jour J — Activer le paiement automatique (après obtention du RCCM)
 
+> **En attendant le RCCM, le mode WhatsApp est actif** (voir `JOUR-J-WHATSAPP.md`) :
+> vous vendez déjà vos codes manuellement, sans frais. Dès que les 2 secrets
+> CinetPay ci-dessous sont posés, `/acheter` bascule **automatiquement** en
+> paiement en ligne — rien à recoder, et les codes WhatsApp déjà vendus restent
+> valides.
+
 Tout le reste est déjà déployé et testé (13/07/2026). Il ne reste que ces étapes.
+
+## 0. Obtenir le RCCM (préalable, quelques jours)
+
+1. **GUCE — Guichet Unique de Création d'Entreprise** (guichetunique.cd,
+   agences à Kinshasa et en provinces).
+2. Choisissez la forme **« établissement / personne physique »** : pas besoin
+   de créer une société (SARL) — l'établissement donne un RCCM à votre nom,
+   suffisant pour le KYC CinetPay, à coût modique.
+3. Pièces typiques : pièce d'identité, photo, adresse, activité déclarée
+   (ex. « services informatiques »). Repartez avec le **numéro RCCM** et
+   l'attestation.
 
 ## 1. Compte marchand CinetPay (1 à 3 jours de validation)
 
@@ -42,8 +59,8 @@ de « bientôt disponible » aux offres.
 
 ## 4. Test réel (10 min)
 
-1. Ouvrir https://pev-ia-proxy.pev-rdc.workers.dev/acheter → les 3 offres
-   (5 $ / 10 $ / 20 $) + le champ « Montant libre » s'affichent.
+1. Ouvrir https://pev-ia-proxy.pev-rdc.workers.dev/acheter → les 4 offres
+   (5 $ / 10 $ / 20 $ / 30 $) + le champ « Montant libre » s'affichent.
 2. Acheter l'offre Découverte (5 $) avec votre propre mobile money.
 3. Après paiement → la page /retour affiche un code `PEV-XXXX-XXXX`.
 4. Dashboard → onglet IA → ⚙ Accès → « 🎫 Code d'accès » → coller le code → poser une question.
