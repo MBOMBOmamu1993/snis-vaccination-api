@@ -2,15 +2,22 @@ name: Sync DHIS2 -> GitHub (FOSA / AS / ZS)
 
 # ─────────────────────────────────────────────────────────────
 # MANUEL : choisir le niveau à rafraîchir
-# AUTO   : tourne les 3 niveaux séquentiellement chaque nuit
-#          FOSA à 01:00 UTC, AS à 01:30 UTC, ZS à 02:00 UTC
+# AUTO   : tourne les 3 niveaux séquentiellement chaque jour
+#          FOSA à 12:00 UTC, AS à 12:30 UTC, ZS à 13:00 UTC
+#
+# ⚠️ NE PAS replanifier dans la fenêtre nocturne (≈18:00–06:00 UTC) :
+# l'API analytics du SNIS y renvoie des valeurs transitoires fausses
+# (combos « 12-23 mois » gonflés x2/x3 ou mois à zéro) pendant la
+# reconstruction des tables analytics — cause de la surestimation
+# CV VAR2 de mars-juillet 2026. L'ordre FOSA → AS → ZS compte aussi :
+# le garde-fou AS/ZS se réfère aux données FOSA fraîchement validées.
 # ─────────────────────────────────────────────────────────────
 
 on:
   schedule:
-    - cron: "0 1 * * *"    # FOSA — 01:00 UTC
-    - cron: "30 1 * * *"   # AS   — 01:30 UTC
-    - cron: "0 2 * * *"    # ZS   — 02:00 UTC
+    - cron: "0 12 * * *"   # FOSA — 12:00 UTC
+    - cron: "30 12 * * *"  # AS   — 12:30 UTC
+    - cron: "0 13 * * *"   # ZS   — 13:00 UTC
   workflow_dispatch:
     inputs:
       level:
@@ -31,7 +38,7 @@ permissions:
   contents: write
 
 # ─────────────────────────────────────────────────────────────
-# JOB FOSA  (01:00 UTC auto  OU  manuel level=FOSA)
+# JOB FOSA  (12:00 UTC auto  OU  manuel level=FOSA)
 # ─────────────────────────────────────────────────────────────
 jobs:
   sync-fosa:
@@ -39,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     if: >
-      (github.event_name == 'schedule' && github.event.schedule == '0 1 * * *') ||
+      (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *') ||
       (github.event_name == 'workflow_dispatch' && inputs.level == 'FOSA')
 
     concurrency:
@@ -50,6 +57,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - uses: actions/setup-python@v5
         with:
@@ -89,14 +97,14 @@ jobs:
           ./scripts/safe_push.sh main
 
 # ─────────────────────────────────────────────────────────────
-# JOB AS  (01:30 UTC auto  OU  manuel level=AS)
+# JOB AS  (12:30 UTC auto  OU  manuel level=AS)
 # ─────────────────────────────────────────────────────────────
   sync-as:
     name: "Sync AS"
     runs-on: ubuntu-latest
     timeout-minutes: 360
     if: >
-      (github.event_name == 'schedule' && github.event.schedule == '30 1 * * *') ||
+      (github.event_name == 'schedule' && github.event.schedule == '30 12 * * *') ||
       (github.event_name == 'workflow_dispatch' && inputs.level == 'AS')
 
     concurrency:
@@ -107,6 +115,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - uses: actions/setup-python@v5
         with:
@@ -146,14 +155,14 @@ jobs:
           ./scripts/safe_push.sh main
 
 # ─────────────────────────────────────────────────────────────
-# JOB ZS  (02:00 UTC auto  OU  manuel level=ZS)
+# JOB ZS  (13:00 UTC auto  OU  manuel level=ZS)
 # ─────────────────────────────────────────────────────────────
   sync-zs:
     name: "Sync ZS"
     runs-on: ubuntu-latest
     timeout-minutes: 360
     if: >
-      (github.event_name == 'schedule' && github.event.schedule == '0 2 * * *') ||
+      (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') ||
       (github.event_name == 'workflow_dispatch' && inputs.level == 'ZS')
 
     concurrency:
@@ -164,6 +173,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - uses: actions/setup-python@v5
         with:

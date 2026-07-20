@@ -15,6 +15,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+import dhis2_guard
+
 # ============================================================
 # 1) CONFIG: AJOUTE TES INDICATEURS ICI
 # ============================================================
@@ -90,7 +92,7 @@ DX_LIST = """
           "Nyke8sWJbn9.dqydGQFHahb;"
           "bzD4QxaNkJm.dqydGQFHahb;bzD4QxaNkJm.NOHlOxLczjc;bzD4QxaNkJm.vbx8t4WAbR8;"
           "bzD4QxaNkJm.KPDzIsWq7JK;bzD4QxaNkJm.oSYTyzezWif;bzD4QxaNkJm.Dr4rWTqepnP;"
-          "RGW61lyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXsTq1MDSv;"
+          "RGW6llyyusM;hGBtbI7kjvb;bZDbSvdUcPC;lXstTq1MDSv;"
           "uAWIVDnGPGH.dxDQKDcTn6Z;uAWIVDnGPGH.XEN3ucCGa07;uAWIVDnGPGH.J8mw9rFkY4v;"
           "uAWIVDnGPGH.WZwmzIuRvwV;uAWIVDnGPGH.GSCwhT2SCCr;uAWIVDnGPGH.pdKyvaYRqCj;"
           "uAWIVDnGPGH.kOWsLrtvrhn;uAWIVDnGPGH.mZLRF4eSPIk;"
@@ -210,8 +212,6 @@ DX_LIST = """
           "c4VvzI5zTep.g6mIyKoGIh2;c4VvzI5zTep.Rby9Jdri29F;c4VvzI5zTep.FCXzheCQXtr;"
           "pak21wvkWJC.g6mIyKoGIh2;cTLKwfG8pSv.QRyK6yxKBU3;pak21wvkWJC.Rby9Jdri29F;"
           "cTLKwfG8pSv.Rby9Jdri29F;pak21wvkWJC.FCXzheCQXtr;cTLKwfG8pSv.VrEj0UVVGr4;"
-          "i5zmivDIHN8.g6mIyKoGIh2;i5zmivDIHN8.QRyK6yxKBU3;i5zmivDIHN8.Rby9Jdri29F;"
-          "i5zmivDIHN8.FCXzheCQXtr;i5zmivDIHN8.VrEj0UVVGr4;"
           "bzD4QxaNkJm.g6mIyKoGIh2;bzD4QxaNkJm.QRyK6yxKBU3;bzD4QxaNkJm.Rby9Jdri29F;"
           "bzD4QxaNkJm.FCXzheCQXtr;bzD4QxaNkJm.VrEj0UVVGr4;"
           "M2JQW0H44dI.QRyK6yxKBU3;M2JQW0H44dI.VrEj0UVVGr4;"
@@ -476,10 +476,10 @@ RENAME_MAP: Dict[str, str] = {
     "bzD4QxaNkJm.oSYTyzezWif": "VAA mobile1",
     "bzD4QxaNkJm.Dr4rWTqepnP": "VAA mobile2",
 
-    "RGW61lyyusM": "Td 2",
+    "RGW6llyyusM": "Td 2",
     "hGBtbI7kjvb": "Td 3",
     "bZDbSvdUcPC": "Td 4",
-    "lXsTq1MDSv": "Td 5",
+    "lXstTq1MDSv": "Td 5",
 
     # ============================================
     # LOGISTIQUES - RENAME MAP
@@ -1201,13 +1201,25 @@ def _analytics_with_split(
 # 4) TRANSFORM
 # ============================================================
 
-def rows_to_records(analytics_json: dict) -> List[dict]:
+def rows_to_records(analytics_json: dict, allowed_dx: Optional[set] = None) -> List[dict]:
+    """Lignes analytics -> enregistrements longs.
+
+    allowed_dx : opérandes réellement demandés dans CE chunk. Au-delà d'un certain
+    nombre d'opérandes d'un même dataElement dans une requête, l'analytics du SNIS
+    cesse de filtrer par categoryOptionCombo et renvoie TOUTES les lignes du
+    dataElement — y compris des COC non demandés (« lignes fantômes »). Ces lignes
+    réapparaissent alors dans le chunk qui les demande vraiment, et pivot_records
+    les additionnait : d'où des valeurs ×2/×3 sur les colonnes 12-23 mois
+    (surestimation de la CV VAR2). On ne garde donc que ce qui a été demandé.
+    """
     rows = analytics_json.get("rows") or []
     recs: List[dict] = []
     for r in rows:
         try:
             dx, pe, ou, val = r[0], r[1], r[2], r[3]
         except Exception:
+            continue
+        if allowed_dx is not None and dx not in allowed_dx:
             continue
         try:
             v = float(val)
@@ -1232,12 +1244,11 @@ def pivot_records(
             row = {"ou": r["ou"], "pe": r["pe"]}
             idx[key] = row
 
-        old = row.get(r["dx"])
-        val = r["value"]
-        if old is None:
-            row[r["dx"]] = val
-        else:
-            row[r["dx"]] = (old or 0) + (val or 0)
+        # Une clé (ou, pe, dx) n'a qu'UNE valeur vraie : ne jamais additionner.
+        # Un même opérande peut revenir dans plusieurs chunks (lignes fantômes,
+        # cf. rows_to_records) avec la même valeur — l'additionner la doublait.
+        if r["dx"] not in row:
+            row[r["dx"]] = r["value"]
 
     for row in idx.values():
         for dx in dx_expected:
@@ -1280,7 +1291,7 @@ def fetch_period(
     for i, ch in enumerate(chunks, start=1):
         print(f"[{pe}] chunk {i}/{len(chunks)} dx_items={len(ch)}", flush=True)
         data = _analytics_with_split(client, pe, ch)
-        long_all.extend(rows_to_records(data))
+        long_all.extend(rows_to_records(data, allowed_dx=set(ch)))
         if sleep_s and sleep_s > 0:
             time.sleep(sleep_s)
 
@@ -1381,6 +1392,8 @@ def main() -> int:
     ap.add_argument("--max_plain_bytes", type=int, default=800_000)
     ap.add_argument("--retry_failed", action="store_true")
     ap.add_argument("--retry_limit", type=int, default=2)
+    ap.add_argument("--skip_guard", action="store_true",
+                    help="Désactive le garde-fou de validation des données (à utiliser en connaissance de cause)")
 
     args = ap.parse_args()
 
@@ -1456,6 +1469,18 @@ def main() -> int:
                 dx_chunk_chars=args.dx_chunk_chars,
                 sleep_s=args.sleep,
             )
+            # Garde-fou : rejette le mois si analytics renvoie des valeurs
+            # transitoires (x2/x3 sur les combos 12-23, mois à zéro, …)
+            if not args.skip_guard:
+                dhis2_guard.check_month(
+                    client=client,
+                    records=records,
+                    pe=pe,
+                    month_folder=monthly_root / pe,
+                    rename_map_dx_to_label=RENAME_MAP,
+                    zoho_map_label_to_link=zoho_map,
+                    level="FOSA",
+                )
         except Exception as e:
             print(f"ERROR: fetch_period failed for {pe}: {e}", flush=True)
             print(f"SKIP month {pe}: keeping existing files/index for this month if any", flush=True)

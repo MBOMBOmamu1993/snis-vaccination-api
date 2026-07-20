@@ -594,8 +594,10 @@ GLOBAL_SUM_SPECS: Dict[str, List[str]] = {
     ],
     "VAR2_12_23": [
         "VAR2 12-23 mois fixe1",
+        "VAR2 12-23 mois fixe2",
         "VAR2 12-23 mois avancé1",
         "VAR2 12-23 mois mobile1",
+        "VAR2 12-23 mois mobile2",
     ],
     "VAA_12_23": [
         "VAA 12-23 mois fixe1",

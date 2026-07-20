@@ -3,8 +3,14 @@
  *  PROXY IA — Dashboard PEV de routine (snis-vaccination-api)
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
- *   1. /v1/messages        → proxy vers l'API Anthropic (clé cachée ici),
- *                            réservé aux codes d'accès valides (quota).
+ *   1. DEUX fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
+ *        /api/chat        → Ollama Cloud (MiniMax M3)   — clé OLLAMA_API_KEY
+ *        /v1/messages     → Anthropic (Claude)          — clé ANTHROPIC_API_KEY
+ *      Dans les deux cas : soit un code d'accès valide (quota décompté, clé du
+ *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
+ *      x-anthropic-key (relais pur, aucun quota consommé).
+ *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
+ *      CORS, un appel direct depuis le navigateur est donc impossible.
  *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
  *                            identifiants cachés ici, codes d'accès requis.
  *   3. /acheter            → page d'obtention d'un code. Deux modes :
@@ -22,7 +28,10 @@
  *                            1 par appareil (empreinte IP+UA), puis paiement
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
+ *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
  *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
+ *                         (les deux sont facultatives : un fournisseur sans clé
+ *                          reste utilisable par les clients ayant leur propre clé)
  *   DHIS2_BASE_URL      — ex. https://snisrdc.com (sans /api)
  *   DHIS2_USERNAME      — compte DHIS2 (lecture seule recommandé)
  *   DHIS2_PASSWORD
@@ -31,7 +40,6 @@
  *                         (ex. 243812345678) : reçoit les commandes des clients
  *   CINETPAY_APIKEY     — (après création compte marchand CinetPay)
  *   CINETPAY_SITE_ID
- *  Variable d'env optionnelle : PAYMENT_PROVIDER = whatsapp | cinetpay
  *
  *  Binding KV requis : CODES
  *  Variable d'env  : ALLOWED_ORIGIN = https://mbombomamu1993.github.io
@@ -41,7 +49,9 @@
 /* ── Offres de vente (à ajuster librement) ──
    requests = nombre de requêtes IA incluses. Une analyse complète consomme
    en moyenne 3 à 6 requêtes (l'IA lit les données puis répond).
-   Tarif : 0,10 $/requête ≈ 3× le coût API Opus moyen (~0,033 $/requête). */
+   Tarif : 0,10 $/requête. Le modèle tourne sur l'abonnement Ollama Cloud
+   (forfait mensuel, pas de facturation à la requête) : la marge dépend donc
+   du volume mensuel, pas d'un coût unitaire à l'appel. */
 const REQUESTS_PER_USD = 10;
 const CUSTOM_MIN_USD = 1;
 const CUSTOM_MAX_USD = 500;
@@ -52,7 +62,16 @@ const OFFERS = [
   { id: 'XL', label: 'Expert', analyses: '±75 analyses', requests: 300, amount: 30, currency: 'USD' },
 ];
 
-const ALLOWED_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
+/* Modèles Ollama Cloud : la liste vit chez Ollama (route /api/tags relayée au
+   dashboard) — on ne fige donc PAS d'allowlist ici, seulement une validation de
+   forme + un défaut. Le tag « :cloud » (ou suffixe -cloud) est obligatoire —
+   sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
+const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
+const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
+const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
+const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const NUM_PREDICT_CAP = 16000; /* plafond de tokens générés (équiv. max_tokens) */
 const MAX_TOKENS_CAP = 16000;
 
 /* ── Essai gratuit : TRIAL_DAYS jours (ou TRIAL_REQUESTS requêtes, la 1re
@@ -70,6 +89,8 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     try {
+      if (url.pathname === '/api/chat' && request.method === 'POST') return await proxyOllama(request, env, cors);
+      if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
@@ -111,7 +132,7 @@ function corsHeaders(env, origin) {
   return {
     'Access-Control-Allow-Origin': ok ? (origin || '*') : allowed[0],
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code',
+    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code,x-ollama-key,x-anthropic-key',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -151,7 +172,8 @@ async function requireCode(request, env) {
 /* ═══ Essai gratuit : 1 mois (ou TRIAL_REQUESTS requêtes) par appareil ═══
    Empreinte = hash SHA-256(IP + User-Agent). Idempotent : un nouvel appel
    depuis le même appareil rend le même code (pratique si l'utilisateur l'a
-   perdu), sans jamais créer de second essai. */
+   perdu), sans jamais créer de second essai. Le code d'essai fonctionne avec
+   tous les fournisseurs IA (Ollama, Anthropic) et le proxy DHIS2. */
 async function trialGrant(request, env, cors) {
   if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
   const ip = request.headers.get('cf-connecting-ip') || 'x';
@@ -171,37 +193,109 @@ async function trialGrant(request, env, cors) {
   return json({ code, essai: true, restant: TRIAL_REQUESTS, expire: expires }, 200, cors);
 }
 
-/* ═══ 1. Proxy Anthropic ═══ */
-async function proxyAnthropic(request, env, cors) {
-  let auth;
-  try { auth = await requireCode(request, env); }
-  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
-  /* Les codes marqués dhis2_only n'ouvrent PAS l'accès Anthropic (crédits) */
-  if (auth.rec.dhis2_only) return json({ error: { type: 'auth', message: 'Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.' } }, 403, cors);
+/* ═══ 1. Proxys IA (Ollama Cloud + Anthropic) ═══
+   Deux modes d'authentification, communs aux deux fournisseurs :
+     • clé personnelle de l'appelant (x-ollama-key / x-anthropic-key) → relais
+       pur, aucun quota consommé (il paie son propre usage) ;
+     • x-access-code : code d'accès acheté → la clé du service est utilisée et
+       1 requête est décomptée du solde.
+   Dans les deux cas le corps et le flux de réponse sont transmis tels quels. */
+async function resolveIaAuth(request, env, ownKeyHeader, serviceKeyName) {
+  const ownKey = (request.headers.get(ownKeyHeader) || '').trim();
+  if (ownKey) return { key: ownKey, auth: null };
 
-  const body = await request.json();
-  if (!ALLOWED_MODELS.includes(body.model)) body.model = ALLOWED_MODELS[0];
+  const auth = await requireCode(request, env); /* lève une erreur si invalide */
+  /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
+  if (auth.rec.dhis2_only) throw Object.assign(new Error('Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.'), { status: 403 });
+  if (!env[serviceKeyName]) throw Object.assign(new Error('Ce fournisseur n\'est pas configuré sur le proxy (' + serviceKeyName + ' absent). Choisissez l\'autre fournisseur dans ⚙ Accès, ou utilisez votre propre clé.'), { status: 503 });
+  return { key: env[serviceKeyName], auth: auth };
+}
+
+/* Décompte : 1 requête réussie = 1 unité (les erreurs ne comptent pas).
+   Le mode « clé personnelle » ne touche jamais au quota. */
+async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
+  const headers = { 'content-type': upstream.headers.get('content-type') || defaultCt, ...cors };
+  if (resolved.auth) {
+    if (upstream.ok) {
+      resolved.auth.rec.remaining -= 1;
+      await putCode(env, resolved.auth.code, resolved.auth.rec);
+    }
+    headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
+  }
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
+
+async function proxyOllama(request, env, cors) {
+  let resolved;
+  try { resolved = await resolveIaAuth(request, env, 'x-ollama-key', 'OLLAMA_API_KEY'); }
+  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
+
+  /* N'importe quel modèle Cloud du compte : validation de forme seulement.
+     Un modèle inconnu produit un « model not found » propre côté Ollama. */
+  if (typeof body.model !== 'string' || !/^[\w.\/:-]{1,80}$/.test(body.model)) body.model = DEFAULT_OLLAMA_MODEL;
+  body.options = body.options || {};
+  if (!body.options.num_predict || body.options.num_predict > NUM_PREDICT_CAP) body.options.num_predict = NUM_PREDICT_CAP;
+
+  const upstream = await fetch(OLLAMA_CHAT_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/x-ndjson',
+      authorization: 'Bearer ' + resolved.key,
+    },
+    body: JSON.stringify(body),
+  });
+  return await finishIaResponse(env, upstream, resolved, cors, 'application/x-ndjson');
+}
+
+/* Liste des modèles Ollama Cloud du compte — permet au dashboard d'afficher
+   automatiquement les modèles ajoutés/mis à jour chez Ollama, sans redéployer.
+   Métadonnées non sensibles : tout code d'accès valide suffit (y compris les
+   codes dhis2_only), aucune requête n'est décomptée ; une clé personnelle
+   x-ollama-key liste les modèles de SON compte. */
+async function ollamaTags(request, env, cors) {
+  const ownKey = (request.headers.get('x-ollama-key') || '').trim();
+  let key = ownKey;
+  if (!key) {
+    try { await requireCode(request, env); }
+    catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+    if (!env.OLLAMA_API_KEY) return json({ error: { type: 'config', message: 'OLLAMA_API_KEY absent du proxy.' } }, 503, cors);
+    key = env.OLLAMA_API_KEY;
+  }
+  const upstream = await fetch(OLLAMA_TAGS_URL, { headers: { authorization: 'Bearer ' + key, accept: 'application/json' } });
+  const text = await upstream.text();
+  return new Response(text, {
+    status: upstream.status,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=600', ...cors },
+  });
+}
+
+async function proxyAnthropic(request, env, cors) {
+  let resolved;
+  try { resolved = await resolveIaAuth(request, env, 'x-anthropic-key', 'ANTHROPIC_API_KEY'); }
+  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
+
+  if (!ALLOWED_ANTHROPIC_MODELS.includes(body.model)) body.model = ALLOWED_ANTHROPIC_MODELS[0];
   if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
 
-  const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+  const upstream = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       'anthropic-version': request.headers.get('anthropic-version') || '2023-06-01',
-      'x-api-key': env.ANTHROPIC_API_KEY,
+      'x-api-key': resolved.key,
     },
     body: JSON.stringify(body),
   });
-
-  /* Décompte : 1 requête réussie = 1 unité (les erreurs ne comptent pas). */
-  if (upstream.ok) {
-    auth.rec.remaining -= 1;
-    await putCode(env, auth.code, auth.rec);
-  }
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: { 'content-type': upstream.headers.get('content-type') || 'application/json', 'x-quota-restant': String(auth.rec.remaining), ...cors },
-  });
+  return await finishIaResponse(env, upstream, resolved, cors, 'application/json');
 }
 
 /* ═══ 2. Proxy DHIS2 (GET, lecture seule) ═══ */
@@ -305,7 +399,6 @@ function payProvider(env) {
   return null;
 }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
 function htmlPage(title, body) {
   return new Response(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
@@ -329,28 +422,28 @@ function buyPage(env, url) {
     return htmlPage('Paiement bientôt disponible',
       `<h1>💳 Codes d'accès — bientôt disponibles</h1>
        <p>La vente de codes d'accès (paiement mobile money : M-Pesa, Orange Money, Airtel Money) est en cours d'activation.
-       Revenez bientôt, ou utilisez votre propre clé API Anthropic dans ⚙ Accès en attendant.</p>`);
+       Revenez bientôt, ou utilisez votre propre clé API (Ollama Cloud ou Anthropic) dans ⚙ Accès en attendant.</p>`);
   }
   const offers = OFFERS.map(o =>
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="${o.id}">
-      <button type="submit" class="offer" style="background:#fff;color:#333;text-align:left">
-        <span><b>${o.label}</b> — <b style="color:#1a237e">${o.analyses}</b><br><small>${o.requests} requêtes IA</small></span>
-        <span class="price">${o.amount.toLocaleString('fr-FR')} $</span></button></form>`).join('');
+     <button type="submit" class="offer" style="background:#fff;color:#333;text-align:left">
+       <span><b>${o.label}</b> — <b style="color:#1a237e">${o.analyses}</b><br><small>${o.requests} requêtes IA</small></span>
+       <span class="price">${o.amount.toLocaleString('fr-FR')} $</span></button></form>`).join('');
   const custom =
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="C">
-      <div class="offer" style="cursor:default;display:block">
-        <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — payez le montant de votre choix</small>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-          <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 7"
-            style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
-          <button type="submit" style="width:auto;padding:10px 18px">Payer</button>
-        </div>
-      </div></form>`;
+     <div class="offer" style="cursor:default;display:block">
+       <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — payez le montant de votre choix</small>
+       <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+         <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 7"
+           style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
+         <button type="submit" style="width:auto;padding:10px 18px">Payer</button>
+       </div>
+     </div></form>`;
   return htmlPage("Obtenir un code d'accès",
     `<h1>🎫 Obtenir un code d'accès</h1>
-      <p>Choisissez une offre ou entrez le montant de votre choix — paiement par <b>mobile money</b>
-      (M-Pesa, Orange Money, Airtel Money) ou <b>carte bancaire</b>.
-      Votre code s'affiche immédiatement après le paiement.</p>${offers}${custom}
+     <p>Choisissez une offre ou entrez le montant de votre choix — paiement par <b>mobile money</b>
+     (M-Pesa, Orange Money, Airtel Money) ou <b>carte bancaire</b>.
+     Votre code s'affiche immédiatement après le paiement.</p>${offers}${custom}
       <small>Assistant IA du Dashboard PEV de routine — RDC.</small>`);
 }
 
@@ -413,7 +506,7 @@ async function cinetpayInit(env, offer, origin) {
   });
   const data = await resp.json();
   if (!data || !data.data || !data.data.payment_url) throw new Error('Échec init CinetPay : ' + JSON.stringify(data).slice(0, 300));
-  await putTx(env, txId, { status: 'pending', provider: 'cinetpay', offer: offer.id, requests: offer.requests, amount: offer.amount, currency: offer.currency, created: new Date().toISOString() });
+  await putTx(env, txId, { status: 'pending', offer: offer.id, requests: offer.requests, created: new Date().toISOString() });
   return data.data.payment_url;
 }
 async function putTx(env, tx, data) { await env.CODES.put('tx:' + tx, JSON.stringify(data)); }
