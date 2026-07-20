@@ -35,5 +35,8 @@ Contexte permanent :
 - Secrets Cloudflare posés : OLLAMA/ANTHROPIC/KIMI API keys, DHIS2_*, ADMIN_TOKEN,
   MPESA_INFOS, BREVO_API_KEY, MAIL_FROM, MAIL_TO_ADMIN, CALLMEBOT_*, WHATSAPP_NUMBER.
 - CinetPay : prêt mais inactif (attente RCCM) ; PAYMENT_PROVIDER force un mode sinon auto.
+- Telegram : ACTIF depuis le 20/07 soir (bot @pev_ventes_bot, TELEGRAM_BOT_TOKEN
+  + TELEGRAM_CHAT_ID posés) — test e2e ok:true instantané. Canal fiable et
+  illimité ; c'est le canal de référence, CallMeBot sert de secours.
 - Diagnostic notifs : clés KV notif:last et notif:last-mail (TTL 24 h) = journal
-  des derniers envois (à consulter en cas de doute).
+  des derniers envois (à consulter en cas de doute) ; file de relance notifq:*.
