@@ -12,3 +12,7 @@ id = "fb104235615740b9a9d117355f864751"
 [vars]
 # Origine(s) autorisée(s) à appeler le proxy (CORS)
 ALLOWED_ORIGIN = "https://mbombomamu1993.github.io,https://snis-vaccination-dhis2.vercel.app"
+
+[triggers]
+# Rapport des ventes quotidien à 17h00 UTC = 18h00 Kinshasa (UTC+1)
+crons = ["0 17 * * *"]

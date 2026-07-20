@@ -9154,6 +9154,19 @@
                 keyLabel: 'Clé API Ollama Cloud (commune à tous les modèles Ollama)', keyPlaceholder: 'votre clé ollama.com',
                 keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
             };
+            /* Kimi (Moonshot AI) — API OpenAI-compatible, relais via /kimi/v1/chat/completions
+               du proxy (même logique : code d'accès OU clé personnelle x-kimi-key).
+               Les valeurs d'option sont préfixées « kimi: » pour éviter toute collision
+               avec les modèles Ollama de même nom (ex. kimi-k2.7-code). */
+            var IA_KIMI_KEYMETA = {
+                keyLabel: 'Clé API Moonshot AI — Kimi (commune à tous les modèles Kimi)', keyPlaceholder: 'sk-...',
+                keyHint: 'Créez une clé sur <b>platform.kimi.ai</b> (API Keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Moonshot sans la stocker : l\'API Kimi n\'autorise pas les appels directs depuis un navigateur.'
+            };
+            var IA_KIMI_MODELS = [
+                { id: 'kimi-k3', label: 'Kimi K3 (vedette — raisonnement high)' },
+                { id: 'kimi-k2.7-code', label: 'Kimi K2.7 Code' },
+                { id: 'kimi-k2.6', label: 'Kimi K2.6' }
+            ];
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'minimax-m3';
@@ -9171,12 +9184,23 @@
             function iaProvKey() {
                 var p = cfg('provider') || '';
                 if (p === 'claude') return 'claude';
+                if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
                 if (p === 'minimax' || !p) return IA_DEFAULT_PROVIDER; /* migration ancien réglage */
                 return p.replace(/:cloud$/, '');
             }
             function iaProv(pk) {
                 pk = pk || iaProvKey();
                 if (pk === 'claude') return IA_CLAUDE;
+                if (pk.indexOf('kimi:') === 0) {
+                    var km = pk.slice(5) || 'kimi-k3';
+                    var kmMeta = null;
+                    for (var x = 0; x < IA_KIMI_MODELS.length; x++) if (IA_KIMI_MODELS[x].id === km) kmMeta = IA_KIMI_MODELS[x];
+                    return {
+                        label: kmMeta ? kmMeta.label : ('Kimi (' + km + ')'), model: km, kind: 'openai',
+                        path: '/kimi/v1/chat/completions', keyHeader: 'x-kimi-key', reasoning_effort: 'high',
+                        keyLabel: IA_KIMI_KEYMETA.keyLabel, keyPlaceholder: IA_KIMI_KEYMETA.keyPlaceholder, keyHint: IA_KIMI_KEYMETA.keyHint
+                    };
+                }
                 return {
                     label: iaModelLabel(pk), model: pk, kind: 'ollama',
                     path: '/api/chat', keyHeader: 'x-ollama-key',
@@ -9184,10 +9208,11 @@
                     keyLabel: IA_OLLAMA_KEYMETA.keyLabel, keyPlaceholder: IA_OLLAMA_KEYMETA.keyPlaceholder, keyHint: IA_OLLAMA_KEYMETA.keyHint
                 };
             }
-            /* Clés personnelles : une pour Anthropic, UNE seule pour tous les modèles
-               Ollama (même compte). Reprend les anciens réglages : migration douce. */
+            /* Clés personnelles : une pour Anthropic, une pour Kimi, UNE seule pour tous
+               les modèles Ollama (même compte). Reprend les anciens réglages : migration douce. */
             function iaUserKey(pk) {
                 if (pk === 'claude') return cfg('key_claude') || cfg('key');
+                if (String(pk).indexOf('kimi:') === 0) return cfg('key_kimi');
                 return cfg('key_ollama') || cfg('key_minimax');
             }
             /* Rafraîchit la liste des modèles Ollama Cloud via le proxy. */
@@ -9711,6 +9736,44 @@
                     return { name: t.function.name, description: t.function.description, input_schema: t.function.parameters };
                 });
             }
+            /* Ollama -> OpenAI (Kimi) : messages texte ou multimodaux, tool_calls
+               avec identifiants forgés (comme pour Anthropic) et arguments en chaîne
+               JSON, résultats d'outils en messages role:'tool' appariés. */
+            function iaMsgsToOpenAI(messages) {
+                var out = [], ids = [];
+                for (var i = 0; i < messages.length; i++) {
+                    var m = messages[i];
+                    if (m.role === 'user') {
+                        if (m.images && m.images.length) {
+                            var parts = m.images.map(function (d) {
+                                return { type: 'image_url', image_url: { url: String(d).indexOf('data:') === 0 ? d : ('data:image/png;base64,' + d) } };
+                            });
+                            parts.push({ type: 'text', text: m.content || '' });
+                            out.push({ role: 'user', content: parts });
+                        } else out.push({ role: 'user', content: m.content || '' });
+                    } else if (m.role === 'assistant') {
+                        ids = [];
+                        var am = { role: 'assistant', content: m.content || '' };
+                        if (m.tool_calls && m.tool_calls.length) {
+                            am.tool_calls = m.tool_calls.map(function (tc, k) {
+                                var id = 'call_' + i + '_' + k;
+                                ids.push(id);
+                                return { id: id, type: 'function', function: { name: iaToolName(tc), arguments: JSON.stringify(iaToolArgs(tc)) } };
+                            });
+                        }
+                        out.push(am);
+                    } else if (m.role === 'tool') {
+                        /* OpenAI attend un message tool PAR appel, avec son tool_call_id */
+                        var k = 0;
+                        while (i < messages.length && messages[i].role === 'tool') {
+                            out.push({ role: 'tool', tool_call_id: ids[k] || ('call_' + i + '_' + k), content: String(messages[i].content || '') });
+                            i++; k++;
+                        }
+                        i--;
+                    }
+                }
+                return out;
+            }
 
             /* ── Appel API — Ollama Cloud (NDJSON) ou Anthropic (SSE) ──
                Toujours via le proxy : ollama.com ne renvoie aucun en-tête CORS et
@@ -9744,6 +9807,16 @@
                        signés sont capturés puis rejoués (cf. iaMsgsToAnthropic). */
                     if (prov.think) body.thinking = { type: 'adaptive' };
                     if (prov.effort) body.output_config = { effort: prov.effort };
+                } else if (prov.kind === 'openai') {
+                    /* Kimi (Moonshot) — format OpenAI : system en tête, outils au
+                       format function-calling, SSE en réponse. reasoning_effort est
+                       propre à K3 ('low'|'high'|'max') — ignoré sans gravité ailleurs. */
+                    body = {
+                        model: prov.model, max_tokens: 16000, stream: true,
+                        messages: [{ role: 'system', content: iaSystem() }].concat(iaMsgsToOpenAI(messages)),
+                        tools: IA_TOOLS
+                    };
+                    if (prov.reasoning_effort) body.reasoning_effort = prov.reasoning_effort;
                 } else {
                     /* Format natif Ollama : le prompt système est un message ordinaire
                        en tête de liste (pas de champ `system` séparé).
@@ -9795,7 +9868,9 @@
                 }
                 return prov.kind === 'anthropic'
                     ? await iaReadAnthropicStream(resp, onText, onThink)
-                    : await iaReadOllamaStream(resp, onText, onThink);
+                    : (prov.kind === 'openai'
+                        ? await iaReadOpenAIStream(resp, onText, onThink)
+                        : await iaReadOllamaStream(resp, onText, onThink));
             }
 
             /* Flux Ollama — NDJSON, une ligne JSON par événement :
@@ -9880,6 +9955,47 @@
                     }
                 });
                 return { content: text, thinking: thinkTxt, tool_calls: toolCalls, done_reason: stop, anthropic_thinking: thinkBlocks };
+            }
+
+            /* Flux OpenAI/Kimi — SSE « data: {json} » terminé par « data: [DONE] ».
+                Deltas : choices[0].delta.content (texte), .reasoning_content (K3),
+                .tool_calls (fragments accumulés par index : name puis arguments).
+                Résultat normalisé au format commun (tool_calls {function:{name,arguments}}). */
+            async function iaReadOpenAIStream(resp, onText, onThink) {
+                var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
+                var text = '', thinking = '', tcs = {}, doneReason = null;
+                function handleData(data) {
+                    if (data === '[DONE]') return;
+                    var ev; try { ev = JSON.parse(data); } catch (e) { return; }
+                    if (ev.error) throw new Error((ev.error && ev.error.message) || 'Erreur API');
+                    var ch = ev.choices && ev.choices[0]; if (!ch) return;
+                    var d = ch.delta || {};
+                    if (d.reasoning_content) { thinking += d.reasoning_content; if (onThink) onThink(); }
+                    if (d.content) { text += d.content; if (onText) onText(d.content); }
+                    (d.tool_calls || []).forEach(function (tc) {
+                        var ix = tc.index || 0;
+                        if (!tcs[ix]) tcs[ix] = { name: '', args: '' };
+                        if (tc.function) {
+                            if (tc.function.name) tcs[ix].name += tc.function.name;
+                            if (tc.function.arguments) tcs[ix].args += tc.function.arguments;
+                        }
+                    });
+                    if (ch.finish_reason) doneReason = ch.finish_reason;
+                }
+                while (true) {
+                    var chunk = await reader.read(); if (chunk.done) break;
+                    buf += dec.decode(chunk.value, { stream: true });
+                    var lines = buf.split('\n'); buf = lines.pop();
+                    for (var i = 0; i < lines.length; i++) {
+                        var l = lines[i].trim();
+                        if (l.indexOf('data:') === 0) handleData(l.slice(5).trim());
+                    }
+                }
+                var toolCalls = Object.keys(tcs).sort(function (a, b) { return a - b; }).map(function (ix) {
+                    var args = {}; try { args = JSON.parse(tcs[ix].args || '{}'); } catch (e) { }
+                    return { function: { name: tcs[ix].name, arguments: args } };
+                });
+                return { content: text, thinking: thinking, tool_calls: toolCalls, done_reason: doneReason };
             }
 
             /* ── Boucle agentique ── */
@@ -10765,19 +10881,22 @@
 
                 function renderModelOptions() {
                     var models = IA_OLLAMA_MODELS.slice();
-                    if (pk !== 'claude' && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
+                    if (pk !== 'claude' && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
                     var html = '<optgroup label="Ollama Cloud — abonnement forfaitaire">' +
                         models.map(function (id) { return '<option value="' + esc(id) + '">' + esc(iaModelLabel(id)) + '</option>'; }).join('') +
                         '</optgroup>' +
-                        '<optgroup label="Anthropic — API à crédits"><option value="claude">' + esc(IA_CLAUDE.label) + '</option></optgroup>';
+                        '<optgroup label="Moonshot AI — API à crédits (usage)">' +
+                        IA_KIMI_MODELS.map(function (x) { return '<option value="kimi:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
+                        '</optgroup>' +
+                        '<optgroup label="Anthropic — API à crédits (usage)"><option value="claude">' + esc(IA_CLAUDE.label) + '</option></optgroup>';
                     selEl.innerHTML = html;
                     selEl.value = pk;
                     if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
                 }
 
-                /* Une clé par fournisseur : Anthropic / Ollama (commune à tous ses modèles) */
-                var keys = { claude: iaUserKey('claude'), ollama: iaUserKey(IA_DEFAULT_PROVIDER) };
-                function keySlot(p) { return p === 'claude' ? 'claude' : 'ollama'; }
+                /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
+                var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: iaUserKey(IA_DEFAULT_PROVIDER) };
+                function keySlot(p) { return p === 'claude' ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
                     pk = np;
@@ -10829,7 +10948,7 @@
                 m.querySelector('#iaSave').onclick = function () {
                     keys[keySlot(pk)] = kEl.value.trim();
                     cfg('mode', mode); cfg('provider', pk);
-                    cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || '');
+                    cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || ''); cfg('key_kimi', keys.kimi || '');
                     /* le code vient du panneau actif : champ dédié en mode clé, champ code en mode code */
                     cfg('code', (mode === 'key' && c2El) ? c2El.value.trim() : (cEl ? cEl.value.trim() : ''));
                     bg.remove();
