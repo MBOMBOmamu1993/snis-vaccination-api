@@ -149,10 +149,15 @@ export default {
       return json({ error: String(e && e.message || e) }, 500, cors);
     }
   },
-  /* Cron quotidien ([triggers] dans wrangler.toml, 18 h Kinshasa) :
-     rapport des ventes du jour par notification/e-mail. */
+  /* Crons ([triggers] dans wrangler.toml) :
+     • toutes les 5 min : relance des alertes téléphone en échec (file notifq:*)
+     • 17 h UTC (18 h Kinshasa) : rapport des ventes du jour + passe de relance. */
   async scheduled(event, env, ctx) {
-    const p = dailyReport(env);
+    const p = (async () => {
+      await retryNotifQueue(env);
+      if (event && event.cron && event.cron.indexOf('*/5') === 0) return; /* passe courte */
+      await dailyReport(env);
+    })();
     if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(p);
     return p;
   },
@@ -1035,7 +1040,21 @@ function aiAmountFromNote(note) {
    • Telegram  : TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (via @BotFather)
    • WhatsApp  : CALLMEBOT_PHONE + CALLMEBOT_APIKEY (via callmebot.com, message
                  envoyé sur VOTRE propre WhatsApp — aucun client ne le voit)
-   Chaque tentative est journalisée dans KV (clé notif:last, 24 h) pour diagnostic. */
+   ⚠️ CallMeBot GRATUIT est soumis à quota : HTTP 200 = message réellement remis ;
+   tout autre code (210…) = souvent perdu silencieusement. Tout échec est mis
+   en FILE (KV notifq:<id>, 2 h) et RELANCÉ par le cron des 5 min (max 3 essais).
+   Chaque tentative est journalisée dans KV (notif:last, 24 h). */
+
+/* Un appel CallMeBot isolé (numéro assaini : un « + » ou espace dans le secret
+   provoquait un 403 silencieux). ok=true UNIQUEMENT sur 200. */
+function callmebotOnce(env, text) {
+  const phone = String(env.CALLMEBOT_PHONE).replace(/[^0-9]/g, '');
+  return fetch('https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(phone)
+    + '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(env.CALLMEBOT_APIKEY))
+    .then(async r => ({ ch: 'callmebot', status: r.status, ok: r.status === 200, body: (await r.text()).slice(0, 150) }))
+    .catch(e => ({ ch: 'callmebot', status: 0, ok: false, body: String(e && e.message || e) }));
+}
+
 async function notifyAdmin(env, text) {
   const jobs = [];
   const log = { at: new Date().toISOString(), results: [] };
@@ -1047,17 +1066,35 @@ async function notifyAdmin(env, text) {
       .catch(e => ({ ch: 'telegram', status: 0, ok: false, body: String(e && e.message || e) })));
   }
   if (env.CALLMEBOT_PHONE && env.CALLMEBOT_APIKEY) {
-    /* Numéro : chiffres uniquement (un « + » ou des espaces dans le secret
-       provoquent un 403 Forbidden silencieux). */
-    const phone = String(env.CALLMEBOT_PHONE).replace(/[^0-9]/g, '');
-    jobs.push(fetch('https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(phone)
-      + '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(env.CALLMEBOT_APIKEY))
-      .then(async r => ({ ch: 'callmebot', status: r.status, ok: r.ok, body: (await r.text()).slice(0, 150) }))
-      .catch(e => ({ ch: 'callmebot', status: 0, ok: false, body: String(e && e.message || e) })));
+    jobs.push(callmebotOnce(env, text).then(async res => {
+      if (res.status !== 200) {
+        /* Mise en file pour le cron des 5 min (3 relances max sur ~15 min) */
+        const id = Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b => b.toString(16).padStart(2, '0')).join('');
+        await env.CODES.put('notifq:' + id, JSON.stringify({ text, tries: 0, created: new Date().toISOString() }), { expirationTtl: 7200 });
+        res.queued = true;
+      }
+      return res;
+    }));
   }
   if (jobs.length) {
     log.results = await Promise.all(jobs);
     await env.CODES.put('notif:last', JSON.stringify(log), { expirationTtl: 86400 });
+  }
+}
+
+/* Cron des 5 min : relance les alertes CallMeBot en échec (file notifq:*).
+   Succès (200) ou 3 essais → sortie de file ; sinon nouvel essai au prochain cron. */
+async function retryNotifQueue(env) {
+  if (!env.CALLMEBOT_PHONE || !env.CALLMEBOT_APIKEY) return;
+  const list = await env.CODES.list({ prefix: 'notifq:', limit: 20 });
+  for (const k of list.keys) {
+    const v = await env.CODES.get(k.name);
+    if (!v) { await env.CODES.delete(k.name); continue; }
+    const q = JSON.parse(v);
+    const res = await callmebotOnce(env, q.text);
+    await env.CODES.put('notif:last', JSON.stringify({ at: new Date().toISOString(), results: [Object.assign({ retry: (q.tries || 0) + 1 }, res)] }), { expirationTtl: 86400 });
+    if (res.status === 200 || (q.tries || 0) >= 2) await env.CODES.delete(k.name);
+    else await env.CODES.put(k.name, JSON.stringify({ text: q.text, tries: (q.tries || 0) + 1, created: q.created }), { expirationTtl: 7200 });
   }
 }
 
