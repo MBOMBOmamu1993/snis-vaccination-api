@@ -2805,15 +2805,19 @@
             var firstFrac = o.firstFrac || (cols > 8 ? 0.16 : 0.34);
             var first = _cxN(_CX_BODY_W * firstFrac), rest = _cxN((_CX_BODY_W - first) / Math.max(1, cols - 1));
             var grid = head.map(function (_, i) { return '<a:gridCol w="' + (i === 0 ? first : rest) + '"/>'; }).join('');
-            var sz = o.sz || (cols > 14 ? 700 : cols > 8 ? 850 : 1000);
-            var rowH = o.rowH || (cols > 14 ? 210000 : 250000);
-            function cell(txt, isHead, fill, col, algn) {
-                return '<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="' + algn + '"/><a:r><a:rPr lang="fr-FR" sz="' + sz + '" b="' + (isHead ? 1 : 0) + '"><a:solidFill><a:srgbClr val="' + col + '"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _cxEsc(txt) + '</a:t></a:r></a:p></a:txBody><a:tcPr marL="27432" marR="27432" marT="9144" marB="9144" anchor="ctr">' + (fill ? '<a:solidFill><a:srgbClr val="' + fill + '"/></a:solidFill>' : '') + '</a:tcPr></a:tc>';
+            var sz = o.sz || (cols > 14 ? 850 : cols > 8 ? 1000 : 1150);
+            var rowH = o.rowH || (cols > 14 ? 245000 : 300000);
+            /* cd = chaîne, OU objet {t:texte, bg:'RRGGBB', fg:'RRGGBB'} pour la légende couleur */
+            function cell(cd, isHead, defFill, defCol, algn) {
+                var txt, bg, fg;
+                if (cd && typeof cd === 'object') { txt = cd.t; bg = cd.bg || defFill; fg = cd.fg || defCol; }
+                else { txt = cd; bg = defFill; fg = defCol; }
+                return '<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="' + algn + '"/><a:r><a:rPr lang="fr-FR" sz="' + sz + '" b="' + (isHead ? 1 : 0) + '"><a:solidFill><a:srgbClr val="' + fg + '"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _cxEsc(String(txt == null ? '' : txt)) + '</a:t></a:r></a:p></a:txBody><a:tcPr marL="27432" marR="27432" marT="9144" marB="9144" anchor="ctr">' + (bg ? '<a:solidFill><a:srgbClr val="' + bg + '"/></a:solidFill>' : '') + '</a:tcPr></a:tc>';
             }
             var hr = '<a:tr h="' + _cxN(rowH * 1.25) + '">' + head.map(function (h, i) { return cell(h, true, '1A237E', 'FFFFFF', i === 0 ? 'l' : 'ctr'); }).join('') + '</a:tr>';
             var br = rows.map(function (r, ri) {
-                var fill = (String(r[0]).toUpperCase().indexOf('TOTAL') === 0) ? 'D6E4F5' : (ri % 2 ? 'EEF4FC' : 'FFFFFF');
-                return '<a:tr h="' + _cxN(rowH) + '">' + r.map(function (c, ci) { return cell(String(c), false, fill, ci === 0 ? '0D47A1' : '1E293B', ci === 0 ? 'l' : 'ctr'); }).join('') + '</a:tr>';
+                var fill = (String((r[0] && r[0].t) || r[0]).toUpperCase().indexOf('TOTAL') === 0) ? 'D6E4F5' : (ri % 2 ? 'EEF4FC' : 'FFFFFF');
+                return '<a:tr h="' + _cxN(rowH) + '">' + r.map(function (c, ci) { return cell(c, false, fill, ci === 0 ? '0D47A1' : '1E293B', ci === 0 ? 'l' : 'ctr'); }).join('') + '</a:tr>';
             }).join('');
             var cy = _cxN(rowH * 1.25 + rowH * rows.length);
             return '<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="' + _cxId() + '" name="Tbl"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>' +
@@ -2833,7 +2837,7 @@
             for (var g = 0; g <= G; g++) {
                 var val = top * (G - g) / G, gy = plotY + plotH * g / G;
                 sh.push(_cxRect(plotX, gy, plotW, 3175, 'D9DEEA'));
-                sh.push(_cxTxt(o.pct ? Math.round(val) + '%' : _cxFmt(val), _CX_MX - 20000, gy - 90000, 520000, 180000, { sz: 800, col: '64748B', algn: 'r' }));
+                sh.push(_cxTxt(o.pct ? Math.round(val) + '%' : _cxFmt(val), _CX_MX - 20000, gy - 100000, 540000, 200000, { sz: 1000, col: '64748B', algn: 'r' }));
             }
             var nC = cats.length, nS = series.length, groupW = plotW / Math.max(1, nC), innerPad = groupW * 0.18, barW = (groupW - 2 * innerPad) / nS;
             for (var c = 0; c < nC; c++) {
@@ -2841,16 +2845,20 @@
                 for (var s2 = 0; s2 < nS; s2++) {
                     var v2 = Number(series[s2].values[c]) || 0, bh = plotH * Math.min(v2, top) / top, bx = gx + s2 * barW;
                     sh.push(_cxRect(bx + barW * 0.08, plotY + plotH - bh, barW * 0.84, bh, series[s2].color || _CX_PAL[s2 % _CX_PAL.length]));
-                    if (nC <= 14) sh.push(_cxTxt(o.pct ? Math.round(v2) + '' : _cxFmt(v2), bx, plotY + plotH - bh - 150000, barW, 150000, { sz: 700, col: '334155', algn: 'ctr' }));
+                    if (nC <= 16) sh.push(_cxTxt(o.pct ? Math.round(v2) + '' : _cxFmt(v2), bx - barW * 0.2, plotY + plotH - bh - 210000, barW * 1.4, 200000, { sz: 950, col: '334155', algn: 'ctr' }));
                 }
-                if (nC > 6) sh.push(_cxTxt(cats[c], plotX + c * groupW + groupW / 2 - 500000, plotY + plotH + 60000, 1000000, 300000, { sz: 750, col: '334155', algn: 'ctr', rot: -2700000 }));
-                else sh.push(_cxTxt(cats[c], plotX + c * groupW, plotY + plotH + 40000, groupW, 260000, { sz: 850, col: '334155', algn: 'ctr' }));
+                if (nC > 6) sh.push(_cxTxt(cats[c], plotX + c * groupW + groupW / 2 - 550000, plotY + plotH + 70000, 1100000, 320000, { sz: 950, col: '334155', algn: 'ctr', rot: -2700000 }));
+                else sh.push(_cxTxt(cats[c], plotX + c * groupW, plotY + plotH + 50000, groupW, 300000, { sz: 1050, col: '334155', algn: 'ctr' }));
             }
-            var lx = plotX, ly = plotY + plotH + 520000;
-            series.forEach(function (se, i) {
-                sh.push(_cxRect(lx, ly, 160000, 160000, se.color || _CX_PAL[i % _CX_PAL.length]));
-                sh.push(_cxTxt(se.name, lx + 200000, ly - 20000, 2600000, 200000, { sz: 900, col: '1E293B', algn: 'l' }));
-                lx += 220000 + se.name.length * 62000;
+            /* légende en HAUT à DROITE (le logo PEV en bas de page couvre le bas) */
+            var _sq = 190000, _gap = 95000, _pad = 240000, _charW = 88000;
+            var _items = series.map(function (se, i) { return { name: se.name, color: se.color || _CX_PAL[i % _CX_PAL.length], w: _sq + _gap + se.name.length * _charW + _pad }; });
+            var _totW = _items.reduce(function (s, it) { return s + it.w; }, 0);
+            var _lx = _CX_MX + _CX_BODY_W - _totW, _ly = y - 110000;
+            _items.forEach(function (it) {
+                sh.push(_cxRect(_lx, _ly, _sq, _sq, it.color));
+                sh.push(_cxTxt(it.name, _lx + _sq + _gap, _ly - 15000, it.w - _sq - _gap, 220000, { sz: 1050, col: '1E293B', algn: 'l' }));
+                _lx += it.w;
             });
             return sh.join('');
         }
@@ -2882,6 +2890,13 @@
         function _cxAbanDTC(recs) { var d1 = _cxSum(recs, 'DTC1_0_11'), d3 = _cxSum(recs, 'DTC3_0_11'); return d1 > 0 ? (d1 - d3) / d1 * 100 : null; }
         function _cxAbanVAR(recs) { var b = _cxSum(recs, 'BCG_0_11'), v = _cxSum(recs, 'VAR1_0_11'); return b > 0 ? (b - v) / b * 100 : null; }
         function _cxTag(recs, nPer) { recs._nPer = nPer; return _cxTargets(recs); }
+        /* Légende couleur du dashboard : fond coloré + texte blanc dans la cellule */
+        function _cxCvCol(p) { if (p == null || !isFinite(p)) return null; if (p > 100) return '2563EB'; if (p >= 90) return '16A34A'; if (p >= 60) return 'EAB308'; return 'DC2626'; }
+        function _cxAbanCol(p) { if (p == null || !isFinite(p)) return null; if (p < 0) return '7F1D1D'; if (p <= 10) return '16A34A'; if (p < 20) return 'EAB308'; return 'EF4444'; }
+        function _cxCatCol(c) { return ({ 'Cat. 1': '16A34A', 'Cat. 2': '2563EB', 'Cat. 3': 'EAB308', 'Cat. 4': 'DC2626', 'NA': '7F1D1D' })[c] || null; }
+        function _cxPropCol(p) { if (p == null || !isFinite(p)) return null; if (p >= 90) return '16A34A'; if (p >= 60) return 'EAB308'; return 'DC2626'; }
+        function _cxLossCol(p) { if (p == null || !isFinite(p)) return null; if (p <= 5) return '16A34A'; if (p <= 10) return 'EAB308'; return 'EF4444'; }
+        function _cxCell(txt, bg) { return bg ? { t: txt, bg: bg, fg: 'FFFFFF' } : txt; }
 
         /* ── Construit les diapos d'analyses locales ── */
         function _cxBuildSections(asRecs, nPer) {
@@ -2917,31 +2932,37 @@
             S1 = S1.concat(chartPages('Complétude & Promptitude par Aire de Santé', asNames, asBy, [{ name: 'Complétude %', color: '1A237E', val: function (rc) { return _cxMean(rc, 'comp') || 0; } }, { name: 'Promptitude %', color: 'E65100', val: function (rc) { return _cxMean(rc, 'prompt') || 0; } }], true));
             /* 3-4 CV administrative tous antigènes */
             var cvHead = ['Zone de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl));
-            function cvRow(name, rc) { var tg = _cxTag(rc, nPer); return [name].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(rc, tg, ag); return v == null ? '–' : Math.round(v); })); }
-            var cvTotal = (function () { var tg = _cxTag(asRecs, nPer); return ['TOTAL'].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(asRecs, tg, ag); return v == null ? '–' : Math.round(v); })); })();
-            S1 = S1.concat(tablePages('Couverture vaccinale administrative par ZS — tous antigènes (%)', cvHead, zsNames.map(function (z) { return cvRow(_cn(z), byZS[z]); }), 235000, 800, 0.14, cvTotal));
-            S1 = S1.concat(tablePages('Couverture vaccinale administrative par AS — tous antigènes (%)', ['Aire de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl)), asList.map(function (a) { return cvRow(_cn(a.name), a.recs); }), 210000, 750, 0.16, null));
+            function cvRow(name, rc) { var tg = _cxTag(rc, nPer); return [name].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(rc, tg, ag); return v == null ? '–' : _cxCell(Math.round(v), _cxCvCol(v)); })); }
+            var cvTotal = (function () { var tg = _cxTag(asRecs, nPer); return ['TOTAL'].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(asRecs, tg, ag); return v == null ? '–' : _cxCell(Math.round(v), _cxCvCol(v)); })); })();
+            S1 = S1.concat(tablePages('Couverture vaccinale administrative par ZS — tous antigènes (%)', cvHead, zsNames.map(function (z) { return cvRow(_cn(z), byZS[z]); }), 268000, 900, 0.14, cvTotal));
+            S1 = S1.concat(tablePages('Couverture vaccinale administrative par AS — tous antigènes (%)', ['Aire de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl)), asList.map(function (a) { return cvRow(_cn(a.name), a.recs); }), 245000, 850, 0.16, null));
             /* 5-6 Zéro-dose & Sous-vaccinés */
             S1 = S1.concat(chartPages('Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par ZS', zsNames, zsBy, [{ name: 'Enfants ZD', color: '7C3AED', val: function (rc) { return Math.round(_cxZD(rc)); } }, { name: 'Enfants SV', color: '00838F', val: function (rc) { return Math.round(_cxESV(rc)); } }], false));
             S1 = S1.concat(chartPages('Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par AS', asNames, asBy, [{ name: 'Enfants ZD', color: '7C3AED', val: function (rc) { return Math.round(_cxZD(rc)); } }, { name: 'Enfants SV', color: '00838F', val: function (rc) { return Math.round(_cxESV(rc)); } }], false));
             /* 7-8 Catégorisation ACZ */
             var aczHead = ['Zone de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'];
-            function aczRow(name, rc) { var tg = _cxTag(rc, nPer); var c1 = _cxCv1(rc, tg), ab = _cxAbanDTC(rc); return [name, c1 == null ? '–' : c1.toFixed(1) + '%', ab == null ? '–' : ab.toFixed(1) + '%', _cxCat(c1, ab)]; }
-            var aczTotal = (function () { var tg = _cxTag(asRecs, nPer); var c1 = _cxCv1(asRecs, tg), ab = _cxAbanDTC(asRecs); return ['TOTAL', c1 == null ? '–' : c1.toFixed(1) + '%', ab == null ? '–' : ab.toFixed(1) + '%', _cxCat(c1, ab)]; })();
-            S1 = S1.concat(tablePages('Catégorisation ACZ par ZS', aczHead, zsNames.map(function (z) { return aczRow(_cn(z), byZS[z]); }), 300000, 1050, 0.34, aczTotal));
-            S1 = S1.concat(tablePages('Catégorisation ACZ par AS', ['Aire de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'], asList.map(function (a) { return aczRow(_cn(a.name), a.recs); }), 250000, 950, 0.34, null));
+            function aczRow(name, rc) { var tg = _cxTag(rc, nPer); var c1 = _cxCv1(rc, tg), ab = _cxAbanDTC(rc), cat = _cxCat(c1, ab); return [name, c1 == null ? '–' : _cxCell(c1.toFixed(1) + '%', _cxCvCol(c1)), ab == null ? '–' : _cxCell(ab.toFixed(1) + '%', _cxAbanCol(ab)), _cxCell(cat, _cxCatCol(cat))]; }
+            var aczTotal = (function () { var tg = _cxTag(asRecs, nPer); var c1 = _cxCv1(asRecs, tg), ab = _cxAbanDTC(asRecs), cat = _cxCat(c1, ab); return ['TOTAL', c1 == null ? '–' : _cxCell(c1.toFixed(1) + '%', _cxCvCol(c1)), ab == null ? '–' : _cxCell(ab.toFixed(1) + '%', _cxAbanCol(ab)), _cxCell(cat, _cxCatCol(cat))]; })();
+            S1 = S1.concat(tablePages('Catégorisation ACZ par ZS', aczHead, zsNames.map(function (z) { return aczRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, aczTotal));
+            S1 = S1.concat(tablePages('Catégorisation ACZ par AS', ['Aire de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'], asList.map(function (a) { return aczRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
             /* 9-10 Disponibilité intrants */
             var dispoHead = ['Zone de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'];
-            function dispoRow(name, rc) { return [name].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(rc, p); return v == null ? '–' : Math.round(v) + '%'; })); }
-            var dispoTotal = ['TOTAL'].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(asRecs, p); return v == null ? '–' : Math.round(v) + '%'; }));
-            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)', dispoHead, zsNames.map(function (z) { return dispoRow(_cn(z), byZS[z]); }), 300000, 1050, 0.34, dispoTotal));
-            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)', ['Aire de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'], asList.map(function (a) { return dispoRow(_cn(a.name), a.recs); }), 250000, 950, 0.34, null));
+            function dispoRow(name, rc) { return [name].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(rc, p); return v == null ? '–' : _cxCell(Math.round(v) + '%', _cxPropCol(v)); })); }
+            var dispoTotal = ['TOTAL'].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(asRecs, p); return v == null ? '–' : _cxCell(Math.round(v) + '%', _cxPropCol(v)); }));
+            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)', dispoHead, zsNames.map(function (z) { return dispoRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, dispoTotal));
+            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)', ['Aire de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'], asList.map(function (a) { return dispoRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
             /* 11-12 Taux de perte */
             var pertHead = ['Zone de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'];
-            function pertRow(name, rc) { return [name].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(rc, p); return v == null ? '–' : v.toFixed(1) + '%'; })); }
-            var pertTotal = ['TOTAL'].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(asRecs, p); return v == null ? '–' : v.toFixed(1) + '%'; }));
-            S1 = S1.concat(tablePages('Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)', pertHead, zsNames.map(function (z) { return pertRow(_cn(z), byZS[z]); }), 300000, 1050, 0.30, pertTotal));
-            S1 = S1.concat(tablePages('Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)', ['Aire de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'], asList.map(function (a) { return pertRow(_cn(a.name), a.recs); }), 250000, 950, 0.30, null));
+            function pertRow(name, rc) { return [name].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(rc, p); return v == null ? '–' : _cxCell(v.toFixed(1) + '%', _cxLossCol(v)); })); }
+            var pertTotal = ['TOTAL'].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(asRecs, p); return v == null ? '–' : _cxCell(v.toFixed(1) + '%', _cxLossCol(v)); }));
+            S1 = S1.concat(tablePages('Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)', pertHead, zsNames.map(function (z) { return pertRow(_cn(z), byZS[z]); }), 330000, 1200, 0.30, pertTotal));
+            S1 = S1.concat(tablePages('Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)', ['Aire de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'], asList.map(function (a) { return pertRow(_cn(a.name), a.recs); }), 300000, 1100, 0.30, null));
+            /* RECO : perdus de vue identifiés/récupérés (champs agrégés RECO_identifies/RECO_recuperes) */
+            var recoHead = ['Zone de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'];
+            function recoRow(name, rc) { var id = _cxSum(rc, 'RECO_identifies'), re = _cxSum(rc, 'RECO_recuperes'); var pct = id > 0 ? Math.round(re / id * 100) : null; return [name, Math.round(id).toLocaleString('fr-FR'), Math.round(re).toLocaleString('fr-FR'), pct == null ? '–' : _cxCell(pct + '%', _cxPropCol(pct))]; }
+            var recoTotal = (function () { var id = _cxSum(asRecs, 'RECO_identifies'), re = _cxSum(asRecs, 'RECO_recuperes'); var pct = id > 0 ? Math.round(re / id * 100) : null; return ['TOTAL', Math.round(id).toLocaleString('fr-FR'), Math.round(re).toLocaleString('fr-FR'), pct == null ? '–' : _cxCell(pct + '%', _cxPropCol(pct))]; })();
+            S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par ZS', recoHead, zsNames.map(function (z) { return recoRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, recoTotal));
+            S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par AS', ['Aire de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'], asList.map(function (a) { return recoRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
             /* 13-14 Taux d'abandon */
             S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", zsNames, zsBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
             S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS", asNames, asBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
