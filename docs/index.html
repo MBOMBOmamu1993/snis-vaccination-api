@@ -2747,42 +2747,298 @@
         }
         function chPg(d) { var tab = TABS[S.tab], np = S.pg + d; if (np >= 0 && np < tab.pp.length) { S.pg = np; rFlt(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
 
-        /* ═══ TÉLÉCHARGEMENT — CANEVAS DE REVUE FORMATIVE (PPTX éditable) ═══
-           Remplit les diapos 10 à 12 du canevas officiel avec les données DHIS2
-           de la période / du périmètre filtrés, en conservant le design du modèle. */
-        var _PPTX_A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
-        var _PPTX_P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+        /* ═══════════════════════════════════════════════════════════════════
+           TÉLÉCHARGEMENT — CANEVAS DE REVUE FORMATIVE (PPTX éditable, DYNAMIQUE)
+           Remplit le canevas officiel (27 diapos) et INSÈRE, juste après le
+           séparateur « IV. Performances par AS et ZS », toutes les analyses DHIS2
+           (par ZS puis paginées par AS) de l'entité + période filtrées :
+           complétude/promptitude, CV tous antigènes, zéro-dose/SV, catégorisation
+           ACZ, disponibilité intrants, taux de perte, taux d'abandon, et RECO
+           (perdus de vue, via DHIS2). Tableaux + graphiques en barres éditables,
+           paginés pour ne jamais déborder du bas de page. Les autres sections du
+           modèle (FFOM, partenaires, surveillance…) restent vides comme le modèle.
+           ═══════════════════════════════════════════════════════════════════ */
+        var _CX_A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+        var _CX_P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+        var _CX_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+        var _CX_EMU_W = 12192000, _CX_EMU_H = 6858000;
+        var _CX_TITLE_Y = 108000, _CX_TITLE_H = 620000, _CX_BODY_Y = 820000, _CX_BODY_BOTTOM = 6720000;
+        var _CX_MX = 240000, _CX_BODY_W = _CX_EMU_W - 2 * _CX_MX;
+        var _cxSpid = 100; function _cxId() { return ++_cxSpid; }
         function _cn(s) { return String(s || '').replace(/^[a-z]{2}\s+/i, '').replace(/\s+(Province|Zone de Sant[ée]|Aire de Sant[ée])$/i, '').trim(); }
-        function _escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function _cxEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
         function _descLocal(root, local) { var out = []; (function w(n) { for (var i = 0; i < n.children.length; i++) { var c = n.children[i]; if (c.localName === local) out.push(c); w(c); } })(root.documentElement || root); return out; }
         function _setCell(doc, tc, text) {
             var ps = _descLocal(tc, 'p'); if (!ps.length) return; var p = ps[0];
             var rs = _descLocal(p, 'r'), r;
             if (!rs.length) {
-                r = doc.createElementNS(_PPTX_A, 'a:r');
-                var rPr = doc.createElementNS(_PPTX_A, 'a:rPr'); rPr.setAttribute('lang', 'fr-FR'); rPr.setAttribute('sz', '1400');
-                var lt = doc.createElementNS(_PPTX_A, 'a:latin'); lt.setAttribute('typeface', 'Times New Roman'); rPr.appendChild(lt);
-                var t0 = doc.createElementNS(_PPTX_A, 'a:t'); r.appendChild(rPr); r.appendChild(t0);
+                r = doc.createElementNS(_CX_A, 'a:r');
+                var rPr = doc.createElementNS(_CX_A, 'a:rPr'); rPr.setAttribute('lang', 'fr-FR'); rPr.setAttribute('sz', '1400');
+                var lt = doc.createElementNS(_CX_A, 'a:latin'); lt.setAttribute('typeface', 'Times New Roman'); rPr.appendChild(lt);
+                var t0 = doc.createElementNS(_CX_A, 'a:t'); r.appendChild(rPr); r.appendChild(t0);
                 var ep = _descLocal(p, 'endParaRPr'); if (ep.length) p.insertBefore(r, ep[0]); else p.appendChild(r);
             } else r = rs[0];
-            var ts = _descLocal(r, 't'), t; if (!ts.length) { t = doc.createElementNS(_PPTX_A, 'a:t'); r.appendChild(t); } else t = ts[0];
+            var ts = _descLocal(r, 't'), t; if (!ts.length) { t = doc.createElementNS(_CX_A, 'a:t'); r.appendChild(t); } else t = ts[0];
             t.textContent = text;
         }
-        function _tableXml(head, rows) {
-            var W = 11277600, X = 457200, first = Math.round(W * 0.42), rest = Math.round((W - first) / Math.max(1, head.length - 1));
+        function _cxN(v) { return Math.round(v); }
+        function _cxTitleShape(text) {
+            return '<p:sp><p:nvSpPr><p:cNvPr id="' + _cxId() + '" name="Titre"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>' +
+                '<p:spPr><a:xfrm><a:off x="' + _CX_MX + '" y="' + _CX_TITLE_Y + '"/><a:ext cx="' + (_CX_EMU_W - 2 * _CX_MX) + '" cy="' + _CX_TITLE_H + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>' +
+                '<p:txBody><a:bodyPr anchor="ctr" wrap="square"/><a:lstStyle/><a:p><a:pPr algn="l"/><a:r><a:rPr lang="fr-FR" sz="1600" b="1"><a:solidFill><a:srgbClr val="1A237E"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _cxEsc(text) + '</a:t></a:r></a:p></p:txBody></p:sp>';
+        }
+        function _cxTxt(text, x, y, w, h, o) {
+            o = o || {}; var sz = o.sz || 900, col = o.col || '1E293B', b = o.b ? 1 : 0, algn = o.algn || 'l';
+            var rot = o.rot ? ' rot="' + o.rot + '"' : '';
+            return '<p:sp><p:nvSpPr><p:cNvPr id="' + _cxId() + '" name="t"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>' +
+                '<p:spPr><a:xfrm' + rot + '><a:off x="' + _cxN(x) + '" y="' + _cxN(y) + '"/><a:ext cx="' + _cxN(w) + '" cy="' + _cxN(h) + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>' +
+                '<p:txBody><a:bodyPr anchor="ctr" wrap="square" lIns="0" rIns="0" tIns="0" bIns="0"/><a:lstStyle/><a:p><a:pPr algn="' + algn + '"/><a:r><a:rPr lang="fr-FR" sz="' + sz + '" b="' + b + '"><a:solidFill><a:srgbClr val="' + col + '"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _cxEsc(text) + '</a:t></a:r></a:p></p:txBody></p:sp>';
+        }
+        function _cxRect(x, y, w, h, fill, o) {
+            o = o || {}; var line = o.line ? '<a:ln w="' + (o.lineW || 6350) + '"><a:solidFill><a:srgbClr val="' + o.line + '"/></a:solidFill></a:ln>' : '<a:ln><a:noFill/></a:ln>';
+            return '<p:sp><p:nvSpPr><p:cNvPr id="' + _cxId() + '" name="r"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>' +
+                '<p:spPr><a:xfrm><a:off x="' + _cxN(x) + '" y="' + _cxN(y) + '"/><a:ext cx="' + _cxN(Math.max(1, w)) + '" cy="' + _cxN(Math.max(1, h)) + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>' +
+                (fill ? '<a:solidFill><a:srgbClr val="' + fill + '"/></a:solidFill>' : '<a:noFill/>') + line + '</p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="fr-FR"/></a:p></p:txBody></p:sp>';
+        }
+        function _cxTable(head, rows, y, o) {
+            o = o || {}; var cols = head.length;
+            var firstFrac = o.firstFrac || (cols > 8 ? 0.16 : 0.34);
+            var first = _cxN(_CX_BODY_W * firstFrac), rest = _cxN((_CX_BODY_W - first) / Math.max(1, cols - 1));
             var grid = head.map(function (_, i) { return '<a:gridCol w="' + (i === 0 ? first : rest) + '"/>'; }).join('');
-            function cell(txt, bold, fill, col) {
-                return '<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="' + (bold ? 'ctr' : 'l') + '"/><a:r><a:rPr lang="fr-FR" sz="1100" b="' + (bold ? 1 : 0) + '"><a:solidFill><a:srgbClr val="' + col + '"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _escXml(txt) + '</a:t></a:r></a:p></a:txBody><a:tcPr marL="45720" marR="45720" marT="22860" marB="22860" anchor="ctr">' + (fill ? '<a:solidFill><a:srgbClr val="' + fill + '"/></a:solidFill>' : '') + '</a:tcPr></a:tc>';
+            var sz = o.sz || (cols > 14 ? 700 : cols > 8 ? 850 : 1000);
+            var rowH = o.rowH || (cols > 14 ? 210000 : 250000);
+            function cell(txt, isHead, fill, col, algn) {
+                return '<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="' + algn + '"/><a:r><a:rPr lang="fr-FR" sz="' + sz + '" b="' + (isHead ? 1 : 0) + '"><a:solidFill><a:srgbClr val="' + col + '"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>' + _cxEsc(txt) + '</a:t></a:r></a:p></a:txBody><a:tcPr marL="27432" marR="27432" marT="9144" marB="9144" anchor="ctr">' + (fill ? '<a:solidFill><a:srgbClr val="' + fill + '"/></a:solidFill>' : '') + '</a:tcPr></a:tc>';
             }
-            var hr = '<a:tr h="370000">' + head.map(function (h) { return cell(h, true, '1a237e', 'FFFFFF'); }).join('') + '</a:tr>';
-            var br = rows.map(function (r, ri) { return '<a:tr h="300000">' + r.map(function (c, ci) { return cell(String(c), false, ri % 2 ? 'EEF4FC' : 'FFFFFF', ci === 0 ? '0d47a1' : '1E293B'); }).join('') + '</a:tr>'; }).join('');
-            return '<p:graphicFrame xmlns:p="' + _PPTX_P + '" xmlns:a="' + _PPTX_A + '" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:nvGraphicFramePr><p:cNvPr id="900" name="TableDHIS2"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="' + X + '" y="2600000"/><a:ext cx="' + W + '" cy="' + (300000 * (rows.length + 1)) + '"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"><a:tableStyleId>{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}</a:tableStyleId></a:tblPr><a:tblGrid>' + grid + '</a:tblGrid>' + hr + br + '</a:tbl></a:graphicData></a:graphic></p:graphicFrame>';
+            var hr = '<a:tr h="' + _cxN(rowH * 1.25) + '">' + head.map(function (h, i) { return cell(h, true, '1A237E', 'FFFFFF', i === 0 ? 'l' : 'ctr'); }).join('') + '</a:tr>';
+            var br = rows.map(function (r, ri) {
+                var fill = (String(r[0]).toUpperCase().indexOf('TOTAL') === 0) ? 'D6E4F5' : (ri % 2 ? 'EEF4FC' : 'FFFFFF');
+                return '<a:tr h="' + _cxN(rowH) + '">' + r.map(function (c, ci) { return cell(String(c), false, fill, ci === 0 ? '0D47A1' : '1E293B', ci === 0 ? 'l' : 'ctr'); }).join('') + '</a:tr>';
+            }).join('');
+            var cy = _cxN(rowH * 1.25 + rowH * rows.length);
+            return '<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="' + _cxId() + '" name="Tbl"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>' +
+                '<p:xfrm><a:off x="' + _CX_MX + '" y="' + _cxN(y) + '"/><a:ext cx="' + _CX_BODY_W + '" cy="' + cy + '"/></p:xfrm>' +
+                '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"><a:tableStyleId>{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}</a:tableStyleId></a:tblPr><a:tblGrid>' + grid + '</a:tblGrid>' + hr + br + '</a:tbl></a:graphicData></a:graphic></p:graphicFrame>';
         }
-        function _appendTable(doc, head, rows) {
-            var st = _descLocal(doc, 'spTree'); if (!st.length) return;
-            var gf = new DOMParser().parseFromString(_tableXml(head, rows.slice(0, 16)), 'application/xml').documentElement;
-            st[0].appendChild(doc.importNode(gf, true));
+        var _CX_PAL = ['1A237E', 'E65100', '2E7D32', '00838F', 'C62828', '6A1B9A'];
+        function _cxNiceCeil(v, pct) { if (pct) return Math.max(100, Math.ceil(v / 20) * 20); if (v <= 0) return 1; var e = Math.pow(10, Math.floor(Math.log10(v))); var m = v / e; var nm = m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10; return nm * e; }
+        function _cxFmt(v) { v = Math.round(v); return v >= 1000 ? v.toLocaleString('fr-FR') : String(v); }
+        function _cxBar(cats, series, y, o) {
+            o = o || {}; var sh = [];
+            var plotX = _CX_MX + 520000, plotY = y + 120000;
+            var plotW = _CX_BODY_W - 560000, plotH = (o.h || (_CX_BODY_BOTTOM - y)) - 900000;
+            var maxV = 0; series.forEach(function (s) { s.values.forEach(function (v) { if (v > maxV) maxV = v; }); });
+            var top = _cxNiceCeil(maxV, o.pct);
+            var G = 4;
+            for (var g = 0; g <= G; g++) {
+                var val = top * (G - g) / G, gy = plotY + plotH * g / G;
+                sh.push(_cxRect(plotX, gy, plotW, 3175, 'D9DEEA'));
+                sh.push(_cxTxt(o.pct ? Math.round(val) + '%' : _cxFmt(val), _CX_MX - 20000, gy - 90000, 520000, 180000, { sz: 800, col: '64748B', algn: 'r' }));
+            }
+            var nC = cats.length, nS = series.length, groupW = plotW / Math.max(1, nC), innerPad = groupW * 0.18, barW = (groupW - 2 * innerPad) / nS;
+            for (var c = 0; c < nC; c++) {
+                var gx = plotX + c * groupW + innerPad;
+                for (var s2 = 0; s2 < nS; s2++) {
+                    var v2 = Number(series[s2].values[c]) || 0, bh = plotH * Math.min(v2, top) / top, bx = gx + s2 * barW;
+                    sh.push(_cxRect(bx + barW * 0.08, plotY + plotH - bh, barW * 0.84, bh, series[s2].color || _CX_PAL[s2 % _CX_PAL.length]));
+                    if (nC <= 14) sh.push(_cxTxt(o.pct ? Math.round(v2) + '' : _cxFmt(v2), bx, plotY + plotH - bh - 150000, barW, 150000, { sz: 700, col: '334155', algn: 'ctr' }));
+                }
+                if (nC > 6) sh.push(_cxTxt(cats[c], plotX + c * groupW + groupW / 2 - 500000, plotY + plotH + 60000, 1000000, 300000, { sz: 750, col: '334155', algn: 'ctr', rot: -2700000 }));
+                else sh.push(_cxTxt(cats[c], plotX + c * groupW, plotY + plotH + 40000, groupW, 260000, { sz: 850, col: '334155', algn: 'ctr' }));
+            }
+            var lx = plotX, ly = plotY + plotH + 520000;
+            series.forEach(function (se, i) {
+                sh.push(_cxRect(lx, ly, 160000, 160000, se.color || _CX_PAL[i % _CX_PAL.length]));
+                sh.push(_cxTxt(se.name, lx + 200000, ly - 20000, 2600000, 200000, { sz: 900, col: '1E293B', algn: 'l' }));
+                lx += 220000 + se.name.length * 62000;
+            });
+            return sh.join('');
         }
+        function _cxSlideXml(body) {
+            return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="' + _CX_A + '" xmlns:r="' + _CX_R + '" xmlns:p="' + _CX_P + '"><p:cSld><p:spTree>' +
+                '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+                '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+                body + '</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping xmlns:a="' + _CX_A + '"/></p:clrMapOvr></p:sld>';
+        }
+        function _cxPaginate(arr, per) { var out = []; for (var i = 0; i < arr.length; i += per) out.push(arr.slice(i, i + per)); return out; }
+
+        /* ── Calculs (formules IDENTIQUES à l'onglet couvertures vaccinales) ── */
+        var _CX_NV = 0.04, _CX_NS = 0.0349;
+        var _CX_AGFIELD = { BCG: 'BCG_0_11', VPO0: 'VPO0_0_11', DTC1: 'DTC1_0_11', VPO1: 'VPO1_0_11', ROTA1: 'ROTA1_0_11', PCV13_1: 'PCV13_1_0_11', DTC2: 'DTC2_0_11', VPO2: 'VPO2_0_11', ROTA2: 'ROTA2_0_11', PCV13_2: 'PCV13_2_0_11', DTC3: 'DTC3_0_11', VPO3: 'VPO3_0_11', VPI1: 'VPI1_0_11', ROTA3: 'ROTA3_0_11', PCV13_3: 'PCV13_3_0_11', VAR1: 'VAR1_0_11', VPI2: 'VPI2_0_11', VAA: 'VAA_0_11', VAR2: 'VAR2_12_23', TD: 'Td_2_plus' };
+        var _CX_TABLE_AGS = ['BCG', 'VPO0', 'DTC1', 'VPO1', 'ROTA1', 'PCV13_1', 'DTC2', 'VPO2', 'ROTA2', 'PCV13_2', 'DTC3', 'VPO3', 'VPI1', 'ROTA3', 'PCV13_3', 'VAR1', 'VPI2', 'VAA', 'VAR2', 'TD'];
+        var _CX_AGHEAD = { PCV13_1: 'PCV13-1', PCV13_2: 'PCV13-2', PCV13_3: 'PCV13-3', TD: 'Td2+' };
+        function _cxAgLbl(a) { return _CX_AGHEAD[a] || a; }
+        function _cxSum(recs, f) { var s = 0; for (var i = 0; i < recs.length; i++) s += Number(recs[i][f]) || 0; return s; }
+        function _cxTargets(recs) { var seen = {}, pop = 0; recs.forEach(function (r) { var k = r._AS || ''; if (!seen[k]) { seen[k] = 1; pop += Number(r.Pop_par_AS) || 0; } }); var nPer = recs._nPer || 1; return { pop: pop, nv: pop * _CX_NV * nPer / 12, ns: pop * _CX_NS * nPer / 12 }; }
+        function _cxZD(recs) { return recs.reduce(function (s, r) { var ns = (Number(r.Pop_par_AS) || 0) * _CX_NS / 12; return s + Math.max(0, ns - (Number(r.DTC1_0_11) || 0)); }, 0); }
+        function _cxESV(recs) { return recs.reduce(function (s, r) { var ns = (Number(r.Pop_par_AS) || 0) * _CX_NS / 12; return s + Math.max(0, ns - (Number(r.DTC3_0_11) || 0)); }, 0); }
+        function _cxCat(cv1, ab) { if (cv1 == null || !isFinite(cv1)) return 'NA'; if (ab == null || !isFinite(ab)) return 'NA'; if (ab < 0) return 'NA'; var h = cv1 >= 90, l = ab <= 10; return h && l ? 'Cat. 1' : h && !l ? 'Cat. 2' : !h && l ? 'Cat. 3' : 'Cat. 4'; }
+        function _cxLoss(recs, p) { var admin = _cxSum(recs, p + '_administr_es'), util = _cxSum(recs, p + '_utilis_es'), perdu = _cxSum(recs, p + '_pertes'); if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin; var d = admin + perdu; return d > 0 ? perdu / d * 100 : null; }
+        function _cxDispo(recs, p) { var rupT = 0, nonT = 0; recs.forEach(function (r) { var rcv = Number(r[p + '_re_ues']) || 0, sf = Number(r[p + '_stock_fin']) || 0, cmm = Number(r[p + '_cmm']) || 0, rup = Math.max(0, Number(r[p + '_jours_rupture']) || 0); if (!(rcv > 0 || sf > 0 || cmm > 0 || rup > 0)) return; rupT += rup; nonT += Math.max(0, 30 - rup); }); return (rupT + nonT) > 0 ? nonT / (rupT + nonT) * 100 : null; }
+        function _cxMean(recs, f) { if (!recs.length) return null; var s = 0, n = 0; recs.forEach(function (r) { var v = r[f]; if (v != null && isFinite(v)) { s += Number(v); n++; } }); return n ? s / n : null; }
+        function _cxGrp(recs, fn) { var g = {}, order = []; recs.forEach(function (r) { var k = fn(r) || ''; if (!g[k]) { g[k] = []; order.push(k); } g[k].push(r); }); g._order = order; return g; }
+        function _cxCvAg(recs, tg, ag) { var f = _CX_AGFIELD[ag]; var den = (ag === 'BCG' || ag === 'TD') ? tg.nv : tg.ns; var d = _cxSum(recs, f); return den > 0 ? d / den * 100 : null; }
+        function _cxCv1(recs, tg) { return tg.ns > 0 ? _cxSum(recs, 'DTC1_0_11') / tg.ns * 100 : null; }
+        function _cxAbanDTC(recs) { var d1 = _cxSum(recs, 'DTC1_0_11'), d3 = _cxSum(recs, 'DTC3_0_11'); return d1 > 0 ? (d1 - d3) / d1 * 100 : null; }
+        function _cxAbanVAR(recs) { var b = _cxSum(recs, 'BCG_0_11'), v = _cxSum(recs, 'VAR1_0_11'); return b > 0 ? (b - v) / b * 100 : null; }
+        function _cxTag(recs, nPer) { recs._nPer = nPer; return _cxTargets(recs); }
+
+        /* ── Construit les diapos d'analyses locales ── */
+        function _cxBuildSections(asRecs, nPer) {
+            var availH = _CX_BODY_BOTTOM - _CX_BODY_Y;
+            var byZS = _cxGrp(asRecs, function (r) { return r._ZS; });
+            var zsNames = byZS._order.filter(Boolean).sort();
+            var asList = [];
+            zsNames.forEach(function (z) { var a = _cxGrp(byZS[z], function (r) { return r._AS; }); a._order.filter(Boolean).sort().forEach(function (an) { asList.push({ name: an, recs: a[an] }); }); });
+            var asNames = asList.map(function (a) { return a.name; });
+            var asRecsMap = {}; asList.forEach(function (a) { asRecsMap[a.name] = a.recs; });
+            function rowsPerTable(rowH) { return Math.max(4, Math.floor((availH - rowH * 1.25) / rowH)); }
+            function chartPages(title, names, recsBy, defs, pct) {
+                var pages = _cxPaginate(names, 12);
+                return pages.map(function (pg, pi) {
+                    var series = defs.map(function (d) { return { name: d.name, color: d.color, values: pg.map(function (nm) { return d.val(recsBy(nm)); }) }; });
+                    return { title: (pages.length > 1 ? title + ' (' + (pi + 1) + '/' + pages.length + ')' : title), build: function () { return _cxBar(pg.map(_cn), series, _CX_BODY_Y, { pct: pct, h: availH }); } };
+                });
+            }
+            function tablePages(title, head, rowsAll, rowH, sz, firstFrac, totalRow) {
+                var per = rowsPerTable(rowH); var pages = _cxPaginate(rowsAll, per);
+                if (!pages.length) pages = [[]];
+                return pages.map(function (pg, pi) {
+                    var rows = (pi === 0 && totalRow) ? [totalRow].concat(pg.slice(0, per - 1)) : (pi === 0 && totalRow ? pg : pg);
+                    if (pi === 0 && totalRow) { rows = [totalRow].concat(pg); if (rows.length > per) { var extra = rows.splice(per); pages.splice(pi + 1, 0, extra); } }
+                    return { title: (pages.length > 1 ? title + ' (' + (pi + 1) + '/' + pages.length + ')' : title), build: function () { return _cxTable(head, rows, _CX_BODY_Y, { rowH: rowH, sz: sz, firstFrac: firstFrac }); } };
+                });
+            }
+            var S1 = [];
+            var zsBy = function (z) { return byZS[z]; };
+            var asBy = function (nm) { return asRecsMap[nm]; };
+            /* 1-2 Complétude & Promptitude */
+            S1 = S1.concat(chartPages('Complétude & Promptitude par Zone de Santé', zsNames, zsBy, [{ name: 'Complétude %', color: '1A237E', val: function (rc) { return _cxMean(rc, 'comp') || 0; } }, { name: 'Promptitude %', color: 'E65100', val: function (rc) { return _cxMean(rc, 'prompt') || 0; } }], true));
+            S1 = S1.concat(chartPages('Complétude & Promptitude par Aire de Santé', asNames, asBy, [{ name: 'Complétude %', color: '1A237E', val: function (rc) { return _cxMean(rc, 'comp') || 0; } }, { name: 'Promptitude %', color: 'E65100', val: function (rc) { return _cxMean(rc, 'prompt') || 0; } }], true));
+            /* 3-4 CV administrative tous antigènes */
+            var cvHead = ['Zone de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl));
+            function cvRow(name, rc) { var tg = _cxTag(rc, nPer); return [name].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(rc, tg, ag); return v == null ? '–' : Math.round(v); })); }
+            var cvTotal = (function () { var tg = _cxTag(asRecs, nPer); return ['TOTAL'].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(asRecs, tg, ag); return v == null ? '–' : Math.round(v); })); })();
+            S1 = S1.concat(tablePages('Couverture vaccinale administrative par ZS — tous antigènes (%)', cvHead, zsNames.map(function (z) { return cvRow(_cn(z), byZS[z]); }), 235000, 800, 0.14, cvTotal));
+            S1 = S1.concat(tablePages('Couverture vaccinale administrative par AS — tous antigènes (%)', ['Aire de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl)), asList.map(function (a) { return cvRow(_cn(a.name), a.recs); }), 210000, 750, 0.16, null));
+            /* 5-6 Zéro-dose & Sous-vaccinés */
+            S1 = S1.concat(chartPages('Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par ZS', zsNames, zsBy, [{ name: 'Enfants ZD', color: '7C3AED', val: function (rc) { return Math.round(_cxZD(rc)); } }, { name: 'Enfants SV', color: '00838F', val: function (rc) { return Math.round(_cxESV(rc)); } }], false));
+            S1 = S1.concat(chartPages('Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par AS', asNames, asBy, [{ name: 'Enfants ZD', color: '7C3AED', val: function (rc) { return Math.round(_cxZD(rc)); } }, { name: 'Enfants SV', color: '00838F', val: function (rc) { return Math.round(_cxESV(rc)); } }], false));
+            /* 7-8 Catégorisation ACZ */
+            var aczHead = ['Zone de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'];
+            function aczRow(name, rc) { var tg = _cxTag(rc, nPer); var c1 = _cxCv1(rc, tg), ab = _cxAbanDTC(rc); return [name, c1 == null ? '–' : c1.toFixed(1) + '%', ab == null ? '–' : ab.toFixed(1) + '%', _cxCat(c1, ab)]; }
+            var aczTotal = (function () { var tg = _cxTag(asRecs, nPer); var c1 = _cxCv1(asRecs, tg), ab = _cxAbanDTC(asRecs); return ['TOTAL', c1 == null ? '–' : c1.toFixed(1) + '%', ab == null ? '–' : ab.toFixed(1) + '%', _cxCat(c1, ab)]; })();
+            S1 = S1.concat(tablePages('Catégorisation ACZ par ZS', aczHead, zsNames.map(function (z) { return aczRow(_cn(z), byZS[z]); }), 300000, 1050, 0.34, aczTotal));
+            S1 = S1.concat(tablePages('Catégorisation ACZ par AS', ['Aire de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'], asList.map(function (a) { return aczRow(_cn(a.name), a.recs); }), 250000, 950, 0.34, null));
+            /* 9-10 Disponibilité intrants */
+            var dispoHead = ['Zone de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'];
+            function dispoRow(name, rc) { return [name].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(rc, p); return v == null ? '–' : Math.round(v) + '%'; })); }
+            var dispoTotal = ['TOTAL'].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(asRecs, p); return v == null ? '–' : Math.round(v) + '%'; }));
+            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)', dispoHead, zsNames.map(function (z) { return dispoRow(_cn(z), byZS[z]); }), 300000, 1050, 0.34, dispoTotal));
+            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)', ['Aire de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'], asList.map(function (a) { return dispoRow(_cn(a.name), a.recs); }), 250000, 950, 0.34, null));
+            /* 11-12 Taux de perte */
+            var pertHead = ['Zone de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'];
+            function pertRow(name, rc) { return [name].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(rc, p); return v == null ? '–' : v.toFixed(1) + '%'; })); }
+            var pertTotal = ['TOTAL'].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(asRecs, p); return v == null ? '–' : v.toFixed(1) + '%'; }));
+            S1 = S1.concat(tablePages('Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)', pertHead, zsNames.map(function (z) { return pertRow(_cn(z), byZS[z]); }), 300000, 1050, 0.30, pertTotal));
+            S1 = S1.concat(tablePages('Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)', ['Aire de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'], asList.map(function (a) { return pertRow(_cn(a.name), a.recs); }), 250000, 950, 0.30, null));
+            /* 13-14 Taux d'abandon */
+            S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", zsNames, zsBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
+            S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS", asNames, asBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
+            return { slides: S1, zsNames: zsNames, asNames: asNames };
+        }
+
+        /* ── RECO : perdus de vue identifiés/récupérés (DHIS2, Penta1+Penta3 tous âges) ── */
+        var _CX_RECO_DE = ['ppMFLxX6NvU', 'DZ2xt2mgVzQ'];
+        var _CX_RECO_ID = ['FGpuKKTof4X', 'RD9Iut5kjja', 'LnwvJBIlzxk'];
+        var _CX_RECO_REC = ['RMMpx7TBreP', 'ZYkCdGglDmr', 'aZmhNMRCrmZ'];
+        async function _cxRecoByLevel(provUID, level, periods) {
+            var dx = [];
+            _CX_RECO_DE.forEach(function (de) { _CX_RECO_ID.concat(_CX_RECO_REC).forEach(function (coc) { dx.push(de + '.' + coc); }); });
+            var params = 'dimension=dx:' + dx.join(';') + '&dimension=pe:' + periods.join(';') + '&dimension=ou:LEVEL-' + level + ';' + provUID + '&displayProperty=NAME&skipMeta=false';
+            var d = await iaDhis2('analytics.json', params);
+            var hdr = (d.headers || []).map(function (h) { return h.name; });
+            var iDx = hdr.indexOf('dx'), iOu = hdr.indexOf('ou'), iVal = hdr.indexOf('value');
+            var names = (d.metaData && d.metaData.items) || {};
+            var recSet = {}; _CX_RECO_REC.forEach(function (c) { recSet[c] = 1; });
+            var agg = {};
+            (d.rows || []).forEach(function (row) {
+                var ou = row[iOu], dxv = String(row[iDx] || ''), val = Number(row[iVal]) || 0;
+                var coc = dxv.split('.')[1] || '';
+                if (!agg[ou]) agg[ou] = { id: 0, rec: 0 };
+                if (recSet[coc]) agg[ou].rec += val; else agg[ou].id += val;
+            });
+            var out = {};
+            Object.keys(agg).forEach(function (ou) { var nm = _cn((names[ou] && names[ou].name) || ou); out[nm] = agg[ou]; });
+            return out;
+        }
+        async function _cxRecoSlides(gi, zsNames, asNames, provinceName, periods) {
+            try {
+                if (!IA_PROXY_URL || !periods.length) return [];
+                var provClean = _cn(provinceName);
+                var meta = await iaDhis2('organisationUnits.json', 'filter=level:eq:2&filter=name:ilike:' + encodeURIComponent(provClean) + '&fields=id,name&pageSize=5');
+                var ous = (meta && meta.organisationUnits) || [];
+                if (!ous.length) return [];
+                var provUID = ous[0].id;
+                var availH = _CX_BODY_BOTTOM - _CX_BODY_Y;
+                var head = ['Zone de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'];
+                var subtitle = 'Perdus de vue identifiés et récupérés par les RECO (DTC = Penta1 + Penta3, tous âges) — source DHIS2.';
+                function mkRows(names, dataByName, totLbl) {
+                    var tId = 0, tRec = 0, rows = [];
+                    names.forEach(function (nm) { var d = dataByName[_cn(nm)] || { id: 0, rec: 0 }; tId += d.id; tRec += d.rec; rows.push([_cn(nm), Math.round(d.id), Math.round(d.rec), d.id > 0 ? Math.round(d.rec / d.id * 100) + '%' : '–']); });
+                    var total = ['TOTAL', Math.round(tId), Math.round(tRec), tId > 0 ? Math.round(tRec / tId * 100) + '%' : '–'];
+                    return { total: total, rows: rows };
+                }
+                function pages(title, head, totalRow, rowsAll, rowH) {
+                    var per = Math.max(4, Math.floor((availH - 400000 - rowH * 1.25) / rowH));
+                    var pg = _cxPaginate(rowsAll, per); if (!pg.length) pg = [[]];
+                    return pg.map(function (chunk, pi) {
+                        var rows = (pi === 0) ? [totalRow].concat(chunk) : chunk;
+                        return { title: (pg.length > 1 ? title + ' (' + (pi + 1) + '/' + pg.length + ')' : title), build: function () { return _cxTxt(subtitle, _CX_MX, _CX_BODY_Y - 40000, _CX_BODY_W, 300000, { sz: 950, col: '475569', algn: 'l' }) + _cxTable(head, rows, _CX_BODY_Y + 320000, { rowH: rowH, sz: 1000, firstFrac: 0.34 }); } };
+                    });
+                }
+                var out = [];
+                var zsData = await _cxRecoByLevel(provUID, 3, periods);
+                var zr = mkRows(zsNames, zsData); out = out.concat(pages('Enfants perdus de vue identifiés et récupérés par les RECO — par ZS', head, zr.total, zr.rows, 300000));
+                var asData = await _cxRecoByLevel(provUID, 4, periods);
+                var ar = mkRows(asNames, asData); out = out.concat(pages('Enfants perdus de vue identifiés et récupérés par les RECO — par AS', ['Aire de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'], ar.total, ar.rows, 250000));
+                return out;
+            } catch (e) { try { console.log('RECO indisponible:', e && e.message); } catch (_) { } return []; }
+        }
+
+        /* ── Assemble le deck : modèle + diapos insérées après la #afterSlide ── */
+        async function _cxBuildDeck(templateBuf, gen, afterSlide) {
+            var zip = await JSZip.loadAsync(templateBuf);
+            var pres = await zip.file('ppt/presentation.xml').async('string');
+            var presRels = await zip.file('ppt/_rels/presentation.xml.rels').async('string');
+            var ct = await zip.file('[Content_Types].xml').async('string');
+            var maxSlide = 0; zip.folder('ppt/slides').forEach(function (p) { var m = p.match(/^slide(\d+)\.xml$/); if (m) maxSlide = Math.max(maxSlide, +m[1]); });
+            var maxRid = 0; (presRels.match(/Id="rId(\d+)"/g) || []).forEach(function (s) { maxRid = Math.max(maxRid, +s.match(/\d+/)[0]); });
+            var maxSldId = 0; (pres.match(/<p:sldId id="(\d+)"/g) || []).forEach(function (s) { maxSldId = Math.max(maxSldId, +s.match(/\d+/)[0]); });
+            var layoutTarget = '../slideLayouts/slideLayout2.xml';
+            var arel = zip.file('ppt/slides/_rels/slide' + afterSlide + '.xml.rels');
+            if (arel) { var rs = await arel.async('string'); var mm = rs.match(/slideLayout\d+\.xml/); if (mm) layoutTarget = '../slideLayouts/' + mm[0]; }
+            var afterRid = (presRels.match(new RegExp('Id="(rId\\d+)"[^>]*Target="slides/slide' + afterSlide + '\\.xml"')) || [])[1];
+            var newRels = [], newCt = [], newSld = [];
+            gen.slides.forEach(function (sd, i) {
+                var num = maxSlide + i + 1, rid = 'rId' + (maxRid + i + 1), sldId = maxSldId + i + 1;
+                zip.file('ppt/slides/slide' + num + '.xml', _cxSlideXml(_cxTitleShape(sd.title) + sd.build()));
+                zip.file('ppt/slides/_rels/slide' + num + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + _CX_R + '/slideLayout" Target="' + layoutTarget + '"/></Relationships>');
+                newRels.push('<Relationship Id="' + rid + '" Type="' + _CX_R + '/slide" Target="slides/slide' + num + '.xml"/>');
+                newCt.push('<Override PartName="/ppt/slides/slide' + num + '.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>');
+                newSld.push('<p:sldId id="' + sldId + '" r:id="' + rid + '"/>');
+            });
+            presRels = presRels.replace('</Relationships>', newRels.join('') + '</Relationships>');
+            ct = ct.replace('</Types>', newCt.join('') + '</Types>');
+            if (afterRid) pres = pres.replace(new RegExp('(<p:sldId id="\\d+" r:id="' + afterRid + '"\\s*/>)'), '$1' + newSld.join(''));
+            else pres = pres.replace('</p:sldIdLst>', newSld.join('') + '</p:sldIdLst>');
+            zip.file('ppt/presentation.xml', pres);
+            zip.file('ppt/_rels/presentation.xml.rels', presRels);
+            zip.file('[Content_Types].xml', ct);
+            return zip;
+        }
+
+        /* Séances de vaccination (résultats de processus) — période n-1 vs courante */
         function _revueData() {
             var prov = S.filters.province;
             var allMonths = uv(S.data, function (r) { return r.period; }).sort();
@@ -2794,61 +3050,75 @@
             function nCS(recs, pf) { var g = grp(recs, function (r) { return r.org5; }); return Object.keys(g).filter(function (k) { return k && sf(g[k], 'seances_' + pf + '_realisees') > 0; }).length; }
             var perLbl = curMonths.length ? (mL(curMonths[0]) + ' – ' + mL(curMonths[curMonths.length - 1])) : 'Toutes périodes';
             var prevLbl = prevMonths.length ? (mL(prevMonths[0]) + ' – ' + mL(prevMonths[prevMonths.length - 1])) : '—';
-            var slide10 = [
-                { l: 'Nombre de CS avec stratégie avancées', p: String(nCS(prev, 'avancees') || '—'), c: String(nCS(cur, 'avancees') || '—') },
-                { l: 'Nombre de CS avec stratégie mobile', p: String(nCS(prev, 'mobiles') || '—'), c: String(nCS(cur, 'mobiles') || '—') },
-                { l: 'Séances de vaccination en stratégie fixe (Prévue/réalisée)', p: pr(prev, 'fixes'), c: pr(cur, 'fixes') },
-                { l: 'Séances de vaccination en stratégie avancée (Prévue/réalisée)', p: pr(prev, 'avancees'), c: pr(cur, 'avancees') },
-                { l: 'Séances de vaccination en stratégie mobile (Prévue/réalisée)', p: pr(prev, 'mobiles'), c: pr(cur, 'mobiles') }
-            ];
-            var byZs = grp(cur, function (r) { return r.org3; });
-            var zsNames = Object.keys(byZs).filter(Boolean).sort();
-            var s11 = zsNames.map(function (z) { var rc = byZs[z]; return [_cn(z), af(rc, 'completude').toFixed(1), af(rc, 'promptitude').toFixed(1), Math.round(sf(rc, 'DTC3')), Math.round(sf(rc, 'VAR1'))]; });
-            var s12 = zsNames.map(function (z) { var rc = byZs[z]; var d1 = sf(rc, 'DTC1'), d3 = sf(rc, 'DTC3'), b = sf(rc, 'BCG'), v = sf(rc, 'VAR1'); return [_cn(z), (d1 ? ((d1 - d3) / d1 * 100) : 0).toFixed(1), (b ? ((b - v) / b * 100) : 0).toFixed(1)]; });
             return {
-                province: prov ? _cn(prov) : 'Toutes les provinces', periodLabel: perLbl, prevLabel: prevLbl, slide10: slide10,
-                s11: { head: ['Zone de santé', 'Complétude %', 'Promptitude %', 'DTC3', 'VAR1'], rows: s11 },
-                s12: { head: ['Zone de santé', 'Abandon DTC1–DTC3 %', 'Abandon BCG–VAR1 %'], rows: s12 }
+                province: prov ? _cn(prov) : 'Toutes les provinces', periodLabel: perLbl, prevLabel: prevLbl,
+                slide10: [
+                    { l: 'Nombre de CS avec stratégie avancées', p: String(nCS(prev, 'avancees') || '—'), c: String(nCS(cur, 'avancees') || '—') },
+                    { l: 'Nombre de CS avec stratégie mobile', p: String(nCS(prev, 'mobiles') || '—'), c: String(nCS(cur, 'mobiles') || '—') },
+                    { l: 'Séances de vaccination en stratégie fixe (Prévue/réalisée)', p: pr(prev, 'fixes'), c: pr(cur, 'fixes') },
+                    { l: 'Séances de vaccination en stratégie avancée (Prévue/réalisée)', p: pr(prev, 'avancees'), c: pr(cur, 'avancees') },
+                    { l: 'Séances de vaccination en stratégie mobile (Prévue/réalisée)', p: pr(prev, 'mobiles'), c: pr(cur, 'mobiles') }
+                ]
             };
         }
+        /* Remplit la page de garde (slide1) et les séances (slide10) du modèle */
+        async function _cxFillTemplate(zip, coverLine, sess) {
+            if (zip.file('ppt/slides/slide1.xml')) {
+                var x1 = await zip.file('ppt/slides/slide1.xml').async('string');
+                x1 = x1.replace(/(ZONE DE SANT[ÉE] DE\s*:?)([^<]*)/i, '$1 ' + _cxEsc(coverLine));
+                zip.file('ppt/slides/slide1.xml', x1);
+            }
+            if (sess && zip.file('ppt/slides/slide10.xml')) {
+                var ser = new XMLSerializer();
+                var d10 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide10.xml').async('string'), 'application/xml');
+                var tbls = _descLocal(d10, 'tbl');
+                if (tbls.length) {
+                    var trs = _descLocal(tbls[0], 'tr');
+                    var hd = _descLocal(trs[0], 'tc'); if (hd[1]) _setCell(d10, hd[1], sess.prevLabel); if (hd[2]) _setCell(d10, hd[2], sess.periodLabel);
+                    sess.slide10.forEach(function (row, i) { var tr0 = trs[i + 1]; if (!tr0) return; var tcs = _descLocal(tr0, 'tc'); if (tcs[1]) _setCell(d10, tcs[1], row.p); if (tcs[2]) _setCell(d10, tcs[2], row.c); });
+                }
+                zip.file('ppt/slides/slide10.xml', ser.serializeToString(d10));
+            }
+        }
+
         async function _genCanevas() {
             var btn = document.getElementById('dlBtn'); var msg = document.getElementById('dlMsg');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération en cours…'; }
             try {
-                var data = _revueData();
+                var f = S.filters;
+                if (!f.province) throw new Error('Sélectionnez d’abord une province (et une antenne ou ZS) dans les filtres.');
+                if (msg) msg.textContent = '⏳ Chargement des données DHIS2…';
+                var gi = _cvGroupInfo();
+                var data = await _loadCVASData(f.province);
+                if (!data || !data.length) throw new Error('Données de couverture indisponibles pour cette province.');
+                var recs = _cvFilterData(data, gi);
+                if (!recs.length) throw new Error('Aucune donnée pour les filtres sélectionnés.');
+                var periods = (f.period && f.period.length) ? f.period.slice().sort() : uv(data, function (r) { return r._YM; }).sort();
+                var nPer = periods.length || 1;
+                var perLbl = periods.length ? (mL(periods[0]) + ' – ' + mL(periods[periods.length - 1])) : 'Toutes périodes';
+                var entLbl = _cn((f.zs && f.zs.length === 1) ? f.zs[0] : (f.antenne && f.antenne.length === 1 ? 'Antenne ' + f.antenne[0] : f.province));
+                if (msg) msg.textContent = '⏳ Construction des analyses…';
+                var sec = _cxBuildSections(recs, nPer);
+                var slides = sec.slides;
+                if (msg) msg.textContent = '⏳ RECO (perdus de vue) via DHIS2…';
+                var reco = await _cxRecoSlides(gi, sec.zsNames, sec.asNames, f.province, periods);
+                if (reco && reco.length) slides = slides.concat(reco);
+                if (msg) msg.textContent = '⏳ Assemblage du canevas…';
+                var sess = _revueData();
                 var buf = await fetch('canevas_revue_formative_pev.pptx').then(function (r) { if (!r.ok) throw new Error('Modèle PPTX introuvable'); return r.arrayBuffer(); });
-                var zip = await JSZip.loadAsync(buf);
-                var ser = new XMLSerializer();
-                // Diapo 1 — page de garde
-                if (zip.file('ppt/slides/slide1.xml')) {
-                    var x1 = await zip.file('ppt/slides/slide1.xml').async('string');
-                    x1 = x1.replace(/(ZONE DE SANT[ÉE] DE\s*:?)([^<]*)/i, '$1 ' + _escXml(data.province + ' — ' + data.periodLabel));
-                    zip.file('ppt/slides/slide1.xml', x1);
-                }
-                // Diapo 10 — séances (tableau existant)
-                if (zip.file('ppt/slides/slide10.xml')) {
-                    var d10 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide10.xml').async('string'), 'application/xml');
-                    var tbls = _descLocal(d10, 'tbl');
-                    if (tbls.length) {
-                        var trs = _descLocal(tbls[0], 'tr');
-                        var hd = _descLocal(trs[0], 'tc'); if (hd[1]) _setCell(d10, hd[1], data.prevLabel); if (hd[2]) _setCell(d10, hd[2], data.periodLabel);
-                        data.slide10.forEach(function (row, i) { var tr0 = trs[i + 1]; if (!tr0) return; var tcs = _descLocal(tr0, 'tc'); if (tcs[1]) _setCell(d10, tcs[1], row.p); if (tcs[2]) _setCell(d10, tcs[2], row.c); });
-                    }
-                    zip.file('ppt/slides/slide10.xml', ser.serializeToString(d10));
-                }
-                // Diapos 11 & 12 — tableaux DHIS2 ajoutés
-                if (zip.file('ppt/slides/slide11.xml')) { var d11 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide11.xml').async('string'), 'application/xml'); _appendTable(d11, data.s11.head, data.s11.rows); zip.file('ppt/slides/slide11.xml', ser.serializeToString(d11)); }
-                if (zip.file('ppt/slides/slide12.xml')) { var d12 = new DOMParser().parseFromString(await zip.file('ppt/slides/slide12.xml').async('string'), 'application/xml'); _appendTable(d12, data.s12.head, data.s12.rows); zip.file('ppt/slides/slide12.xml', ser.serializeToString(d12)); }
+                var zip = await _cxBuildDeck(buf, { slides: slides }, 11);
+                await _cxFillTemplate(zip, entLbl + ' — ' + perLbl, sess);
                 var out = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
-                var a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = 'Canevas_Revue_Formative_PEV_' + data.province.replace(/\s+/g, '_') + '.pptx';
+                var a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = 'Canevas_Revue_Formative_PEV_' + entLbl.replace(/\s+/g, '_') + '.pptx';
                 document.body.appendChild(a); a.click(); a.remove();
-                if (msg) msg.textContent = '✅ Canevas PPTX éditable généré avec les données DHIS2.';
+                if (msg) msg.textContent = '✅ Canevas généré : ' + slides.length + ' diapositives d’analyses DHIS2' + (reco && reco.length ? '' : ' (RECO indisponible — vérifiez le code d’accès DHIS2)') + '.';
             } catch (e) {
                 if (msg) msg.textContent = '❌ Erreur : ' + ((e && e.message) || e);
             } finally {
                 if (btn) { btn.disabled = false; btn.textContent = '📥 Télécharger en PPTX éditable'; }
             }
         }
+
         function rDownload(c) {
             var prov = S.filters.province ? _cn(S.filters.province) : 'Toutes les provinces';
             var per = (S.filters.period && S.filters.period.length) ? (mL(S.filters.period.slice().sort()[0]) + ' → ' + mL(S.filters.period.slice().sort()[S.filters.period.length - 1])) : 'Toutes les périodes';
