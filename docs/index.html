@@ -2805,8 +2805,8 @@
             var firstFrac = o.firstFrac || (cols > 8 ? 0.16 : 0.34);
             var first = _cxN(_CX_BODY_W * firstFrac), rest = _cxN((_CX_BODY_W - first) / Math.max(1, cols - 1));
             var grid = head.map(function (_, i) { return '<a:gridCol w="' + (i === 0 ? first : rest) + '"/>'; }).join('');
-            var sz = o.sz || (cols > 14 ? 850 : cols > 8 ? 1000 : 1150);
-            var rowH = o.rowH || (cols > 14 ? 245000 : 300000);
+            var sz = o.sz || (cols > 14 ? 1100 : cols > 8 ? 1200 : 1300);
+            var rowH = o.rowH || (cols > 14 ? 300000 : 360000);
             /* cd = chaîne, OU objet {t:texte, bg:'RRGGBB', fg:'RRGGBB'} pour la légende couleur */
             function cell(cd, isHead, defFill, defCol, algn) {
                 var txt, bg, fg;
@@ -2837,7 +2837,7 @@
             for (var g = 0; g <= G; g++) {
                 var val = top * (G - g) / G, gy = plotY + plotH * g / G;
                 sh.push(_cxRect(plotX, gy, plotW, 3175, 'D9DEEA'));
-                sh.push(_cxTxt(o.pct ? Math.round(val) + '%' : _cxFmt(val), _CX_MX - 20000, gy - 100000, 540000, 200000, { sz: 1000, col: '64748B', algn: 'r' }));
+                sh.push(_cxTxt(o.pct ? Math.round(val) + '%' : _cxFmt(val), _CX_MX - 40000, gy - 110000, 560000, 220000, { sz: 1200, col: '64748B', algn: 'r' }));
             }
             var nC = cats.length, nS = series.length, groupW = plotW / Math.max(1, nC), innerPad = groupW * 0.18, barW = (groupW - 2 * innerPad) / nS;
             for (var c = 0; c < nC; c++) {
@@ -2845,20 +2845,20 @@
                 for (var s2 = 0; s2 < nS; s2++) {
                     var v2 = Number(series[s2].values[c]) || 0, bh = plotH * Math.min(v2, top) / top, bx = gx + s2 * barW;
                     sh.push(_cxRect(bx + barW * 0.08, plotY + plotH - bh, barW * 0.84, bh, series[s2].color || _CX_PAL[s2 % _CX_PAL.length]));
-                    if (nC <= 16) sh.push(_cxTxt(o.pct ? Math.round(v2) + '' : _cxFmt(v2), bx - barW * 0.2, plotY + plotH - bh - 210000, barW * 1.4, 200000, { sz: 950, col: '334155', algn: 'ctr' }));
+                    if (nC <= 16) sh.push(_cxTxt(o.pct ? Math.round(v2) + '' : _cxFmt(v2), bx - barW * 0.3, plotY + plotH - bh - 240000, barW * 1.6, 230000, { sz: 1200, col: '334155', algn: 'ctr' }));
                 }
-                if (nC > 6) sh.push(_cxTxt(cats[c], plotX + c * groupW + groupW / 2 - 550000, plotY + plotH + 70000, 1100000, 320000, { sz: 950, col: '334155', algn: 'ctr', rot: -2700000 }));
-                else sh.push(_cxTxt(cats[c], plotX + c * groupW, plotY + plotH + 50000, groupW, 300000, { sz: 1050, col: '334155', algn: 'ctr' }));
+                if (nC > 6) sh.push(_cxTxt(cats[c], plotX + c * groupW + groupW / 2 - 600000, plotY + plotH + 80000, 1200000, 340000, { sz: 1100, col: '334155', algn: 'ctr', rot: -2700000 }));
+                else sh.push(_cxTxt(cats[c], plotX + c * groupW, plotY + plotH + 60000, groupW, 320000, { sz: 1250, col: '334155', algn: 'ctr' }));
             }
             /* légende en BAS à DROITE : sous les barres (évite la superposition en haut)
                et à droite (le logo PEV du modèle est en bas à GAUCHE) */
-            var _sq = 190000, _gap = 95000, _pad = 240000, _charW = 88000;
+            var _sq = 220000, _gap = 100000, _pad = 260000, _charW = 100000;
             var _items = series.map(function (se, i) { return { name: se.name, color: se.color || _CX_PAL[i % _CX_PAL.length], w: _sq + _gap + se.name.length * _charW + _pad }; });
             var _totW = _items.reduce(function (s, it) { return s + it.w; }, 0);
-            var _lx = _CX_MX + _CX_BODY_W - _totW, _ly = plotY + plotH + 560000;
+            var _lx = _CX_MX + _CX_BODY_W - _totW, _ly = plotY + plotH + 580000;
             _items.forEach(function (it) {
                 sh.push(_cxRect(_lx, _ly, _sq, _sq, it.color));
-                sh.push(_cxTxt(it.name, _lx + _sq + _gap, _ly - 15000, it.w - _sq - _gap, 220000, { sz: 1050, col: '1E293B', algn: 'l' }));
+                sh.push(_cxTxt(it.name, _lx + _sq + _gap, _ly - 20000, it.w - _sq - _gap, 250000, { sz: 1200, col: '1E293B', algn: 'l' }));
                 _lx += it.w;
             });
             return sh.join('');
@@ -2931,7 +2931,7 @@
                     var ty = sub ? _CX_BODY_Y + subOff : _CX_BODY_Y;
                     return {
                         title: (pages.length > 1 ? title + ' (' + (pi + 1) + '/' + pages.length + ')' : title),
-                        build: function () { return (sub ? _cxTxt(sub, _CX_MX, _CX_BODY_Y - 10000, _CX_BODY_W, subOff - 40000, { sz: 950, col: '475569', algn: 'l' }) : '') + _cxTable(head, rows, ty, { rowH: rowH, sz: sz, firstFrac: firstFrac }); }
+                        build: function () { return (sub ? _cxTxt(sub, _CX_MX, _CX_BODY_Y - 10000, _CX_BODY_W, subOff - 40000, { sz: 1050, col: '475569', algn: 'l' }) : '') + _cxTable(head, rows, ty, { rowH: rowH, sz: sz, firstFrac: firstFrac }); }
                     };
                 });
             }
@@ -2945,8 +2945,8 @@
             var cvHead = ['Zone de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl));
             function cvRow(name, rc) { var tg = _cxTag(rc, nPer); return [name].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(rc, tg, ag); return v == null ? '–' : _cxCell(Math.round(v), _cxCvCol(v)); })); }
             var cvTotal = (function () { var tg = _cxTag(asRecs, nPer); return ['TOTAL'].concat(_CX_TABLE_AGS.map(function (ag) { var v = _cxCvAg(asRecs, tg, ag); return v == null ? '–' : _cxCell(Math.round(v), _cxCvCol(v)); })); })();
-            S1 = S1.concat(tablePages('Couverture vaccinale administrative par ZS — tous antigènes (%)', cvHead, zsNames.map(function (z) { return cvRow(_cn(z), byZS[z]); }), 268000, 900, 0.14, cvTotal));
-            S1 = S1.concat(tablePages('Couverture vaccinale administrative par AS — tous antigènes (%)', ['Aire de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl)), asList.map(function (a) { return cvRow(_cn(a.name), a.recs); }), 245000, 850, 0.16, null));
+            S1 = S1.concat(tablePages('Couverture vaccinale administrative par ZS — tous antigènes (%)', cvHead, zsNames.map(function (z) { return cvRow(_cn(z), byZS[z]); }), 320000, 1050, 0.14, cvTotal));
+            S1 = S1.concat(tablePages('Couverture vaccinale administrative par AS — tous antigènes (%)', ['Aire de Santé'].concat(_CX_TABLE_AGS.map(_cxAgLbl)), asList.map(function (a) { return cvRow(_cn(a.name), a.recs); }), 300000, 1000, 0.16, null));
             /* 5-6 Zéro-dose & Sous-vaccinés */
             S1 = S1.concat(chartPages('Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par ZS', zsNames, zsBy, [{ name: 'Enfants ZD', color: '7C3AED', val: function (rc) { return Math.round(_cxZD(rc)); } }, { name: 'Enfants SV', color: '00838F', val: function (rc) { return Math.round(_cxESV(rc)); } }], false));
             S1 = S1.concat(chartPages('Enfants Zéro-Dose (ZD) et Sous-Vaccinés (SV) par AS', asNames, asBy, [{ name: 'Enfants ZD', color: '7C3AED', val: function (rc) { return Math.round(_cxZD(rc)); } }, { name: 'Enfants SV', color: '00838F', val: function (rc) { return Math.round(_cxESV(rc)); } }], false));
@@ -2954,31 +2954,33 @@
             var aczHead = ['Zone de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'];
             function aczRow(name, rc) { var tg = _cxTag(rc, nPer); var c1 = _cxCv1(rc, tg), ab = _cxAbanDTC(rc), cat = _cxCat(c1, ab); return [name, c1 == null ? '–' : _cxCell(c1.toFixed(1) + '%', _cxCvCol(c1)), ab == null ? '–' : _cxCell(ab.toFixed(1) + '%', _cxAbanCol(ab)), _cxCell(cat, _cxCatCol(cat))]; }
             var aczTotal = (function () { var tg = _cxTag(asRecs, nPer); var c1 = _cxCv1(asRecs, tg), ab = _cxAbanDTC(asRecs), cat = _cxCat(c1, ab); return ['TOTAL', c1 == null ? '–' : _cxCell(c1.toFixed(1) + '%', _cxCvCol(c1)), ab == null ? '–' : _cxCell(ab.toFixed(1) + '%', _cxAbanCol(ab)), _cxCell(cat, _cxCatCol(cat))]; })();
-            S1 = S1.concat(tablePages('Catégorisation ACZ par ZS', aczHead, zsNames.map(function (z) { return aczRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, aczTotal));
-            S1 = S1.concat(tablePages('Catégorisation ACZ par AS', ['Aire de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'], asList.map(function (a) { return aczRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
+            S1 = S1.concat(tablePages('Catégorisation ACZ par ZS', aczHead, zsNames.map(function (z) { return aczRow(_cn(z), byZS[z]); }), 380000, 1300, 0.34, aczTotal));
+            S1 = S1.concat(tablePages('Catégorisation ACZ par AS', ['Aire de Santé', 'CV Penta1 (%)', 'Taux abandon DTC1-DTC3 (%)', 'Catégorie ACZ'], asList.map(function (a) { return aczRow(_cn(a.name), a.recs); }), 360000, 1250, 0.34, null));
             /* 9-10 Disponibilité intrants */
             var dispoHead = ['Zone de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'];
             function dispoRow(name, rc) { return [name].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(rc, p); return v == null ? '–' : _cxCell(Math.round(v) + '%', _cxPropCol(v)); })); }
             var dispoTotal = ['TOTAL'].concat(['BCG', 'DTC', 'VAR', 'VPO'].map(function (p) { var v = _cxDispo(asRecs, p); return v == null ? '–' : _cxCell(Math.round(v) + '%', _cxPropCol(v)); }));
-            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)', dispoHead, zsNames.map(function (z) { return dispoRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, dispoTotal));
-            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)', ['Aire de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'], asList.map(function (a) { return dispoRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
+            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par ZS (BCG, DTC, VAR, VPO)', dispoHead, zsNames.map(function (z) { return dispoRow(_cn(z), byZS[z]); }), 380000, 1300, 0.34, dispoTotal));
+            S1 = S1.concat(tablePages('Taux de disponibilité des intrants par AS (BCG, DTC, VAR, VPO)', ['Aire de Santé', 'BCG', 'DTC (Penta)', 'VAR', 'VPO'], asList.map(function (a) { return dispoRow(_cn(a.name), a.recs); }), 360000, 1250, 0.34, null));
             /* 11-12 Taux de perte */
             var pertHead = ['Zone de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'];
             function pertRow(name, rc) { return [name].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(rc, p); return v == null ? '–' : _cxCell(v.toFixed(1) + '%', _cxLossCol(v)); })); }
             var pertTotal = ['TOTAL'].concat(['VPO', 'DTC', 'VAR', 'VAA', 'Td'].map(function (p) { var v = _cxLoss(asRecs, p); return v == null ? '–' : _cxCell(v.toFixed(1) + '%', _cxLossCol(v)); }));
-            S1 = S1.concat(tablePages('Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)', pertHead, zsNames.map(function (z) { return pertRow(_cn(z), byZS[z]); }), 330000, 1200, 0.30, pertTotal));
-            S1 = S1.concat(tablePages('Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)', ['Aire de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'], asList.map(function (a) { return pertRow(_cn(a.name), a.recs); }), 300000, 1100, 0.30, null));
+            S1 = S1.concat(tablePages('Taux de perte par ZS et antigène traceur (VPO, DTC, VAR, VAA, Td)', pertHead, zsNames.map(function (z) { return pertRow(_cn(z), byZS[z]); }), 380000, 1300, 0.30, pertTotal));
+            S1 = S1.concat(tablePages('Taux de perte par AS et antigène traceur (VPO, DTC, VAR, VAA, Td)', ['Aire de Santé', 'VPO', 'DTC (Penta)', 'VAR', 'VAA', 'Td'], asList.map(function (a) { return pertRow(_cn(a.name), a.recs); }), 360000, 1250, 0.30, null));
             /* RECO : perdus de vue identifiés/récupérés (champs agrégés RECO_identifies/RECO_recuperes) */
             var recoHead = ['Zone de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'];
             function recoRow(name, rc) { var id = _cxSum(rc, 'RECO_identifies'), re = _cxSum(rc, 'RECO_recuperes'); var pct = id > 0 ? Math.round(re / id * 100) : null; return [name, Math.round(id).toLocaleString('fr-FR'), Math.round(re).toLocaleString('fr-FR'), pct == null ? '–' : _cxCell(pct + '%', _cxPropCol(pct))]; }
             var recoTotal = (function () { var id = _cxSum(asRecs, 'RECO_identifies'), re = _cxSum(asRecs, 'RECO_recuperes'); var pct = id > 0 ? Math.round(re / id * 100) : null; return ['TOTAL', Math.round(id).toLocaleString('fr-FR'), Math.round(re).toLocaleString('fr-FR'), pct == null ? '–' : _cxCell(pct + '%', _cxPropCol(pct))]; })();
             var recoNote = 'Méthode de calcul : « Identifiés » = enfants perdus de vue repérés par les Relais Communautaires (RECO), somme Penta1 + Penta3 pour tous les âges (0-11, 12-23 et 24-59 mois) ; « Récupérés » = ces enfants ramenés puis effectivement vaccinés ; « % récupérés » = Récupérés ÷ Identifiés × 100. Source : DHIS2 (SNIS) — l’indicateur « par les RECO » n’est pas collecté pour la VAR.';
-            S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par ZS', recoHead, zsNames.map(function (z) { return recoRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, recoTotal, recoNote));
-            S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par AS', ['Aire de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'], asList.map(function (a) { return recoRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
-            /* 13-14 Taux d'abandon */
-            S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", zsNames, zsBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
-            S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS", asNames, asBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
-            return { slides: S1, zsNames: zsNames, asNames: asNames };
+            /* Groupe B : RECO + taux d'abandon — insérés APRÈS le séparateur modèle
+               « Performance communication » (slide 12) qui les introduit. */
+            var S2 = [];
+            S2 = S2.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par ZS', recoHead, zsNames.map(function (z) { return recoRow(_cn(z), byZS[z]); }), 380000, 1300, 0.34, recoTotal, recoNote));
+            S2 = S2.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par AS', ['Aire de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'], asList.map(function (a) { return recoRow(_cn(a.name), a.recs); }), 360000, 1250, 0.34, null));
+            S2 = S2.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", zsNames, zsBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
+            S2 = S2.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par AS", asNames, asBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
+            return { A: S1, B: S2, zsNames: zsNames, asNames: asNames };
         }
 
         /* ── RECO : perdus de vue identifiés/récupérés (DHIS2, Penta1+Penta3 tous âges) ── */
@@ -3040,7 +3042,9 @@
         }
 
         /* ── Assemble le deck : modèle + diapos insérées après la #afterSlide ── */
-        async function _cxBuildDeck(templateBuf, gen, afterSlide) {
+        /* groups = [{ after: <n° diapo modèle>, slides: [...] }, ...] :
+           chaque groupe est inséré juste après la diapo modèle indiquée. */
+        async function _cxBuildDeck(templateBuf, groups) {
             var zip = await JSZip.loadAsync(templateBuf);
             var pres = await zip.file('ppt/presentation.xml').async('string');
             var presRels = await zip.file('ppt/_rels/presentation.xml.rels').async('string');
@@ -3048,23 +3052,29 @@
             var maxSlide = 0; zip.folder('ppt/slides').forEach(function (p) { var m = p.match(/^slide(\d+)\.xml$/); if (m) maxSlide = Math.max(maxSlide, +m[1]); });
             var maxRid = 0; (presRels.match(/Id="rId(\d+)"/g) || []).forEach(function (s) { maxRid = Math.max(maxRid, +s.match(/\d+/)[0]); });
             var maxSldId = 0; (pres.match(/<p:sldId id="(\d+)"/g) || []).forEach(function (s) { maxSldId = Math.max(maxSldId, +s.match(/\d+/)[0]); });
-            var layoutTarget = '../slideLayouts/slideLayout2.xml';
-            var arel = zip.file('ppt/slides/_rels/slide' + afterSlide + '.xml.rels');
-            if (arel) { var rs = await arel.async('string'); var mm = rs.match(/slideLayout\d+\.xml/); if (mm) layoutTarget = '../slideLayouts/' + mm[0]; }
-            var afterRid = (presRels.match(new RegExp('Id="(rId\\d+)"[^>]*Target="slides/slide' + afterSlide + '\\.xml"')) || [])[1];
-            var newRels = [], newCt = [], newSld = [];
-            gen.slides.forEach(function (sd, i) {
-                var num = maxSlide + i + 1, rid = 'rId' + (maxRid + i + 1), sldId = maxSldId + i + 1;
-                zip.file('ppt/slides/slide' + num + '.xml', _cxSlideXml(_cxTitleShape(sd.title) + sd.build()));
-                zip.file('ppt/slides/_rels/slide' + num + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + _CX_R + '/slideLayout" Target="' + layoutTarget + '"/></Relationships>');
-                newRels.push('<Relationship Id="' + rid + '" Type="' + _CX_R + '/slide" Target="slides/slide' + num + '.xml"/>');
-                newCt.push('<Override PartName="/ppt/slides/slide' + num + '.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>');
-                newSld.push('<p:sldId id="' + sldId + '" r:id="' + rid + '"/>');
-            });
+            var newRels = [], newCt = [], seq = 0;
+            for (var gi2 = 0; gi2 < groups.length; gi2++) {
+                var grp2 = groups[gi2]; if (!grp2.slides || !grp2.slides.length) continue;
+                var afterSlide = grp2.after;
+                var layoutTarget = '../slideLayouts/slideLayout2.xml';
+                var arel = zip.file('ppt/slides/_rels/slide' + afterSlide + '.xml.rels');
+                if (arel) { var rs = await arel.async('string'); var mm = rs.match(/slideLayout\d+\.xml/); if (mm) layoutTarget = '../slideLayouts/' + mm[0]; }
+                var afterRid = (presRels.match(new RegExp('Id="(rId\\d+)"[^>]*Target="slides/slide' + afterSlide + '\\.xml"')) || [])[1];
+                var grpSld = [];
+                grp2.slides.forEach(function (sd) {
+                    seq++;
+                    var num = maxSlide + seq, rid = 'rId' + (maxRid + seq), sldId = maxSldId + seq;
+                    zip.file('ppt/slides/slide' + num + '.xml', _cxSlideXml(_cxTitleShape(sd.title) + sd.build()));
+                    zip.file('ppt/slides/_rels/slide' + num + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + _CX_R + '/slideLayout" Target="' + layoutTarget + '"/></Relationships>');
+                    newRels.push('<Relationship Id="' + rid + '" Type="' + _CX_R + '/slide" Target="slides/slide' + num + '.xml"/>');
+                    newCt.push('<Override PartName="/ppt/slides/slide' + num + '.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>');
+                    grpSld.push('<p:sldId id="' + sldId + '" r:id="' + rid + '"/>');
+                });
+                if (afterRid) pres = pres.replace(new RegExp('(<p:sldId id="\\d+" r:id="' + afterRid + '"\\s*/>)'), '$1' + grpSld.join(''));
+                else pres = pres.replace('</p:sldIdLst>', grpSld.join('') + '</p:sldIdLst>');
+            }
             presRels = presRels.replace('</Relationships>', newRels.join('') + '</Relationships>');
             ct = ct.replace('</Types>', newCt.join('') + '</Types>');
-            if (afterRid) pres = pres.replace(new RegExp('(<p:sldId id="\\d+" r:id="' + afterRid + '"\\s*/>)'), '$1' + newSld.join(''));
-            else pres = pres.replace('</p:sldIdLst>', newSld.join('') + '</p:sldIdLst>');
             zip.file('ppt/presentation.xml', pres);
             zip.file('ppt/_rels/presentation.xml.rels', presRels);
             zip.file('[Content_Types].xml', ct);
@@ -3094,20 +3104,29 @@
                 ]
             };
         }
-        /* Remplit la page de garde (slide1) et les séances (slide10) du modèle.
-           cover = { period:'JUIN 2026', niveau:"L'ANTENNE PEV BUTA" } — rend la
-           phrase « PRÉSENTATION DES PERFORMANCES <période> DE <niveau> » dynamique
-           en remplaçant les runs de texte du modèle. */
+        /* Remplit la page de garde (slide1), les titres des séparateurs (slides 11 & 12)
+           et les séances (slide10) du modèle.
+           cover = { periodTitle:'Juin 2026', niveau:"L'ANTENNE PEV BUTA" } — rend la
+           phrase « PRÉSENTATION DES PERFORMANCES <période> DE <niveau> » et les titres
+           « IV. Performances par AS et ZS/<période> » dynamiques. */
         async function _cxFillTemplate(zip, cover, sess) {
             if (zip.file('ppt/slides/slide1.xml')) {
                 var x1 = await zip.file('ppt/slides/slide1.xml').async('string');
-                /* run période (ex. « JANVIER À AVRIL 2026 ») → période sélectionnée */
-                x1 = x1.replace(/(<a:t>)\s*JANVIER[^<]*?\d{4}\s*(<\/a:t>)/i, '$1' + _cxEsc(cover.period) + '$2');
+                /* run période (ex. « JANVIER À AVRIL 2026 ») → période sélectionnée (majuscules) */
+                x1 = x1.replace(/(<a:t>)\s*JANVIER[^<]*?\d{4}\s*(<\/a:t>)/i, '$1' + _cxEsc(String(cover.periodTitle).toUpperCase()) + '$2');
                 /* runs « DE LA ZONE DE » + « SANTÉ » + « DE: » → « DE <niveau> » */
                 x1 = x1.replace(/(<a:t>)\s*DE LA\s+ZONE DE\s*(<\/a:t>)/i, '$1 DE ' + _cxEsc(cover.niveau) + '$2');
                 x1 = x1.replace(/(<a:t>)\s*SANT[ÉE]\s*(<\/a:t>)/i, '$1$2');
                 x1 = x1.replace(/(<a:t>)\s*DE:\s*(<\/a:t>)/i, '$1$2');
                 zip.file('ppt/slides/slide1.xml', x1);
+            }
+            /* Titres des séparateurs « IV. Performances par AS et ZS/<période> » (slides 11 & 12) */
+            for (var _sn = 11; _sn <= 12; _sn++) {
+                var _sp = zip.file('ppt/slides/slide' + _sn + '.xml');
+                if (!_sp) continue;
+                var _sx = await _sp.async('string');
+                _sx = _sx.replace(/(ZS\/)\s*Janvier\s*[-–]\s*Avril\s*\d{4}/i, '$1' + _cxEsc(cover.periodTitle));
+                zip.file('ppt/slides/slide' + _sn + '.xml', _sx);
             }
             if (sess && zip.file('ppt/slides/slide10.xml')) {
                 var ser = new XMLSerializer();
@@ -3147,20 +3166,18 @@
                 var entLbl = _cn((f.as && f.as.length === 1) ? f.as[0] : (f.zs && f.zs.length === 1) ? f.zs[0] : (f.antenne && f.antenne.length === 1 ? 'Antenne ' + f.antenne[0] : f.province));
                 if (msg) msg.textContent = '⏳ Construction des analyses…';
                 var sec = _cxBuildSections(recs, nPer);
-                var slides = sec.slides;
-                /* RECO (perdus de vue) : source non encore présente dans les fichiers
-                   agrégés servis — sera ajoutée via le pipeline d'agrégation. */
-                var reco = [];
-                if (reco && reco.length) slides = slides.concat(reco);
+                var nbSlides = sec.A.length + sec.B.length;
                 if (msg) msg.textContent = '⏳ Assemblage du canevas…';
                 var sess = _revueData();
                 var buf = await fetch('canevas_revue_formative_pev.pptx').then(function (r) { if (!r.ok) throw new Error('Modèle PPTX introuvable'); return r.arrayBuffer(); });
-                var zip = await _cxBuildDeck(buf, { slides: slides }, 11);
-                await _cxFillTemplate(zip, { period: perLbl.toUpperCase(), niveau: coverNiveau }, sess);
+                /* Groupe A (complétude→perte) après le séparateur slide 11 ; groupe B
+                   (RECO + abandon) après le séparateur slide 12 qui les introduit. */
+                var zip = await _cxBuildDeck(buf, [{ after: 11, slides: sec.A }, { after: 12, slides: sec.B }]);
+                await _cxFillTemplate(zip, { periodTitle: perLbl, niveau: coverNiveau }, sess);
                 var out = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
                 var a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = 'Canevas_Revue_Formative_PEV_' + entLbl.replace(/\s+/g, '_') + '.pptx';
                 document.body.appendChild(a); a.click(); a.remove();
-                if (msg) msg.textContent = '✅ Canevas généré : ' + slides.length + ' diapositives d’analyses DHIS2 (par ZS et par AS).';
+                if (msg) msg.textContent = '✅ Canevas généré : ' + nbSlides + ' diapositives d’analyses DHIS2 (par ZS et par AS).';
             } catch (e) {
                 if (msg) msg.textContent = '❌ Erreur : ' + ((e && e.message) || e);
             } finally {
