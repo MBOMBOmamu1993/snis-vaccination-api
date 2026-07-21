@@ -14,7 +14,15 @@ Contexte permanent :
 - Admin /admin : file de commandes + OCR IA des captures (AI_HELPER_PROVIDER=kimi
   par défaut, modèle kimi-k3, clé KIMI_API_KEY posée le 20/07) + /admin/rapport
   (ventes) + rapport quotidien cron 17h UTC (18h Kinshasa).
-- Dashboard docs/index.html : 3 fournisseurs IA au choix — Ollama Cloud
+- Dashboard docs/index.html : VUE CLIENT épurée (21/07) — le client ne voit QUE
+  le code d'accès + essai gratuit + « Obtenir un code », et 6 modèles fixes
+  (MiniMax M3, GLM 5.2, DeepSeek V4 Pro, Kimi K2.7, Kimi K3, Claude Opus 4.8 ;
+  mention « adapté aux tâches les plus complexes et exigeantes » sur K3 et
+  Opus 4.8). VUE ADMIN complète (onglet « Ma clé API » + liste dynamique
+  Ollama/Kimi/Claude) : ouvrir le dashboard avec ?admin=1 une fois (mémorisé
+  dans le navigateur), ?admin=0 pour repasser en vue client. Essai gratuit =
+  7 JOURS / 50 requêtes (TRIAL_DAYS=7 depuis le 21/07 — avant : 31 j).
+  3 fournisseurs IA au choix — Ollama Cloud
   (forfait, modèles dynamiques via /api/tags), Kimi (usage, kind 'openai',
   options préfixées « kimi: » : kimi-k3, kimi-k2.7-code, kimi-k2.6),
   Anthropic Claude Opus 4.8 (usage). Clés perso : pev_ia_key_ollama / key_kimi / key_claude.
@@ -58,3 +66,10 @@ Contexte permanent :
   illimité ; c'est le canal de référence, CallMeBot sert de secours.
 - Diagnostic notifs : clés KV notif:last et notif:last-mail (TTL 24 h) = journal
   des derniers envois (à consulter en cas de doute) ; file de relance notifq:*.
+- ⚠️ GIT LOCAL CASSÉ (clone partiel blob:none, réseau instable) : git status /
+  commit / write-tree CLASSIQUES PENDENT indéfiniment (lazy-fetch massif des
+  blobs « racily clean »). Procédure qui marche (21/07) :
+  $env:GIT_NO_LAZY_FETCH="1" ; git -c gc.auto=0 add <fichiers> ;
+  git write-tree --missing-ok ; git commit-tree <tree> -p HEAD -m "..." ;
+  git update-ref refs/heads/main <sha> ; git push origin main.
+  Supprimer .git/index.lock + .git/gc.pid si une tentative précédente a été tuée.
