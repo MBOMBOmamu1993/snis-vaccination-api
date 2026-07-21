@@ -2858,7 +2858,7 @@
             return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="' + _CX_A + '" xmlns:r="' + _CX_R + '" xmlns:p="' + _CX_P + '"><p:cSld><p:spTree>' +
                 '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
                 '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
-                body + '</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping xmlns:a="' + _CX_A + '"/></p:clrMapOvr></p:sld>';
+                body + '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
         }
         function _cxPaginate(arr, per) { var out = []; for (var i = 0; i < arr.length; i += per) out.push(arr.slice(i, i + per)); return out; }
 
@@ -3100,8 +3100,9 @@
                 if (msg) msg.textContent = '⏳ Construction des analyses…';
                 var sec = _cxBuildSections(recs, nPer);
                 var slides = sec.slides;
-                if (msg) msg.textContent = '⏳ RECO (perdus de vue) via DHIS2…';
-                var reco = await _cxRecoSlides(gi, sec.zsNames, sec.asNames, f.province, periods);
+                /* RECO (perdus de vue) : source non encore présente dans les fichiers
+                   agrégés servis — sera ajoutée via le pipeline d'agrégation. */
+                var reco = [];
                 if (reco && reco.length) slides = slides.concat(reco);
                 if (msg) msg.textContent = '⏳ Assemblage du canevas…';
                 var sess = _revueData();
@@ -3111,7 +3112,7 @@
                 var out = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
                 var a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = 'Canevas_Revue_Formative_PEV_' + entLbl.replace(/\s+/g, '_') + '.pptx';
                 document.body.appendChild(a); a.click(); a.remove();
-                if (msg) msg.textContent = '✅ Canevas généré : ' + slides.length + ' diapositives d’analyses DHIS2' + (reco && reco.length ? '' : ' (RECO indisponible — vérifiez le code d’accès DHIS2)') + '.';
+                if (msg) msg.textContent = '✅ Canevas généré : ' + slides.length + ' diapositives d’analyses DHIS2 (par ZS et par AS).';
             } catch (e) {
                 if (msg) msg.textContent = '❌ Erreur : ' + ((e && e.message) || e);
             } finally {
@@ -3128,11 +3129,16 @@
                 '<div class="ch" style="min-width:300px"><div style="background:#f6f8fb;border:1px solid #e7edf5;border-radius:14px;padding:18px">' +
                 '<b style="color:#1a237e">Contenu renseigné depuis le DHIS2 :</b>' +
                 '<div style="font-size:13px;color:#475467;line-height:1.7;margin-top:8px">' +
-                '✅ Page de garde : province et période filtrées<br>' +
-                '✅ Diapo 10 : séances de vaccination prévues/réalisées (fixe, avancée, mobile) — période n-1 vs courante<br>' +
-                '✅ Diapo 11 : complétude, promptitude &amp; doses (DTC3, VAR1) par zone de santé<br>' +
-                '✅ Diapo 12 : taux d\'abandon DTC1–DTC3 et BCG–VAR1 par zone de santé</div>' +
-                '<div style="font-size:11.5px;color:#64748b;font-style:italic;margin-top:12px">Le fichier conserve la mise en forme du canevas officiel et reste entièrement éditable dans PowerPoint.</div>' +
+                '✅ Page de garde &amp; séances de vaccination (résultats de processus, n-1 vs courante)<br>' +
+                '✅ Complétude &amp; promptitude — par ZS et par AS<br>' +
+                '✅ Couverture vaccinale administrative — tous antigènes (20) par ZS et AS<br>' +
+                '✅ Enfants zéro-dose &amp; sous-vaccinés — par ZS et AS<br>' +
+                '✅ Catégorisation ACZ (CV Penta1, abandon, catégorie) — par ZS et AS<br>' +
+                '✅ Disponibilité des intrants (BCG, DTC, VAR, VPO) — par ZS et AS<br>' +
+                '✅ Taux de perte (VPO, DTC, VAR, VAA, Td) — par ZS et AS<br>' +
+                '✅ Taux d\'abandon DTC1–DTC3 et BCG–VAR1 — par ZS et AS<br>' +
+                '✅ Perdus de vue identifiés/récupérés par les RECO — par ZS et AS</div>' +
+                '<div style="font-size:11.5px;color:#64748b;font-style:italic;margin-top:12px">Chaque section est paginée par AS. Le fichier conserve la mise en forme du canevas officiel et reste entièrement éditable dans PowerPoint. Les sections non chiffrées (FFOM, partenaires, plan de redressement…) restent vides comme dans le modèle.</div>' +
                 '</div></div>' +
                 '<div class="ch" style="min-width:280px"><div style="border:1px solid #e7edf5;border-radius:14px;padding:24px;text-align:center;background:#fff">' +
                 '<div style="font-size:40px">📊</div>' +
