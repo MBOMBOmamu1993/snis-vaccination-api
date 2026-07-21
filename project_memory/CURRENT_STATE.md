@@ -7,7 +7,7 @@ Contexte permanent :
 - ne pas modifier monthly pour corriger l'affichage
 - harmoniser aggregate_dashboard.py et index.html avec les champs réels
 
-État actuel (20/07/2026) :
+État actuel (21/07/2026) :
 - Vente de codes IA : système « commande en ligne » COMPLET et déployé
   (client : /acheter → /commander (nom+email obligatoires) → approbation auto →
   dépôt M-Pesa (MPESA_INFOS) → upload capture → admin livre → code affiché + e-mail).
@@ -20,14 +20,27 @@ Contexte permanent :
   Anthropic Claude Opus 4.8 (usage). Clés perso : pev_ia_key_ollama / key_kimi / key_claude.
 - Worker Kimi : base https://api.moonshot.ai (surcharge KIMI_API_BASE pour .cn),
   route /kimi/v1/chat/completions, DEFAULT_KIMI_MODEL=kimi-k3.
-- E-mails : sendMail accepte 2 prestataires dans l'ordre — 1) EMAILJS (priorité,
-  e-mails partant du VRAI Gmail du vendeur via OAuth → livrés chez Gmail ;
-  secrets EMAILJS_SERVICE_ID/TEMPLATE_ID/PUBLIC_KEY À POSER par l'utilisateur,
-  modèle {{to_email}}/{{to_name}}/{{subject}}/{{{message_html}}} + « Allow
-  non-browser applications » à activer) ; 2) BREVO en secours (accepté 201 mais
-  Gmail jette silencieusement l'expéditeur @gmail.com relayé — inutilisable seul).
-  Réservés au RAPPORT QUOTIDIEN (MAIL_TO_ADMIN) + e-mails CLIENTS (validation,
-  livraison du code = preuve écrite).
+- E-mails : sendMail accepte 2 prestataires dans l'ordre — 1) EMAILJS (ACTIF
+  depuis le 21/07, priorité, e-mails partant du VRAI Gmail du vendeur via OAuth
+  → livrés chez Gmail ; secrets EMAILJS_SERVICE_ID=service_pxomvps /
+  TEMPLATE_ID=template_1ph1lhu / PUBLIC_KEY + PRIVATE_KEY posés — ⚠️ le compte
+  est en « strict mode » : la PRIVATE_KEY (accessToken) est OBLIGATOIRE pour
+  l'API serveur, sans elle → 403 « API access in strict mode » ; modèle
+  {{to_email}}/{{to_name}}/{{subject}}/{{{message_html}}}) ; 2) BREVO en secours
+  (accepté 201 mais Gmail jette silencieusement l'expéditeur @gmail.com relayé —
+  inutilisable seul). Réservés au RAPPORT QUOTIDIEN (MAIL_TO_ADMIN) + e-mails
+  CLIENTS (validation, livraison du code = preuve écrite).
+  Vente test e2e validée le 21/07 : CMD-MXMLRV → code PEV-J6NJ-2VLS (10 req.)
+  livré, e-mail client via EmailJS 200 OK (trace notif:last-mail).
+  ⚠️ Gmail range parfois l'e-mail du code en SPAM (vérifié en direct) — la page
+  de suivi affiche donc désormais la consigne « vérifiez boîte de réception ET
+  Spam, le code reste affiché à l'écran » (déployé le 21/07). Expéditeur réel =
+  anlysepevdhis@gmail.com (Gmail connecté), Bcc = fellybokota@gmail.com
+  (archive-preuve). Historique des envois consultable : GET api.emailjs.com
+  /api/v1.1/history?user_id=<PUBLIC>&accessToken=<PRIVATE>.
+  ⚠️ Diagnostic KV : `wrangler kv key get/list` renvoie vide sur ce namespace
+  (supports_url_encoding) — utiliser l'API REST Cloudflare directe
+  (/storage/kv/namespaces/<id>/values/<clé>) pour lire les clés notif:*/ord:*.
 - WhatsApp CallMeBot : 2 pièges documentés (20/07) —
   1) 403 = réf « (CMD-xxx) » entre parenthèses sur sa propre ligne (WAF) →
      format « Réf CMD-xxx » en ligne, validé en direct.

@@ -9170,6 +9170,16 @@
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'minimax-m3';
+            /* Liste FIXE proposée aux clients (l'admin, lui, voit la liste complète
+               dynamique Ollama + Kimi + Claude) */
+            var IA_CLIENT_MODELS = [
+                { v: 'minimax-m3', label: 'MiniMax M3' },
+                { v: 'glm-5.2', label: 'GLM 5.2' },
+                { v: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+                { v: 'kimi-k2.7-code', label: 'Kimi K2.7' },
+                { v: 'kimi:kimi-k3', label: 'Kimi K3 (adapté aux tâches les plus complexes et exigeantes)' },
+                { v: 'claude', label: 'Claude Opus 4.8 (adapté aux tâches les plus complexes et exigeantes)' }
+            ];
             var iaThinkOff = {}; /* modèles ayant refusé le raisonnement (mémorisé pour la session) */
 
             /* Libellé lisible : 'kimi-k2.7-code' → 'Kimi K2.7 Code' ; 'gemma4:31b' → 'Gemma4 (31B)' */
@@ -9242,6 +9252,14 @@
 
             function cfg(k, v) { try { if (v === undefined) return localStorage.getItem('pev_ia_' + k) || ''; localStorage.setItem('pev_ia_' + k, v); } catch (e) { return ''; } }
             function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+            /* Mode ADMINISTRATEUR (vendeur) : ouvrir une fois le dashboard avec
+               ?admin=1 dans l'URL pour l'activer (mémorisé dans ce navigateur),
+               ?admin=0 pour revenir à la vue client. Seul l'admin voit l'onglet
+               « Ma clé API » et la liste complète des modèles ; les clients ne
+               voient que le code d'accès, l'essai gratuit et l'achat d'un code. */
+            function iaIsAdmin() { return cfg('admin') === '1'; }
+            try { var _iaAdm = new URLSearchParams(location.search).get('admin'); if (_iaAdm === '1') cfg('admin', '1'); else if (_iaAdm === '0') cfg('admin', '0'); } catch (e) { }
 
             /* Markdown minimal → HTML (échappé d'abord), avec tableaux |...| */
             function md(t) {
@@ -10856,18 +10874,19 @@
             function iaSettings(onDone) {
                 var bg = E('div', 'ia-modal-bg'); var m = E('div', 'ia-modal'); bg.appendChild(m);
                 var hasProxy = !!IA_PROXY_URL;
-                var mode = cfg('mode') || 'key';
+                var isAdm = iaIsAdmin();
+                var mode = isAdm ? (cfg('mode') || 'key') : 'code'; /* client : code d'accès uniquement */
                 var pk = iaProvKey();
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. La liste Ollama Cloud se met à jour automatiquement. Basculez librement — y compris en cours de conversation.</div>' +
-                    (hasProxy ?
+                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
+                    (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Nouveau ? <b>1 mois d\'essai gratuit</b> — bouton « Essai gratuit » ci-dessous. Ensuite, achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
-                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 1 mois</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
+                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit</b> — bouton « Essai gratuit » ci-dessous. Ensuite, achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
+                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 7 jours</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
                     '<div class="ia-hint" id="iaTrialMsg" style="margin-top:6px"></div></div>' +
                     '<div id="iaPaneKey"><label id="iaKeyLbl">Clé API</label><input type="password" id="iaKey" placeholder="">' +
                     '<div class="ia-hint" id="iaKeyHint"></div>' +
@@ -10880,6 +10899,16 @@
                 if (cEl) cEl.value = cfg('code'); if (c2El) c2El.value = cfg('code');
 
                 function renderModelOptions() {
+                    if (!isAdm) {
+                        /* Client : liste fixe et volontairement courte */
+                        var listed = false;
+                        for (var ci = 0; ci < IA_CLIENT_MODELS.length; ci++) if (IA_CLIENT_MODELS[ci].v === pk) listed = true;
+                        var opts = listed ? IA_CLIENT_MODELS : [{ v: pk, label: iaProv(pk).label }].concat(IA_CLIENT_MODELS);
+                        selEl.innerHTML = opts.map(function (x) { return '<option value="' + esc(x.v) + '">' + esc(x.label) + '</option>'; }).join('');
+                        selEl.value = pk;
+                        if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
+                        return;
+                    }
                     var models = IA_OLLAMA_MODELS.slice();
                     if (pk !== 'claude' && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
                     var html = '<optgroup label="Ollama Cloud — abonnement forfaitaire">' +
@@ -10915,11 +10944,13 @@
                 }
                 renderModelOptions();
                 setProv(pk);
-                iaFetchModels(function () { if (document.body.contains(bg)) renderModelOptions(); });
+                if (isAdm) iaFetchModels(function () { if (document.body.contains(bg)) renderModelOptions(); });
                 selEl.onchange = function () { setProv(selEl.value); };
                 if (hasProxy) {
-                    m.querySelector('#iaRadKey').onclick = function () { setMode('key'); };
-                    m.querySelector('#iaRadCode').onclick = function () { setMode('code'); };
+                    if (isAdm) {
+                        m.querySelector('#iaRadKey').onclick = function () { setMode('key'); };
+                        m.querySelector('#iaRadCode').onclick = function () { setMode('code'); };
+                    }
                     setMode(mode);
                     var buy = m.querySelector('#iaBuy');
                     if (buy) buy.onclick = function () { window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank'); };
@@ -10936,14 +10967,14 @@
                                     var d = j.expire ? new Date(j.expire).toLocaleDateString('fr-FR') : '';
                                     trMsg.innerHTML = (j.deja
                                         ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (reste <b>' + j.restant + '</b> requêtes, jusqu\'au <b>' + d + '</b>) a été replacé dans le champ.'
-                                        : '🎉 <b>1 mois gratuit activé</b> : ' + j.restant + ' requêtes IA, valables jusqu\'au <b>' + d + '</b>.') +
+                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : ' + j.restant + ' requêtes IA, valables jusqu\'au <b>' + d + '</b>.') +
                                         ' Cliquez « Enregistrer » pour terminer.';
                                 }
                             })
                             .catch(function (e) { if (trMsg) trMsg.textContent = '⚠ ' + (e.message || e); })
                             .finally(function () { tr.disabled = false; });
                     };
-                } else setMode('key');
+                } else setMode(isAdm ? 'key' : 'code');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {
                     keys[keySlot(pk)] = kEl.value.trim();

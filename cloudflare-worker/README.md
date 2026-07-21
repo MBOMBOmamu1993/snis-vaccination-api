@@ -19,7 +19,7 @@ Il remplit 3 fonctions :
      (M-Pesa, Orange Money, Airtel Money, carte) → le code s'affiche tout seul
      après paiement. Bascule automatique dès que les clés CinetPay sont posées.
      Voir `JOUR-J-CINETPAY.md`.
-4. **Essai gratuit 1 mois** — endpoint `/essai` : 50 requêtes IA valables 31 jours,
+4. **Essai gratuit 7 jours** — endpoint `/essai` : 50 requêtes IA valables 7 jours,
    1 par appareil (empreinte IP + navigateur). À expiration, l'utilisateur est
    renvoyé vers l'achat d'un code.
 

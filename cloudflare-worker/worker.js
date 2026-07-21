@@ -27,7 +27,7 @@
  *                            capture, livraison) + création manuelle de codes.
  *                            /admin/codes → API JSON.
  *   5. /verifier?code=     → solde restant d'un code
- *   6. /essai              → code d'essai gratuit : 1 mois / 50 requêtes,
+ *   6. /essai              → code d'essai gratuit : 7 jours / 50 requêtes,
  *                            1 par appareil (empreinte IP+UA), puis paiement
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
@@ -96,7 +96,7 @@ const MAX_TOKENS_CAP = 16000;
 /* ── Essai gratuit : TRIAL_DAYS jours (ou TRIAL_REQUESTS requêtes, la 1re
    échéance compte) PAR APPAREIL. Empreinte = hash(IP + User-Agent) ;
    un nouvel appui sur « Essai gratuit » rend le même code. ── */
-const TRIAL_DAYS = 31;
+const TRIAL_DAYS = 7;
 const TRIAL_REQUESTS = 50;
 
 export default {
@@ -200,7 +200,7 @@ async function requireCode(request, env) {
   if (!rec) throw Object.assign(new Error("Code d'accès invalide. Achetez un code sur la page « Obtenir un code »."), { status: 401 });
   if (rec.expires && Date.now() > Date.parse(rec.expires)) {
     throw Object.assign(new Error(rec.trial
-      ? "Votre mois d'essai gratuit est terminé. Achetez un code (⚙ Accès → « Obtenir un code ») pour continuer à utiliser l'assistant."
+      ? "Votre semaine d'essai gratuit est terminée. Achetez un code (⚙ Accès → « Obtenir un code ») pour continuer à utiliser l'assistant."
       : 'Code expiré. Achetez un nouveau code.'), { status: 402 });
   }
   if (rec.remaining <= 0) throw Object.assign(new Error('Code épuisé (' + rec.total + ' requêtes consommées). Achetez un nouveau code.'), { status: 402 });
@@ -216,7 +216,7 @@ async function fpHash(request) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-/* ═══ Essai gratuit : 1 mois (ou TRIAL_REQUESTS requêtes) par appareil ═══
+/* ═══ Essai gratuit : 7 jours (ou TRIAL_REQUESTS requêtes) par appareil ═══
    Idempotent : un nouvel appel depuis le même appareil rend le même code
    (pratique si l'utilisateur l'a perdu), sans jamais créer de second essai.
    Le code d'essai fonctionne avec tous les fournisseurs IA et le proxy DHIS2. */
@@ -892,7 +892,7 @@ function trackPage(env, url) {
            zone.innerHTML='<p><b>✅ Paiement confirmé — merci !</b></p><p>Voici votre code d\\'accès :</p><div class="code">'+j.code+'</div>'
              +'<button onclick="navigator.clipboard.writeText(\\''+j.code+'\\');this.textContent=\\'✓ Copié !\\'">📋 Copier le code</button>'
              +'<p style="margin-top:12px">Collez-le dans l\\'onglet « Génération des analyses » → ⚙ Accès → Code d\\'accès.'
-             +(j.mail?' <b>Une copie vous a été envoyée par e-mail.</b>':'')+' Conservez-le précieusement : il ne sera plus affiché ailleurs.</p>';
+              +(j.mail?' <b>Le même code vous a aussi été envoyé par e-mail</b> : vérifiez votre boîte de réception <b>et le dossier Spam / Courrier indésirable</b> — il reste de toute façon affiché ici sur votre écran.':'')+' Conservez-le précieusement : il ne sera plus affiché ailleurs.</p>';
          }
        }
        async function poll(){try{var r=await fetch('/api/commande?id='+ID+'&key='+KEY);render(await r.json());}catch(e){} if(last!=='delivered')setTimeout(poll,4000);}
