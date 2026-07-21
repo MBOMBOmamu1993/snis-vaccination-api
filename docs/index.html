@@ -2850,11 +2850,12 @@
                 if (nC > 6) sh.push(_cxTxt(cats[c], plotX + c * groupW + groupW / 2 - 550000, plotY + plotH + 70000, 1100000, 320000, { sz: 950, col: '334155', algn: 'ctr', rot: -2700000 }));
                 else sh.push(_cxTxt(cats[c], plotX + c * groupW, plotY + plotH + 50000, groupW, 300000, { sz: 1050, col: '334155', algn: 'ctr' }));
             }
-            /* légende en HAUT à DROITE (le logo PEV en bas de page couvre le bas) */
+            /* légende en BAS à DROITE : sous les barres (évite la superposition en haut)
+               et à droite (le logo PEV du modèle est en bas à GAUCHE) */
             var _sq = 190000, _gap = 95000, _pad = 240000, _charW = 88000;
             var _items = series.map(function (se, i) { return { name: se.name, color: se.color || _CX_PAL[i % _CX_PAL.length], w: _sq + _gap + se.name.length * _charW + _pad }; });
             var _totW = _items.reduce(function (s, it) { return s + it.w; }, 0);
-            var _lx = _CX_MX + _CX_BODY_W - _totW, _ly = y - 110000;
+            var _lx = _CX_MX + _CX_BODY_W - _totW, _ly = plotY + plotH + 560000;
             _items.forEach(function (it) {
                 sh.push(_cxRect(_lx, _ly, _sq, _sq, it.color));
                 sh.push(_cxTxt(it.name, _lx + _sq + _gap, _ly - 15000, it.w - _sq - _gap, 220000, { sz: 1050, col: '1E293B', algn: 'l' }));
@@ -2915,13 +2916,23 @@
                     return { title: (pages.length > 1 ? title + ' (' + (pi + 1) + '/' + pages.length + ')' : title), build: function () { return _cxBar(pg.map(_cn), series, _CX_BODY_Y, { pct: pct, h: availH }); } };
                 });
             }
-            function tablePages(title, head, rowsAll, rowH, sz, firstFrac, totalRow) {
-                var per = rowsPerTable(rowH); var pages = _cxPaginate(rowsAll, per);
+            function tablePages(title, head, rowsAll, rowH, sz, firstFrac, totalRow, subtitle) {
+                var subOff = 640000; /* espace réservé au sous-titre explicatif (page 1 seulement) */
+                var per = rowsPerTable(rowH);
+                var perFirst = subtitle ? Math.max(3, Math.floor((availH - subOff - rowH * 1.25) / rowH)) : per;
+                var pages = [], i0 = 0;
+                if (subtitle) { pages.push(rowsAll.slice(0, perFirst)); i0 = perFirst; }
+                for (var i = i0; i < rowsAll.length; i += per) pages.push(rowsAll.slice(i, i + per));
                 if (!pages.length) pages = [[]];
                 return pages.map(function (pg, pi) {
-                    var rows = (pi === 0 && totalRow) ? [totalRow].concat(pg.slice(0, per - 1)) : (pi === 0 && totalRow ? pg : pg);
-                    if (pi === 0 && totalRow) { rows = [totalRow].concat(pg); if (rows.length > per) { var extra = rows.splice(per); pages.splice(pi + 1, 0, extra); } }
-                    return { title: (pages.length > 1 ? title + ' (' + (pi + 1) + '/' + pages.length + ')' : title), build: function () { return _cxTable(head, rows, _CX_BODY_Y, { rowH: rowH, sz: sz, firstFrac: firstFrac }); } };
+                    var rows = pg;
+                    if (pi === 0 && totalRow) { rows = [totalRow].concat(pg); if (rows.length > (subtitle ? perFirst : per)) { var extra = rows.splice(subtitle ? perFirst : per); pages.splice(pi + 1, 0, extra); } }
+                    var sub = (subtitle && pi === 0) ? subtitle : null;
+                    var ty = sub ? _CX_BODY_Y + subOff : _CX_BODY_Y;
+                    return {
+                        title: (pages.length > 1 ? title + ' (' + (pi + 1) + '/' + pages.length + ')' : title),
+                        build: function () { return (sub ? _cxTxt(sub, _CX_MX, _CX_BODY_Y - 10000, _CX_BODY_W, subOff - 40000, { sz: 950, col: '475569', algn: 'l' }) : '') + _cxTable(head, rows, ty, { rowH: rowH, sz: sz, firstFrac: firstFrac }); }
+                    };
                 });
             }
             var S1 = [];
@@ -2961,7 +2972,8 @@
             var recoHead = ['Zone de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'];
             function recoRow(name, rc) { var id = _cxSum(rc, 'RECO_identifies'), re = _cxSum(rc, 'RECO_recuperes'); var pct = id > 0 ? Math.round(re / id * 100) : null; return [name, Math.round(id).toLocaleString('fr-FR'), Math.round(re).toLocaleString('fr-FR'), pct == null ? '–' : _cxCell(pct + '%', _cxPropCol(pct))]; }
             var recoTotal = (function () { var id = _cxSum(asRecs, 'RECO_identifies'), re = _cxSum(asRecs, 'RECO_recuperes'); var pct = id > 0 ? Math.round(re / id * 100) : null; return ['TOTAL', Math.round(id).toLocaleString('fr-FR'), Math.round(re).toLocaleString('fr-FR'), pct == null ? '–' : _cxCell(pct + '%', _cxPropCol(pct))]; })();
-            S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par ZS', recoHead, zsNames.map(function (z) { return recoRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, recoTotal));
+            var recoNote = 'Méthode de calcul : « Identifiés » = enfants perdus de vue repérés par les Relais Communautaires (RECO), somme Penta1 + Penta3 pour tous les âges (0-11, 12-23 et 24-59 mois) ; « Récupérés » = ces enfants ramenés puis effectivement vaccinés ; « % récupérés » = Récupérés ÷ Identifiés × 100. Source : DHIS2 (SNIS) — l’indicateur « par les RECO » n’est pas collecté pour la VAR.';
+            S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par ZS', recoHead, zsNames.map(function (z) { return recoRow(_cn(z), byZS[z]); }), 330000, 1200, 0.34, recoTotal, recoNote));
             S1 = S1.concat(tablePages('Enfants perdus de vue identifiés et récupérés par les RECO — par AS', ['Aire de Santé', 'Identifiés (RECO)', 'Récupérés (RECO)', '% récupérés'], asList.map(function (a) { return recoRow(_cn(a.name), a.recs); }), 300000, 1100, 0.34, null));
             /* 13-14 Taux d'abandon */
             S1 = S1.concat(chartPages("Taux d'abandon DTC1-DTC3 et BCG-VAR1(RR1) par ZS", zsNames, zsBy, [{ name: 'Abandon DTC1-DTC3 %', color: 'C62828', val: function (rc) { return Math.max(0, _cxAbanDTC(rc) || 0); } }, { name: 'Abandon BCG-VAR1 %', color: '6A1B9A', val: function (rc) { return Math.max(0, _cxAbanVAR(rc) || 0); } }], true));
@@ -3082,11 +3094,19 @@
                 ]
             };
         }
-        /* Remplit la page de garde (slide1) et les séances (slide10) du modèle */
-        async function _cxFillTemplate(zip, coverLine, sess) {
+        /* Remplit la page de garde (slide1) et les séances (slide10) du modèle.
+           cover = { period:'JUIN 2026', niveau:"L'ANTENNE PEV BUTA" } — rend la
+           phrase « PRÉSENTATION DES PERFORMANCES <période> DE <niveau> » dynamique
+           en remplaçant les runs de texte du modèle. */
+        async function _cxFillTemplate(zip, cover, sess) {
             if (zip.file('ppt/slides/slide1.xml')) {
                 var x1 = await zip.file('ppt/slides/slide1.xml').async('string');
-                x1 = x1.replace(/(ZONE DE SANT[ÉE] DE\s*:?)([^<]*)/i, '$1 ' + _cxEsc(coverLine));
+                /* run période (ex. « JANVIER À AVRIL 2026 ») → période sélectionnée */
+                x1 = x1.replace(/(<a:t>)\s*JANVIER[^<]*?\d{4}\s*(<\/a:t>)/i, '$1' + _cxEsc(cover.period) + '$2');
+                /* runs « DE LA ZONE DE » + « SANTÉ » + « DE: » → « DE <niveau> » */
+                x1 = x1.replace(/(<a:t>)\s*DE LA\s+ZONE DE\s*(<\/a:t>)/i, '$1 DE ' + _cxEsc(cover.niveau) + '$2');
+                x1 = x1.replace(/(<a:t>)\s*SANT[ÉE]\s*(<\/a:t>)/i, '$1$2');
+                x1 = x1.replace(/(<a:t>)\s*DE:\s*(<\/a:t>)/i, '$1$2');
                 zip.file('ppt/slides/slide1.xml', x1);
             }
             if (sess && zip.file('ppt/slides/slide10.xml')) {
@@ -3116,8 +3136,15 @@
                 if (!recs.length) throw new Error('Aucune donnée pour les filtres sélectionnés.');
                 var periods = (f.period && f.period.length) ? f.period.slice().sort() : uv(data, function (r) { return r._YM; }).sort();
                 var nPer = periods.length || 1;
-                var perLbl = periods.length ? (mL(periods[0]) + ' – ' + mL(periods[periods.length - 1])) : 'Toutes périodes';
-                var entLbl = _cn((f.zs && f.zs.length === 1) ? f.zs[0] : (f.antenne && f.antenne.length === 1 ? 'Antenne ' + f.antenne[0] : f.province));
+                var perLbl = !periods.length ? 'Toutes périodes' : (periods.length === 1 ? mL(periods[0]) : mL(periods[0]) + ' – ' + mL(periods[periods.length - 1]));
+                /* Niveau + nom de la DERNIÈRE entité sélectionnée (page de garde dynamique) */
+                var lvlWord, lvlName;
+                if (f.as && f.as.length === 1) { lvlWord = "L'AIRE DE SANTÉ"; lvlName = _cn(f.as[0]); }
+                else if (f.zs && f.zs.length === 1) { lvlWord = "LA ZONE DE SANTÉ"; lvlName = _cn(f.zs[0]); }
+                else if (f.antenne && f.antenne.length === 1) { lvlWord = "L'ANTENNE PEV"; lvlName = f.antenne[0]; }
+                else { lvlWord = "LA PROVINCE"; lvlName = _cn(f.province); }
+                var coverNiveau = lvlWord + ' ' + String(lvlName).toUpperCase();
+                var entLbl = _cn((f.as && f.as.length === 1) ? f.as[0] : (f.zs && f.zs.length === 1) ? f.zs[0] : (f.antenne && f.antenne.length === 1 ? 'Antenne ' + f.antenne[0] : f.province));
                 if (msg) msg.textContent = '⏳ Construction des analyses…';
                 var sec = _cxBuildSections(recs, nPer);
                 var slides = sec.slides;
@@ -3129,7 +3156,7 @@
                 var sess = _revueData();
                 var buf = await fetch('canevas_revue_formative_pev.pptx').then(function (r) { if (!r.ok) throw new Error('Modèle PPTX introuvable'); return r.arrayBuffer(); });
                 var zip = await _cxBuildDeck(buf, { slides: slides }, 11);
-                await _cxFillTemplate(zip, entLbl + ' — ' + perLbl, sess);
+                await _cxFillTemplate(zip, { period: perLbl.toUpperCase(), niveau: coverNiveau }, sess);
                 var out = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
                 var a = document.createElement('a'); a.href = URL.createObjectURL(out); a.download = 'Canevas_Revue_Formative_PEV_' + entLbl.replace(/\s+/g, '_') + '.pptx';
                 document.body.appendChild(a); a.click(); a.remove();
