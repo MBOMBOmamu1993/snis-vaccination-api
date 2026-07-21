@@ -259,6 +259,11 @@ BASE_SUM_SPECS = {
     "R_ceptacles_stock_d_but": ["R_ceptacles_stock_d_but"], "R_ceptacles_re_ues": ["R_ceptacles_re_ues"], "R_ceptacles_utilis_es": ["R_ceptacles_utilis_es"], "R_ceptacles_pertes": ["R_ceptacles_pertes"], "R_ceptacles_stock_fin": ["R_ceptacles_stock_fin"], "R_ceptacles_jours_rupture": ["R_ceptacles_jours_rupture"], "R_ceptacles_administr_es": ["R_ceptacles_administr_es"],
     "R_ceptacles_stock_max": ["R_ceptacles_stock_max"], "R_ceptacles_qte_a_commander": ["R_ceptacles_qte_a_commander"], "R_ceptacles_cmm": ["R_ceptacles_cmm"], "R_ceptacles_ajustement": ["R_ceptacles_ajustement"], "R_ceptacles_msd": ["R_ceptacles_msd"],
 
+    # ── RECO : enfants perdus de vue identifiés / récupérés par les RECO ──
+    #   (Penta1 ppMFLxX6NvU + Penta3 DZ2xt2mgVzQ, tous âges ; VAR non collectée) ──
+    "RECO_identifies": ["Perdues_de_vue_identifi_s_Penta1_0_11mois", "Perdues_de_vue_identifi_s_Penta1_12_23mois", "Perdues_de_vue_identifi_s_24_59mois", "Perdues_de_vue_identifi_s_Penta3_0_11mois", "Perdues_de_vue_identifi_s_Penta3_12_23mois", "Perdues_de_vue_identifi_s_Penta3_24_59mois"],
+    "RECO_recuperes": ["Perdues_de_vue_r_cup_r_s_Penta1_0_11mois", "Perdues_de_vue_r_cup_r_s_Penta1_12_23mois", "Perdues_de_vue_r_cup_r_s_Penta1_24_59mois", "Perdues_de_vue_r_cup_r_s_Penta3_0_11mois", "Perdues_de_vue_r_cup_r_s_Penta3_12_23mois", "Perdues_de_vue_r_cup_r_s_Penta3_24_59mois"],
+
 }
 
 DERIVED_SUM_SPECS = {
