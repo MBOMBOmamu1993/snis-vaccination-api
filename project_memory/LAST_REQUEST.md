@@ -1,10 +1,13 @@
 # Dernière requête
 
 Date : 22/07/2026
-Dernière demande : Étendre l'IA de l'onglet « Génération des analyses et
-  rapports » (tous les modèles, Kimi K3 inclus) à l'analyse et au rapport de
-  TOUTES les données et indicateurs DHIS2 de TOUS les programmes (au-delà du
-  PEV), pour toutes les années et toutes les entités ; ignorer les canevas
-  DV/DVD abandonnés ; push + merge en production.
-Fichiers concernés : docs/index.html (iaSystem + accueil/chips), project_memory/*
-Statut : FAIT et poussé sur main (production) — voir REQUEST_HISTORY du 22/07/2026.
+Dernière demande : Fiabiliser le function-calling de l'assistant IA (ids natifs
+  tool_calls, reasoning_content renvoyé à Kimi K3, filet de sécurité historique
+  + retry auto sur 400) et ajouter les compétences cartographie (helper ctx.geo
+  GeoJSON DHIS2, recette cartes choroplèthes, score qualité des données, format
+  de rapport 'carte' = page HTML interactive autonome). Session précédente
+  plantée en cours de route — reprise et finalisation.
+Fichiers concernés : docs/index.html (conversions, flux SSE, boucle agentique,
+  ctx, prompt système, outil generer_rapport, iaRepCarte), project_memory/*
+Statut : FAIT — tests 26/26 + carte HTML validés ; poussé sur main (production)
+  via API GitHub — voir REQUEST_HISTORY du 22/07/2026 (2e entrée).

@@ -92,3 +92,33 @@ Contexte permanent :
   0,0349 / 0,036 / 0,149 / 0,113 / 0,057) ; IDSR = périodes hebdo (2026W12,
   LAST_12_WEEKS) ; programIndicators = canevas DV ABANDONNÉS sans données →
   ne pas utiliser.
+
+État 22/07/2026 (2) — FIABILITÉ TOOL_CALLS + CARTOGRAPHIE (déployé) :
+- Function-calling durci (docs/index.html, tous fournisseurs) : les identifiants
+  NATIFS des tool_calls (Kimi call_*, Anthropic toolu_*) sont conservés de bout
+  en bout (flux SSE → historique interne → conversions) ; les réponses tool
+  portent tool_call_id et l'appariement est EXPLICITE par tid (repli positionnel
+  pour les anciens historiques sans tid). Kimi K3 : le reasoning_content d'un
+  message assistant est RENVOYÉ tel quel au tour suivant (iaMsgsToOpenAI) —
+  sinon 400 « reasoning_content must be passed back ».
+- Filet de sécurité iaSanitizeHistory(messages) : répare une COPIE de
+  l'historique (tool_calls sans toutes leurs réponses → dégradés en texte,
+  réponses partielles/orphelines repliées en note user ; appariement vérifié
+  par ensembles de tid quand ils existent). Retry AUTOMATIQUE unique dans
+  iaCallAPI sur erreur 400 mentionnant tool_calls/tool_use/tool_result/
+  tool_call_id/reasoning_content. IA.msgs n'est jamais modifié.
+- Cartographie : helper ctx.geo(niveau, parent) dans executer_js → GeoJSON
+  DHIS2 (organisationUnits.geojson ; 2=provinces via parent 'LEVEL-1', 3=ZS
+  d'une province, 4=AS ; features properties.id=UID, properties.na=nom) ;
+  prompt système enrichi : RECETTE CARTE choroplèthe Plotly (geojson +
+  locations UID + featureidkey 'properties.id', échelle provinces national /
+  ZS d'UNE province) + recette SCORE QUALITÉ des données (0,5×complétude
+  REPORTING_RATE + 0,3×promptitude REPORTING_RATE_ON_TIME + 0,2×cohérence
+  interne, sur 100). iaMissingAwait couvre aussi ctx.geo.
+- generer_rapport : NOUVEAU format 'carte' (enum + iaRepCarte) = page HTML
+  INTERACTIVE autonome téléchargée (.html) — figures Plotly navigables
+  (zoom/survol, jamais rasterisées), GeoJSON et données embarqués, Plotly
+  2.35.0 via CDN, page de garde/tableaux/signature identiques aux rapports.
+- Tests : 4/4 blocs script valides (vm.Script) + 26 scénarios de conversion
+  OpenAI/Anthropic, flux SSE fragmenté multi-appels, sanitize (copie intacte,
+  tid mismatch, historique sain inchangé) et détection 400 — tous OK.

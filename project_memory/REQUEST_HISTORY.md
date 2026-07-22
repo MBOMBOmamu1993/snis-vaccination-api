@@ -83,3 +83,36 @@ Action faite : Exploration complète du DHIS2 national via le proxy
   canevas + admin secret) via read-tree + hash-object + commit-tree + update-ref.
 Résultat : tous les modèles IA peuvent analyser/rapporter tous les programmes
   DHIS2 (PEV inclus) sur n'importe quelle année/entité ; production à jour.
+
+---
+
+Date : 22/07/2026 (2)
+Demande : Fiabiliser le function-calling de l'assistant IA : ids natifs des
+  tool_calls conservés + reasoning_content renvoyé à Kimi K3 + appariement
+  explicite par tid ; filet de sécurité iaSanitizeHistory + retry auto sur
+  erreur 400 tool_call ; compétences cartographie : helper ctx.geo (GeoJSON
+  DHIS2) + recette cartes choroplèthes + score qualité des données dans le
+  prompt ; format 'carte' (HTML interactif) dans generer_rapport. (Session
+  précédente plantée au milieu — reprise complète et finalisation.)
+Fichiers concernés : docs/index.html (iaReadOpenAIStream, iaReadAnthropicStream,
+  iaMsgsToOpenAI, iaMsgsToAnthropic, iaSanitizeHistory, iaCallAPI, iaAgentLoop,
+  iaGeo, iaRunTool, iaMissingAwait, iaSystem, IA_TOOLS/generer_rapport,
+  iaRepCarte, iaGenReport), project_memory/*
+Action faite : ids natifs (Kimi call_*, Anthropic toolu_*) propagés du flux SSE
+  à l'historique interne puis aux conversions ; messages tool dotés de
+  tool_call_id (appariement explicite, repli positionnel pour les historiques
+  sans tid) ; reasoning_content renvoyé à Kimi (sinon 400 « must be passed
+  back ») ; iaSanitizeHistory (copie : tool_calls incomplets dégradés en texte,
+  réponses partielles/orphelines repliées en note user, vérification par
+  ensembles de tid) + retry unique dans iaCallAPI sur 400 tool_call ; ctx.geo
+  (organisationUnits.geojson, parent LEVEL-1/UID) + recette carte Plotly
+  choropleth (featureidkey properties.id) + recette score qualité (0,5
+  complétude + 0,3 promptitude + 0,2 cohérence) dans iaSystem ; generer_rapport
+  format 'carte' → iaRepCarte : page HTML autonome (Plotly 2.35.0 CDN, figures
+  navigables non rasterisées, GeoJSON embarqué, garde/tableaux/signature).
+  Tests : 4/4 blocs script valides (vm.Script), 26 scénarios (conversions,
+  SSE fragmenté 2 appels parallèles, sanitize, détection 400) + génération
+  carte HTML (JS injecté valide) — tous OK. Push : API GitHub directe
+  (blob → tree → commit → ref) car git local cassé (clone partiel).
+Résultat : function-calling fiabilisé pour Kimi K3/Claude/Ollama, cartes
+  interactives DHIS2 disponibles (chat + fichier autonome), production à jour.

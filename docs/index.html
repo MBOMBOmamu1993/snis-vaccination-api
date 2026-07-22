@@ -9657,6 +9657,7 @@
                     "- Clés du 1er enregistrement : " + JSON.stringify(keys.slice(0, 80)),
                     "- ctx.AG : " + JSON.stringify(typeof AG !== 'undefined' ? AG : []) + " · Provinces : " + JSON.stringify(provs) + " · Périodes : " + (pers.length ? pers[0] + "–" + pers[pers.length - 1] : "?"),
                     "- ctx.load(chemin) : './data/dashboard/by_province.json.gz' (agrégats mensuels par province : _Province,_YM,n,rap,comp,prompt,doses ex. BCG_0_11 + variantes _fixe) ; './data/dashboard/by_zs.json.gz' (idem par ZS : _ZS,_Province,_YM) ; './data/cibles_ajustees/2025.json' et 2026.json (cibles — inspecte la structure) ; './data/ou_map.json.gz' (référentiel ~25 000 FOSA). ctx.loadUrl(url) : ressource https publique (ex. GeoJSON RDC).",
+                    "- ctx.geo(niveau, parent) : GeoJSON DHIS2 des unités d'organisation (ASYNCHRONE — await) : niveau 2 = 26 provinces (parent 'LEVEL-1', défaut), 3 = ZS (parent = UID de la province), 4 = AS (parent = UID de la ZS). Chaque feature a properties.id (UID DHIS2) et properties.na (nom) : le joint aux valeurs analytics se fait sur l'UID.",
                     "",
                     "## DHIS2 national : accès COMPLET en lecture (source principale)",
                     "Toutes les données du SNIS te sont accessibles — TOUS les programmes (vaccination PEV, paludisme PNLP, tuberculose PNLT, VIH/IST PNLS, nutrition, santé de la mère et du nouveau-né, planification familiale, surveillance épidémiologique, logistique, hôpitaux, banque de sang…) : tous éléments (~9 500), indicateurs (~1 570), datasets (42), niveaux, périodes. Ne réponds JAMAIS qu'une donnée est indisponible sans avoir cherché dans le DHIS2. Les fichiers locaux ne couvrent que le PEV 2025–2026 : pour tout autre programme, toute autre année ou comparaison pluriannuelle, va au DHIS2 (pe:2019, pe:201901;…, LAST_5_YEARS/LAST_10_YEARS).",
@@ -9671,7 +9672,8 @@
                     "- DÉCOUVERTE d'un indicateur : indicators.json?filter=name:ilike:<mot-clé>&fields=id,name,numerator,denominator,indicatorType&pageSize=50 — la recherche par NOM est la plus fiable (le filtre par groupe ne voit qu'une partie des groupes) : 'couverture', 'paludisme', 'tuberculose', 'CPN', 'accouchement', 'ARV', 'létalité', 'abandon'…",
                     "- CALCUL d'un indicateur : laisse DHIS2 le faire — interroge l'indicateur directement dans analytics (dimension=dx:<UID_indicateur>&dimension=pe:…&dimension=ou:…) : la valeur renvoyée a déjà la formule officielle appliquée (numérateur/dénominateur × facteur du type : Percentage ×100, Per 100 000 ×100000, Number ×1). ⚠ Requête lourde côté serveur : UN SEUL indicateur par appel analytics ; si l'appel expire ou échoue (erreur 5xx), REPLI IMMÉDIAT : prends les dataElements du numerator/denominator de sa formule (légers) et calcule toi-même — pour comparer plusieurs séries ou indicateurs, c'est aussi la voie à privilégier.",
                     "- LECTURE DES FORMULES (numerator/denominator) : sommes de #{UID_élément} ou #{UID_élément.UID_combo} ; R{UID_dataset.ACTUAL_REPORTS}/EXPECTED_REPORTS/ACTUAL_REPORTS_ON_TIME = rapports soumis/attendus/à temps ; dénominateur souvent #{WLSKVyA8LoY} (population) × coefficient : 0,04 = grossesses/naissances vivantes attendues (maternité, SP, BCG, Td), 0,0349 = nourrissons survivants 0-11 mois (vaccins nourrisson), 0,036 = enfants 12-23 mois, 0,149 = 12-59 mois, 0,113 = 24-59 mois, 0,057 = 6-23 mois.",
-                    "- COMPLÉTUDE/PROMPTITUDE : dimension=dx:<UID_dataset>.REPORTING_RATE dans analytics (ex. ahT7ysZZ913.REPORTING_RATE = complétude du formulaire A-Edition 2025) ; indicateurs globaux officiels : L3KahLq4YFo (complétude globale des rapports ESS, 11 formulaires) et bnyWMbmL5IR (promptitude globale).",
+                    "- COMPLÉTUDE/PROMPTITUDE : dimension=dx:<UID_dataset>.REPORTING_RATE dans analytics (ex. ahT7ysZZ913.REPORTING_RATE = complétude du formulaire A-Edition 2025) et <UID_dataset>.REPORTING_RATE_ON_TIME pour la promptitude ; indicateurs globaux officiels : L3KahLq4YFo (complétude globale des rapports ESS, 11 formulaires) et bnyWMbmL5IR (promptitude globale).",
+                    "- SCORE QUALITÉ DES DONNÉES (recette toute faite) : pour une entité et une période, calcule 1) complétude moyenne des datasets concernés (REPORTING_RATE), 2) promptitude moyenne (REPORTING_RATE_ON_TIME), 3) cohérence interne (% de contrôles réussis : Penta3 ≤ Penta1, VAR2 ≤ VAR1, taux ≤ 100 %, décès ≤ cas) ; score composite = 0,5 × complétude + 0,3 × promptitude + 0,2 × cohérence, sur 100. Présente TOUJOURS les 3 composantes avec le score, et cite les entités/contrôles en échec.",
                     "- PROGRAM INDICATORS (programIndicators.json) : ils n'existent que pour les canevas d'enquête infrastructure « DV » (programmes à événements ABANDONNÉS, sans données) — ne les utilise pas sauf demande historique explicite. Toute l'analyse de routine repose sur dataElements + indicators + datasets.",
                     "",
                     "## Conventions PEV RDC — dénominateurs et UID clés (à utiliser directement, ne les recherche pas)",
@@ -9685,10 +9687,10 @@
                     "",
                     "## Méthode (OBLIGATOIRE)",
                     "1. TOUS les calculs via executer_js — n'invente JAMAIS un chiffre ; explore la structure en cas de doute ; si une donnée manque, dis-le.",
-                    "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. Carte sans GeoJSON → barres classées par zone.",
+                    "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. RECETTE CARTE choroplèthe : const gj = await ctx.geo(2) (provinces) ou await ctx.geo(3, uidProvince) (ZS) ; récupère les valeurs analytics avec dimension=ou:LEVEL-2/LEVEL-3 (les lignes portent l'UID) ; puis afficher_resultat type 'carte' avec figure={data:[{type:'choropleth', geojson:gj, locations:[UID…], z:[valeurs…], featureidkey:'properties.id', zauto:true, colorscale:'Blues', marker:{line:{color:'#fff',width:0.5}}}], layout:{margin:{t:30,r:0,b:0,l:0}}} — N'affiche JAMAIS le GeoJSON dans ta réponse, passe-le directement dans la figure. Échelle raisonnable : provinces pour une vue nationale, ZS d'UNE province à la fois. Sans GeoJSON disponible → barres classées par zone.",
                     "3. Formules : préfère TOUJOURS l'indicateur officiel DHIS2 (formule déjà appliquée côté serveur) ; sinon : taux/proportion = numérateur/dénominateur×100 (dénominateur de couverture = population × coefficient officiel, cumulé sur la période) ; CV% = doses cumulées/cible cumulée×100 (cible mensuelle = annuelle/12) ; abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100 ; complétude = reçus/attendus×100 ; taux d'attaque = cas/population×100 000 ; létalité = décès/cas×100.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",
-                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX) : calcule d'abord TOUT. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations.",
+                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX/CARTE) : calcule d'abord TOUT. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif ; format 'carte' = page HTML INTERACTIVE autonome — cartes choroplèthes et graphiques Plotly navigables, zoom/survol, GeoJSON et données embarqués : idéal pour une carte à partager) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations. Pour le format 'carte', construis les figures choroplèthes via ctx.geo (recette carte ci-dessus) : les figures y restent interactives, jamais figées en image.",
                     "",
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
@@ -9714,7 +9716,7 @@
                     type: 'function',
                     function: {
                         name: 'executer_js',
-                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), loadUrl(url), mL(ym)→libellé du mois. ⚠ ctx.dhis2, ctx.load et ctx.loadUrl sont ASYNCHRONES : écris TOUJOURS `const r = await ctx.dhis2(...)` — sans await tu reçois une Promise vide et tes résultats seront à 0. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), geo(niveau,parent)→GeoJSON DHIS2 des unités d'organisation (2=provinces, 3=ZS, 4=AS ; parent=UID ou 'LEVEL-n', défaut 'LEVEL-1'), loadUrl(url), mL(ym)→libellé du mois. ⚠ ctx.dhis2, ctx.geo, ctx.load et ctx.loadUrl sont ASYNCHRONES : écris TOUJOURS `const r = await ctx.dhis2(...)` — sans await tu reçois une Promise vide et tes résultats seront à 0. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
                         parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
@@ -9748,12 +9750,12 @@
                     type: 'function',
                     function: {
                         name: 'generer_rapport',
-                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word (vrai fichier .docx natif, éditable dans Word) ou PPTX. À utiliser quand l'utilisateur demande un rapport, un bulletin ou une présentation — ou pour REPRODUIRE fidèlement un modèle joint non modifiable sur place (.doc/.ppt/PDF) : dans ce cas, reprendre TOUTES les sections du modèle dans l'ordre, recopier les textes inchangés, et n'actualiser que les données. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Sans modèle, structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau(x) et/ou figure Plotly + commentaire) → conclusions et recommandations. Exigence : document impeccable — titres de sections qui énoncent le constat, chaque tableau suivi d'un commentaire analytique, page de garde générée automatiquement (en-tête officiel multi-lignes possible via style.entete_lignes), bloc signature via signature. Style par défaut : design du rapport officiel type PEV — bleu #0b5e8e, corps Times New Roman, titres Arial gras ; adapter style.couleur_principale/police si le client le demande ou joint un modèle.",
+                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word (vrai fichier .docx natif, éditable dans Word), PPTX ou CARTE (format='carte' : page HTML interactive autonome — figures Plotly navigables, zoom et survol actifs, données et GeoJSON embarqués dans le fichier ; idéal pour les cartes choroplèthes à partager). À utiliser quand l'utilisateur demande un rapport, un bulletin, une présentation ou une carte interactive — ou pour REPRODUIRE fidèlement un modèle joint non modifiable sur place (.doc/.ppt/PDF) : dans ce cas, reprendre TOUTES les sections du modèle dans l'ordre, recopier les textes inchangés, et n'actualiser que les données. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Sans modèle, structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau(x) et/ou figure Plotly + commentaire) → conclusions et recommandations. Exigence : document impeccable — titres de sections qui énoncent le constat, chaque tableau suivi d'un commentaire analytique, page de garde générée automatiquement (en-tête officiel multi-lignes possible via style.entete_lignes), bloc signature via signature. Style par défaut : design du rapport officiel type PEV — bleu #0b5e8e, corps Times New Roman, titres Arial gras ; adapter style.couleur_principale/police si le client le demande ou joint un modèle.",
                         parameters: {
                             type: 'object',
                             properties: {
                                 titre: { type: 'string' },
-                                format: { type: 'string', enum: ['pdf', 'word', 'pptx'] },
+                                format: { type: 'string', enum: ['pdf', 'word', 'pptx', 'carte'], description: "pdf (défaut) | word (.docx natif) | pptx | carte (page HTML interactive autonome : figures Plotly navigables, GeoJSON embarqué)" },
                                 sous_titre: { type: 'string' },
                                 periode: { type: 'string', description: "Période analysée, ex. 'Janvier – Juin 2026'" },
                                 auteur: { type: 'string' },
@@ -9865,6 +9867,17 @@
                 try { return JSON.parse(tt); } catch (e) { return tt; }
             }
 
+            /* GeoJSON des unités d'organisation DHIS2 (cartes choroplèthes) :
+               niveau 2 = provinces, 3 = ZS, 4 = AS, 5 = FOSA ; parent = UID
+               d'unité ou 'LEVEL-n' (défaut 'LEVEL-1' → toutes les provinces).
+               Les features ont properties.id (UID) et properties.na (nom). */
+            async function iaGeo(level, parent) {
+                var lv = parseInt(level, 10); if (!(lv >= 2 && lv <= 5)) lv = 2;
+                var par = String(parent || 'LEVEL-1');
+                if (!/^[\w-]+$/.test(par)) throw new Error('Parent invalide : ' + par);
+                return await iaDhis2('organisationUnits.geojson', 'level=' + lv + '&parent=' + par);
+            }
+
             /* Un tool_call Ollama a la forme {function:{name, arguments}}. `arguments`
                est un objet dans l'API native, une chaîne JSON en mode compatible
                OpenAI : les deux cas sont acceptés. */
@@ -9893,7 +9906,7 @@
                qui renvoie une Promise vide (résultats à 0) et fait boucler le modèle.
                On prévient le modèle dans le résultat pour qu'il corrige au tour suivant. */
             function iaMissingAwait(code) {
-                var re = /ctx\s*\.\s*(dhis2|load|loadUrl)\s*\(/g, m, hits = [];
+                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo)\s*\(/g, m, hits = [];
                 while ((m = re.exec(code))) {
                     var before = code.slice(Math.max(0, m.index - 40), m.index);
                     if (!/await\s*(\(\s*)?$/.test(before) && !/(Promise\s*\.\s*all|\.then|return)\s*[([]?\s*$/.test(before)) hits.push(m[1]);
@@ -9903,7 +9916,7 @@
 
             async function iaRunTool(name, input, msgsEl) {
                 if (name === 'executer_js') {
-                    var ctx = { S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, mL: mL };
+                    var ctx = { S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, geo: iaGeo, mL: mL };
                     var fn = new Function('ctx', '"use strict";return (async function(){' + input.code + '\n})();');
                     var out = await fn(ctx);
                     var s = (out === undefined) ? 'undefined (le code doit se terminer par return)' : JSON.stringify(out);
@@ -10100,16 +10113,20 @@
                         if (m.content) ab.push({ type: 'text', text: m.content });
                         ids = [];
                         (m.tool_calls || []).forEach(function (tc, k) {
-                            var id = 'call_' + i + '_' + k;
+                            /* id NATIF du fournisseur conservé quand il existe (Kimi) ;
+                               sinon forgé (Ollama n'a pas d'identifiant de tool_call). */
+                            var id = tc.id || ('call_' + i + '_' + k);
                             ids.push(id);
                             ab.push({ type: 'tool_use', id: id, name: iaToolName(tc), input: iaToolArgs(tc) });
                         });
                         out.push({ role: 'assistant', content: ab.length ? ab : [{ type: 'text', text: '…' }] });
                     } else if (m.role === 'tool') {
-                        /* Anthropic attend TOUS les résultats d'un tour dans un seul message */
+                        /* Anthropic attend TOUS les résultats d'un tour dans un seul message.
+                           Appariement EXPLICITE par tid (tool_call_id mémorisé à l'exécution),
+                           position en secours. */
                         var res = [], k = 0;
                         while (i < messages.length && messages[i].role === 'tool') {
-                            res.push({ type: 'tool_result', tool_use_id: ids[k] || ('call_' + i + '_' + k), content: String(messages[i].content || '') });
+                            res.push({ type: 'tool_result', tool_use_id: messages[i].tool_call_id || ids[k] || ('call_' + i + '_' + k), content: String(messages[i].content || '') });
                             i++; k++;
                         }
                         i--;
@@ -10124,8 +10141,13 @@
                 });
             }
             /* Ollama -> OpenAI (Kimi) : messages texte ou multimodaux, tool_calls
-               avec identifiants forgés (comme pour Anthropic) et arguments en chaîne
-               JSON, résultats d'outils en messages role:'tool' appariés. */
+               avec leurs identifiants NATIFS (tc.id renvoyé par Kimi — requis pour
+               l'appariement) ou forgés en secours (Ollama), arguments en chaîne
+               JSON, résultats d'outils en messages role:'tool' appariés
+               EXPLICITEMENT par tid (tool_call_id mémorisé à l'exécution).
+               Kimi K3 (modèle à raisonnement) EXIGE que le reasoning_content
+               d'un message assistant soit renvoyé tel quel au tour suivant —
+               sinon erreur 400 (« reasoning_content … must be passed back »). */
             function iaMsgsToOpenAI(messages) {
                 var out = [], ids = [];
                 for (var i = 0; i < messages.length; i++) {
@@ -10141,9 +10163,10 @@
                     } else if (m.role === 'assistant') {
                         ids = [];
                         var am = { role: 'assistant', content: m.content || '' };
+                        if (m.thinking) am.reasoning_content = m.thinking;
                         if (m.tool_calls && m.tool_calls.length) {
                             am.tool_calls = m.tool_calls.map(function (tc, k) {
-                                var id = 'call_' + i + '_' + k;
+                                var id = tc.id || ('call_' + i + '_' + k);
                                 ids.push(id);
                                 return { id: id, type: 'function', function: { name: iaToolName(tc), arguments: JSON.stringify(iaToolArgs(tc)) } };
                             });
@@ -10153,11 +10176,60 @@
                         /* OpenAI attend un message tool PAR appel, avec son tool_call_id */
                         var k = 0;
                         while (i < messages.length && messages[i].role === 'tool') {
-                            out.push({ role: 'tool', tool_call_id: ids[k] || ('call_' + i + '_' + k), content: String(messages[i].content || '') });
+                            out.push({ role: 'tool', tool_call_id: messages[i].tool_call_id || ids[k] || ('call_' + i + '_' + k), content: String(messages[i].content || '') });
                             i++; k++;
                         }
                         i--;
                     }
+                }
+                return out;
+            }
+
+            /* ── Filet de sécurité : répare une COPIE de l'historique avant envoi ──
+               Cas traités (historique corrompu par une interruption ou un basculement
+               de fournisseur en plein tour d'outils) :
+                 • message assistant avec tool_calls SANS toutes leurs réponses tool
+                   → tool_calls retirés (le texte reste), réponses partielles repliées
+                     en note utilisateur ;
+                 • message role:'tool' orphelin (sans tool_calls qui précèdent)
+                   → replié en note utilisateur ;
+               L'historique interne (IA.msgs) n'est JAMAIS modifié : la version
+               assainie ne sert qu'à l'appel courant. */
+            function iaSanitizeHistory(messages) {
+                var out = [];
+                for (var i = 0; i < messages.length; i++) {
+                    var m = messages[i];
+                    if (m.role === 'assistant' && m.tool_calls && m.tool_calls.length) {
+                        var need = m.tool_calls.length, got = 0;
+                        while (i + 1 + got < messages.length && messages[i + 1 + got].role === 'tool') got++;
+                        var complet = (got === need);
+                        /* Quand les tid existent DES DEUX côtés, l'appariement est
+                           explicite : les ensembles d'identifiants doivent coïncider
+                           (sinon une réponse étrangère masquerait une réponse manquante). */
+                        var tids = m.tool_calls.map(function (tc) { return tc && tc.id; }).filter(Boolean);
+                        if (tids.length === need) {
+                            var rtids = [];
+                            for (var k0 = 0; k0 < got; k0++) { var t0 = messages[i + 1 + k0].tool_call_id; if (t0) rtids.push(t0); }
+                            if (rtids.length === got) complet = (got === need) && tids.every(function (id) { return rtids.indexOf(id) >= 0; });
+                        }
+                        if (complet) {
+                            out.push(m);
+                            for (var k = 0; k < need; k++) out.push(messages[++i]);
+                        } else {
+                            var c = {};
+                            for (var key in m) if (key !== 'tool_calls' && key !== '_thinkBlocks') c[key] = m[key];
+                            if (!c.content) c.content = '(appel d\'outil interrompu)';
+                            out.push(c);
+                            if (got > 0) {
+                                var note = [];
+                                for (var k2 = 0; k2 < got; k2++) note.push(String(messages[i + 1 + k2].content || ''));
+                                out.push({ role: 'user', content: '(Résultats d\'outils récupérés après interruption)\n' + note.join('\n---\n') });
+                                i += got;
+                            }
+                        }
+                    } else if (m.role === 'tool') {
+                        out.push({ role: 'user', content: '(Résultat d\'outil hors contexte)\n' + String(m.content || '') });
+                    } else out.push(m);
                 }
                 return out;
             }
@@ -10167,7 +10239,7 @@
                la clé du service doit rester côté serveur.
                  mode 'code' → x-access-code (quota décompté par le proxy)
                  mode 'key'  → clé personnelle du fournisseur, simplement relayée. */
-            async function iaCallAPI(messages, onText, onThink, provKey) {
+            async function iaCallAPI(messages, onText, onThink, provKey, _rs) {
                 var mode = cfg('mode') || 'key';
                 /* provKey : fournisseur figé par la boucle agentique — un changement
                    dans ⚙ Accès ne s'applique qu'à la prochaine demande, jamais au
@@ -10245,6 +10317,14 @@
                         iaThinkOff[prov.model] = true;
                         return await iaCallAPI(messages, onText, onThink, pk);
                     }
+                    /* Erreur 400 liée à l'appariement des tool_calls (historique
+                       corrompu : réponse tool manquante/orpheline, id non reconnu,
+                       reasoning_content absent…) → UNE retry automatique sur une
+                       copie assainie de l'historique (iaSanitizeHistory). */
+                    if (resp.status === 400 && (!_rs || !_rs.sanitized) && /tool[_ ]?calls?|tool_use|tool_result|tool_call_id|reasoning_content/i.test(msg)) {
+                        if (onThink) onThink();
+                        return await iaCallAPI(iaSanitizeHistory(messages), onText, onThink, pk, { sanitized: true });
+                    }
                     var bascule = ' Vous pouvez basculer sur un autre modèle dans ⚙ Accès.';
                     if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre ' + prov.keyLabel + ' (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
                     if (resp.status === 402) msg = 'Crédits épuisés sur ce compte (' + prov.label + ').' + bascule + ' ' + msg;
@@ -10311,7 +10391,7 @@
                         if (ev.type === 'content_block_start') {
                             var cb = ev.content_block;
                             if (cb.type === 'text') blocks[ev.index] = { type: 'text', text: '' };
-                            else if (cb.type === 'tool_use') blocks[ev.index] = { type: 'tool_use', name: cb.name, _json: '' };
+                            else if (cb.type === 'tool_use') blocks[ev.index] = { type: 'tool_use', id: cb.id || null, name: cb.name, _json: '' };
                             else if (cb.type === 'thinking') { blocks[ev.index] = { type: 'thinking', thinking: '', _sig: null }; if (onThink) onThink(); }
                             else if (cb.type === 'redacted_thinking') blocks[ev.index] = { type: 'redacted_thinking', data: cb.data || '' };
                             else blocks[ev.index] = { type: cb.type };
@@ -10331,7 +10411,9 @@
                     if (b.type === 'text') text += (b.text || '');
                     else if (b.type === 'tool_use') {
                         var inp = {}; try { inp = b._json ? JSON.parse(b._json) : {}; } catch (e) { }
-                        toolCalls.push({ function: { name: b.name, arguments: inp } });
+                        var tu = { function: { name: b.name, arguments: inp } };
+                        if (b.id) tu.id = b.id; /* id natif Anthropic (toolu_…) conservé */
+                        toolCalls.push(tu);
                     } else if (b.type === 'thinking') {
                         thinkTxt += (b.thinking || '');
                         var tb = { type: 'thinking', thinking: b.thinking || '' };
@@ -10345,9 +10427,12 @@
             }
 
             /* Flux OpenAI/Kimi — SSE « data: {json} » terminé par « data: [DONE] ».
-                Deltas : choices[0].delta.content (texte), .reasoning_content (K3),
-                .tool_calls (fragments accumulés par index : name puis arguments).
-                Résultat normalisé au format commun (tool_calls {function:{name,arguments}}). */
+                 Deltas : choices[0].delta.content (texte), .reasoning_content (K3),
+                 .tool_calls (fragments accumulés par index : id et name au 1er
+                 fragment, arguments ensuite). L'identifiant NATIF du tool_call
+                 (tc.id, ex. « call_abc123 » chez Kimi) est capturé et propagé dans
+                 le résultat normalisé : l'appariement des réponses se fait
+                 EXPLICITEMENT par ce tid, jamais par position seule. */
             async function iaReadOpenAIStream(resp, onText, onThink) {
                 var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
                 var text = '', thinking = '', tcs = {}, doneReason = null;
@@ -10361,7 +10446,8 @@
                     if (d.content) { text += d.content; if (onText) onText(d.content); }
                     (d.tool_calls || []).forEach(function (tc) {
                         var ix = tc.index || 0;
-                        if (!tcs[ix]) tcs[ix] = { name: '', args: '' };
+                        if (!tcs[ix]) tcs[ix] = { id: null, name: '', args: '' };
+                        if (tc.id) tcs[ix].id = tc.id;
                         if (tc.function) {
                             if (tc.function.name) tcs[ix].name += tc.function.name;
                             if (tc.function.arguments) tcs[ix].args += tc.function.arguments;
@@ -10380,7 +10466,9 @@
                 }
                 var toolCalls = Object.keys(tcs).sort(function (a, b) { return a - b; }).map(function (ix) {
                     var args = {}; try { args = JSON.parse(tcs[ix].args || '{}'); } catch (e) { }
-                    return { function: { name: tcs[ix].name, arguments: args } };
+                    var o = { function: { name: tcs[ix].name, arguments: args } };
+                    if (tcs[ix].id) o.id = tcs[ix].id;
+                    return o;
                 });
                 return { content: text, thinking: thinking, tool_calls: toolCalls, done_reason: doneReason };
             }
@@ -10419,9 +10507,9 @@
                         msgsEl.appendChild(w2); iaScroll(msgsEl);
                         try {
                             var out = await iaRunTool(name, args, msgsEl);
-                            IA.msgs.push({ role: 'tool', tool_name: name, content: out });
+                            IA.msgs.push({ role: 'tool', tool_name: name, tool_call_id: resp.tool_calls[i].id || null, content: out });
                         } catch (e) {
-                            IA.msgs.push({ role: 'tool', tool_name: name, content: 'Erreur : ' + (e && e.message || e) });
+                            IA.msgs.push({ role: 'tool', tool_name: name, tool_call_id: resp.tool_calls[i].id || null, content: 'Erreur : ' + (e && e.message || e) });
                         } finally { w2.remove(); }
                     }
                 }
@@ -10911,6 +10999,87 @@
                 } finally { host.remove(); }
             }
 
+            /* ═══ COMPÉTENCE CARTE : page HTML INTERACTIVE autonome ═══
+               Contrairement aux rapports PDF/Word (figures figées en PNG), les
+               figures restent des graphiques Plotly NAVIGABLES (zoom, survol,
+               légende cliquable) — Plotly est chargé depuis le CDN, les données
+               et le GeoJSON sont embarqués dans le fichier téléchargé. */
+            function iaRepCarte(inp, safe) {
+                var st = inp.style || {};
+                var C = st.couleur_principale || '#0b5e8e';
+                var C2 = st.couleur_secondaire || C;
+                var font = st.police || "'Times New Roman', Georgia, serif";
+                var hfont = st.police ? font : "Arial, Helvetica, sans-serif";
+                var entete = st.entete || 'Programme Élargi de Vaccination — RDC';
+                var pied = st.pied_de_page || 'Carte générée automatiquement par l\'assistant IA du Dashboard PEV de routine — données DHIS2 (SNIS RDC), sujettes à validation.';
+                var logo = iaLogoData(st.logo);
+                var date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                var figs = [];
+                function escH(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+                var enteteHtml;
+                if (st.entete_lignes && st.entete_lignes.length) {
+                    enteteHtml = st.entete_lignes.map(function (l) { return '<div style="font-size:13px;font-weight:700;color:#1f1f1f;margin:2px 0">' + escH(l) + '</div>'; }).join('');
+                } else {
+                    enteteHtml = '<div style="font-size:12px;letter-spacing:3px;color:' + (st.couleur_secondaire ? C2 : '#8a877e') + ';text-transform:uppercase">' + escH(entete) + '</div>';
+                }
+                var h = '<header style="text-align:center;padding:34px 24px 22px;border-bottom:3px solid ' + C + '">';
+                if (logo) h += '<div style="margin-bottom:16px"><img src="' + logo + '" style="height:64px;max-width:220px;object-fit:contain"></div>';
+                h += enteteHtml +
+                    '<h1 style="font-family:' + hfont + ';font-size:26px;color:' + C + ';margin:18px 0 8px">' + escH(inp.titre || 'Carte interactive') + '</h1>' +
+                    (inp.sous_titre ? '<div style="font-size:15px;color:#555">' + escH(inp.sous_titre) + '</div>' : '') +
+                    (inp.periode ? '<div style="margin-top:12px;font-size:13px;color:#444"><b>Période :</b> ' + escH(inp.periode) + '</div>' : '') +
+                    '<div style="margin-top:14px;color:#8a877e;font-size:11px">' + (inp.auteur ? escH(inp.auteur) + ' · ' : '') + 'Généré le ' + date + ' · Source : DHIS2 (SNIS)</div></header>';
+                h += '<main style="max-width:980px;margin:0 auto;padding:10px 24px 30px">';
+                (inp.sections || []).forEach(function (sec, i) {
+                    h += '<section style="margin-top:30px">' +
+                        '<h2 style="font-family:' + hfont + ';color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:18px">' + (i + 1) + '. ' + escH(sec.titre || '') + '</h2>';
+                    if (sec.contenu) h += '<div style="font-size:13px;line-height:1.6">' + md(sec.contenu) + '</div>';
+                    var tbls = [];
+                    if (sec.tableau && sec.tableau.colonnes) tbls.push(sec.tableau);
+                    (sec.tableaux || []).forEach(function (tb) { if (tb && tb.colonnes) tbls.push(tb); });
+                    tbls.forEach(function (tb) {
+                        if (tb.titre) h += '<div style="font-weight:700;font-style:italic;color:#444;font-size:12px;margin:12px 0 4px">' + escH(tb.titre) + '</div>';
+                        h += '<table style="border-collapse:collapse;width:100%;font-size:11.5px;margin:6px 0 12px"><tr>' +
+                            tb.colonnes.map(function (c) { return '<th style="font-family:' + hfont + ';background:' + C + ';color:#fff;padding:6px 8px;border:1px solid ' + C + ';text-align:left">' + escH(c) + '</th>'; }).join('') + '</tr>';
+                        (tb.lignes || []).forEach(function (l, ri) {
+                            h += '<tr>' + (l || []).map(function (v) { return '<td style="border:1px solid #c6d3dc;padding:5px 8px;' + (ri % 2 ? 'background:#eef5fa' : '') + '">' + escH(v) + '</td>'; }).join('') + '</tr>';
+                        });
+                        h += '</table>';
+                        if (tb.commentaire) h += '<div style="font-size:12px;margin:0 0 12px"><b>Commentaire :</b> ' + md(tb.commentaire) + '</div>';
+                    });
+                    if (sec.figure) {
+                        var fid = 'iafig' + i;
+                        figs.push({ id: fid, fig: sec.figure });
+                        h += '<div id="' + fid + '" style="min-height:460px;margin:10px 0"></div>';
+                    }
+                    if (sec.commentaire) h += '<div style="font-size:12px;margin:8px 0 0"><b>Commentaire :</b> ' + md(sec.commentaire) + '</div>';
+                    h += '</section>';
+                });
+                var sig = inp.signature;
+                if (sig && (sig.lieu || sig.fonction || sig.nom)) {
+                    h += '<div style="margin-top:40px;font-size:13px">' +
+                        '<div>Fait à ' + escH(sig.lieu || '') + (sig.date ? ', le ' + escH(sig.date) : '') + '.</div>' +
+                        (sig.fonction ? '<div style="text-align:right;font-weight:700;margin-top:22px">' + escH(sig.fonction) + '</div>' : '') +
+                        (sig.nom ? '<div style="text-align:right;font-weight:700;margin-top:52px">' + escH(sig.nom) + '</div>' : '') +
+                        '</div>';
+                }
+                h += '</main><footer style="max-width:980px;margin:0 auto;padding:10px 24px 26px;color:#8a877e;font-size:10.5px;border-top:1px solid #e0e0e0">' + escH(pied) + '</footer>';
+                /* Figures injectées en JSON (</ échappé pour ne pas rompre le script) */
+                var js = figs.map(function (f) {
+                    return 'try{Plotly.newPlot(document.getElementById(' + JSON.stringify(f.id) + '),' +
+                        JSON.stringify(f.fig.data || []).replace(/<\//g, '<\\/') + ',' +
+                        JSON.stringify(f.fig.layout || {}).replace(/<\//g, '<\\/') +
+                        ',{responsive:true,displaylogo:false});}catch(e){}';
+                }).join('\n');
+                var doc = '<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n' +
+                    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+                    '<title>' + escH(inp.titre || 'Carte interactive') + '</title>\n' +
+                    '<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"><\/script>\n' +
+                    '<style>body{margin:0;background:#f7fafc;color:#222;font-family:' + font + '}main,header,footer{background:#fff}header,main,footer{max-width:980px;margin:0 auto}header{margin-top:0}@media print{.Plotly,.js-plotly-plot{page-break-inside:avoid}}</style>\n' +
+                    '</head>\n<body>\n' + h + '\n<script>\n' + js + '\n<\/script>\n</body>\n</html>';
+                iaDlBlob(safe + '.html', 'text/html;charset=utf-8', doc);
+            }
+
             /* ═══ COMPÉTENCE WORD : génération d'un VRAI .docx natif (OOXML) ═══
                Remplace l'ancienne astuce MHTML (.doc) : le fichier produit est un
                authentique document Word éditable — styles de titres, tableaux à
@@ -11158,6 +11327,10 @@
                 var secs = iaParseMaybe(inp.sections) || [];
                 if (!Array.isArray(secs)) secs = [secs];
                 inp.sections = secs;
+                /* Format 'carte' déterminé AVANT la boucle : ses figures restent
+                   interactives (pas de rasterisation PNG). */
+                var fmt0 = String(inp.format || 'pdf').toLowerCase();
+                var isCarte = fmt0.indexOf('carte') === 0 || fmt0 === 'html';
                 for (var i = 0; i < secs.length; i++) {
                     /* même tolérance que pour afficher_resultat : figures/tableaux réparés */
                     if (secs[i].figure) secs[i].figure = iaFixFigure(secs[i].figure);
@@ -11180,11 +11353,12 @@
                             return (Array.isArray(t0.colonnes) && Array.isArray(t0.lignes)) ? t0 : null;
                         }).filter(Boolean);
                     }
-                    if (secs[i].figure && !secs[i]._png) { try { secs[i]._png = await iaFigPng(secs[i].figure, (inp.style || {}).couleur_principale); } catch (e) { } }
+                    if (secs[i].figure && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaFigPng(secs[i].figure, (inp.style || {}).couleur_principale); } catch (e) { } }
                 }
                 var fmt = String(inp.format || 'pdf').toLowerCase();
                 if (fmt.indexOf('ppt') === 0) { await iaRepPptx(inp, safe); fmt = 'pptx'; }
                 else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { await iaRepDocx(inp, safe); fmt = 'word'; }
+                else if (isCarte) { iaRepCarte(inp, safe); fmt = 'carte'; }
                 else { await iaRepPdf(inp, safe); fmt = 'pdf'; }
                 if (msgsEl) {
                     var card = E('div', 'ia-card');
@@ -11249,7 +11423,7 @@
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
