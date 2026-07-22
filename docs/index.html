@@ -9657,7 +9657,7 @@
                     "- Clés du 1er enregistrement : " + JSON.stringify(keys.slice(0, 80)),
                     "- ctx.AG : " + JSON.stringify(typeof AG !== 'undefined' ? AG : []) + " · Provinces : " + JSON.stringify(provs) + " · Périodes : " + (pers.length ? pers[0] + "–" + pers[pers.length - 1] : "?"),
                     "- ctx.load(chemin) : './data/dashboard/by_province.json.gz' (agrégats mensuels par province : _Province,_YM,n,rap,comp,prompt,doses ex. BCG_0_11 + variantes _fixe) ; './data/dashboard/by_zs.json.gz' (idem par ZS : _ZS,_Province,_YM) ; './data/cibles_ajustees/2025.json' et 2026.json (cibles — inspecte la structure) ; './data/ou_map.json.gz' (référentiel ~25 000 FOSA). ctx.loadUrl(url) : ressource https publique (ex. GeoJSON RDC).",
-                    "- ctx.geo(niveau, parent) : GeoJSON DHIS2 des unités d'organisation (ASYNCHRONE — await) : niveau 2 = 26 provinces (parent 'LEVEL-1', défaut), 3 = ZS (parent = UID de la province), 4 = AS (parent = UID de la ZS), 5 = FOSA. Chaque feature a properties.id (UID DHIS2) et properties.na (nom) : le joint aux valeurs analytics se fait sur l'UID. ⚠ Les frontières viennent EN DIRECT de DHIS2 : les provinces et ZS sont fiables, mais la géométrie des AS (niveau 4) est SOUVENT absente selon l'instance. VÉRIFIE toujours que gj.features existe et que features[0].geometry est non nul ; si la géométrie manque à un niveau, redescends au niveau supérieur disponible (carte des ZS) ou bascule en barres classées, et signale-le honnêtement au client (« les limites des AS ne sont pas renseignées dans DHIS2 »). Ne fabrique JAMAIS de fausses frontières.",
+                    "- ctx.geo(niveau, parent) : FeatureCollection GeoJSON des unités d'organisation DHIS2 (ASYNCHRONE — await) : niveau 2 = 26 provinces (parent 'LEVEL-1', défaut), 3 = ZS (parent = UID de la province), 4 = AS (parent = UID de la ZS), 5 = FOSA. Chaque feature a properties.id (UID DHIS2) et properties.na (nom) : le joint aux valeurs analytics se fait sur l'UID. Les POLYGONES DES AIRES DE SANTÉ (niveau 4) SONT disponibles : ctx.geo interroge automatiquement plusieurs sources DHIS2 (organisationUnits?fields=geometry, puis geoFeatures — l'API de l'app Maps qui porte ces polygones, puis .geojson) et renvoie ce qui existe. Fais donc les cartes AS comme les cartes ZS : `const gj = await ctx.geo(4, uidZS)`. Vérifie quand même `gj.features.length` ; dans le cas rare où une entité n'a réellement aucune géométrie, redescends d'un niveau ou bascule en barres et signale-le. Ne fabrique JAMAIS de fausses frontières.",
                     "",
                     "## DHIS2 national : accès COMPLET en lecture (source principale)",
                     "Toutes les données du SNIS te sont accessibles — TOUS les programmes (vaccination PEV, paludisme PNLP, tuberculose PNLT, VIH/IST PNLS, nutrition, santé de la mère et du nouveau-né, planification familiale, surveillance épidémiologique, logistique, hôpitaux, banque de sang…) : tous éléments (~9 500), indicateurs (~1 570), datasets (42), niveaux, périodes. Ne réponds JAMAIS qu'une donnée est indisponible sans avoir cherché dans le DHIS2. Les fichiers locaux ne couvrent que le PEV 2025–2026 : pour tout autre programme, toute autre année ou comparaison pluriannuelle, va au DHIS2 (pe:2019, pe:201901;…, LAST_5_YEARS/LAST_10_YEARS).",
@@ -9879,12 +9879,49 @@
             /* GeoJSON des unités d'organisation DHIS2 (cartes choroplèthes) :
                niveau 2 = provinces, 3 = ZS, 4 = AS, 5 = FOSA ; parent = UID
                d'unité ou 'LEVEL-n' (défaut 'LEVEL-1' → toutes les provinces).
-               Les features ont properties.id (UID) et properties.na (nom). */
+               Renvoie TOUJOURS un FeatureCollection normalisé — chaque feature a
+               properties.id (UID) et properties.na (nom).
+               Robuste : on essaie successivement 3 sources DHIS2, car les polygones
+               (notamment ceux des AIRES DE SANTÉ) ne sortent pas de la même API selon
+               l'instance —
+               1) organisationUnits?fields=geometry (GeoJSON natif, typé correctement) ;
+               2) geoFeatures (l'endpoint de l'app Maps de DHIS2 — c'est LUI qui porte
+                  les polygones AS visibles dans Maps) ;
+               3) organisationUnits.geojson (ancien endpoint, repli). */
+            function iaGeoDepth(a) { return Array.isArray(a) ? 1 + iaGeoDepth(a[0]) : 0; }
+            function iaGeoHasFeats(fc) { return fc && Array.isArray(fc.features) && fc.features.some(function (f) { return f && f.geometry && f.geometry.coordinates && f.geometry.coordinates.length; }); }
             async function iaGeo(level, parent) {
                 var lv = parseInt(level, 10); if (!(lv >= 2 && lv <= 5)) lv = 2;
                 var par = String(parent || 'LEVEL-1');
                 if (!/^[\w-]+$/.test(par)) throw new Error('Parent invalide : ' + par);
-                return await iaDhis2('organisationUnits.geojson', 'level=' + lv + '&parent=' + par);
+                var isLevelTok = /^LEVEL-\d+$/i.test(par);
+                /* 1) organisationUnits fields=geometry — géométrie GeoJSON native */
+                try {
+                    var flt = 'filter=level:eq:' + lv + (isLevelTok ? '' : '&filter=path:like:' + par);
+                    var r1 = await iaDhis2('organisationUnits', flt + '&fields=id,name,geometry&paging=false');
+                    var ous = (r1 && r1.organisationUnits) || [];
+                    var f1 = ous.filter(function (o) { return o.geometry && o.geometry.coordinates && o.geometry.coordinates.length; })
+                        .map(function (o) { return { type: 'Feature', geometry: o.geometry, properties: { id: o.id, na: o.name } }; });
+                    if (f1.length) return { type: 'FeatureCollection', features: f1 };
+                } catch (e) { }
+                /* 2) geoFeatures — endpoint de l'app Maps (porte les polygones AS) */
+                try {
+                    var ouParam = 'ou:LEVEL-' + lv + (isLevelTok ? '' : ';' + par);
+                    var r2 = await iaDhis2('geoFeatures', 'ou=' + ouParam + '&displayProperty=NAME');
+                    if (Array.isArray(r2) && r2.length) {
+                        var f2 = r2.map(function (g) {
+                            var co; try { co = JSON.parse(g.co); } catch (e) { co = null; }
+                            if (!co || !co.length) return null;
+                            var d = iaGeoDepth(co);
+                            var type = d <= 1 ? 'Point' : d === 2 ? 'LineString' : d === 3 ? 'Polygon' : 'MultiPolygon';
+                            return { type: 'Feature', geometry: { type: type, coordinates: co }, properties: { id: g.id, na: g.na } };
+                        }).filter(Boolean);
+                        if (f2.length) return { type: 'FeatureCollection', features: f2 };
+                    }
+                } catch (e) { }
+                /* 3) repli : ancien endpoint .geojson */
+                var r3 = await iaDhis2('organisationUnits.geojson', 'level=' + lv + '&parent=' + par);
+                return r3;
             }
 
             /* Un tool_call Ollama a la forme {function:{name, arguments}}. `arguments`
