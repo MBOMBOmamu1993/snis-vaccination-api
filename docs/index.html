@@ -9582,7 +9582,7 @@
             /* Clés personnelles : une pour Anthropic, une pour Kimi, UNE seule pour tous
                les modèles Ollama (même compte). Reprend les anciens réglages : migration douce. */
             function iaUserKey(pk) {
-                if (pk === 'claude') return cfg('key_claude') || cfg('key');
+                if (pk === 'claude' || pk === 'claude-fable') return cfg('key_claude') || cfg('key');
                 if (String(pk).indexOf('kimi:') === 0) return cfg('key_kimi');
                 return cfg('key_ollama') || cfg('key_minimax');
             }
@@ -11739,14 +11739,14 @@
                         return;
                     }
                     var models = IA_OLLAMA_MODELS.slice();
-                    if (pk !== 'claude' && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
+                    if (pk !== 'claude' && pk !== 'claude-fable' && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
                     var html = '<optgroup label="Ollama Cloud — abonnement forfaitaire">' +
                         models.map(function (id) { return '<option value="' + esc(id) + '">' + esc(iaModelLabel(id)) + '</option>'; }).join('') +
                         '</optgroup>' +
                         '<optgroup label="Moonshot AI — API à crédits (usage)">' +
                         IA_KIMI_MODELS.map(function (x) { return '<option value="kimi:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
                         '</optgroup>' +
-                        '<optgroup label="Anthropic — API à crédits (usage)"><option value="claude">' + esc(IA_CLAUDE.label) + '</option></optgroup>';
+                        '<optgroup label="Anthropic — API à crédits (usage)"><option value="claude">' + esc(IA_CLAUDE.label) + '</option><option value="claude-fable">' + esc(IA_CLAUDE_FABLE.label) + '</option></optgroup>';
                     selEl.innerHTML = html;
                     selEl.value = pk;
                     if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
@@ -11754,7 +11754,7 @@
 
                 /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
                 var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: iaUserKey(IA_DEFAULT_PROVIDER) };
-                function keySlot(p) { return p === 'claude' ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
+                function keySlot(p) { return (p === 'claude' || p === 'claude-fable') ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
                     pk = np;
