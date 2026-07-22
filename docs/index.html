@@ -9657,7 +9657,7 @@
                     "- Clés du 1er enregistrement : " + JSON.stringify(keys.slice(0, 80)),
                     "- ctx.AG : " + JSON.stringify(typeof AG !== 'undefined' ? AG : []) + " · Provinces : " + JSON.stringify(provs) + " · Périodes : " + (pers.length ? pers[0] + "–" + pers[pers.length - 1] : "?"),
                     "- ctx.load(chemin) : './data/dashboard/by_province.json.gz' (agrégats mensuels par province : _Province,_YM,n,rap,comp,prompt,doses ex. BCG_0_11 + variantes _fixe) ; './data/dashboard/by_zs.json.gz' (idem par ZS : _ZS,_Province,_YM) ; './data/cibles_ajustees/2025.json' et 2026.json (cibles — inspecte la structure) ; './data/ou_map.json.gz' (référentiel ~25 000 FOSA). ctx.loadUrl(url) : ressource https publique (ex. GeoJSON RDC).",
-                    "- ctx.geo(niveau, parent) : GeoJSON DHIS2 des unités d'organisation (ASYNCHRONE — await) : niveau 2 = 26 provinces (parent 'LEVEL-1', défaut), 3 = ZS (parent = UID de la province), 4 = AS (parent = UID de la ZS). Chaque feature a properties.id (UID DHIS2) et properties.na (nom) : le joint aux valeurs analytics se fait sur l'UID.",
+                    "- ctx.geo(niveau, parent) : GeoJSON DHIS2 des unités d'organisation (ASYNCHRONE — await) : niveau 2 = 26 provinces (parent 'LEVEL-1', défaut), 3 = ZS (parent = UID de la province), 4 = AS (parent = UID de la ZS), 5 = FOSA. Chaque feature a properties.id (UID DHIS2) et properties.na (nom) : le joint aux valeurs analytics se fait sur l'UID. ⚠ Les frontières viennent EN DIRECT de DHIS2 : les provinces et ZS sont fiables, mais la géométrie des AS (niveau 4) est SOUVENT absente selon l'instance. VÉRIFIE toujours que gj.features existe et que features[0].geometry est non nul ; si la géométrie manque à un niveau, redescends au niveau supérieur disponible (carte des ZS) ou bascule en barres classées, et signale-le honnêtement au client (« les limites des AS ne sont pas renseignées dans DHIS2 »). Ne fabrique JAMAIS de fausses frontières.",
                     "",
                     "## DHIS2 national : accès COMPLET en lecture (source principale)",
                     "Toutes les données du SNIS te sont accessibles — TOUS les programmes (vaccination PEV, paludisme PNLP, tuberculose PNLT, VIH/IST PNLS, nutrition, santé de la mère et du nouveau-né, planification familiale, surveillance épidémiologique, logistique, hôpitaux, banque de sang…) : tous éléments (~9 500), indicateurs (~1 570), datasets (42), niveaux, périodes. Ne réponds JAMAIS qu'une donnée est indisponible sans avoir cherché dans le DHIS2. Les fichiers locaux ne couvrent que le PEV 2025–2026 : pour tout autre programme, toute autre année ou comparaison pluriannuelle, va au DHIS2 (pe:2019, pe:201901;…, LAST_5_YEARS/LAST_10_YEARS).",
@@ -9705,6 +9705,7 @@
                     "Tu es analyste senior de santé publique, rédacteur pro et designer : chaque livrable doit être impeccable et captivant.",
                     "- DESIGN SYSTEM par défaut : TOUTES les analyses, visuels, graphiques et tableaux des rapports suivent le design system officiel PEV (référence : rapport de riposte rougeole ZS Masuika) — bleu principal #0b5e8e, bleu foncé #0b3a56, fonds clairs #eef5fa, filets de tableaux #c6d3dc, corps en Times New Roman, titres en Arial gras — appliqué automatiquement si aucun style n'est précisé. SEULE EXCEPTION : si le client demande son propre design OU joint un modèle (image/PDF/ancien rapport), reproduis SA structure ET SON design : style.couleur_principale/couleur_secondaire/police/entete_lignes/pied_de_page dans generer_rapport, layout Plotly pour les figures ; logo joint → style.logo = nom exact du fichier image. Résultats affichés dans le chat (afficher_resultat) : charte dashboard marine #1a237e.",
                     "- GRAPHIQUES — design impeccable (un thème pro est appliqué AUTOMATIQUEMENT : palette validée non-daltonienne avec la couleur de marque en tête, grille discrète, axes sobres, police sans-serif, légende horizontale — n'écris PAS de couleurs de série à la main, laisse le thème gérer). CHOISIS LA FORME selon le message : grandeur/classement → barres TRIÉES ; évolution dans le temps → courbe ; comparaison de 2 périodes → barres groupées ; part d'un tout (≤5 catégories) → barres empilées ou donut sobre ; géographie → carte choroplèthe. RÈGLES : une SEULE échelle par graphique (JAMAIS de double axe Y — deux mesures d'échelles différentes = deux graphiques) ; titre qui porte le message ; axes avec unités ; nombres au format français (12 345 · 85,3 %) ; cible en pointillé (ex. CV 95 %) ; légende dès 2 séries, étiquettes directes avec parcimonie (jamais un nombre sur chaque point) ; jamais de 3D, jamais de camembert à >5 parts, jamais d'arc-en-ciel.",
+                    "- DEUX MOTEURS DE VISUALISATION : (1) Plotly via `figure = {data, layout}` — défaut, courbes/barres/choroplèthes. (2) Vega-Lite via `vega = {spec complète}` — À PRIVILÉGIER pour les CARTES choroplèthes soignées, heatmaps et small multiples. Les deux marchent dans afficher_resultat ET dans les sections de generer_rapport (rendu en image dans word/pdf/pptx, interactif dans la carte HTML). Un thème de marque est appliqué automatiquement aux deux ; si le CLIENT veut son propre style de carte, mets-le dans layout (Plotly) ou config (Vega-Lite) — ta config est prioritaire. Carte Vega-Lite : `mark:'geoshape'`, `data:{values: <GeoJSON>, format:{type:'json', property:'features'}}`, `transform` de jointure avec tes valeurs, `encoding.color` (scale sur seuils). Récupère le GeoJSON via ctx.geo (niveau 2 provinces, 3 ZS) — ne l'affiche JAMAIS en texte.",
                     "- TABLEAUX — soignés et lisibles : en-tête coloré, 1re colonne = entité, chaque tableau de scores/qualité COLORÉ cellule par cellule (feux vert/jaune/rouge via {t, bg}) selon les seuils ; commentaire analytique chiffré dessous ; format paysage seulement si le tableau est large.",
                     "- MISE EN PAGE : hiérarchie claire (page de garde soignée, sections numérotées au titre parlant, un visuel focalisé par idée), respiration (marges, espacements), cohérence totale des couleurs et polices d'un bout à l'autre du document. Un livrable = un système visuel unique, pas un assemblage.",
                     "- RÉDACTION : français pro de santé publique, zéro faute ; titres qui énoncent le constat (« La CV DTC3 gagne 8 points » et non « Analyse DTC3 ») ; chiffres clés en gras ; recommandations actionnables (qui, quoi, quand).",
@@ -9742,10 +9743,11 @@
                             type: 'object',
                             properties: {
                                 titre: { type: 'string' },
-                                type: { type: 'string', enum: ['table', 'graphique', 'carte'] },
+                                type: { type: 'string', enum: ['table', 'graphique', 'carte', 'vega'] },
                                 colonnes: { type: 'array', items: { type: 'string' } },
                                 lignes: { type: 'array', items: { type: 'array' } },
                                 figure: { type: 'object', description: 'Figure Plotly {data, layout}' },
+                                vega: { type: 'object', description: "Spécification Vega-Lite (ou Vega) COMPLÈTE et autonome (avec $schema, data.values, encoding…). Second moteur de visualisation, idéal pour les CARTES choroplèthes soignées, heatmaps et small multiples. Un thème de marque est appliqué par défaut ; ta propre 'config' reste prioritaire (le client peut donc imposer son style). Pour une carte : data.format={type:'json',property:'features'} sur un GeoJSON, mark='geoshape', encoding.color sur une propriété. Utilise 'vega' au lieu de 'figure' quand tu choisis ce moteur." },
                                 note: { type: 'string' }
                             }, required: ['titre', 'type']
                         }
@@ -9792,7 +9794,8 @@
                                             tableau: { type: 'object', description: "colonnes = libellés d'en-tête ; lignes = tableau de lignes, chaque ligne = tableau de cellules. Une cellule est soit une valeur simple, soit un OBJET {t, bg} pour la COLORER (code couleur Excel) : t = contenu, bg = couleur de fond (jeton nommé 'vert'|'jaune'|'rouge'|'orange'|'bleu'|'gris', ou hex '#RRGGBB'). Ex. ligne : ['Tshopo', {t:'72,7', bg:'rouge'}, {t:'95,0', bg:'vert'}]. La couleur est rendue dans TOUS les formats (word, pdf, pptx, carte). Pour reproduire une grille Excel vert/jaune/rouge, colore chaque cellule concernée.", properties: { titre: { type: 'string' }, colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } }, commentaire: { type: 'string' } } },
                                             tableaux: { type: 'array', description: "Plusieurs tableaux dans la même section, chacun {titre, colonnes, lignes, commentaire}. Mêmes règles de coloration cellule par cellule que 'tableau' : une cellule peut être {t, bg} (bg = 'vert'|'jaune'|'rouge'|'orange'|hex).", items: { type: 'object', properties: { titre: { type: 'string' }, colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } }, commentaire: { type: 'string' } } } },
                                             commentaire: { type: 'string', description: 'Commentaire analytique affiché sous le tableau/la figure' },
-                                            figure: { type: 'object', description: 'Figure Plotly {data, layout}' }
+                                            figure: { type: 'object', description: 'Figure Plotly {data, layout}' },
+                                            vega: { type: 'object', description: "Spécification Vega-Lite (ou Vega) complète et autonome — alternative à 'figure', idéale pour les CARTES choroplèthes soignées, heatmaps et small multiples. Rendue en image dans word/pdf/pptx et interactive dans la carte HTML. Thème de marque appliqué par défaut, ta 'config' reste prioritaire (style client respecté)." }
                                         }, required: ['titre']
                                     }
                                 }
@@ -10063,9 +10066,11 @@
                 });
                 var fig = iaFixFigure(inp.figure || (inp.data ? { data: inp.data, layout: inp.layout } : null));
                 inp.figure = fig;
+                if (inp.vega) inp.vega = iaParseMaybe(inp.vega);
                 /* type manquant ou incohérent : on l'infère */
                 var t = String(inp.type || '').toLowerCase();
-                if (t !== 'table' && t !== 'graphique' && t !== 'carte') t = '';
+                if (t !== 'table' && t !== 'graphique' && t !== 'carte' && t !== 'vega') t = '';
+                if (inp.vega && (!t || t === 'graphique' || t === 'carte')) t = 'vega';
                 if (!t) t = fig ? 'graphique' : (inp.colonnes && inp.lignes ? 'table' : '');
                 if (t === 'graphique' || t === 'carte') {
                     if (!fig) {
@@ -10119,6 +10124,16 @@
                         b2.onclick = function () { Plotly.downloadImage(gd, { format: 'png', filename: safe, width: 1200, height: 700, scale: 2 }); };
                         dl2.appendChild(b2);
                     }
+                } else if (inp.type === 'vega' && inp.vega) {
+                    var vg = E('div', ''); vg.style.minHeight = '360px'; card.appendChild(vg);
+                    var dlv = E('div', 'ia-dl'); card.appendChild(dlv);
+                    iaEnsureVega().then(function () {
+                        return vegaEmbed(vg, iaVegaThemed(inp.vega, (inp.style || {}).couleur_principale), { actions: false, renderer: 'svg' });
+                    }).then(function (res) {
+                        var bpng = E('button', 'ia-btn', '⬇ Télécharger PNG');
+                        bpng.onclick = function () { res.view.toImageURL('png', 2).then(function (u) { var a = document.createElement('a'); a.href = u; a.download = safe + '.png'; a.click(); }); };
+                        dlv.appendChild(bpng);
+                    }).catch(function (e) { card.appendChild(E('div', 'ia-err', 'Visualisation Vega invalide : ' + esc(e.message || e))); });
                 } else {
                     card.appendChild(E('div', 'ia-err', 'Résultat incomplet reçu de l\'IA — demandez simplement : « réaffiche le résultat ».'));
                 }
@@ -10987,6 +11002,52 @@
                 }, { format: 'png', width: 1000, height: 560, scale: 2 });
             }
 
+            /* ══ COMPÉTENCE VEGA-LITE / VEGA ══
+               Second moteur de visualisation offert aux modèles (en plus de Plotly),
+               idéal pour les cartes choroplèthes soignées, heatmaps et small multiples.
+               vega, vega-lite et vega-embed sont chargés dans la page (CDN, <head>) ;
+               fallback de chargement au cas où. Un thème de marque est appliqué par
+               défaut (config fusionnée en profondeur, celle du modèle reste prioritaire). */
+            function iaEnsureVega() {
+                if (window.vegaEmbed) return Promise.resolve();
+                return iaLoadScript('https://cdn.jsdelivr.net/npm/vega@5')
+                    .then(function () { return iaLoadScript('https://cdn.jsdelivr.net/npm/vega-lite@5'); })
+                    .then(function () { return iaLoadScript('https://cdn.jsdelivr.net/npm/vega-embed@6'); });
+            }
+            function iaVegaConfig(C) {
+                var brand = (C && /^#?[0-9a-fA-F]{6}$/.test(String(C).trim())) ? ('#' + String(C).replace('#', '')) : '#0b5e8e';
+                return {
+                    font: 'Arial, Helvetica, sans-serif', background: '#ffffff',
+                    view: { stroke: null },
+                    range: { category: iaPlotColorway(brand), heatmap: ['#cde2fb', '#3987e5', '#104281'], ramp: ['#cde2fb', '#3987e5', '#104281'] },
+                    axis: { labelColor: '#52514E', titleColor: '#2B2A28', gridColor: '#EDEDEA', domainColor: '#C9C9C4', tickColor: '#C9C9C4', labelFont: 'Arial', titleFont: 'Arial', labelFontSize: 12, titleFontSize: 13 },
+                    legend: { labelColor: '#52514E', titleColor: '#2B2A28', labelFont: 'Arial', titleFont: 'Arial' },
+                    title: { color: '#0b3a56', font: 'Arial', fontSize: 15, anchor: 'start', fontWeight: 700 },
+                    mark: { color: brand }
+                };
+            }
+            function iaVegaThemed(spec, C) {
+                spec = iaParseMaybe(spec) || {};
+                var out = {}, k;
+                for (k in spec) if (Object.prototype.hasOwnProperty.call(spec, k)) out[k] = spec[k];
+                if (!out.$schema) out.$schema = 'https://vega.github.io/schema/vega-lite/v5.json';
+                out.config = iaDeepMerge(iaVegaConfig(C), spec.config || {});
+                return out;
+            }
+            /* Rendu hors-écran d'une spec Vega-Lite/Vega → PNG (pour Word/PDF/PPTX). */
+            async function iaVegaPng(spec, C) {
+                await iaEnsureVega();
+                var host = document.createElement('div');
+                host.style.cssText = 'position:absolute;left:-10000px;top:0;background:#fff';
+                document.body.appendChild(host);
+                try {
+                    var res = await vegaEmbed(host, iaVegaThemed(spec, C), { actions: false, renderer: 'canvas' });
+                    var url = await res.view.toImageURL('png', 2);
+                    try { res.view.finalize(); } catch (e) { }
+                    return url;
+                } finally { host.remove(); }
+            }
+
             /* Logo du client : nom d'un fichier image joint dans la conversation
                (IA.imgs) ou dataURL direct. */
             function iaLogoData(v) {
@@ -11108,7 +11169,7 @@
                 var pied = st.pied_de_page || 'Carte générée automatiquement par l\'assistant IA du Dashboard PEV de routine — données DHIS2 (SNIS RDC), sujettes à validation.';
                 var logo = iaLogoData(st.logo);
                 var date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                var figs = [];
+                var figs = [], vegas = [];
                 function escH(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
                 var enteteHtml;
                 if (st.entete_lignes && st.entete_lignes.length) {
@@ -11150,6 +11211,11 @@
                         figs.push({ id: fid, fig: sec.figure });
                         h += '<div id="' + fid + '" style="min-height:460px;margin:10px 0"></div>';
                     }
+                    if (sec.vega) {
+                        var vid = 'iaveg' + i;
+                        vegas.push({ id: vid, spec: iaVegaThemed(sec.vega, st.couleur_principale) });
+                        h += '<div id="' + vid + '" style="margin:10px 0"></div>';
+                    }
                     if (sec.commentaire) h += '<div style="font-size:12px;margin:8px 0 0"><b>Commentaire :</b> ' + md(sec.commentaire) + '</div>';
                     h += '</section>';
                 });
@@ -11169,10 +11235,15 @@
                         JSON.stringify(iaDeepMerge(iaPlotlyTheme(st.couleur_principale), f.fig.layout || {})).replace(/<\//g, '<\\/') +
                         ',{responsive:true,displaylogo:false});}catch(e){}';
                 }).join('\n');
+                js += '\n' + vegas.map(function (v) {
+                    return 'try{vegaEmbed(document.getElementById(' + JSON.stringify(v.id) + '),' +
+                        JSON.stringify(v.spec).replace(/<\//g, '<\\/') + ',{actions:false,renderer:"svg"});}catch(e){}';
+                }).join('\n');
+                var vegaScripts = vegas.length ? '<script src="https://cdn.jsdelivr.net/npm/vega@5"><\/script>\n<script src="https://cdn.jsdelivr.net/npm/vega-lite@5"><\/script>\n<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"><\/script>\n' : '';
                 var doc = '<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n' +
                     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
                     '<title>' + escH(inp.titre || 'Carte interactive') + '</title>\n' +
-                    '<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"><\/script>\n' +
+                    '<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"><\/script>\n' + vegaScripts +
                     '<style>body{margin:0;background:#f7fafc;color:#222;font-family:' + font + '}main,header,footer{background:#fff}header,main,footer{max-width:' + (paysage ? '1400px' : '980px') + ';margin:0 auto}header{margin-top:0}' + (paysage ? '@page{size:A4 landscape}' : '') + '@media print{.Plotly,.js-plotly-plot{page-break-inside:avoid}}</style>\n' +
                     '</head>\n<body>\n' + h + '\n<script>\n' + js + '\n<\/script>\n</body>\n</html>';
                 iaDlBlob(safe + '.html', 'text/html;charset=utf-8', doc);
@@ -11457,7 +11528,9 @@
                             return (Array.isArray(t0.colonnes) && Array.isArray(t0.lignes)) ? t0 : null;
                         }).filter(Boolean);
                     }
+                    if (secs[i].vega) secs[i].vega = iaParseMaybe(secs[i].vega);
                     if (secs[i].figure && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaFigPng(secs[i].figure, (inp.style || {}).couleur_principale); } catch (e) { } }
+                    if (secs[i].vega && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaVegaPng(secs[i].vega, (inp.style || {}).couleur_principale); } catch (e) { } }
                 }
                 var fmt = String(inp.format || 'pdf').toLowerCase();
                 if (fmt.indexOf('ppt') === 0) { await iaRepPptx(inp, safe); fmt = 'pptx'; }
