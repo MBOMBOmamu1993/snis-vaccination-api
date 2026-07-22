@@ -9695,13 +9695,18 @@
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
                     "- Modèle .doc/.ppt/.pdf joint (non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle.",
+                    "- RESPECTE le format demandé : l'utilisateur demande Word → format:'word' ; PDF → format:'pdf'. Ne remplace JAMAIS le format demandé par 'carte' (HTML) — le Word et le PDF savent désormais colorer les cellules et se mettre en paysage.",
+                    "- TABLEAUX COLORÉS (code couleur Excel vert/jaune/rouge) : pour reproduire une grille de scores/qualité colorée cellule par cellule (comme un tableau Excel), chaque cellule concernée doit être un OBJET {t:'valeur', bg:'couleur'} dans lignes[] — bg = 'vert'|'jaune'|'orange'|'rouge'|'bleu'|'gris' ou hex '#RRGGBB'. La couleur est rendue dans word, pdf, pptx ET carte. Colore selon les seuils du modèle (ex. ≥95 % vert, 80–94 jaune, <80 rouge). NE te contente PAS d'expliquer le code couleur en commentaire : applique-le réellement aux cellules.",
+                    "- ORIENTATION : pour une matrice large (ex. ZS en lignes × canevas en colonnes, ou tableau de score à nombreuses colonnes), passe orientation:'paysage' — valable pour word et pdf. Garde la 1re colonne = entité (ZS/DPS) et la 1re ligne = en-têtes (canevas/critères).",
                     "- Chaque tableau de données est suivi d'un commentaire analytique chiffré (champ commentaire), comme dans les rapports PEV officiels.",
                     "- Jamais de placeholder (« à compléter », « XX ») : toute valeur écrite provient d'un calcul executer_js/requete_dhis2 ; si une donnée est réellement indisponible après recherche DHIS2, écris « Non disponible » et signale-le.",
                     "",
                     "## Qualité, design, rédaction (exigence maximale)",
                     "Tu es analyste senior de santé publique, rédacteur pro et designer : chaque livrable doit être impeccable et captivant.",
                     "- DESIGN SYSTEM par défaut : TOUTES les analyses, visuels, graphiques et tableaux des rapports suivent le design system officiel PEV (référence : rapport de riposte rougeole ZS Masuika) — bleu principal #0b5e8e, bleu foncé #0b3a56, fonds clairs #eef5fa, filets de tableaux #c6d3dc, corps en Times New Roman, titres en Arial gras — appliqué automatiquement si aucun style n'est précisé. SEULE EXCEPTION : si le client demande son propre design OU joint un modèle (image/PDF/ancien rapport), reproduis SA structure ET SON design : style.couleur_principale/couleur_secondaire/police/entete_lignes/pied_de_page dans generer_rapport, layout Plotly pour les figures ; logo joint → style.logo = nom exact du fichier image. Résultats affichés dans le chat (afficher_resultat) : charte dashboard marine #1a237e.",
-                    "- GRAPHIQUES : titre qui porte le message, axes avec unités, nombres au format français (12 345 · 85,3 %), barres triées, info clé en couleur d'accent, cible en pointillé (ex. CV 95 %), jamais de 3D.",
+                    "- GRAPHIQUES — design impeccable (un thème pro est appliqué AUTOMATIQUEMENT : palette validée non-daltonienne avec la couleur de marque en tête, grille discrète, axes sobres, police sans-serif, légende horizontale — n'écris PAS de couleurs de série à la main, laisse le thème gérer). CHOISIS LA FORME selon le message : grandeur/classement → barres TRIÉES ; évolution dans le temps → courbe ; comparaison de 2 périodes → barres groupées ; part d'un tout (≤5 catégories) → barres empilées ou donut sobre ; géographie → carte choroplèthe. RÈGLES : une SEULE échelle par graphique (JAMAIS de double axe Y — deux mesures d'échelles différentes = deux graphiques) ; titre qui porte le message ; axes avec unités ; nombres au format français (12 345 · 85,3 %) ; cible en pointillé (ex. CV 95 %) ; légende dès 2 séries, étiquettes directes avec parcimonie (jamais un nombre sur chaque point) ; jamais de 3D, jamais de camembert à >5 parts, jamais d'arc-en-ciel.",
+                    "- TABLEAUX — soignés et lisibles : en-tête coloré, 1re colonne = entité, chaque tableau de scores/qualité COLORÉ cellule par cellule (feux vert/jaune/rouge via {t, bg}) selon les seuils ; commentaire analytique chiffré dessous ; format paysage seulement si le tableau est large.",
+                    "- MISE EN PAGE : hiérarchie claire (page de garde soignée, sections numérotées au titre parlant, un visuel focalisé par idée), respiration (marges, espacements), cohérence totale des couleurs et polices d'un bout à l'autre du document. Un livrable = un système visuel unique, pas un assemblage.",
                     "- RÉDACTION : français pro de santé publique, zéro faute ; titres qui énoncent le constat (« La CV DTC3 gagne 8 points » et non « Analyse DTC3 ») ; chiffres clés en gras ; recommandations actionnables (qui, quoi, quand).",
                     "- ANALYSE : interprète toujours (tendance, écart à la cible, comparaison) ; signale les limites des données ; propose l'analyse complémentaire la plus utile.",
                     "",
@@ -9755,7 +9760,8 @@
                             type: 'object',
                             properties: {
                                 titre: { type: 'string' },
-                                format: { type: 'string', enum: ['pdf', 'word', 'pptx', 'carte'], description: "pdf (défaut) | word (.docx natif) | pptx | carte (page HTML interactive autonome : figures Plotly navigables, GeoJSON embarqué)" },
+                                format: { type: 'string', enum: ['pdf', 'word', 'pptx', 'carte'], description: "pdf (défaut) | word (.docx natif) | pptx | carte (page HTML interactive autonome : figures Plotly navigables, GeoJSON embarqué). RESPECTE le format demandé par l'utilisateur : s'il demande Word → 'word', PDF → 'pdf'. Ne bascule PAS vers 'carte' sans qu'il le demande." },
+                                orientation: { type: 'string', enum: ['portrait', 'paysage'], description: "Orientation de la page pour word et pdf (défaut portrait). Utilise 'paysage' pour les tableaux larges (nombreuses colonnes, ex. matrice ZS × canevas)." },
                                 sous_titre: { type: 'string' },
                                 periode: { type: 'string', description: "Période analysée, ex. 'Janvier – Juin 2026'" },
                                 auteur: { type: 'string' },
@@ -9783,8 +9789,8 @@
                                         type: 'object', properties: {
                                             titre: { type: 'string' },
                                             contenu: { type: 'string', description: 'Texte de la section (markdown simple : **gras**, listes -)' },
-                                            tableau: { type: 'object', properties: { colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } } } },
-                                            tableaux: { type: 'array', description: "Plusieurs tableaux dans la même section, chacun {titre, colonnes, lignes, commentaire}", items: { type: 'object', properties: { titre: { type: 'string' }, colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } }, commentaire: { type: 'string' } } } },
+                                            tableau: { type: 'object', description: "colonnes = libellés d'en-tête ; lignes = tableau de lignes, chaque ligne = tableau de cellules. Une cellule est soit une valeur simple, soit un OBJET {t, bg} pour la COLORER (code couleur Excel) : t = contenu, bg = couleur de fond (jeton nommé 'vert'|'jaune'|'rouge'|'orange'|'bleu'|'gris', ou hex '#RRGGBB'). Ex. ligne : ['Tshopo', {t:'72,7', bg:'rouge'}, {t:'95,0', bg:'vert'}]. La couleur est rendue dans TOUS les formats (word, pdf, pptx, carte). Pour reproduire une grille Excel vert/jaune/rouge, colore chaque cellule concernée.", properties: { titre: { type: 'string' }, colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } }, commentaire: { type: 'string' } } },
+                                            tableaux: { type: 'array', description: "Plusieurs tableaux dans la même section, chacun {titre, colonnes, lignes, commentaire}. Mêmes règles de coloration cellule par cellule que 'tableau' : une cellule peut être {t, bg} (bg = 'vert'|'jaune'|'rouge'|'orange'|hex).", items: { type: 'object', properties: { titre: { type: 'string' }, colonnes: { type: 'array', items: { type: 'string' } }, lignes: { type: 'array', items: { type: 'array' } }, commentaire: { type: 'string' } } } },
                                             commentaire: { type: 'string', description: 'Commentaire analytique affiché sous le tableau/la figure' },
                                             figure: { type: 'object', description: 'Figure Plotly {data, layout}' }
                                         }, required: ['titre']
@@ -9982,16 +9988,63 @@
                 if (!data.length) return null;
                 return { data: data, layout: iaParseMaybe(fig.layout) || {} };
             }
+            /* ── Coloration conditionnelle des cellules (feux type Excel) ──
+               Une cellule d'un tableau (dans lignes[]) peut être un SCALAIRE
+               (comportement normal) ou un OBJET {t, bg} pour porter sa propre
+               couleur de fond — reproduit le code couleur Excel vert/jaune/rouge
+               dans TOUS les formats (écran, Word .docx, PDF, PPTX, carte HTML).
+                 t / v / valeur / texte : le contenu de la cellule
+                 bg / couleur / fond    : jeton nommé (vert, jaune, rouge, orange,
+                                          bleu, gris + synonymes) ou hex (#rrggbb)
+                 fg / texte_couleur     : couleur du texte (optionnelle) */
+            var IA_FEUX = {
+                vert: ['C6EFCE', '006100'], green: ['C6EFCE', '006100'], bon: ['C6EFCE', '006100'], ok: ['C6EFCE', '006100'], atteint: ['C6EFCE', '006100'], acceptable: ['C6EFCE', '006100'],
+                jaune: ['FFEB9C', '9C6500'], yellow: ['FFEB9C', '9C6500'], moyen: ['FFEB9C', '9C6500'], alerte: ['FFEB9C', '9C6500'], warning: ['FFEB9C', '9C6500'], intermediaire: ['FFEB9C', '9C6500'],
+                orange: ['FCE4D6', '974706'],
+                rouge: ['FFC7CE', '9C0006'], red: ['FFC7CE', '9C0006'], mauvais: ['FFC7CE', '9C0006'], critique: ['FFC7CE', '9C0006'], faible: ['FFC7CE', '9C0006'], danger: ['FFC7CE', '9C0006'], insuffisant: ['FFC7CE', '9C0006'],
+                bleu: ['BDD7EE', '1F3864'], blue: ['BDD7EE', '1F3864'],
+                gris: ['D9D9D9', '3F3F3F'], gray: ['D9D9D9', '3F3F3F'], grey: ['D9D9D9', '3F3F3F']
+            };
+            function iaHexNorm(s) {
+                var m = /^#?([0-9a-fA-F]{6})$/.exec(String(s == null ? '' : s).trim());
+                return m ? m[1].toUpperCase() : null;
+            }
+            function iaFgFor(fill) { /* noir/blanc selon la luminance du fond */
+                var r = parseInt(fill.slice(0, 2), 16), g = parseInt(fill.slice(2, 4), 16), b = parseInt(fill.slice(4, 6), 16);
+                return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '1F1F1F' : 'FFFFFF';
+            }
+            /* Normalise une cellule → {text, fill, fg} (fill/fg = hex 6 sans #, ou null). */
+            function iaCellNorm(cell) {
+                if (cell != null && typeof cell === 'object' && !Array.isArray(cell)) {
+                    var text = cell.t != null ? cell.t : (cell.v != null ? cell.v : (cell.valeur != null ? cell.valeur : (cell.texte != null ? cell.texte : (cell.value != null ? cell.value : (cell.label != null ? cell.label : '')))));
+                    var raw = cell.bg != null ? cell.bg : (cell.couleur != null ? cell.couleur : (cell.fond != null ? cell.fond : (cell.color != null ? cell.color : (cell.feu != null ? cell.feu : null))));
+                    var fill = null, fg = null;
+                    if (raw != null && String(raw).trim() !== '') {
+                        var key = String(raw).trim().toLowerCase();
+                        if (IA_FEUX[key]) { fill = IA_FEUX[key][0]; fg = IA_FEUX[key][1]; }
+                        else { fill = iaHexNorm(raw); if (fill) fg = iaFgFor(fill); }
+                    }
+                    var fgRaw = cell.fg != null ? cell.fg : (cell.texte_couleur != null ? cell.texte_couleur : null);
+                    if (fgRaw != null && String(fgRaw).trim() !== '') {
+                        var fk = IA_FEUX[String(fgRaw).trim().toLowerCase()];
+                        fg = fk ? fk[1] : (iaHexNorm(fgRaw) || fg);
+                    }
+                    return { text: String(text == null ? '' : text), fill: fill, fg: fg };
+                }
+                return { text: String(cell == null ? '' : cell), fill: null, fg: null };
+            }
+            function iaCellText(cell) { return iaCellNorm(cell).text; }
+
             /* Construit une figure de secours à partir d'un tableau colonnes/lignes :
                1re colonne = X, chaque colonne numérique = une série. */
             function iaFigureFromTable(colonnes, lignes) {
                 if (!Array.isArray(colonnes) || !Array.isArray(lignes) || !lignes.length) return null;
-                var x = lignes.map(function (l) { return Array.isArray(l) ? l[0] : l; });
+                var x = lignes.map(function (l) { return Array.isArray(l) ? iaCellText(l[0]) : iaCellText(l); });
                 var traces = [];
                 for (var c = 1; c < colonnes.length; c++) {
                     var vals = lignes.map(function (l) {
                         var v = Array.isArray(l) ? l[c] : null;
-                        var n = parseFloat(String(v == null ? '' : v).replace(/\s| |%/g, '').replace(',', '.'));
+                        var n = parseFloat(iaCellText(v).replace(/\s| |%/g, '').replace(',', '.'));
                         return isFinite(n) ? n : null;
                     });
                     if (vals.some(function (v) { return v !== null; })) {
@@ -10033,12 +10086,12 @@
                 if (inp.type === 'table' && inp.colonnes && inp.lignes) {
                     var wrap = E('div', 'ia-tblwrap');
                     var html = '<table class="ia-tbl"><thead><tr>' + inp.colonnes.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
-                    inp.lignes.forEach(function (l) { html += '<tr>' + l.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; });
+                    inp.lignes.forEach(function (l) { html += '<tr>' + l.map(function (v) { var cn = iaCellNorm(v); return '<td' + (cn.fill ? ' style="background:#' + cn.fill + ';' + (cn.fg ? 'color:#' + cn.fg + ';' : '') + '"' : '') + '>' + esc(cn.text) + '</td>'; }).join('') + '</tr>'; });
                     wrap.innerHTML = html + '</tbody></table>'; card.appendChild(wrap);
                     var dl = E('div', 'ia-dl'); card.appendChild(dl);
                     var b1 = E('button', 'ia-btn', '⬇ Télécharger CSV (Excel)');
                     b1.onclick = function () {
-                        var csv = '﻿' + inp.colonnes.join(';') + '\n' + inp.lignes.map(function (l) { return l.map(function (v) { return String(v == null ? '' : v).replace(/;/g, ','); }).join(';'); }).join('\n');
+                        var csv = '﻿' + inp.colonnes.join(';') + '\n' + inp.lignes.map(function (l) { return l.map(function (v) { return iaCellText(v).replace(/;/g, ','); }).join(';'); }).join('\n');
                         iaDlBlob(safe + '.csv', 'text/csv;charset=utf-8', csv);
                     };
                     dl.appendChild(b1);
@@ -10053,7 +10106,7 @@
                         if (Array.isArray(inp.colonnes) && Array.isArray(inp.lignes)) {
                             var w2 = E('div', 'ia-tblwrap');
                             var h2 = '<table class="ia-tbl"><thead><tr>' + inp.colonnes.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
-                            inp.lignes.forEach(function (l) { h2 += '<tr>' + l.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; });
+                            inp.lignes.forEach(function (l) { h2 += '<tr>' + l.map(function (v) { var cn = iaCellNorm(v); return '<td' + (cn.fill ? ' style="background:#' + cn.fill + ';' + (cn.fg ? 'color:#' + cn.fg + ';' : '') + '"' : '') + '>' + esc(cn.text) + '</td>'; }).join('') + '</tr>'; });
                             w2.innerHTML = h2 + '</tbody></table>'; card.appendChild(w2);
                             card.appendChild(E('div', 'ia-note', 'Le graphique n\'a pas pu être tracé (' + esc(e.message) + ') — données affichées en tableau.'));
                         } else {
@@ -10891,12 +10944,46 @@
             function iaEnsurePdf() { return window.html2pdf ? Promise.resolve() : iaLoadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js'); }
             function iaEnsurePptx() { return window.PptxGenJS ? Promise.resolve() : iaLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'); }
 
+            /* ── Thème Plotly commun (design "impeccable" par défaut) ──
+               Palette catégorielle validée CVD (couleur de marque en tête),
+               grille discrète, axes sobres, police sans-serif, légende
+               horizontale. Appliqué à toutes les figures des analyses et
+               rapports ; la mise en page fournie par le modèle reste prioritaire
+               (fusion profonde). */
+            function iaPlotColorway(C) {
+                var b = (C && /^#?[0-9a-fA-F]{6}$/.test(String(C).trim())) ? ('#' + String(C).replace('#', '')) : '#0b5e8e';
+                return [b, '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
+            }
+            function iaDeepMerge(base, over) {
+                base = base || {}; over = over || {};
+                var out = {}, k;
+                for (k in base) if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = base[k];
+                for (k in over) if (Object.prototype.hasOwnProperty.call(over, k)) {
+                    var bv = out[k], ov = over[k];
+                    if (bv && ov && typeof bv === 'object' && typeof ov === 'object' && !Array.isArray(bv) && !Array.isArray(ov)) out[k] = iaDeepMerge(bv, ov);
+                    else out[k] = ov;
+                }
+                return out;
+            }
+            function iaPlotlyTheme(C) {
+                var axis = { showgrid: true, gridcolor: '#EDEDEA', gridwidth: 1, zeroline: false, linecolor: '#C9C9C4', linewidth: 1, ticks: 'outside', tickcolor: '#C9C9C4', ticklen: 4, tickfont: { size: 12, color: '#52514E' }, title: { font: { size: 13, color: '#2B2A28' } }, automargin: true };
+                return {
+                    colorway: iaPlotColorway(C),
+                    font: { family: 'Arial, Helvetica, sans-serif', size: 12, color: '#2B2A28' },
+                    paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff',
+                    margin: { t: 46, r: 26, b: 58, l: 66 },
+                    xaxis: axis, yaxis: { showgrid: true, gridcolor: '#EDEDEA', gridwidth: 1, zeroline: false, linecolor: '#C9C9C4', linewidth: 1, ticks: 'outside', tickcolor: '#C9C9C4', ticklen: 4, tickfont: { size: 12, color: '#52514E' }, title: { font: { size: 13, color: '#2B2A28' } }, automargin: true },
+                    title: { font: { family: 'Arial, Helvetica, sans-serif', size: 15, color: '#0b3a56' }, x: 0.02, xanchor: 'left' },
+                    legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center', font: { size: 11.5, color: '#52514E' } },
+                    hoverlabel: { font: { family: 'Arial, Helvetica, sans-serif', size: 12 }, bordercolor: '#C9C9C4' }
+                };
+            }
             async function iaFigPng(fig, C) {
                 /* Figures des rapports : design system des documents (bleu #0b5e8e)
                    par défaut ; C = couleur principale du style demandé par le client. */
                 return await Plotly.toImage({
                     data: fig.data || [],
-                    layout: Object.assign({ paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 12 }, margin: { t: 40, r: 20, b: 60, l: 60 }, colorway: [C || '#0b5e8e', '#d97757', '#2e7d32', '#f9a825', '#0b3a56', '#00838f', '#c62828', '#546e7a'] }, fig.layout || {})
+                    layout: iaDeepMerge(iaPlotlyTheme(C), fig.layout || {})
                 }, { format: 'png', width: 1000, height: 560, scale: 2 });
             }
 
@@ -10958,7 +11045,11 @@
                         h += '<table style="border-collapse:collapse;width:100%;font-size:11.5px;margin:6px 0 12px"><tr>' +
                             tb.colonnes.map(function (c) { return '<th style="font-family:' + hfont + ';background:' + C + ';color:#fff;padding:6px 8px;border:1px solid ' + C + ';text-align:left">' + esc(c) + '</th>'; }).join('') + '</tr>';
                         (tb.lignes || []).forEach(function (l, ri) {
-                            h += '<tr>' + (l || []).map(function (v) { return '<td style="border:1px solid #c6d3dc;padding:5px 8px;' + (ri % 2 ? 'background:#eef5fa' : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>';
+                            h += '<tr>' + (l || []).map(function (cell) {
+                                var cn = iaCellNorm(cell);
+                                var bg = cn.fill ? 'background:#' + cn.fill + ';' + (cn.fg ? 'color:#' + cn.fg + ';' : '') : (ri % 2 ? 'background:#eef5fa' : '');
+                                return '<td style="border:1px solid #c6d3dc;padding:5px 8px;' + bg + '">' + esc(cn.text) + '</td>';
+                            }).join('') + '</tr>';
                         });
                         h += '</table>';
                         if (tb.commentaire) h += '<div style="font-size:12px;margin:0 0 12px"><b>Commentaire :</b> ' + md(tb.commentaire) + '</div>';
@@ -10984,16 +11075,18 @@
 
             async function iaRepPdf(inp, safe) {
                 await iaEnsurePdf();
+                var st = inp.style || {};
+                var paysage = /pays|land|horizon/i.test(String(inp.orientation || st.orientation || ''));
                 var r = iaRepHtml(inp, false);
                 var host = document.createElement('div');
-                host.style.cssText = 'position:absolute;left:-10000px;top:0;width:794px;background:#fff';
+                host.style.cssText = 'position:absolute;left:-10000px;top:0;width:' + (paysage ? '1123px' : '794px') + ';background:#fff';
                 host.innerHTML = r.html; document.body.appendChild(host);
                 try {
                     await html2pdf().set({
                         margin: [12, 12, 16, 12], filename: safe + '.pdf',
                         image: { type: 'jpeg', quality: 0.95 },
                         html2canvas: { scale: 2, useCORS: true },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: paysage ? 'landscape' : 'portrait' },
                         pagebreak: { mode: ['css', 'legacy'] }
                     }).from(host).save();
                 } finally { host.remove(); }
@@ -11006,6 +11099,7 @@
                et le GeoJSON sont embarqués dans le fichier téléchargé. */
             function iaRepCarte(inp, safe) {
                 var st = inp.style || {};
+                var paysage = /pays|land|horizon/i.test(String(inp.orientation || st.orientation || ''));
                 var C = st.couleur_principale || '#0b5e8e';
                 var C2 = st.couleur_secondaire || C;
                 var font = st.police || "'Times New Roman', Georgia, serif";
@@ -11042,7 +11136,11 @@
                         h += '<table style="border-collapse:collapse;width:100%;font-size:11.5px;margin:6px 0 12px"><tr>' +
                             tb.colonnes.map(function (c) { return '<th style="font-family:' + hfont + ';background:' + C + ';color:#fff;padding:6px 8px;border:1px solid ' + C + ';text-align:left">' + escH(c) + '</th>'; }).join('') + '</tr>';
                         (tb.lignes || []).forEach(function (l, ri) {
-                            h += '<tr>' + (l || []).map(function (v) { return '<td style="border:1px solid #c6d3dc;padding:5px 8px;' + (ri % 2 ? 'background:#eef5fa' : '') + '">' + escH(v) + '</td>'; }).join('') + '</tr>';
+                            h += '<tr>' + (l || []).map(function (cell) {
+                                var cn = iaCellNorm(cell);
+                                var bg = cn.fill ? 'background:#' + cn.fill + ';' + (cn.fg ? 'color:#' + cn.fg + ';' : '') : (ri % 2 ? 'background:#eef5fa' : '');
+                                return '<td style="border:1px solid #c6d3dc;padding:5px 8px;' + bg + '">' + escH(cn.text) + '</td>';
+                            }).join('') + '</tr>';
                         });
                         h += '</table>';
                         if (tb.commentaire) h += '<div style="font-size:12px;margin:0 0 12px"><b>Commentaire :</b> ' + md(tb.commentaire) + '</div>';
@@ -11068,14 +11166,14 @@
                 var js = figs.map(function (f) {
                     return 'try{Plotly.newPlot(document.getElementById(' + JSON.stringify(f.id) + '),' +
                         JSON.stringify(f.fig.data || []).replace(/<\//g, '<\\/') + ',' +
-                        JSON.stringify(f.fig.layout || {}).replace(/<\//g, '<\\/') +
+                        JSON.stringify(iaDeepMerge(iaPlotlyTheme(st.couleur_principale), f.fig.layout || {})).replace(/<\//g, '<\\/') +
                         ',{responsive:true,displaylogo:false});}catch(e){}';
                 }).join('\n');
                 var doc = '<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n' +
                     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
                     '<title>' + escH(inp.titre || 'Carte interactive') + '</title>\n' +
                     '<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"><\/script>\n' +
-                    '<style>body{margin:0;background:#f7fafc;color:#222;font-family:' + font + '}main,header,footer{background:#fff}header,main,footer{max-width:980px;margin:0 auto}header{margin-top:0}@media print{.Plotly,.js-plotly-plot{page-break-inside:avoid}}</style>\n' +
+                    '<style>body{margin:0;background:#f7fafc;color:#222;font-family:' + font + '}main,header,footer{background:#fff}header,main,footer{max-width:' + (paysage ? '1400px' : '980px') + ';margin:0 auto}header{margin-top:0}' + (paysage ? '@page{size:A4 landscape}' : '') + '@media print{.Plotly,.js-plotly-plot{page-break-inside:avoid}}</style>\n' +
                     '</head>\n<body>\n' + h + '\n<script>\n' + js + '\n<\/script>\n</body>\n</html>';
                 iaDlBlob(safe + '.html', 'text/html;charset=utf-8', doc);
             }
@@ -11144,8 +11242,11 @@
                 (rows || []).forEach(function (l, ri) {
                     l = l || [];
                     x += '<w:tr>' + (cols || []).map(function (c, ci) {
-                        var v = l[ci];
-                        return '<w:tc><w:tcPr>' + (ri % 2 ? '<w:shd w:val="clear" w:color="auto" w:fill="EEF5FA"/>' : '') + '<w:vAlign w:val="center"/></w:tcPr>' + iaOoxP(iaOoxRun(String(v == null ? '' : v), { sz: 19, font: font }), { spacingAfter: 0 }) + '</w:tc>';
+                        var cn = iaCellNorm(l[ci]);
+                        var shd = cn.fill ? '<w:shd w:val="clear" w:color="auto" w:fill="' + cn.fill + '"/>' : (ri % 2 ? '<w:shd w:val="clear" w:color="auto" w:fill="EEF5FA"/>' : '');
+                        var ropt = { sz: 19, font: font };
+                        if (cn.fg) ropt.color = cn.fg;
+                        return '<w:tc><w:tcPr>' + shd + '<w:vAlign w:val="center"/></w:tcPr>' + iaOoxP(iaOoxRun(cn.text, ropt), { spacingAfter: 0 }) + '</w:tc>';
                     }).join('') + '</w:tr>';
                 });
                 return x + '</w:tbl>';
@@ -11164,6 +11265,7 @@
             async function iaRepDocx(inp, safe) {
                 await iaEnsureZip();
                 var st = inp.style || {};
+                var paysage = /pays|land|horizon/i.test(String(inp.orientation || st.orientation || ''));
                 var C = (st.couleur_principale || '#0b5e8e').replace('#', '').toUpperCase();
                 var font = String(st.police || 'Times New Roman').replace(/['"]/g, '').split(',')[0].trim() || 'Times New Roman';
                 var hFont = st.police ? font : 'Arial'; /* design de référence : corps serif, titres sans gras */
@@ -11228,7 +11330,7 @@
                 }
                 var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
                     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>' + body +
-                    '<w:sectPr><w:footerReference w:type="default" r:id="rId3"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+                    '<w:sectPr><w:footerReference w:type="default" r:id="rId3"/>' + (paysage ? '<w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>' : '<w:pgSz w:w="11906" w:h="16838"/>') + '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
                 var stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
                     '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
                     '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="' + iaOoxEsc(font) + '" w:hAnsi="' + iaOoxEsc(font) + '"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
@@ -11287,6 +11389,7 @@
                 await iaEnsurePptx();
                 var st = inp.style || {};
                 var C = (st.couleur_principale || '#0b5e8e').replace('#', '');
+                var C2 = (st.couleur_secondaire || st.couleur_principale || '#0b5e8e').replace('#', '');
                 var entete = st.entete || 'Programme Élargi de Vaccination — RDC';
                 var pied = st.pied_de_page || '';
                 var logo = iaLogoData(st.logo);
@@ -11301,7 +11404,8 @@
                     var sl = p.addSlide(); sl.background = { color: 'FFFFFF' };
                     if (logo) sl.addImage({ data: logo, x: 9.35, y: 0.12, w: 0.45, h: 0.45, sizing: { type: 'contain', w: 0.45, h: 0.45 } });
                     if (pied) sl.addText(pied, { x: 0.4, y: 5.3, w: 9.2, h: 0.3, fontSize: 8, color: '999999', align: 'center' });
-                    sl.addText((i + 1) + '. ' + (sec.titre || ''), { x: 0.4, y: 0.25, w: 8.8, h: 0.6, fontSize: 20, bold: true, color: C });
+                    sl.addText((i + 1) + '. ' + (sec.titre || ''), { x: 0.4, y: 0.25, w: 8.8, h: 0.6, fontSize: 20, bold: true, color: C, fontFace: 'Arial' });
+                    sl.addShape('rect', { x: 0.4, y: 0.92, w: 1.1, h: 0.045, fill: { color: C2 || C }, line: { type: 'none' } });
                     var tbP = (sec.tableau && sec.tableau.colonnes) ? sec.tableau : ((sec.tableaux || []).filter(function (t2) { return t2 && t2.colonnes; })[0] || null);
                     var hasVis = !!(sec._png || tbP);
                     if (sec.contenu) {
@@ -11313,7 +11417,7 @@
                         sl.addImage({ data: sec._png, x: sec.contenu ? 5.0 : 0.9, y: 1.2, w: sec.contenu ? 4.5 : 8.2, h: sec.contenu ? 2.52 : 4.59 });
                     } else if (tbP) {
                         var rows = [tbP.colonnes.map(function (c) { return { text: String(c), options: { bold: true, color: 'FFFFFF', fill: { color: C }, fontSize: 10 } }; })]
-                            .concat((tbP.lignes || []).slice(0, 13).map(function (l) { return l.map(function (v) { return { text: String(v == null ? '' : v), options: { fontSize: 9.5, color: '333333' } }; }); }));
+                            .concat((tbP.lignes || []).slice(0, 13).map(function (l) { return l.map(function (v) { var cn = iaCellNorm(v); var o = { fontSize: 9.5, color: cn.fg || '333333' }; if (cn.fill) o.fill = { color: cn.fill }; return { text: cn.text, options: o }; }); }));
                         sl.addTable(rows, { x: sec.contenu ? 5.0 : 0.4, y: 1.15, w: sec.contenu ? 4.6 : 9.2, border: { pt: 0.5, color: 'CCCCCC' } });
                     }
                 });
