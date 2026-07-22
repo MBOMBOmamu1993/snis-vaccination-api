@@ -81,7 +81,7 @@ const OFFERS = [
    forme + un défaut. Le tag « :cloud » (ou suffixe -cloud) est obligatoire —
    sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
 const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
-const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
+const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
 const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';

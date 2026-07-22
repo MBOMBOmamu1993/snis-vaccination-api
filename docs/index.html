@@ -9485,11 +9485,18 @@
                outils d'analyse, graphiques et rapports PDF/Word/PPTX) et la même clé
                Ollama. L'historique est stocké au format Ollama et converti à la volée
                pour Anthropic : on peut changer de modèle en cours de conversation. */
+            var IA_CLAUDE_KEYHINT = 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.';
             var IA_CLAUDE = {
                 label: 'Claude Opus 4.8', model: 'claude-opus-4-8', kind: 'anthropic',
                 path: '/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
                 keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
-                keyHint: 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.'
+                keyHint: IA_CLAUDE_KEYHINT
+            };
+            var IA_CLAUDE_FABLE = {
+                label: 'Claude Fable 5', model: 'claude-fable-5', kind: 'anthropic',
+                path: '/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
+                keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
+                keyHint: IA_CLAUDE_KEYHINT
             };
             var IA_OLLAMA_KEYMETA = {
                 keyLabel: 'Clé API Ollama Cloud (commune à tous les modèles Ollama)', keyPlaceholder: 'votre clé ollama.com',
@@ -9519,7 +9526,8 @@
                 { v: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
                 { v: 'kimi-k2.7-code', label: 'Kimi K2.7' },
                 { v: 'kimi:kimi-k3', label: 'Kimi K3 (adapté aux tâches les plus complexes et exigeantes)' },
-                { v: 'claude', label: 'Claude Opus 4.8 (adapté aux tâches les plus complexes et exigeantes)' }
+                { v: 'claude', label: 'Claude Opus 4.8 (le plus intelligent — recommandé pour les cartes, rapports et tâches complexes)' },
+                { v: 'claude-fable', label: 'Claude Fable 5 (haut de gamme — compréhension et rendu soignés)' }
             ];
             var iaThinkOff = {}; /* modèles ayant refusé le raisonnement (mémorisé pour la session) */
 
@@ -9534,7 +9542,7 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
-                if (p === 'claude') return 'claude';
+                if (p === 'claude' || p === 'claude-fable') return p;
                 if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
                 if (p === 'minimax' || !p) return IA_DEFAULT_PROVIDER; /* migration ancien réglage */
                 return p.replace(/:cloud$/, '');
@@ -9542,6 +9550,7 @@
             function iaProv(pk) {
                 pk = pk || iaProvKey();
                 if (pk === 'claude') return IA_CLAUDE;
+                if (pk === 'claude-fable') return IA_CLAUDE_FABLE;
                 if (pk.indexOf('kimi:') === 0) {
                     var km = pk.slice(5) || 'kimi-k3';
                     var kmMeta = null;
@@ -9705,6 +9714,15 @@
                     "- TABLEAUX COLORÉS (code couleur Excel vert/jaune/rouge) : pour reproduire une grille de scores/qualité colorée cellule par cellule (comme un tableau Excel), chaque cellule concernée doit être un OBJET {t:'valeur', bg:'couleur'} dans lignes[] — bg = 'vert'|'jaune'|'orange'|'rouge'|'bleu'|'gris' ou hex '#RRGGBB'. La couleur est rendue dans word, pdf, pptx ET carte. Colore selon les seuils du modèle (ex. ≥95 % vert, 80–94 jaune, <80 rouge). NE te contente PAS d'expliquer le code couleur en commentaire : applique-le réellement aux cellules.",
                     "- ORIENTATION : pour une matrice large (ex. ZS en lignes × canevas en colonnes, ou tableau de score à nombreuses colonnes), passe orientation:'paysage' — valable pour word et pdf. Garde la 1re colonne = entité (ZS/DPS) et la 1re ligne = en-têtes (canevas/critères).",
                     "- Chaque tableau de données est suivi d'un commentaire analytique chiffré (champ commentaire), comme dans les rapports PEV officiels.",
+                    "",
+                    "## Comprendre le client et exécuter juste (DISCIPLINE — lis avant d'agir)",
+                    "- COMPRENDS L'INTENTION d'abord : reformule mentalement, en une phrase, le résultat concret attendu (quel indicateur, quelle période, quelle entité, quel FORMAT/rendu), puis fais EXACTEMENT cela — ni plus, ni moins. Le livrable doit répondre mot pour mot à la demande.",
+                    "- UNE RECETTE FOURNIE = À COPIER : quand ces instructions donnent un modèle précis (carte des ZS, tableau coloré, légende CV…), reprends-le TEL QUEL. N'invente pas ta propre méthode, ne « bricole » pas une variante.",
+                    "- QUAND LE CLIENT TE CORRIGE : relis sa phrase, identifie le SEUL point à changer, et applique une correction MINIMALE et ciblée — ne refais pas tout, ne change rien d'autre. S'il dit « la légende doit être X », change uniquement la légende pour qu'elle soit exactement X.",
+                    "- NE RÉPÈTE JAMAIS une approche qui vient d'échouer : change de méthode. Si tu te retrouves à reconstruire à la main quelque chose que l'outil sait faire (ex. dessiner une légende en SVG), ARRÊTE et utilise la fonction native (légende Vega/Plotly, ctx.afficher, ctx.topoZS…).",
+                    "- AMBIGUÏTÉ RÉELLE seulement → pose UNE question courte et précise ; sinon agis directement avec l'hypothèse la plus raisonnable et signale-la brièvement.",
+                    "- ÉCONOMISE LES TOURS : calcule et prépare TOUT, puis livre en une fois. Évite les essais visibles à répétition. Un livrable juste du premier coup vaut mieux que dix tentatives.",
+                    "- HONNÊTETÉ : ne prétends jamais qu'un rendu est fait/correct si tu n'en es pas sûr ; tu ne vois pas le résultat à l'écran — fie-toi aux recettes fournies et aux données, pas à une supposition.",
                     "- Jamais de placeholder (« à compléter », « XX ») : toute valeur écrite provient d'un calcul executer_js/requete_dhis2 ; si une donnée est réellement indisponible après recherche DHIS2, écris « Non disponible » et signale-le.",
                     "",
                     "## Qualité, design, rédaction (exigence maximale)",
