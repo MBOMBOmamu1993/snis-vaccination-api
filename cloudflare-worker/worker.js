@@ -82,6 +82,16 @@ const OFFERS = [
    sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
 const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
 const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
+/* Modèles PUISSANTS réservés aux abonnés PAYANTS : un code d'ESSAI gratuit ne
+   peut PAS les utiliser (réponse 402 → le dashboard redirige vers l'achat).
+   Les clés personnelles (x-anthropic-key / x-kimi-key) ne sont jamais bloquées. */
+const PAID_ONLY_MODELS = new Set(['claude-opus-4-8', 'claude-fable-5', 'kimi-k3']);
+function blockIfTrialPaidModel(resolved, model, cors) {
+  if (resolved && resolved.auth && resolved.auth.rec && resolved.auth.rec.trial && PAID_ONLY_MODELS.has(String(model))) {
+    return json({ error: { type: 'paid_required', message: "Le modèle « " + model + " » est réservé aux abonnés. L'essai gratuit ne donne accès qu'aux modèles standard. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour l'utiliser." } }, 402, cors);
+  }
+  return null;
+}
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
 const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -223,16 +233,27 @@ async function fpHash(request) {
 async function trialGrant(request, env, cors) {
   if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
   const fp = await fpHash(request);
-  const prev = await env.CODES.get('trial:' + fp);
-  if (prev) {
-    const t = JSON.parse(prev);
-    const rec = await getCode(env, t.code);
-    return json({ code: t.code, essai: true, deja: true, restant: rec ? rec.remaining : 0, expire: t.expires }, 200, cors);
+  /* Identifiant d'appareil persistant envoyé par le navigateur (localStorage) :
+     bloque le renouvellement même si l'IP ou le User-Agent change. On vérifie
+     DEUX clés (empreinte IP+UA ET deviceId) — si l'UNE existe déjà, on rend le
+     code d'essai existant, JAMAIS un nouveau. */
+  let devId = '';
+  if (request.method === 'POST') { try { const b = await request.json(); devId = (b && typeof b.deviceId === 'string') ? b.deviceId.replace(/[^\w-]/g, '').slice(0, 64) : ''; } catch (e) { } }
+  const keys = ['trial:' + fp].concat(devId ? ['trial:dev:' + devId] : []);
+  for (const k of keys) {
+    const prev = await env.CODES.get(k);
+    if (prev) {
+      const t = JSON.parse(prev);
+      const rec = await getCode(env, t.code);
+      /* rattache l'autre clé au même code (si l'une manquait) pour verrouiller les 2 voies */
+      for (const k2 of keys) { if (k2 !== k) await env.CODES.put(k2, JSON.stringify({ code: t.code, expires: t.expires })); }
+      return json({ code: t.code, essai: true, deja: true, restant: rec ? rec.remaining : 0, expire: t.expires }, 200, cors);
+    }
   }
   const code = genCode();
   const expires = new Date(Date.now() + TRIAL_DAYS * 864e5).toISOString();
   await putCode(env, code, { total: TRIAL_REQUESTS, remaining: TRIAL_REQUESTS, created: new Date().toISOString(), tx: 'essai', trial: true, expires });
-  await env.CODES.put('trial:' + fp, JSON.stringify({ code, expires }));
+  for (const k of keys) await env.CODES.put(k, JSON.stringify({ code, expires }));
   return json({ code, essai: true, restant: TRIAL_REQUESTS, expire: expires }, 200, cors);
 }
 
@@ -329,6 +350,7 @@ async function proxyKimi(request, env, cors) {
   catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
 
   if (typeof body.model !== 'string' || !/^[\w.\/:-]{1,80}$/.test(body.model)) body.model = DEFAULT_KIMI_MODEL;
+  { const blk = blockIfTrialPaidModel(resolved, body.model, cors); if (blk) return blk; }
   if (body.max_tokens && body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
 
   const upstream = await fetch((env.KIMI_API_BASE || KIMI_DEFAULT_BASE).replace(/\/+$/, '') + '/v1/chat/completions', {
@@ -353,6 +375,7 @@ async function proxyAnthropic(request, env, cors) {
   catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
 
   if (!ALLOWED_ANTHROPIC_MODELS.includes(body.model)) body.model = ALLOWED_ANTHROPIC_MODELS[0];
+  { const blk = blockIfTrialPaidModel(resolved, body.model, cors); if (blk) return blk; }
   if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
 
   const upstream = await fetch(ANTHROPIC_URL, {

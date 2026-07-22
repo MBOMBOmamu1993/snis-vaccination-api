@@ -9525,10 +9525,21 @@
                 { v: 'glm-5.2', label: 'GLM 5.2' },
                 { v: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
                 { v: 'kimi-k2.7-code', label: 'Kimi K2.7' },
-                { v: 'kimi:kimi-k3', label: 'Kimi K3 (adapté aux tâches les plus complexes et exigeantes)' },
-                { v: 'claude', label: 'Claude Opus 4.8 (le plus intelligent — recommandé pour les cartes, rapports et tâches complexes)' },
-                { v: 'claude-fable', label: 'Claude Fable 5 (haut de gamme — compréhension et rendu soignés)' }
+                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
+                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
+                { v: 'claude-fable', label: 'Claude Fable 5 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true }
             ];
+            function iaProvIsPaid(pk) { for (var i = 0; i < IA_CLIENT_MODELS.length; i++) if (IA_CLIENT_MODELS[i].v === pk) return !!IA_CLIENT_MODELS[i].paid; return false; }
+            /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
+            function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
+            /* Abonné payant ? code valide, NON-essai et non expiré. cb(true|false). */
+            function iaCheckPaying(cb) {
+                var code = cfg('code'); if (!code || !IA_PROXY_URL) { cb(false); return; }
+                fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/verifier?code=' + encodeURIComponent(code))
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) { cb(!!(j && j.valide && !j.essai && !j['expire_passé'])); })
+                    .catch(function () { cb(false); });
+            }
             var iaThinkOff = {}; /* modèles ayant refusé le raisonnement (mémorisé pour la session) */
 
             /* Libellé lisible : 'kimi-k2.7-code' → 'Kimi K2.7 Code' ; 'gemma4:31b' → 'Gemma4 (31B)' */
@@ -11698,6 +11709,7 @@
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
                     '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
+                    '<div id="iaPaidBadge" style="display:none;margin:-6px 0 14px;padding:10px 12px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;font-size:13px;font-weight:600"></div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
@@ -11759,10 +11771,24 @@
                     var rk = m.querySelector('#iaRadKey'), rc = m.querySelector('#iaRadCode');
                     if (rk) rk.classList.toggle('on', mo === 'key'); if (rc) rc.classList.toggle('on', mo === 'code');
                 }
+                /* Gating des modèles PAYANTS (Kimi K3, Opus 4.8, Fable 5) pour les
+                   clients non abonnés : insigne rouge « mettre à jour » + achat. */
+                var paidBadge = m.querySelector('#iaPaidBadge');
+                var iaPaying = null; /* null=inconnu, true, false */
+                function refreshPaidBadge() {
+                    if (!paidBadge) return;
+                    if (!isAdm && iaProvIsPaid(pk) && iaPaying !== true) {
+                        paidBadge.style.display = '';
+                        paidBadge.innerHTML = '🔒 Ce modèle est <b>réservé aux abonnés</b> — l\'essai gratuit ne l\'inclut pas. <button class="ia-btn" id="iaUpgradeBtn" style="margin-left:6px;background:#dc2626;color:#fff;border-color:#dc2626">⬆ Mettre à jour — obtenir un code</button>';
+                        var ub = paidBadge.querySelector('#iaUpgradeBtn');
+                        if (ub) ub.onclick = function () { window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank'); };
+                    } else { paidBadge.style.display = 'none'; }
+                }
+                if (!isAdm) iaCheckPaying(function (p) { iaPaying = p; refreshPaidBadge(); });
                 renderModelOptions();
                 setProv(pk);
                 if (isAdm) iaFetchModels(function () { if (document.body.contains(bg)) renderModelOptions(); });
-                selEl.onchange = function () { setProv(selEl.value); };
+                selEl.onchange = function () { setProv(selEl.value); refreshPaidBadge(); };
                 if (hasProxy) {
                     if (isAdm) {
                         m.querySelector('#iaRadKey').onclick = function () { setMode('key'); };
@@ -11775,7 +11801,7 @@
                     var tr = m.querySelector('#iaTrial'), trMsg = m.querySelector('#iaTrialMsg');
                     if (tr) tr.onclick = function () {
                         tr.disabled = true; if (trMsg) trMsg.textContent = 'Activation en cours…';
-                        fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/essai', { method: 'POST' })
+                        fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/essai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ deviceId: iaDeviceId() }) })
                             .then(function (r) { return r.json(); })
                             .then(function (j) {
                                 if (!j || !j.code) throw new Error((j && j.error && j.error.message) || (j && j.error) || 'Essai indisponible pour le moment.');
@@ -11794,6 +11820,12 @@
                 } else setMode(isAdm ? 'key' : 'code');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {
+                    /* Client non abonné choisissant un modèle payant → redirection achat, pas d'enregistrement. */
+                    if (!isAdm && iaProvIsPaid(pk) && iaPaying === false) {
+                        refreshPaidBadge();
+                        window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank');
+                        return;
+                    }
                     keys[keySlot(pk)] = kEl.value.trim();
                     cfg('mode', mode); cfg('provider', pk);
                     cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || ''); cfg('key_kimi', keys.kimi || '');
