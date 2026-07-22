@@ -9720,7 +9720,9 @@
                     "",
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
-                    "- GRAPHIQUES/IMAGES d'un .docx joint : ils sont adressés [IMG#] dans l'extraction (ordre = figures 1..N) et se remplacent EN PLACE via modifier_document op remplacer_image {image:n, figure:{data,layout}} — la nouvelle figure est rendue en PNG au ratio exact du cadre d'origine, sans déformer ni bouger la mise en page. C'est la SEULE bonne méthode pour actualiser les figures d'un rapport : calcule d'abord les valeurs par ZS (executer_js), construis chaque figure Plotly (ou vega), puis un remplacer_image par graphique — le tout dans le MÊME appel modifier_document que les remplacements de texte/tableaux, pour livrer UN seul fichier final complet. Ne dis JAMAIS à l'utilisateur que tu ne peux pas remplacer les images : tu le peux désormais.",
+                    "- GRAPHIQUES d'un .docx joint — DEUX cas, tous deux traités SUR PLACE (jamais de régénération, jamais d'annexe) : (a) GRAPHIQUE NATIF Word [GRAPH#] (objet graphique éditable — le cas le PLUS fréquent dans les rapports PEV/DHIS2) → op remplacer_graphique {graphique:n, figure:{data,layout}} ; (b) IMAGE incorporée [IMG#] → op remplacer_image {image:n, figure}. Les deux sont listés dans l'extraction. Méthode : calcule d'abord les valeurs par ZS (executer_js), construis chaque figure Plotly (ou vega), puis UN remplacer_graphique (ou remplacer_image) par figure — dans le MÊME appel modifier_document que les textes/tableaux, pour livrer UN seul fichier final. Pour « 1 graphique agrandi par page », ajoute pleine_page:true. Si l'utilisateur veut PLUS de figures qu'il n'y a de cadres, utilise inserer_image {p, figure, saut_de_page:true}.",
+                    "- COULEURS de tableaux (tableaux de suivi/logistique/score colorés selon une légende) : op colorer_cellule {t, ligne, colonne, couleur} applique un fond de cellule SUR PLACE (jeton vert/jaune/orange/rouge/bleu/gris ou hex) sans reconstruire le document ni changer le design. C'est POSSIBLE et attendu. Ex. légende logistique dashboard : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge (colonnes TX SATISFACTION/DISPONIBILITÉ). Émets un colorer_cellule par cellule à colorer.",
+                    "- INTERDICTIONS ABSOLUES quand un .docx est joint : ne JAMAIS répondre qu'une action est « impossible sur place » (remplacer un graphique natif, colorer des cellules, insérer des images pleine page sont TOUS possibles via modifier_document) ; ne JAMAIS régénérer le rapport avec generer_rapport (cela change le design) ; ne JAMAIS livrer une « annexe » à copier-coller. Toujours modifier le fichier joint et le rendre tel quel avec seulement les changements demandés.",
                     "- Modèle .doc/.ppt/.pdf joint (non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle.",
                     "- RESPECTE le format demandé : l'utilisateur demande Word → format:'word' ; PDF → format:'pdf'. Ne remplace JAMAIS le format demandé par 'carte' (HTML) — le Word et le PDF savent désormais colorer les cellules et se mettre en paysage.",
                     "- TABLEAUX COLORÉS (code couleur Excel vert/jaune/rouge) : pour reproduire une grille de scores/qualité colorée cellule par cellule (comme un tableau Excel), chaque cellule concernée doit être un OBJET {t:'valeur', bg:'couleur'} dans lignes[] — bg = 'vert'|'jaune'|'orange'|'rouge'|'bleu'|'gris' ou hex '#RRGGBB'. La couleur est rendue dans word, pdf, pptx ET carte. Colore selon les seuils du modèle (ex. ≥95 % vert, 80–94 jaune, <80 rouge). NE te contente PAS d'expliquer le code couleur en commentaire : applique-le réellement aux cellules.",
@@ -9847,7 +9849,7 @@
                     type: 'function',
                     function: {
                         name: 'modifier_document',
-                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1), [IMG#]=image incorporée (dans l'ordre d'apparition = figures 1..N). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut) ; remplacer_image {image, figure|vega|image_b64} — REMPLACE une image/figure incorporée PAR UNE NOUVELLE dans le cadre existant (même taille et position) : passe une figure Plotly {data,layout} ou une spec Vega-Lite (rendues en PNG au ratio du cadre), ou un PNG en base64/dataURL. C'est ainsi qu'on actualise les graphiques 1..N d'un rapport SANS refaire la mise en page : calcule d'abord les valeurs (executer_js), puis un remplacer_image par figure. Le document modifié est téléchargé automatiquement chez l'utilisateur.",
+                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1), [IMG#]=image incorporée (dans l'ordre d'apparition = figures 1..N). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut) ; remplacer_image {image, figure|vega|image_b64} — REMPLACE une image incorporée [IMG#] dans son cadre existant (même taille/position) ; remplacer_graphique {graphique, figure|vega, pleine_page?} — ACTUALISE un GRAPHIQUE NATIF Word [GRAPH#] (objet graphique éditable, celui utilisé dans la plupart des rapports PEV/DHIS2 — ce N'EST PAS une image) en le remplaçant par ta figure à jour dans le même emplacement ; ajoute pleine_page:true pour l'agrandir seul sur sa page ; colorer_cellule {t, ligne, colonne, couleur} — applique une COULEUR DE FOND à une cellule de tableau SUR PLACE (jeton légende vert/jaune/orange/rouge/bleu/gris ou hex), sans toucher au reste ; inserer_image {p, figure|vega|image_b64, pleine_page?, saut_de_page?} — insère une NOUVELLE image (nouveau paragraphe, pleine largeur) après [P#], option nouvelle page. Ainsi on peut : actualiser les graphiques d'un rapport (remplacer_graphique/remplacer_image), colorer des tableaux de suivi selon une légende (colorer_cellule), ajouter des figures pleine page (inserer_image) — TOUJOURS sur place, mise en page d'origine conservée. Le document modifié est téléchargé automatiquement chez l'utilisateur.",
                         parameters: {
                             type: 'object',
                             properties: {
@@ -9856,7 +9858,7 @@
                                 operations: {
                                     type: 'array', items: {
                                         type: 'object', properties: {
-                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'inserer_apres', 'remplacer_image'] },
+                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'inserer_apres', 'remplacer_image', 'remplacer_graphique', 'colorer_cellule', 'inserer_image'] },
                                             cherche: { type: 'string' },
                                             remplace: { type: 'string' },
                                             p: { type: 'integer', description: 'Numéro de paragraphe [P#]' },
@@ -9865,10 +9867,14 @@
                                             colonne: { type: 'integer' },
                                             texte: { type: 'string', description: 'Nouveau texte (\\n = saut de ligne)' },
                                             image: { type: 'integer', description: "remplacer_image : numéro de l'image incorporée [IMG#] à remplacer (ordre d'apparition = figures 1..N)" },
-                                            figure: { type: 'object', description: 'remplacer_image : figure Plotly {data, layout} à rendre en PNG dans le cadre de l\'image ciblée (au ratio du cadre, sans déformation)' },
-                                            vega: { type: 'object', description: 'remplacer_image : spécification Vega-Lite/Vega complète à rendre en PNG (alternative à figure)' },
-                                            image_b64: { type: 'string', description: 'remplacer_image : image PNG déjà prête, en base64 ou dataURL (alternative à figure/vega)' },
-                                            image_fichier: { type: 'string', description: 'remplacer_image : nom exact d\'une image jointe dans la conversation à utiliser comme remplacement' }
+                                            graphique: { type: 'integer', description: "remplacer_graphique : numéro du graphique NATIF Word [GRAPH#] à actualiser (objet graphique éditable, distinct des images [IMG#])" },
+                                            figure: { type: 'object', description: 'remplacer_image / remplacer_graphique / inserer_image : figure Plotly {data, layout} rendue en PNG (au ratio du cadre pour un remplacement, sans déformation)' },
+                                            vega: { type: 'object', description: 'spécification Vega-Lite/Vega complète à rendre en PNG (alternative à figure)' },
+                                            image_b64: { type: 'string', description: 'image PNG déjà prête, en base64 ou dataURL (alternative à figure/vega)' },
+                                            image_fichier: { type: 'string', description: 'nom exact d\'une image jointe dans la conversation à utiliser comme figure' },
+                                            couleur: { type: 'string', description: "colorer_cellule : couleur de fond de la cellule — jeton légende (vert/jaune/orange/rouge/bleu/gris) ou hex RRGGBB. Ex. légende logistique : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge." },
+                                            pleine_page: { type: 'boolean', description: 'remplacer_graphique/inserer_image : true = agrandir à la pleine largeur (1 figure par page avec saut de page pour remplacer_graphique)' },
+                                            saut_de_page: { type: 'boolean', description: 'inserer_image : true = commencer la nouvelle image sur une nouvelle page' }
                                         }, required: ['op']
                                     }
                                 }
@@ -10964,6 +10970,8 @@
                 });
                 out.push('(Les paragraphes vides ne sont pas listés mais comptent dans la numérotation [P#].)');
                 if (imgs.length) out.push(imgs.length + ' image(s) incorporée(s) : ' + imgs.map(function (_, k) { return '[IMG' + (k + 1) + ']'; }).join(' ') + " — remplaçables SUR PLACE via modifier_document, opération remplacer_image {image:n, figure|vega|image_b64}. L'ordre [IMG#] suit l'ordre d'apparition (figures 1..N) ; le cadre, la taille et la position sont conservés.");
+                var charts = iaDocxCharts(xmlDoc);
+                if (charts.length) out.push(charts.length + ' GRAPHIQUE(S) NATIF(S) Word (objets graphiques éditables, PAS des images) : ' + charts.map(function (_, k) { return '[GRAPH' + (k + 1) + ']'; }).join(' ') + " — ce sont les « Graphiques » du rapport ; ils affichent encore leurs anciennes données. Pour les ACTUALISER, calcule les valeurs puis remplace chacun par sa figure à jour via modifier_document, opération remplacer_graphique {graphique:n, figure|vega} (ajoute pleine_page:true pour 1 graphique agrandi par page). L'ordre [GRAPH#] suit l'ordre d'apparition.");
                 return out.join('\n');
             }
             /* Remplace le texte d'un paragraphe en conservant son style (pPr) et la
@@ -11054,6 +11062,92 @@
                 if (!raw) throw new Error('fournir figure, vega, image_b64 ou image_fichier');
                 raw = String(raw);
                 return /^data:image\//.test(raw) ? raw : ('data:image/png;base64,' + iaStripData(raw));
+            }
+            /* ══ GRAPHIQUES NATIFS Word (c:chart) : adressage [GRAPH#] + remplacement ══
+               Beaucoup de rapports (modèles PEV/DHIS2) contiennent des graphiques
+               NATIFS Word/Excel : un <a:graphicData uri=".../chart"><c:chart r:id=…/>.
+               Ce ne sont PAS des images (blip) — d'où l'échec des modèles qui ne
+               savaient que remplacer des images. On les énumère dans l'ordre du
+               document ([GRAPH1], [GRAPH2]…) et on remplace un graphique par une
+               nouvelle figure : on transforme son graphicData en une image (PNG rendu)
+               dans le MÊME cadre (taille/position conservées), et on la met à jour. */
+            var IA_WPD_NS = 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing';
+            var IA_PIC_URI = 'http://schemas.openxmlformats.org/drawingml/2006/picture';
+            function iaDocxCharts(xmlDoc) {
+                var gds = xmlDoc.getElementsByTagNameNS(IA_A_NS, 'graphicData'), out = [];
+                for (var i = 0; i < gds.length; i++) if ((gds[i].getAttribute('uri') || '').indexOf('chart') >= 0) out.push(gds[i]);
+                return out;
+            }
+            /* Dimensions natives (px) d'un PNG en dataURL/base64, pour garder le ratio. */
+            function iaPngDims(durl) {
+                try {
+                    var b64 = iaStripData(durl), bin = atob(b64.slice(0, 64));
+                    if (bin.charCodeAt(0) !== 0x89 || bin.charCodeAt(1) !== 0x50) return null;
+                    function u32(o) { return (bin.charCodeAt(o) << 24 | bin.charCodeAt(o + 1) << 16 | bin.charCodeAt(o + 2) << 8 | bin.charCodeAt(o + 3)) >>> 0; }
+                    return { w: u32(16), h: u32(20) };
+                } catch (e) { return null; }
+            }
+            /* Construit un <pic:pic> (namespaces déclarés localement) référençant rid. */
+            function iaDocxPicNode(xmlDoc, rid, id, cx, cy) {
+                var s = '<pic:pic xmlns:pic="' + IA_PIC_URI + '" xmlns:a="' + IA_A_NS + '" xmlns:r="' + IA_R_NS + '">' +
+                    '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Figure' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+                    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+                    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+                    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>';
+                var frag = new DOMParser().parseFromString(s, 'application/xml').documentElement;
+                return xmlDoc.importNode(frag, true);
+            }
+            /* Paragraphe-image complet (inline, centré), option saut de page avant. */
+            function iaDocxImgPara(xmlDoc, rid, id, cx, cy, pageBreak) {
+                var s = '<w:p xmlns:w="' + IA_W + '" xmlns:wp="' + IA_WPD_NS + '" xmlns:a="' + IA_A_NS + '" xmlns:pic="' + IA_PIC_URI + '" xmlns:r="' + IA_R_NS + '">' +
+                    '<w:pPr>' + (pageBreak ? '<w:pageBreakBefore/>' : '') + '<w:jc w:val="center"/></w:pPr>' +
+                    '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
+                    '<wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+                    '<wp:docPr id="' + id + '" name="Figure' + id + '"/>' +
+                    '<a:graphic xmlns:a="' + IA_A_NS + '"><a:graphicData uri="' + IA_PIC_URI + '">' +
+                    '<pic:pic xmlns:pic="' + IA_PIC_URI + '"><pic:nvPicPr><pic:cNvPr id="' + id + '" name="Figure' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+                    '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+                    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>' +
+                    '</a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+                var frag = new DOMParser().parseFromString(s, 'application/xml').documentElement;
+                return xmlDoc.importNode(frag, true);
+            }
+            /* Jetons de couleur « feux » du dashboard logistique → hex de remplissage. */
+            var IA_SHD = { vert: '92D050', jaune: 'FFFF00', orange: 'FFC000', rouge: 'FF5B5B', bleu: 'BDD7EE', gris: 'D9D9D9', blanc: 'FFFFFF' };
+            function iaShdHex(c) {
+                c = String(c || '').trim().toLowerCase().replace(/^#/, '');
+                if (IA_SHD[c]) return IA_SHD[c];
+                if (/^[0-9a-f]{6}$/.test(c)) return c.toUpperCase();
+                return null;
+            }
+            function iaDocxSetShd(xmlDoc, tc, fill) {
+                var tcPr = null;
+                for (var ch = tc.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1 && ch.localName === 'tcPr') { tcPr = ch; break; }
+                if (!tcPr) { tcPr = xmlDoc.createElementNS(IA_W, 'w:tcPr'); tc.insertBefore(tcPr, tc.firstChild); }
+                for (var c2 = tcPr.firstChild, nx; c2; c2 = nx) { nx = c2.nextSibling; if (c2.nodeType === 1 && c2.localName === 'shd') tcPr.removeChild(c2); }
+                var shd = xmlDoc.createElementNS(IA_W, 'w:shd');
+                shd.setAttributeNS(IA_W, 'w:val', 'clear'); shd.setAttributeNS(IA_W, 'w:color', 'auto'); shd.setAttributeNS(IA_W, 'w:fill', fill);
+                var ordn = ['cnfStyle', 'tcW', 'gridSpan', 'hMerge', 'vMerge', 'tcBorders'], ref = null;
+                for (var c3 = tcPr.firstChild; c3; c3 = c3.nextSibling) if (c3.nodeType === 1 && ordn.indexOf(c3.localName) >= 0) ref = c3;
+                if (ref) tcPr.insertBefore(shd, ref.nextSibling); else tcPr.insertBefore(shd, tcPr.firstChild);
+            }
+            function iaDocxPageBreak(xmlDoc, p) {
+                var pPr = null;
+                for (var ch = p.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1 && ch.localName === 'pPr') { pPr = ch; break; }
+                if (!pPr) { pPr = xmlDoc.createElementNS(IA_W, 'w:pPr'); p.insertBefore(pPr, p.firstChild); }
+                for (var c2 = pPr.firstChild; c2; c2 = c2.nextSibling) if (c2.nodeType === 1 && c2.localName === 'pageBreakBefore') return;
+                pPr.insertBefore(xmlDoc.createElementNS(IA_W, 'w:pageBreakBefore'), pPr.firstChild);
+            }
+            /* Largeur utile de la page (EMU) = largeur − marges G/D, depuis sectPr. */
+            function iaDocxTextWidthEmu(xmlDoc) {
+                try {
+                    var szs = xmlDoc.getElementsByTagNameNS(IA_W, 'pgSz'), mrs = xmlDoc.getElementsByTagNameNS(IA_W, 'pgMar');
+                    if (szs.length && mrs.length) {
+                        var w = +szs[szs.length - 1].getAttributeNS(IA_W, 'w'), l = +mrs[mrs.length - 1].getAttributeNS(IA_W, 'left'), r = +mrs[mrs.length - 1].getAttributeNS(IA_W, 'right');
+                        if (w > 0) { var tw = (w - (l || 0) - (r || 0)) * 635; if (tw > 1000000) return tw; }
+                    }
+                } catch (e) { }
+                return 5943600; /* ~16,5 cm par défaut */
             }
 
             /* Outil modifier_document : applique les opérations puis télécharge le
@@ -11149,6 +11243,45 @@
                             var newRid = await iaAddImageRel(iaStripData(durl));
                             tgt.el.setAttributeNS(IA_R_NS, tgt.qname, newRid);
                             log.push('✔ [IMG' + o.image + '] image remplacée' + (extEmu ? ' (cadre d\'origine conservé)' : '')); nOK++;
+                        } else if (o.op === 'remplacer_graphique') {
+                            var charts = iaDocxCharts(xmlDoc);
+                            var gd = charts[(o.graphique | 0) - 1];
+                            if (!gd) throw new Error('[GRAPH' + o.graphique + '] inexistant (' + charts.length + ' graphique(s) natif(s) : GRAPH1–GRAPH' + charts.length + ')');
+                            var gext = iaDocxExtent(gd);
+                            var durl2 = await iaDocxRenderPng(o, gext);
+                            await iaEnsurePngCT();
+                            var rid2 = await iaAddImageRel(iaStripData(durl2));
+                            var gcx = gext ? gext.cx : 5486400, gcy = gext ? gext.cy : 3086100;
+                            if (o.pleine_page) { var gdims = iaPngDims(durl2); gcx = iaDocxTextWidthEmu(xmlDoc); gcy = gdims ? Math.round(gcx * gdims.h / gdims.w) : Math.round(gcx * (gext ? gext.cy / gext.cx : 0.56)); }
+                            var drawG = null; for (var nn = gd; nn; nn = nn.parentNode) if (nn.nodeType === 1 && nn.localName === 'drawing') { drawG = nn; break; }
+                            if (drawG) { var exs = drawG.getElementsByTagNameNS(IA_WPD_NS, 'extent'); if (exs.length) { exs[0].setAttribute('cx', String(gcx)); exs[0].setAttribute('cy', String(gcy)); } }
+                            gd.setAttribute('uri', IA_PIC_URI);
+                            while (gd.firstChild) gd.removeChild(gd.firstChild);
+                            gd.appendChild(iaDocxPicNode(xmlDoc, rid2, 900 + (o.graphique | 0), gcx, gcy));
+                            if (o.pleine_page) { var pG = iaDocxNearestP(gd); if (pG) iaDocxPageBreak(xmlDoc, pG); }
+                            log.push('✔ [GRAPH' + o.graphique + '] graphique natif remplacé par la figure' + (o.pleine_page ? ' (pleine page)' : ' (cadre conservé)')); nOK++;
+                        } else if (o.op === 'colorer_cellule') {
+                            var tbc = w.tables[(o.t | 0) - 1]; if (!tbc) throw new Error('[T' + o.t + '] inexistant (T1–T' + w.tables.length + ')');
+                            var hex = iaShdHex(o.couleur); if (!hex) throw new Error('couleur invalide : « ' + o.couleur + ' » (jetons: vert/jaune/orange/rouge/bleu/gris ou hex RRGGBB)');
+                            var rowsC = iaTblRows(tbc), rowC = rowsC[(o.ligne | 0) - 1];
+                            if (!rowC) throw new Error('[T' + o.t + ':L' + o.ligne + '] inexistant (' + rowsC.length + ' ligne(s))');
+                            var tcC = rowC[(o.colonne | 0) - 1];
+                            if (!tcC) throw new Error('[T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] inexistant (' + rowC.length + ' colonne(s))');
+                            iaDocxSetShd(xmlDoc, tcC, hex);
+                            if (o.texte != null) iaSetCellText(xmlDoc, tcC, o.texte);
+                            log.push('✔ [T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] colorée #' + hex); nOK++;
+                        } else if (o.op === 'inserer_image') {
+                            var durl3 = await iaDocxRenderPng(o, null);
+                            await iaEnsurePngCT();
+                            var rid3 = await iaAddImageRel(iaStripData(durl3));
+                            var dims3 = iaPngDims(durl3), cw = iaDocxTextWidthEmu(xmlDoc);
+                            var iw = (o.pleine_page === false) ? Math.min(cw, 4000000) : cw;
+                            var ih = dims3 ? Math.round(iw * dims3.h / dims3.w) : Math.round(iw * 0.6);
+                            var imgPara = iaDocxImgPara(xmlDoc, rid3, 950 + i, iw, ih, !!o.saut_de_page);
+                            var anchor = (o.p | 0) > 0 ? w.paras[(o.p | 0) - 1] : null;
+                            if (anchor) anchor.parentNode.insertBefore(imgPara, anchor.nextSibling);
+                            else { var body2 = xmlDoc.getElementsByTagNameNS(IA_W, 'body')[0], sect = body2 && body2.lastElementChild; if (sect && sect.localName === 'sectPr') body2.insertBefore(imgPara, sect); else body2.appendChild(imgPara); }
+                            log.push('✔ image insérée' + (anchor ? ' après [P' + o.p + ']' : ' en fin de document') + (o.saut_de_page ? ' (nouvelle page)' : '')); nOK++;
                         } else throw new Error('opération inconnue : ' + o.op);
                     } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
                 }
