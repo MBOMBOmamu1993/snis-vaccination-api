@@ -9706,6 +9706,8 @@
                     "- DESIGN SYSTEM par défaut : TOUTES les analyses, visuels, graphiques et tableaux des rapports suivent le design system officiel PEV (référence : rapport de riposte rougeole ZS Masuika) — bleu principal #0b5e8e, bleu foncé #0b3a56, fonds clairs #eef5fa, filets de tableaux #c6d3dc, corps en Times New Roman, titres en Arial gras — appliqué automatiquement si aucun style n'est précisé. SEULE EXCEPTION : si le client demande son propre design OU joint un modèle (image/PDF/ancien rapport), reproduis SA structure ET SON design : style.couleur_principale/couleur_secondaire/police/entete_lignes/pied_de_page dans generer_rapport, layout Plotly pour les figures ; logo joint → style.logo = nom exact du fichier image. Résultats affichés dans le chat (afficher_resultat) : charte dashboard marine #1a237e.",
                     "- GRAPHIQUES — design impeccable (un thème pro est appliqué AUTOMATIQUEMENT : palette validée non-daltonienne avec la couleur de marque en tête, grille discrète, axes sobres, police sans-serif, légende horizontale — n'écris PAS de couleurs de série à la main, laisse le thème gérer). CHOISIS LA FORME selon le message : grandeur/classement → barres TRIÉES ; évolution dans le temps → courbe ; comparaison de 2 périodes → barres groupées ; part d'un tout (≤5 catégories) → barres empilées ou donut sobre ; géographie → carte choroplèthe. RÈGLES : une SEULE échelle par graphique (JAMAIS de double axe Y — deux mesures d'échelles différentes = deux graphiques) ; titre qui porte le message ; axes avec unités ; nombres au format français (12 345 · 85,3 %) ; cible en pointillé (ex. CV 95 %) ; légende dès 2 séries, étiquettes directes avec parcimonie (jamais un nombre sur chaque point) ; jamais de 3D, jamais de camembert à >5 parts, jamais d'arc-en-ciel.",
                     "- DEUX MOTEURS DE VISUALISATION : (1) Plotly via `figure = {data, layout}` — défaut, courbes/barres/choroplèthes. (2) Vega-Lite via `vega = {spec complète}` — À PRIVILÉGIER pour les CARTES choroplèthes soignées, heatmaps et small multiples. Les deux marchent dans afficher_resultat ET dans les sections de generer_rapport (rendu en image dans word/pdf/pptx, interactif dans la carte HTML). Un thème de marque est appliqué automatiquement aux deux ; si le CLIENT veut son propre style de carte, mets-le dans layout (Plotly) ou config (Vega-Lite) — ta config est prioritaire. Carte Vega-Lite : `mark:'geoshape'`, `data:{values: <GeoJSON>, format:{type:'json', property:'features'}}`, `transform` de jointure avec tes valeurs, `encoding.color` (scale sur seuils). Récupère le GeoJSON via ctx.geo (niveau 2 provinces, 3 ZS) — ne l'affiche JAMAIS en texte.",
+                    "- 🗺️ CARTES — RÈGLE CRITIQUE (sinon la carte échoue avec « Résultat incomplet ») : un GeoJSON de ZS/AS pèse plusieurs Mo → il NE DOIT JAMAIS transiter par toi (ni via `return`, tronqué à " + IA_TOOL_RESULT_MAX + " car., ni comme argument d'afficher_resultat, que tu ne peux pas ré-émettre fidèlement). La géométrie est déjà dans le navigateur (ctx.geo) : RENDS LA CARTE DIRECTEMENT depuis executer_js avec `ctx.afficher(spec)`. Modèle EXACT à suivre pour une carte choroplèthe : DANS UN SEUL executer_js → `const gj = await ctx.geo(3, uidProvince);` (ou LEVEL-3 pour toute la RDC) ; récupère les valeurs (analytics) ; construis `const fig = {data:[{type:'choropleth', geojson:gj, featureidkey:'properties.id', locations:[UID…], z:[valeurs…], colorscale:[[0,'#dc2626'],[0.6,'#eab308'],[0.9,'#16a34a'],[1,'#2563eb']], zmin:0, zmax:120, marker:{line:{color:'#fff',width:0.4}}, colorbar:{title:'CV %'}}], layout:{margin:{t:30,r:0,b:0,l:0}, geo:{fitbounds:'locations', visible:false}}};` puis `ctx.afficher({titre:'…', type:'carte', figure:fig}); return {ok:true, n: locations.length};`. N'appelle PAS afficher_resultat ensuite — c'est déjà affiché. (Variante generer_rapport : `const k = ctx.keep(fig);` puis passe `figure:k` dans la section — la clé @ref est résolue au rendu.)",
+                    "- LÉGENDE CV — reprends EXACTEMENT celle du dashboard (fonction _cvColor) pour toute carte/tableau de couverture vaccinale : > 100 % bleu #2563eb · 90–100 % vert #16a34a · 60–89 % jaune #eab308 · < 60 % rouge #dc2626 (valeur manquante = gris). Utilise ces seuils/couleurs dans la colorscale et la légende, pas d'autres.",
                     "- TABLEAUX — soignés et lisibles : en-tête coloré, 1re colonne = entité, chaque tableau de scores/qualité COLORÉ cellule par cellule (feux vert/jaune/rouge via {t, bg}) selon les seuils ; commentaire analytique chiffré dessous ; format paysage seulement si le tableau est large.",
                     "- MISE EN PAGE : hiérarchie claire (page de garde soignée, sections numérotées au titre parlant, un visuel focalisé par idée), respiration (marges, espacements), cohérence totale des couleurs et polices d'un bout à l'autre du document. Un livrable = un système visuel unique, pas un assemblage.",
                     "- RÉDACTION : français pro de santé publique, zéro faute ; titres qui énoncent le constat (« La CV DTC3 gagne 8 points » et non « Analyse DTC3 ») ; chiffres clés en gras ; recommandations actionnables (qui, quoi, quand).",
@@ -9722,7 +9724,7 @@
                     type: 'function',
                     function: {
                         name: 'executer_js',
-                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), geo(niveau,parent)→GeoJSON DHIS2 des unités d'organisation (2=provinces, 3=ZS, 4=AS ; parent=UID ou 'LEVEL-n', défaut 'LEVEL-1'), loadUrl(url), mL(ym)→libellé du mois. ⚠ ctx.dhis2, ctx.geo, ctx.load et ctx.loadUrl sont ASYNCHRONES : écris TOUJOURS `const r = await ctx.dhis2(...)` — sans await tu reçois une Promise vide et tes résultats seront à 0. Termine par `return <valeur>` ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères — retourne des résultats compacts.",
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data (lignes FOSA×mois), flt (après filtres utilisateur), AG, load(chemin)→JSON local (gère .gz), dhis2(endpoint,params)→API DHIS2 en direct sans troncature (gros volumes : agrège en code), geo(niveau,parent)→GeoJSON DHIS2 des unités d'organisation (2=provinces, 3=ZS, 4=AS, 5=FOSA ; parent=UID ou 'LEVEL-n', défaut 'LEVEL-1'), loadUrl(url), mL(ym)→libellé du mois. ⭐ ctx.afficher(spec) : AFFICHE un résultat DIRECTEMENT dans le chat depuis le code, spec = {titre, type:'carte'|'graphique'|'vega'|'table', figure|vega|colonnes/lignes} — À UTILISER POUR TOUTES LES CARTES (le GeoJSON, plusieurs Mo, reste dans le navigateur au lieu d'être renvoyé/tronqué). ⭐ ctx.keep(valeur)→'@ref:n' : conserve une donnée volumineuse et renvoie une courte clé à passer dans generer_rapport (figure/vega) au lieu de la donnée. ⚠ ctx.dhis2, ctx.geo, ctx.load et ctx.loadUrl sont ASYNCHRONES : écris TOUJOURS `const r = await ctx.dhis2(...)` — sans await tu reçois une Promise vide et tes résultats seront à 0. Termine par `return <valeur COMPACTE>` (jamais un GeoJSON ni une figure de carte : passe-les à ctx.afficher/ctx.keep) ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
                         parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
@@ -9962,7 +9964,20 @@
 
             async function iaRunTool(name, input, msgsEl) {
                 if (name === 'executer_js') {
-                    var ctx = { S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, geo: iaGeo, mL: mL };
+                    if (!IA.reg) IA.reg = {};
+                    var ctx = {
+                        S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, geo: iaGeo, mL: mL,
+                        /* Rendu DIRECT dans le chat depuis le code (la grosse géométrie
+                           reste dans le navigateur, JAMAIS renvoyée à l'IA) : idéal pour
+                           les cartes choroplèthes (GeoJSON volumineux). spec = même forme
+                           que afficher_resultat : {titre, type:'carte'|'graphique'|'vega'|'table', figure|vega|colonnes/lignes}. */
+                        afficher: function (spec) { if (msgsEl) { try { iaRenderResult(iaParseMaybe(spec) || spec, msgsEl); } catch (e) { return 'Erreur affichage : ' + (e.message || e); } } return true; },
+                        /* Conserve une valeur volumineuse dans le navigateur et renvoie une
+                           courte CLÉ (@ref:n) : passe cette clé (au lieu de la donnée) dans
+                           generer_rapport (figure/vega) ou afficher_resultat — elle est
+                           résolue au rendu. Évite de faire transiter des Mo par l'IA. */
+                        keep: function (v) { var k = '@ref:' + (++IA._regN || (IA._regN = 1)); IA.reg[k] = v; return k; }
+                    };
                     var fn = new Function('ctx', '"use strict";return (async function(){' + input.code + '\n})();');
                     var out = await fn(ctx);
                     var s = (out === undefined) ? 'undefined (le code doit se terminer par return)' : JSON.stringify(out);
@@ -10075,6 +10090,23 @@
             }
             function iaCellText(cell) { return iaCellNorm(cell).text; }
 
+            /* Résolution des poignées @ref:n créées par ctx.keep() : remplace une
+               courte clé par la valeur volumineuse conservée côté navigateur, pour
+               que la grosse géométrie n'ait jamais à transiter par l'IA. */
+            function iaDeref(v) { return (typeof v === 'string' && IA && IA.reg && Object.prototype.hasOwnProperty.call(IA.reg, v)) ? IA.reg[v] : v; }
+            function iaDerefFigure(fig) {
+                fig = iaDeref(fig);
+                if (fig && Array.isArray(fig.data)) fig.data.forEach(function (tr) {
+                    if (tr && typeof tr === 'object') ['geojson', 'locations', 'z', 'x', 'y', 'lat', 'lon', 'values', 'text'].forEach(function (kk) { if (typeof tr[kk] === 'string') tr[kk] = iaDeref(tr[kk]); });
+                });
+                return fig;
+            }
+            function iaDerefVega(spec) {
+                spec = iaDeref(spec);
+                if (spec && spec.data && typeof spec.data.values === 'string') spec.data.values = iaDeref(spec.data.values);
+                return spec;
+            }
+
             /* Construit une figure de secours à partir d'un tableau colonnes/lignes :
                1re colonne = X, chaque colonne numérique = une série. */
             function iaFigureFromTable(colonnes, lignes) {
@@ -10101,9 +10133,9 @@
                     l = iaParseMaybe(l);
                     return Array.isArray(l) ? l : (l && typeof l === 'object' ? Object.values(l) : [l]);
                 });
-                var fig = iaFixFigure(inp.figure || (inp.data ? { data: inp.data, layout: inp.layout } : null));
+                var fig = iaFixFigure(iaDerefFigure(inp.figure) || (inp.data ? { data: inp.data, layout: inp.layout } : null));
                 inp.figure = fig;
-                if (inp.vega) inp.vega = iaParseMaybe(inp.vega);
+                if (inp.vega) inp.vega = iaDerefVega(iaParseMaybe(inp.vega));
                 /* type manquant ou incohérent : on l'infère */
                 var t = String(inp.type || '').toLowerCase();
                 if (t !== 'table' && t !== 'graphique' && t !== 'carte' && t !== 'vega') t = '';
@@ -11545,7 +11577,7 @@
                 var isCarte = fmt0.indexOf('carte') === 0 || fmt0 === 'html';
                 for (var i = 0; i < secs.length; i++) {
                     /* même tolérance que pour afficher_resultat : figures/tableaux réparés */
-                    if (secs[i].figure) secs[i].figure = iaFixFigure(secs[i].figure);
+                    if (secs[i].figure) secs[i].figure = iaFixFigure(iaDerefFigure(secs[i].figure));
                     if (secs[i].tableau) {
                         var tb = iaParseMaybe(secs[i].tableau);
                         if (tb && typeof tb === 'object') {
@@ -11565,7 +11597,7 @@
                             return (Array.isArray(t0.colonnes) && Array.isArray(t0.lignes)) ? t0 : null;
                         }).filter(Boolean);
                     }
-                    if (secs[i].vega) secs[i].vega = iaParseMaybe(secs[i].vega);
+                    if (secs[i].vega) secs[i].vega = iaDerefVega(iaParseMaybe(secs[i].vega));
                     if (secs[i].figure && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaFigPng(secs[i].figure, (inp.style || {}).couleur_principale); } catch (e) { } }
                     if (secs[i].vega && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaVegaPng(secs[i].vega, (inp.style || {}).couleur_principale); } catch (e) { } }
                 }
