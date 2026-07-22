@@ -9720,6 +9720,7 @@
                     "",
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
+                    "- GRAPHIQUES/IMAGES d'un .docx joint : ils sont adressés [IMG#] dans l'extraction (ordre = figures 1..N) et se remplacent EN PLACE via modifier_document op remplacer_image {image:n, figure:{data,layout}} — la nouvelle figure est rendue en PNG au ratio exact du cadre d'origine, sans déformer ni bouger la mise en page. C'est la SEULE bonne méthode pour actualiser les figures d'un rapport : calcule d'abord les valeurs par ZS (executer_js), construis chaque figure Plotly (ou vega), puis un remplacer_image par graphique — le tout dans le MÊME appel modifier_document que les remplacements de texte/tableaux, pour livrer UN seul fichier final complet. Ne dis JAMAIS à l'utilisateur que tu ne peux pas remplacer les images : tu le peux désormais.",
                     "- Modèle .doc/.ppt/.pdf joint (non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle.",
                     "- RESPECTE le format demandé : l'utilisateur demande Word → format:'word' ; PDF → format:'pdf'. Ne remplace JAMAIS le format demandé par 'carte' (HTML) — le Word et le PDF savent désormais colorer les cellules et se mettre en paysage.",
                     "- TABLEAUX COLORÉS (code couleur Excel vert/jaune/rouge) : pour reproduire une grille de scores/qualité colorée cellule par cellule (comme un tableau Excel), chaque cellule concernée doit être un OBJET {t:'valeur', bg:'couleur'} dans lignes[] — bg = 'vert'|'jaune'|'orange'|'rouge'|'bleu'|'gris' ou hex '#RRGGBB'. La couleur est rendue dans word, pdf, pptx ET carte. Colore selon les seuils du modèle (ex. ≥95 % vert, 80–94 jaune, <80 rouge). NE te contente PAS d'expliquer le code couleur en commentaire : applique-le réellement aux cellules.",
@@ -9846,7 +9847,7 @@
                     type: 'function',
                     function: {
                         name: 'modifier_document',
-                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut). Le document modifié est téléchargé automatiquement chez l'utilisateur.",
+                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1), [IMG#]=image incorporée (dans l'ordre d'apparition = figures 1..N). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut) ; remplacer_image {image, figure|vega|image_b64} — REMPLACE une image/figure incorporée PAR UNE NOUVELLE dans le cadre existant (même taille et position) : passe une figure Plotly {data,layout} ou une spec Vega-Lite (rendues en PNG au ratio du cadre), ou un PNG en base64/dataURL. C'est ainsi qu'on actualise les graphiques 1..N d'un rapport SANS refaire la mise en page : calcule d'abord les valeurs (executer_js), puis un remplacer_image par figure. Le document modifié est téléchargé automatiquement chez l'utilisateur.",
                         parameters: {
                             type: 'object',
                             properties: {
@@ -9855,14 +9856,19 @@
                                 operations: {
                                     type: 'array', items: {
                                         type: 'object', properties: {
-                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'inserer_apres'] },
+                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'inserer_apres', 'remplacer_image'] },
                                             cherche: { type: 'string' },
                                             remplace: { type: 'string' },
                                             p: { type: 'integer', description: 'Numéro de paragraphe [P#]' },
                                             t: { type: 'integer', description: 'Numéro de tableau [T#]' },
                                             ligne: { type: 'integer' },
                                             colonne: { type: 'integer' },
-                                            texte: { type: 'string', description: 'Nouveau texte (\\n = saut de ligne)' }
+                                            texte: { type: 'string', description: 'Nouveau texte (\\n = saut de ligne)' },
+                                            image: { type: 'integer', description: "remplacer_image : numéro de l'image incorporée [IMG#] à remplacer (ordre d'apparition = figures 1..N)" },
+                                            figure: { type: 'object', description: 'remplacer_image : figure Plotly {data, layout} à rendre en PNG dans le cadre de l\'image ciblée (au ratio du cadre, sans déformation)' },
+                                            vega: { type: 'object', description: 'remplacer_image : spécification Vega-Lite/Vega complète à rendre en PNG (alternative à figure)' },
+                                            image_b64: { type: 'string', description: 'remplacer_image : image PNG déjà prête, en base64 ou dataURL (alternative à figure/vega)' },
+                                            image_fichier: { type: 'string', description: 'remplacer_image : nom exact d\'une image jointe dans la conversation à utiliser comme remplacement' }
                                         }, required: ['op']
                                     }
                                 }
@@ -10937,11 +10943,16 @@
                 var xmlDoc = new DOMParser().parseFromString(xml, 'application/xml');
                 if (xmlDoc.getElementsByTagName('parsererror').length) throw new Error('XML Word illisible');
                 var w = iaDocxWalk(xmlDoc), out = [], pIdx = 0, tIdx = 0;
+                /* Images incorporées, dans l'ordre du document (= ordre des figures) */
+                var imgs = iaDocxImages(xmlDoc), pImg = new Map();
+                imgs.forEach(function (im, k) { var pp = iaDocxNearestP(im.el); if (pp) { if (!pImg.has(pp)) pImg.set(pp, []); pImg.get(pp).push(k + 1); } });
                 w.seq.forEach(function (it) {
                     if (it.k === 'p') {
                         pIdx++;
                         var t = iaParaText(it.n).replace(/\s*\n\s*/g, ' ⏎ ').trim();
-                        if (t) out.push('[P' + pIdx + '] ' + t);
+                        var mk = pImg.has(it.n) ? ' 🖼️' + pImg.get(it.n).map(function (k) { return '[IMG' + k + ']'; }).join('') : '';
+                        if (t) out.push('[P' + pIdx + '] ' + t + mk);
+                        else if (mk) out.push('[P' + pIdx + ']' + mk + ' (paragraphe-image)');
                     } else {
                         tIdx++;
                         var rows = iaTblRows(it.n);
@@ -10952,6 +10963,7 @@
                     }
                 });
                 out.push('(Les paragraphes vides ne sont pas listés mais comptent dans la numérotation [P#].)');
+                if (imgs.length) out.push(imgs.length + ' image(s) incorporée(s) : ' + imgs.map(function (_, k) { return '[IMG' + (k + 1) + ']'; }).join(' ') + " — remplaçables SUR PLACE via modifier_document, opération remplacer_image {image:n, figure|vega|image_b64}. L'ordre [IMG#] suit l'ordre d'apparition (figures 1..N) ; le cadre, la taille et la position sont conservés.");
                 return out.join('\n');
             }
             /* Remplace le texte d'un paragraphe en conservant son style (pPr) et la
@@ -10982,6 +10994,68 @@
                 if (!first) { first = xmlDoc.createElementNS(IA_W, 'w:p'); tc.appendChild(first); }
                 iaSetParaText(xmlDoc, first, texte);
             }
+            /* ══ IMAGES INCORPORÉES : adressage [IMG#] + remplacement en place ══
+               Une image d'un .docx est un <a:blip r:embed="rId…"/> (DrawingML) ou un
+               <v:imagedata r:id="rId…"/> (VML) qui pointe, via word/_rels/document.xml.rels,
+               vers un fichier word/media/imageN.*. On énumère ces références dans l'ordre
+               du document (= ordre des figures 1..N) : [IMG1], [IMG2]… Remplacer une image
+               = ajouter le nouveau PNG dans word/media, créer une relation, et repointer
+               le r:embed / r:id de la référence ciblée. Le <w:drawing> (taille, position)
+               reste intact : seule l'image affichée change. */
+            var IA_A_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+            var IA_R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+            function iaDocxImages(xmlDoc) {
+                var out = [];
+                (function rec(n) {
+                    for (var ch = n.firstChild; ch; ch = ch.nextSibling) {
+                        if (ch.nodeType !== 1) continue;
+                        if (ch.localName === 'Fallback') continue; /* évite de compter 2× (Choice DrawingML + Fallback VML) */
+                        if (ch.localName === 'blip') {
+                            var id = ch.getAttributeNS(IA_R_NS, 'embed') || ch.getAttributeNS(IA_R_NS, 'link');
+                            if (id) out.push({ el: ch, rId: id, qname: 'r:embed' });
+                        } else if (ch.localName === 'imagedata') {
+                            var id2 = ch.getAttributeNS(IA_R_NS, 'id');
+                            if (id2) out.push({ el: ch, rId: id2, qname: 'r:id' });
+                        }
+                        rec(ch);
+                    }
+                })(xmlDoc.documentElement || xmlDoc);
+                return out;
+            }
+            function iaDocxNearestP(el) {
+                for (var n = el; n; n = n.parentNode) if (n.nodeType === 1 && n.localName === 'p' && n.namespaceURI === IA_W) return n;
+                return null;
+            }
+            /* Dimensions (EMU) du cadre contenant l'image, pour rendre la nouvelle figure
+               au bon ratio et éviter toute déformation. */
+            function iaDocxExtent(el) {
+                var draw = null;
+                for (var n = el; n; n = n.parentNode) if (n.nodeType === 1 && (n.localName === 'drawing' || n.localName === 'pict' || n.localName === 'object')) { draw = n; break; }
+                if (!draw) return null;
+                var all = draw.getElementsByTagName('*');
+                for (var i = 0; i < all.length; i++) {
+                    var e = all[i], l = e.localName;
+                    if (l === 'extent' || l === 'ext') { var cx = +e.getAttribute('cx'), cy = +e.getAttribute('cy'); if (cx > 0 && cy > 0) return { cx: cx, cy: cy }; }
+                }
+                return null;
+            }
+            /* Rend une figure Plotly / Vega-Lite en dataURL PNG au ratio du cadre cible. */
+            async function iaDocxRenderPng(o, ext) {
+                var W = 1100, H = ext ? Math.round(W * ext.cy / ext.cx) : 620;
+                if (!(H > 180 && H < 4000)) H = Math.round(W * 0.56);
+                if (o.figure != null) {
+                    if (!window.Plotly) throw new Error('moteur graphique indisponible');
+                    var fig = iaDerefFigure(iaParseMaybe(o.figure)) || {};
+                    return await Plotly.toImage({ data: fig.data || [], layout: iaDeepMerge(iaPlotlyTheme(), fig.layout || {}) }, { format: 'png', width: W, height: H, scale: 2 });
+                }
+                if (o.vega != null) return await iaVegaPng(iaDerefVega(iaParseMaybe(o.vega)));
+                var raw = o.image_b64;
+                if (!raw && o.image_fichier) { raw = (IA.imgs && IA.imgs[o.image_fichier]) || (IA.docs && IA.docs[o.image_fichier]); if (!raw) throw new Error('image jointe introuvable : « ' + o.image_fichier + ' »'); }
+                if (!raw) throw new Error('fournir figure, vega, image_b64 ou image_fichier');
+                raw = String(raw);
+                return /^data:image\//.test(raw) ? raw : ('data:image/png;base64,' + iaStripData(raw));
+            }
+
             /* Outil modifier_document : applique les opérations puis télécharge le
                .docx modifié — la mise en forme d'origine est intégralement préservée. */
             async function iaDocxModify(inp, msgsEl) {
@@ -10997,6 +11071,37 @@
                 if (!f0) throw new Error('document.xml absent du fichier');
                 var xmlDoc = new DOMParser().parseFromString(await f0.async('string'), 'application/xml');
                 if (xmlDoc.getElementsByTagName('parsererror').length) throw new Error('XML Word illisible');
+                /* Remplacement d'images : relations + content-types chargés à la demande */
+                var relsPath = 'word/_rels/document.xml.rels', relsDoc = null, relsRoot = null, relsChanged = false, ctChanged = false, imgSeq = 0, usedIds = null;
+                async function iaEnsureRels() {
+                    if (relsDoc) return;
+                    var rf = zip.file(relsPath);
+                    var rxml = rf ? await rf.async('string') : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+                    relsDoc = new DOMParser().parseFromString(rxml, 'application/xml');
+                    relsRoot = relsDoc.documentElement; usedIds = {};
+                    var rl = relsRoot.getElementsByTagName('*');
+                    for (var j = 0; j < rl.length; j++) { var idv = rl[j].getAttribute && rl[j].getAttribute('Id'); if (idv) usedIds[idv] = 1; }
+                }
+                async function iaEnsurePngCT() {
+                    if (ctChanged) return; ctChanged = true;
+                    var cf = zip.file('[Content_Types].xml'); if (!cf) return;
+                    var ct = await cf.async('string');
+                    if (!/Extension="png"/i.test(ct)) zip.file('[Content_Types].xml', ct.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>'));
+                }
+                async function iaAddImageRel(b64png) {
+                    await iaEnsureRels();
+                    imgSeq++;
+                    var fname = 'media/ia_fig_' + Date.now().toString(36) + '_' + imgSeq + '.png';
+                    zip.file('word/' + fname, b64png, { base64: true });
+                    var rid; do { rid = 'rIdIA' + imgSeq + '_' + Math.floor(Math.random() * 9000 + 1000); } while (usedIds[rid]);
+                    usedIds[rid] = 1;
+                    var rel = relsDoc.createElementNS(relsRoot.namespaceURI, 'Relationship');
+                    rel.setAttribute('Id', rid);
+                    rel.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image');
+                    rel.setAttribute('Target', fname);
+                    relsRoot.appendChild(rel); relsChanged = true;
+                    return rid;
+                }
                 var ops = inp.operations || [], log = [], nOK = 0;
                 for (var i = 0; i < ops.length; i++) {
                     var o = ops[i] || {};
@@ -11034,11 +11139,22 @@
                             iaSetParaText(xmlDoc, np, o.texte);
                             p4.parentNode.insertBefore(np, p4.nextSibling);
                             log.push('✔ paragraphe inséré après [P' + o.p + ']'); nOK++;
+                        } else if (o.op === 'remplacer_image') {
+                            var imgsList = iaDocxImages(xmlDoc);
+                            var tgt = imgsList[(o.image | 0) - 1];
+                            if (!tgt) throw new Error('[IMG' + o.image + '] inexistant (' + imgsList.length + ' image(s) : IMG1–IMG' + imgsList.length + ')');
+                            var extEmu = iaDocxExtent(tgt.el);
+                            var durl = await iaDocxRenderPng(o, extEmu);
+                            await iaEnsurePngCT();
+                            var newRid = await iaAddImageRel(iaStripData(durl));
+                            tgt.el.setAttributeNS(IA_R_NS, tgt.qname, newRid);
+                            log.push('✔ [IMG' + o.image + '] image remplacée' + (extEmu ? ' (cadre d\'origine conservé)' : '')); nOK++;
                         } else throw new Error('opération inconnue : ' + o.op);
                     } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
                 }
                 if (!nOK) return 'AUCUNE opération appliquée — document non téléchargé.\n' + log.join('\n');
                 zip.file('word/document.xml', new XMLSerializer().serializeToString(xmlDoc));
+                if (relsChanged) zip.file(relsPath, new XMLSerializer().serializeToString(relsDoc));
                 var outName = (inp.nom_sortie ? String(inp.nom_sortie).replace(/\.docx$/i, '') : name.replace(/\.docx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.docx';
                 var blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
                 iaDlBlob(outName, blob.type, blob);
