@@ -1,0 +1,126 @@
+{
+  "generated_at": "2026-07-24T01:40:34.152Z",
+  "server": "eu-west-1a.online.tableau.com",
+  "site": "axdata",
+  "workbook": {
+    "name": "Mashako 3.0 — Rapport de l'Antenne",
+    "contentUrl": "Mashako3_0RapportdelAntenne"
+  },
+  "main_view": "HZScores_ANT",
+  "original_url": "https://eu-west-1a.online.tableau.com/#/site/axdata/views/Mashako3_0RapportdelAntenne/HZScores_ANT",
+  "sync_mode": "local-browser",
+  "views": [
+    {
+      "name": "Cover Page",
+      "urlName": "Cover_Page",
+      "rows": 0,
+      "file": null,
+      "image": "views/Cover_Page.png"
+    },
+    {
+      "name": "KPI Manuel_ANT_P1",
+      "urlName": "KPI_Manuel_ANT_P1",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_ANT_P1.png"
+    },
+    {
+      "name": "KPI Manuel_ANT_P2",
+      "urlName": "KPI_Manuel_ANT_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_ANT_P2.png"
+    },
+    {
+      "name": "KPI Manuel_ANT_P3",
+      "urlName": "KPI_Manuel_ANT_P3",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_ANT_P3.png"
+    },
+    {
+      "name": "Configuration_ANT",
+      "urlName": "Configuration_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Configuration_ANT.png"
+    },
+    {
+      "name": "Ranking_ANT",
+      "urlName": "Ranking_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Ranking_ANT.png"
+    },
+    {
+      "name": "Performance Résumé_ANT",
+      "urlName": "Performance_Resume_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Performance_Resume_ANT.png"
+    },
+    {
+      "name": "Performance Heatmap_ANT",
+      "urlName": "Performance_Heatmap_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Performance_Heatmap_ANT.png"
+    },
+    {
+      "name": "HZ Scores_ANT",
+      "urlName": "HZ_Scores_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/HZ_Scores_ANT.png"
+    },
+    {
+      "name": "Supervision_Quality_ANT",
+      "urlName": "Supervision_Quality_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Supervision_Quality_ANT.png"
+    },
+    {
+      "name": "Carte Qualité Supervision_ANT",
+      "urlName": "Carte_Qualite_Supervision_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Qualite_Supervision_ANT.png"
+    },
+    {
+      "name": "Supervision_ANT_P1",
+      "urlName": "Supervision_ANT_P1",
+      "rows": 0,
+      "file": null,
+      "image": "views/Supervision_ANT_P1.png"
+    },
+    {
+      "name": "Supervision_ANT_P2",
+      "urlName": "Supervision_ANT_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/Supervision_ANT_P2.png"
+    },
+    {
+      "name": "Carte Réunion_ANT",
+      "urlName": "Carte_Reunion_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Reunion_ANT.png"
+    },
+    {
+      "name": "Réunion_ANT",
+      "urlName": "Reunion_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Reunion_ANT.png"
+    },
+    {
+      "name": "Carte CDF_ANT",
+      "urlName": "Carte_CDF_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_CDF_ANT.png"
+    }
+  ]
+}
