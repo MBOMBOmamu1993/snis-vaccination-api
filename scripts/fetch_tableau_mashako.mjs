@@ -125,6 +125,17 @@ async function main() {
 
   const metaViews = [];
   for (const v of views) {
+    const entry = { name: v.name, urlName: v.viewUrlName, rows: 0, file: null, image: null };
+    try {
+      const iRes = await api(
+        `/sites/${siteId}/views/${v.id}/image?resolution=high&maxAge=1`,
+        { headers: { Accept: "image/png" } }, token
+      );
+      entry.image = `views/${v.viewUrlName}.png`;
+      await writeFile(path.join(OUT, entry.image), Buffer.from(await iRes.arrayBuffer()));
+    } catch (e) {
+      console.warn(`  ⚠ ${v.viewUrlName} : image impossible (${e.message})`);
+    }
     try {
       const dRes = await api(
         `/sites/${siteId}/views/${v.id}/data?maxAge=1`,
@@ -132,17 +143,19 @@ async function main() {
       );
       const csv = await dRes.text();
       const data = csvToRecords(csv);
-      const file = `views/${v.viewUrlName}.json`;
-      await writeFile(
-        path.join(OUT, file),
-        JSON.stringify({ name: v.name, urlName: v.viewUrlName, ...data })
-      );
-      metaViews.push({ name: v.name, urlName: v.viewUrlName, rows: data.rows.length, file });
-      console.log(`  ✓ ${v.viewUrlName} : ${data.rows.length} lignes`);
+      if (data.rows.length) {
+        entry.file = `views/${v.viewUrlName}.json`;
+        await writeFile(
+          path.join(OUT, entry.file),
+          JSON.stringify({ name: v.name, urlName: v.viewUrlName, ...data })
+        );
+        entry.rows = data.rows.length;
+      }
     } catch (e) {
       console.warn(`  ⚠ ${v.viewUrlName} : export données impossible (${e.message})`);
-      metaViews.push({ name: v.name, urlName: v.viewUrlName, rows: 0, file: null });
     }
+    if (entry.image || entry.file) metaViews.push(entry);
+    console.log(`  ✓ ${v.viewUrlName} : ${entry.image ? "PNG" : "—"}${entry.file ? ` + ${entry.rows} lignes` : ""}`);
   }
 
   // Image PNG de la vue principale (aperçu fidèle du dashboard original)

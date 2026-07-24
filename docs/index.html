@@ -12281,24 +12281,22 @@
 
             function mkRender(c) {
                 var m = mkMeta;
-                var views = (m.views || []).filter(function (v) { return v.file; });
+                var views = (m.views || []).filter(function (v) { return v.file || v.image; });
                 var h =
                     '<div class="pev-banner">🎯 Plan Mashako 3.0 — ' + esc(m.workbook && m.workbook.name || 'Rapport de l\'Antenne') +
                     '<span style="margin-left:auto;font-size:12px;font-weight:400;opacity:.92">Synchronisé le ' + esc(fmtDate(m.generated_at)) + '</span></div>' +
                     '<div class="cb" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px">' +
                     '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · miroir automatique, mis à jour lundi &amp; jeudi.</span>' +
                     '<a href="' + esc(m.original_url || MK_URL_FALLBACK) + '" target="_blank" rel="noopener" style="margin-left:auto;padding:9px 18px;border-radius:10px;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;font-weight:800;font-size:12.5px;text-decoration:none;border-bottom:3px solid #ffd700;white-space:nowrap">Ouvrir l\'original ↗</a>' +
-                    '</div>' +
-                    '<div class="cb"><h4>🖼️ Aperçu du dashboard original</h4>' +
-                    '<div style="overflow-x:auto"><img id="mkSnap" src="' + mkUrl('snapshot.png') + '?v=' + encodeURIComponent(m.generated_at || '') + '" alt="Aperçu Plan Mashako 3.0" style="max-width:100%;border:1px solid #e7edf5;border-radius:12px" onerror="this.parentNode.parentNode.style.display=\'none\'"></div></div>';
+                    '</div>';
                 if (views.length) {
-                    h += '<div class="cb"><h4>📑 Données par vue</h4><div id="mkTabs" style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px">';
+                    h += '<div class="cb"><h4>📑 Feuilles du classeur</h4><div id="mkTabs" style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px">';
                     views.forEach(function (v, i) {
                         h += '<button type="button" class="mk-vbtn" data-i="' + i + '" style="padding:8px 16px;border-radius:9px;border:2px solid ' + (i === 0 ? 'var(--tb,#0d47a1)' : '#e7edf5') + ';background:' + (i === 0 ? '#1a237e' : '#fff') + ';color:' + (i === 0 ? '#fff' : '#475467') + ';font-weight:700;font-size:12.5px;cursor:pointer">' + esc(v.name) + '</button>';
                     });
                     h += '</div><div id="mkView"></div></div>';
                 } else {
-                    h += '<div class="cb" style="color:#64748b">Aucune donnée tabulaire exportable — utilisez l\'aperçu ci-dessus ou l\'original.</div>';
+                    h += '<div class="cb" style="color:#64748b">Aucune feuille synchronisée pour l\'instant — utilisez le lien vers l\'original.</div>';
                 }
                 c.innerHTML = h;
                 if (views.length) {
@@ -12315,15 +12313,16 @@
 
             function mkLoadView(v, box) {
                 if (!box) return;
-                if (mkViewCache[v.file]) { mkDrawView(mkViewCache[v.file], box); return; }
+                if (!v.file) { mkDrawView({ name: v.name, urlName: v.urlName, columns: [], rows: [] }, box, v); return; }
+                if (mkViewCache[v.file]) { mkDrawView(mkViewCache[v.file], box, v); return; }
                 box.innerHTML = '<div style="padding:26px;text-align:center;color:#64748b">⏳ Chargement de « ' + esc(v.name) + ' »…</div>';
                 fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(function (d) { mkViewCache[v.file] = d; mkDrawView(d, box); })
+                    .then(function (d) { mkViewCache[v.file] = d; mkDrawView(d, box, v); })
                     .catch(function (e) { box.innerHTML = '<div style="padding:22px;color:#c0392b">Impossible de charger cette vue (' + esc(e.message) + ').</div>'; });
             }
 
-            function mkDrawView(d, box) {
+            function mkDrawView(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];
                 var PGS = 15, pg = 0, q = '';
                 /* Colonnes numériques (≥60 % de valeurs numériques) pour le graphique auto */
@@ -12333,7 +12332,16 @@
                 });
                 var lblCol = cols.filter(function (c) { return numCols.indexOf(c) < 0; })[0] || cols[0];
                 var chartId = 'mkC' + Math.random().toString(36).slice(2, 8);
-                var h = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
+                var h = '';
+                /* Visualisation fidèle de la feuille (PNG exporté de Tableau) */
+                if (vm && vm.image) {
+                    h += '<div style="overflow-x:auto;margin-bottom:14px"><img src="' + mkUrl(vm.image) + '?v=' + encodeURIComponent(mkMeta.generated_at || '') + '" alt="' + esc(d.name || vm.name) + '" style="max-width:100%;border:1px solid #e7edf5;border-radius:12px;box-shadow:0 6px 18px -12px rgba(15,23,42,.35)"></div>';
+                }
+                if (!rows.length || !cols.length) {
+                    box.innerHTML = h || '<div style="padding:22px;color:#64748b">Pas de contenu disponible pour cette feuille.</div>';
+                    return;
+                }
+                h += '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
                     '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:180px;padding:9px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px">' +
                     '<button type="button" class="mk-csv" style="padding:9px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
                     '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
