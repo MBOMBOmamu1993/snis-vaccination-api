@@ -45,14 +45,26 @@ jobs:
         with:
           node-version: "20"
 
+      # L'admin du site axdata a désactivé la création de PAT (constaté 24/07/2026).
+      # En attendant, la synchro tourne en local (C:\Users\felly\mashako-sync sur le
+      # PC de Felly) et ce workflow se met en veille sans échouer. Si l'admin active
+      # les PAT un jour : créer le jeton, ajouter les 2 secrets, et ce workflow
+      # reprend tout seul.
       - name: Export Tableau → docs/data/mashako
         env:
           TABLEAU_PAT_NAME: ${{ secrets.TABLEAU_PAT_NAME }}
           TABLEAU_PAT_SECRET: ${{ secrets.TABLEAU_PAT_SECRET }}
-        run: node scripts/fetch_tableau_mashako.mjs
+        run: |
+          if [ -z "$TABLEAU_PAT_NAME" ] || [ -z "$TABLEAU_PAT_SECRET" ]; then
+            echo "::notice::Secrets Tableau absents (PAT désactivés par l'admin axdata) — synchro cloud en veille, la synchro locale prend le relais."
+            echo "SKIP_COMMIT=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          node scripts/fetch_tableau_mashako.mjs
 
       - name: Commit & push si changement
         run: |
+          if [ "$SKIP_COMMIT" = "1" ]; then echo "En veille — rien à committer."; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/data/mashako
