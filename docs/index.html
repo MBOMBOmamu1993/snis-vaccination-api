@@ -12251,11 +12251,14 @@
            données par vue + graphique automatique + lien vers l'original Tableau. */
         (function () {
             var MK_URL_FALLBACK = 'https://eu-west-1a.online.tableau.com/#/site/axdata/views/Mashako3_0RapportdelAntenne/HZScores_ANT';
-            var mkMeta = null, mkViewCache = {};
+            /* Source primaire : branche dédiée mashako-data (écrasée à chaque synchro,
+               l'historique du dépôt ne grossit pas). Secours : ancien chemin Pages. */
+            var MK_RAW = 'https://raw.githubusercontent.com/MBOMBOmamu1993/snis-vaccination-api/mashako-data';
+            var mkMeta = null, mkViewCache = {}, mkBase = MK_RAW, mkAnt = '', mkCurView = null, mkCurBox = null;
             function mkOrigin() {
                 try { return (typeof DATA_ORIGIN !== 'undefined' && DATA_ORIGIN !== '.') ? DATA_ORIGIN : '.'; } catch (e) { return '.'; }
             }
-            function mkUrl(p) { return mkOrigin() + '/data/mashako/' + p; }
+            function mkUrl(p) { return mkBase + '/' + p; }
             function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
             function isNum(v) { if (v === '' || v == null) return false; var n = Number(String(v).replace(/ | /g, '').replace(',', '.')); return isFinite(n); }
             function toNum(v) { return Number(String(v).replace(/ | /g, '').replace(',', '.')); }
@@ -12263,11 +12266,50 @@
 
             window.rMashako = function (c) {
                 c.innerHTML = '<div class="cb" style="text-align:center;padding:44px;color:#64748b">⏳ Chargement des données Plan Mashako 3.0…</div>';
+                mkBase = MK_RAW;
                 fetch(mkUrl('meta.json') + '?_r=' + Date.now(), { cache: 'no-store' })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                     .then(function (meta) { mkMeta = meta; mkRender(c); })
-                    .catch(function () { mkEmpty(c); });
+                    .catch(function () {
+                        mkBase = mkOrigin() + '/data/mashako';
+                        fetch(mkUrl('meta.json') + '?_r=' + Date.now(), { cache: 'no-store' })
+                            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                            .then(function (meta) { mkMeta = meta; mkRender(c); })
+                            .catch(function () { mkEmpty(c); });
+                    });
             };
+
+            /* ── Zoom plein écran (clic sur un visuel) : molette = zoom, glisser =
+               déplacer, double-clic = réinitialiser, Échap/✕ = fermer ── */
+            function mkLightbox(src, title) {
+                var ov = document.createElement('div');
+                ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(10,14,35,.95);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab';
+                var img = document.createElement('img');
+                img.src = src; img.alt = title || '';
+                img.style.cssText = 'max-width:96%;max-height:92%;border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6);transition:transform .08s;transform-origin:center center;user-select:none';
+                var scale = 1, tx = 0, ty = 0, drag = null;
+                function apply() { img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')'; }
+                ov.addEventListener('wheel', function (e) {
+                    e.preventDefault();
+                    scale = Math.min(8, Math.max(0.4, scale * (e.deltaY < 0 ? 1.18 : 0.85)));
+                    apply();
+                }, { passive: false });
+                ov.addEventListener('mousedown', function (e) { drag = { x: e.clientX - tx, y: e.clientY - ty }; ov.style.cursor = 'grabbing'; });
+                window.addEventListener('mousemove', function (e) { if (drag) { tx = e.clientX - drag.x; ty = e.clientY - drag.y; apply(); } });
+                window.addEventListener('mouseup', function () { drag = null; ov.style.cursor = 'grab'; });
+                img.addEventListener('dblclick', function () { scale = 1; tx = 0; ty = 0; apply(); });
+                var bar = document.createElement('div');
+                bar.style.cssText = 'position:absolute;top:14px;left:0;right:0;display:flex;align-items:center;gap:12px;padding:0 20px;color:#fff';
+                bar.innerHTML = '<b style="font-size:14px">' + (title || '') + '</b>' +
+                    '<span style="font-size:12px;opacity:.75">molette = zoom · glisser = déplacer · double-clic = réinitialiser</span>' +
+                    '<button style="margin-left:auto;background:#fff;color:#1a237e;border:none;border-radius:9px;padding:8px 18px;font-weight:800;cursor:pointer;font-size:14px">✕ Fermer</button>';
+                bar.querySelector('button').onclick = close;
+                function close() { document.body.removeChild(ov); document.removeEventListener('keydown', onKey); }
+                function onKey(e) { if (e.key === 'Escape') close(); }
+                ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+                document.addEventListener('keydown', onKey);
+                ov.appendChild(img); ov.appendChild(bar); document.body.appendChild(ov);
+            }
 
             function mkEmpty(c) {
                 c.innerHTML =
@@ -12286,7 +12328,13 @@
                     '<div class="pev-banner">🎯 Plan Mashako 3.0 — ' + esc(m.workbook && m.workbook.name || 'Rapport de l\'Antenne') +
                     '<span style="margin-left:auto;font-size:12px;font-weight:400;opacity:.92">Synchronisé le ' + esc(fmtDate(m.generated_at)) + '</span></div>' +
                     '<div class="cb" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px">' +
-                    '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · miroir automatique, mis à jour lundi &amp; jeudi.</span>' +
+                    (m.antennes && m.antennes.values && m.antennes.values.length ?
+                        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📍 Antenne :' +
+                        '<select id="mkAntSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
+                        '<option value="">Vue par défaut</option>' +
+                        m.antennes.values.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') +
+                        '</select></label>' : '') +
+                    '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · synchronisation automatique.</span>' +
                     '<a href="' + esc(m.original_url || MK_URL_FALLBACK) + '" target="_blank" rel="noopener" style="margin-left:auto;padding:9px 18px;border-radius:10px;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;font-weight:800;font-size:12.5px;text-decoration:none;border-bottom:3px solid #ffd700;white-space:nowrap">Ouvrir l\'original ↗</a>' +
                     '</div>';
                 if (views.length) {
@@ -12299,6 +12347,11 @@
                     h += '<div class="cb" style="color:#64748b">Aucune feuille synchronisée pour l\'instant — utilisez le lien vers l\'original.</div>';
                 }
                 c.innerHTML = h;
+                var antSelEl = c.querySelector('#mkAntSel');
+                if (antSelEl) antSelEl.onchange = function () {
+                    mkAnt = this.value;
+                    if (mkCurView && mkCurBox) mkLoadView(mkCurView, mkCurBox);
+                };
                 if (views.length) {
                     c.querySelectorAll('.mk-vbtn').forEach(function (b) {
                         b.onclick = function () {
@@ -12313,6 +12366,7 @@
 
             function mkLoadView(v, box) {
                 if (!box) return;
+                mkCurView = v; mkCurBox = box;
                 if (!v.file) { mkDrawView({ name: v.name, urlName: v.urlName, columns: [], rows: [] }, box, v); return; }
                 if (mkViewCache[v.file]) { mkDrawView(mkViewCache[v.file], box, v); return; }
                 box.innerHTML = '<div style="padding:26px;text-align:center;color:#64748b">⏳ Chargement de « ' + esc(v.name) + ' »…</div>';
@@ -12342,14 +12396,26 @@
                 var lblCol = cols.filter(function (c) { return numCols.indexOf(c) < 0; })[0] || cols[0];
                 var chartId = 'mkC' + Math.random().toString(36).slice(2, 8);
                 var h = '';
-                /* Visualisation fidèle de la feuille (PNG exporté de Tableau) */
-                if (vm && vm.image) {
-                    h += '<div style="overflow-x:auto;margin-bottom:14px"><img src="' + mkUrl(vm.image) + '?v=' + encodeURIComponent(mkMeta.generated_at || '') + '" alt="' + esc(d.name || vm.name) + '" style="max-width:100%;border:1px solid #e7edf5;border-radius:12px;box-shadow:0 6px 18px -12px rgba(15,23,42,.35)"></div>';
+                /* Visualisation fidèle (PNG exporté de Tableau) : variante de
+                   l'antenne sélectionnée si disponible, cliquable pour zoomer. */
+                var imgRel = null;
+                if (vm) {
+                    imgRel = (mkAnt && vm.antImages && vm.antImages[mkAnt]) ? vm.antImages[mkAnt] : vm.image;
+                }
+                if (imgRel) {
+                    h += '<div style="margin-bottom:14px">' +
+                        (mkAnt && vm.antImages && vm.antImages[mkAnt] ? '<div style="font-size:12px;font-weight:800;color:#1a237e;margin-bottom:6px">📍 Antenne : ' + esc(mkAnt) + '</div>' : '') +
+                        '<img class="mk-img" src="' + mkUrl(imgRel) + '?v=' + encodeURIComponent(mkMeta.generated_at || '') + '" alt="' + esc(d.name || vm.name) + '" title="Cliquer pour agrandir" style="width:100%;border:1px solid #e7edf5;border-radius:12px;box-shadow:0 6px 18px -12px rgba(15,23,42,.35);cursor:zoom-in">' +
+                        '<div style="font-size:11px;color:#94a3b8;margin-top:4px">🔍 Cliquez sur le visuel pour l\'agrandir (zoom molette)</div></div>';
                 }
                 if (!rows.length || !cols.length) {
                     box.innerHTML = h || '<div style="padding:22px;color:#64748b">Pas de contenu disponible pour cette feuille.</div>';
+                    var im0 = box.querySelector('.mk-img');
+                    if (im0) im0.onclick = function () { mkLightbox(this.src, d.name || (vm && vm.name) || ''); };
                     return;
                 }
+                /* Filtre antenne global appliqué aussi aux tables */
+                if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
                 h += '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
                     (antCol ? '<select class="mk-ant" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📍 Toutes les antennes</option>' + antVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:180px;padding:9px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px">' +
@@ -12383,7 +12449,20 @@
                     body.innerHTML = fr.slice(pg * PGS, pg * PGS + PGS).map(function (r, i) {
                         return '<tr style="background:' + (i % 2 ? '#f8fafc' : '#fff') + '">' + cols.map(function (c) {
                             var v = r[c], num = isNum(v);
-                            return '<td style="padding:8px 12px;border-bottom:1px solid #eef2f7;' + (num ? 'text-align:right;font-variant-numeric:tabular-nums' : '') + '">' + esc(v) + '</td>';
+                            var st = 'padding:8px 12px;border-bottom:1px solid #eef2f7;';
+                            if (num) {
+                                st += 'text-align:right;font-variant-numeric:tabular-nums;';
+                                /* Code couleur Mashako sur les pourcentages :
+                                   ≥80 vert · 50–79 jaune · <50 rouge */
+                                var n = toNum(v);
+                                var isPct = /%/.test(String(v)) || /%|score|taux|couverture|dispo|complétude|completude/i.test(c);
+                                if (isPct && n >= 0 && n <= 100) {
+                                    if (n >= 80) st += 'background:#2ca02c;color:#fff;font-weight:800;';
+                                    else if (n >= 50) st += 'background:#f2c744;color:#5b4a00;font-weight:800;';
+                                    else st += 'background:#d62728;color:#fff;font-weight:800;';
+                                }
+                            }
+                            return '<td style="' + st + '">' + esc(v) + '</td>';
                         }).join('') + '</tr>';
                     }).join('') || '<tr><td colspan="' + cols.length + '" style="padding:22px;text-align:center;color:#888">Aucun résultat.</td></tr>';
                     box.querySelector('.mk-pi').textContent = 'Page ' + (pg + 1) + ' / ' + nP;
@@ -12394,7 +12473,9 @@
                 }
                 box.querySelector('.mk-q').oninput = function () { q = this.value; pg = 0; draw(); };
                 var antEl = box.querySelector('.mk-ant');
-                if (antEl) antEl.onchange = function () { antSel = this.value; pg = 0; draw(); };
+                if (antEl) { antEl.value = antSel; antEl.onchange = function () { antSel = this.value; pg = 0; draw(); }; }
+                var imEl = box.querySelector('.mk-img');
+                if (imEl) imEl.onclick = function () { mkLightbox(this.src, d.name || (vm && vm.name) || ''); };
                 box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
                 box.querySelector('.mk-nx').onclick = function () { pg++; draw(); };
                 box.querySelector('.mk-csv').onclick = function () {
