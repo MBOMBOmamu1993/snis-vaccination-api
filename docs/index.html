@@ -12281,7 +12281,7 @@
 
             function mkRender(c) {
                 var m = mkMeta;
-                var views = (m.views || []).filter(function (v) { return v.file || v.image; });
+                var views = (m.views || []).filter(function (v) { return (v.file || v.image) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
                 var h =
                     '<div class="pev-banner">🎯 Plan Mashako 3.0 — ' + esc(m.workbook && m.workbook.name || 'Rapport de l\'Antenne') +
                     '<span style="margin-left:auto;font-size:12px;font-weight:400;opacity:.92">Synchronisé le ' + esc(fmtDate(m.generated_at)) + '</span></div>' +
@@ -12324,7 +12324,16 @@
 
             function mkDrawView(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];
-                var PGS = 15, pg = 0, q = '';
+                var PGS = 15, pg = 0, q = '', antSel = '';
+                /* Filtre Antenne (demande Configuration_ANT) : dès qu'une colonne
+                   « antenne » existe dans les données, un menu déroulant filtre la table. */
+                var antCol = cols.filter(function (c) { return /antenne/i.test(c); })[0] || null;
+                var antVals = [];
+                if (antCol) {
+                    var _s = {}; rows.forEach(function (r) { var v = String(r[antCol] || '').trim(); if (v) _s[v] = 1; });
+                    antVals = Object.keys(_s).sort();
+                    if (antVals.length < 2) { antCol = null; antVals = []; }
+                }
                 /* Colonnes numériques (≥60 % de valeurs numériques) pour le graphique auto */
                 var numCols = cols.filter(function (c) {
                     var n = 0, t = 0; rows.forEach(function (r) { if (r[c] !== '') { t++; if (isNum(r[c])) n++; } });
@@ -12342,6 +12351,7 @@
                     return;
                 }
                 h += '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
+                    (antCol ? '<select class="mk-ant" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📍 Toutes les antennes</option>' + antVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:180px;padding:9px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px">' +
                     '<button type="button" class="mk-csv" style="padding:9px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
                     '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
@@ -12358,9 +12368,13 @@
                 box.innerHTML = h;
 
                 function fRows() {
-                    if (!q) return rows;
-                    var qq = q.toLowerCase();
-                    return rows.filter(function (r) { return cols.some(function (c) { return String(r[c]).toLowerCase().indexOf(qq) >= 0; }); });
+                    var out = rows;
+                    if (antCol && antSel) out = out.filter(function (r) { return String(r[antCol] || '').trim() === antSel; });
+                    if (q) {
+                        var qq = q.toLowerCase();
+                        out = out.filter(function (r) { return cols.some(function (c) { return String(r[c]).toLowerCase().indexOf(qq) >= 0; }); });
+                    }
+                    return out;
                 }
                 function draw() {
                     var fr = fRows(), nP = Math.max(1, Math.ceil(fr.length / PGS));
@@ -12379,6 +12393,8 @@
                     box.querySelector('.mk-nav').style.display = nP > 1 ? 'flex' : 'none';
                 }
                 box.querySelector('.mk-q').oninput = function () { q = this.value; pg = 0; draw(); };
+                var antEl = box.querySelector('.mk-ant');
+                if (antEl) antEl.onchange = function () { antSel = this.value; pg = 0; draw(); };
                 box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
                 box.querySelector('.mk-nx').onclick = function () { pg++; draw(); };
                 box.querySelector('.mk-csv').onclick = function () {
