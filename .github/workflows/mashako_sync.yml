@@ -1,0 +1,71 @@
+# Synchronisation Tableau Cloud → onglet « Plan Mashako 3.0 ».
+#
+# Double rôle :
+#  1. Exporte les données du classeur Mashako3_0RapportdelAntenne (site axdata)
+#     vers docs/data/mashako/ → publiées sur GitHub Pages → lues par le dashboard.
+#  2. KEEP-ALIVE licence : la licence Tableau (fellybokota@gmail.com) est révoquée
+#     après 1 mois sans connexion. Chaque exécution se connecte via le PAT et
+#     maintient donc la licence active. Ne pas espacer le cron au-delà de ~3 semaines.
+#
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   TABLEAU_PAT_NAME   — nom du Personal Access Token Tableau
+#   TABLEAU_PAT_SECRET — secret du token
+name: Sync Tableau Mashako 3.0
+
+on:
+  schedule:
+    # Chaque lundi et jeudi 05:30 UTC — bien en-deçà de la limite d'1 mois,
+    # et robuste si une exécution échoue (la suivante arrive 3-4 jours après).
+    - cron: "30 5 * * 1,4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mashako-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Checkout léger : on évite docs/*/monthly (~10 Go de ndjson bruts)
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /*
+            !/docs/data/monthly
+            !/docs/data_as/monthly
+            !/docs/data_zs/monthly
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Export Tableau → docs/data/mashako
+        env:
+          TABLEAU_PAT_NAME: ${{ secrets.TABLEAU_PAT_NAME }}
+          TABLEAU_PAT_SECRET: ${{ secrets.TABLEAU_PAT_SECRET }}
+        run: node scripts/fetch_tableau_mashako.mjs
+
+      - name: Commit & push si changement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/mashako
+          if git diff --cached --quiet; then
+            echo "Aucun changement de données — licence rafraîchie, rien à committer."
+            exit 0
+          fi
+          git commit -m "auto: sync Tableau Mashako 3.0 ($(date -u +%F))"
+          # Push avec retry : d'autres workflows (aggregate, sync_dhis2) committent aussi sur main
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "Push refusé (tentative $i) — rebase sur origin/main puis retry…"
+            git pull --rebase origin main || true
+            sleep $((i * 10))
+          done
+          echo "✖ Push impossible après 5 tentatives." && exit 1
