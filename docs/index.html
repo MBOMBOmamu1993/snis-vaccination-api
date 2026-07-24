@@ -12378,7 +12378,7 @@
 
             function mkDrawView(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];
-                var PGS = 15, pg = 0, q = '', antSel = '';
+                var PGS = 15, pg = 0, q = '', antSel = '', moisSel = '', anSel = '';
                 /* Filtre Antenne (demande Configuration_ANT) : dès qu'une colonne
                    « antenne » existe dans les données, un menu déroulant filtre la table. */
                 var antCol = cols.filter(function (c) { return /antenne/i.test(c); })[0] || null;
@@ -12388,6 +12388,18 @@
                     antVals = Object.keys(_s).sort();
                     if (antVals.length < 2) { antCol = null; antVals = []; }
                 }
+                /* Filtres Période (Mois / Année) — colonnes présentes dans les données
+                   Tableau (« Month name FR »/« Mois », « Year »/« Année »). */
+                function _distinct(col) { var s = {}; rows.forEach(function (r) { var v = String(r[col] || '').trim(); if (v) s[v] = 1; }); return Object.keys(s); }
+                var moisCol = cols.filter(function (c) { return /mois|month.*fr|^month name/i.test(c); })[0]
+                    || cols.filter(function (c) { return /^month$|\bmonth\b/i.test(c); })[0] || null;
+                var anCol = cols.filter(function (c) { return /ann[eé]e|^year$|\byear\b/i.test(c); })[0] || null;
+                var MOIS_ORD = ['janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'];
+                function _moisRank(v) { var i = MOIS_ORD.indexOf(String(v).toLowerCase()); if (i >= 0) return i < 5 ? i : (i === 5 ? 4 : i - 1); var n = parseInt(v, 10); return isFinite(n) ? n - 1 : 99; }
+                var moisVals = moisCol ? _distinct(moisCol).sort(function (a, b) { return _moisRank(a) - _moisRank(b); }) : [];
+                var anVals = anCol ? _distinct(anCol).sort() : [];
+                if (moisVals.length < 2) { moisCol = null; moisVals = []; }
+                if (anVals.length < 2) { anCol = null; anVals = []; }
                 /* Colonnes numériques (≥60 % de valeurs numériques) pour le graphique auto */
                 var numCols = cols.filter(function (c) {
                     var n = 0, t = 0; rows.forEach(function (r) { if (r[c] !== '') { t++; if (isNum(r[c])) n++; } });
@@ -12420,7 +12432,9 @@
                 if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
                 h += '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
                     (antCol ? '<select class="mk-ant" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📍 Toutes les antennes</option>' + antVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
-                    '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:180px;padding:9px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px">' +
+                    (moisCol ? '<select class="mk-mois" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">🗓️ Tous les mois</option>' + moisVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    (anCol ? '<select class="mk-an" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📅 Toutes années</option>' + anVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:150px;padding:9px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px">' +
                     '<button type="button" class="mk-csv" style="padding:9px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
                     '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
                 if (numCols.length && rows.length > 1) {
@@ -12442,6 +12456,8 @@
                 function fRows() {
                     var out = rows;
                     if (antCol && antSel) out = out.filter(function (r) { return String(r[antCol] || '').trim() === antSel; });
+                    if (moisCol && moisSel) out = out.filter(function (r) { return String(r[moisCol] || '').trim() === moisSel; });
+                    if (anCol && anSel) out = out.filter(function (r) { return String(r[anCol] || '').trim() === anSel; });
                     if (q) {
                         var qq = q.toLowerCase();
                         out = out.filter(function (r) { return cols.some(function (c) { return String(r[c]).toLowerCase().indexOf(qq) >= 0; }); });
@@ -12478,8 +12494,13 @@
                     box.querySelector('.mk-nav').style.display = nP > 1 ? 'flex' : 'none';
                 }
                 box.querySelector('.mk-q').oninput = function () { q = this.value; pg = 0; draw(); };
+                function _afterFilter() { pg = 0; draw(); if (box._mkRebuildChart) box._mkRebuildChart(); }
                 var antEl = box.querySelector('.mk-ant');
-                if (antEl) { antEl.value = antSel; antEl.onchange = function () { antSel = this.value; pg = 0; draw(); }; }
+                if (antEl) { antEl.value = antSel; antEl.onchange = function () { antSel = this.value; _afterFilter(); }; }
+                var moisEl = box.querySelector('.mk-mois');
+                if (moisEl) moisEl.onchange = function () { moisSel = this.value; _afterFilter(); };
+                var anEl = box.querySelector('.mk-an');
+                if (anEl) anEl.onchange = function () { anSel = this.value; _afterFilter(); };
                 var imEl = box.querySelector('.mk-img');
                 if (imEl) imEl.onclick = function () { mkLightbox(this.src, d.name || (vm && vm.name) || ''); };
                 box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
@@ -12493,21 +12514,27 @@
                     a.download = 'mashako_' + (d.urlName || 'vue') + '.csv'; a.click(); URL.revokeObjectURL(a.href);
                 };
                 draw();
-                if (numCols.length && rows.length > 1 && typeof Chart !== 'undefined') {
-                    /* Top 20 par 1re colonne numérique, libellé = 1re colonne texte */
-                    var agg = {};
-                    rows.forEach(function (r) { var k = String(r[lblCol] || '—'); agg[k] = (agg[k] || 0) + (isNum(r[numCols[0]]) ? toNum(r[numCols[0]]) : 0); });
-                    var pairs = Object.keys(agg).map(function (k) { return [k, agg[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20);
+                /* Graphique : recalculé sur les lignes FILTRÉES (antenne/mois/année)
+                   → il suit les filtres, comme la table. */
+                function rebuildChart() {
                     var el = document.getElementById(chartId);
-                    if (el && pairs.length > 1) {
-                        var ch = new Chart(el, {
-                            type: 'bar',
-                            data: { labels: pairs.map(function (p) { return p[0].length > 30 ? p[0].slice(0, 29) + '…' : p[0]; }), datasets: [{ label: numCols[0], data: pairs.map(function (p) { return Math.round(p[1] * 100) / 100; }), backgroundColor: '#0d47a1', hoverBackgroundColor: '#1a237e', borderRadius: 5, maxBarThickness: 34 }] },
-                            options: { indexAxis: pairs.length > 8 ? 'y' : 'x', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } }, title: { display: true, text: esc(d.name || '') + ' — ' + esc(numCols[0]) + ' par ' + esc(lblCol) + ' (top 20)', font: { size: 13, weight: 'bold' }, color: '#1a237e' } } }
-                        });
-                        try { if (typeof S !== 'undefined' && S.charts) S.charts[chartId] = ch; } catch (e) { }
-                    } else if (el) { el.parentNode.style.display = 'none'; }
+                    if (!el || !numCols.length || typeof Chart === 'undefined') { if (el) el.parentNode.style.display = 'none'; return; }
+                    try { if (typeof S !== 'undefined' && S.charts && S.charts[chartId]) { S.charts[chartId].destroy(); } } catch (e) { }
+                    var src = fRows();
+                    var agg = {};
+                    src.forEach(function (r) { var k = String(r[lblCol] || '—'); agg[k] = (agg[k] || 0) + (isNum(r[numCols[0]]) ? toNum(r[numCols[0]]) : 0); });
+                    var pairs = Object.keys(agg).map(function (k) { return [k, agg[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20);
+                    if (pairs.length < 2) { el.parentNode.style.display = 'none'; return; }
+                    el.parentNode.style.display = '';
+                    var ch = new Chart(el, {
+                        type: 'bar',
+                        data: { labels: pairs.map(function (p) { return p[0].length > 30 ? p[0].slice(0, 29) + '…' : p[0]; }), datasets: [{ label: numCols[0], data: pairs.map(function (p) { return Math.round(p[1] * 100) / 100; }), backgroundColor: '#0d47a1', hoverBackgroundColor: '#1a237e', borderRadius: 5, maxBarThickness: 34 }] },
+                        options: { indexAxis: pairs.length > 8 ? 'y' : 'x', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } }, title: { display: true, text: esc(d.name || '') + ' — ' + esc(numCols[0]) + ' par ' + esc(lblCol), font: { size: 13, weight: 'bold' }, color: '#1a237e' } } }
+                    });
+                    try { if (typeof S !== 'undefined' && S.charts) S.charts[chartId] = ch; } catch (e) { }
                 }
+                box._mkRebuildChart = rebuildChart;
+                if (numCols.length && rows.length > 1) rebuildChart();
             }
         })();
     </script>
