@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-24T01:44:47.962Z",
+  "generated_at": "2026-07-24T02:11:51.735Z",
   "server": "eu-west-1a.online.tableau.com",
   "site": "axdata",
   "workbook": {
@@ -44,6 +44,174 @@
       "rows": 0,
       "file": null,
       "image": "views/Configuration_ANT.png"
+    },
+    {
+      "name": "Ranking_ANT",
+      "urlName": "Ranking_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Ranking_ANT.png"
+    },
+    {
+      "name": "Performance Résumé_ANT",
+      "urlName": "Performance_Resume_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Performance_Resume_ANT.png"
+    },
+    {
+      "name": "Performance Heatmap_ANT",
+      "urlName": "Performance_Heatmap_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Performance_Heatmap_ANT.png"
+    },
+    {
+      "name": "HZ Scores_ANT",
+      "urlName": "HZ_Scores_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/HZ_Scores_ANT.png"
+    },
+    {
+      "name": "Supervision_Quality_ANT",
+      "urlName": "Supervision_Quality_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Supervision_Quality_ANT.png"
+    },
+    {
+      "name": "Carte Qualité Supervision_ANT",
+      "urlName": "Carte_Qualite_Supervision_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Qualite_Supervision_ANT.png"
+    },
+    {
+      "name": "Supervision_ANT_P1",
+      "urlName": "Supervision_ANT_P1",
+      "rows": 0,
+      "file": null,
+      "image": "views/Supervision_ANT_P1.png"
+    },
+    {
+      "name": "Supervision_ANT_P2",
+      "urlName": "Supervision_ANT_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/Supervision_ANT_P2.png"
+    },
+    {
+      "name": "Carte Réunion_ANT",
+      "urlName": "Carte_Reunion_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Reunion_ANT.png"
+    },
+    {
+      "name": "Réunion_ANT",
+      "urlName": "Reunion_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Reunion_ANT.png"
+    },
+    {
+      "name": "Carte CDF_ANT",
+      "urlName": "Carte_CDF_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_CDF_ANT.png"
+    },
+    {
+      "name": "CDF_ANT",
+      "urlName": "CDF_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/CDF_ANT.png"
+    },
+    {
+      "name": "CDF_Problèmes_ANT",
+      "urlName": "CDF_Problemes_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/CDF_Problemes_ANT.png"
+    },
+    {
+      "name": "Dispo_vaccins_ANT",
+      "urlName": "Dispo_vaccins_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Dispo_vaccins_ANT.png"
+    },
+    {
+      "name": "Livraison_ANT_P1",
+      "urlName": "Livraison_ANT_P1",
+      "rows": 0,
+      "file": null,
+      "image": "views/Livraison_ANT_P1.png"
+    },
+    {
+      "name": "Livraison_ANT_P2",
+      "urlName": "Livraison_ANT_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/Livraison_ANT_P2.png"
+    },
+    {
+      "name": "Carte Séances_ANT",
+      "urlName": "Carte_Seances_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Seances_ANT.png"
+    },
+    {
+      "name": "Séances_ANT",
+      "urlName": "Seances_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Seances_ANT.png"
+    },
+    {
+      "name": "Carte Taux d'abandon_ANT",
+      "urlName": "Carte_Taux_d_abandon_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Taux_d_abandon_ANT.png"
+    },
+    {
+      "name": "Taux d'abandon_ANT",
+      "urlName": "Taux_d_abandon_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Taux_d_abandon_ANT.png"
+    },
+    {
+      "name": "Carte_Infirmier_ANT",
+      "urlName": "Carte_Infirmier_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Carte_Infirmier_ANT.png"
+    },
+    {
+      "name": "Infirmier_ANT",
+      "urlName": "Infirmier_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Infirmier_ANT.png"
+    },
+    {
+      "name": "Contacts Page",
+      "urlName": "Contacts_Page",
+      "rows": 0,
+      "file": null,
+      "image": "views/Contacts_Page.png"
+    },
+    {
+      "name": "FILTER_VALUES_ANT",
+      "urlName": "FILTER_VALUES_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/FILTER_VALUES_ANT.png"
     }
   ]
 }
