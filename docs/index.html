@@ -12333,7 +12333,6 @@
                     '<div style="font-size:44px;margin-bottom:14px">🎯</div>' +
                     '<h3 style="color:var(--tn);font-weight:800;margin-bottom:10px">Première synchronisation en attente</h3>' +
                     '<p style="color:#64748b;max-width:640px;margin:0 auto;line-height:1.6">Les données du Plan Mashako 3.0 sont synchronisées automatiquement depuis Tableau (site axdata) deux fois par semaine. La première synchronisation n\'a pas encore été exécutée — lancez le workflow <b>« Sync Tableau Mashako 3.0 »</b> depuis l\'onglet Actions du dépôt GitHub, ou attendez la prochaine exécution planifiée.</p>' +
-                    '<a href="' + MK_URL_FALLBACK + '" target="_blank" rel="noopener" style="display:inline-block;margin-top:22px;padding:12px 26px;border-radius:12px;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;font-weight:800;text-decoration:none;border-bottom:3px solid #ffd700">Ouvrir le dashboard original (Tableau) ↗</a>' +
                     '</div>';
             }
 
@@ -12366,6 +12365,11 @@
             function mkRender(c) {
                 var m = mkMeta;
                 var views = (m.views || []).filter(function (v) { return (v.file || v.image) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
+                if (!views.some(function (v) { return v.name === 'Ranking_ANT'; }) && views.some(function (v) { return v.name === 'Performance Heatmap_ANT' && v.file; })) {
+                    var _ri = -1;
+                    views.forEach(function (v, i) { if (_ri < 0 && /^Configuration_ANT$/i.test(v.name)) _ri = i; });
+                    views.splice(_ri >= 0 ? _ri + 1 : 4, 0, { name: 'Ranking_ANT', urlName: 'Ranking_ANT', synthetic: 'ranking', rows: 0, file: null, image: null });
+                }
                 var yrs = [];
                 try { ((mkPeriods && mkPeriods.periods) || []).forEach(function (k) { var y = String(k).slice(0, 4); if (yrs.indexOf(y) < 0) yrs.push(y); }); } catch (e) { }
                 var gy = '';
@@ -12381,20 +12385,26 @@
                         '<select id="mkAntSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
                         '<option value="">Vue par défaut</option>' +
                         m.antennes.values.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') +
-                        '</select></label>' : '') +
+                        '</select>' +
+                        '<button type="button" class="mk-rst" data-t="ant" title="Réinitialiser l\'antenne" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
+                        '</label>' : '') +
                     '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">🗓️ Mois :' +
                     '<select id="mkMoisSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
                     '<option value="">Rapport courant</option>' +
                     MK_MOIS12.map(function (mo) { return '<option value="' + mo + '"' + (mo === mkSelMois ? ' selected' : '') + '>' + mo + '</option>'; }).join('') +
-                    '</select></label>' +
+                    '</select>' +
+                    '<button type="button" class="mk-rst" data-t="mois" title="Réinitialiser le mois" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
+                    '</label>' +
                     '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📅 Année :' +
                     '<select id="mkAnSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
                     '<option value="">—</option>' +
                     yrs.map(function (y) { return '<option value="' + y + '"' + (y === mkSelAn ? ' selected' : '') + '>' + y + '</option>'; }).join('') +
-                    '</select></label>' +
+                    '</select>' +
+                    '<button type="button" class="mk-rst" data-t="an" title="Réinitialiser l\'année" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
+                    '</label>' +
+                    '<button type="button" class="mk-rst" data-t="all" title="Réinitialiser tous les filtres" style="border:none;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;border-radius:9px;padding:9px 16px;cursor:pointer;font-size:12.5px;font-weight:800">↺ Réinitialiser</button>' +
                     (mkArch ? '<span style="padding:7px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:800">📂 Archive ' + esc(mkArch) + '</span>' : '') +
                     '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · synchronisation automatique.</span>' +
-                    '<a href="' + esc(m.original_url || MK_URL_FALLBACK) + '" target="_blank" rel="noopener" style="margin-left:auto;padding:9px 18px;border-radius:10px;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;font-weight:800;font-size:12.5px;text-decoration:none;border-bottom:3px solid #ffd700;white-space:nowrap">Ouvrir l\'original ↗</a>' +
                     '</div>' +
                     (mkPeriodMiss ? '<div class="cb" style="background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:13px;padding:12px 18px">📂 La période <b>' + esc(mkPeriodMiss) + '</b> n\'est pas encore archivée. La récupération des mois passés est en cours — cette période apparaîtra automatiquement dès qu\'elle sera synchronisée depuis Tableau.</div>' : '');
                 if (views.length) {
@@ -12423,6 +12433,18 @@
                 }
                 if (moisSelEl) moisSelEl.onchange = _onPer;
                 if (anSelEl) anSelEl.onchange = _onPer;
+                c.querySelectorAll('.mk-rst').forEach(function (b) {
+                    b.onclick = function () {
+                        var t = this.getAttribute('data-t');
+                        if (t === 'ant' || t === 'all') mkAnt = '';
+                        if (t === 'mois' || t === 'all') mkSelMois = '';
+                        if (t === 'an' || t === 'all') mkSelAn = '';
+                        mkPeriodMiss = '';
+                        /* période incomplète ou effacée → retour au rapport courant */
+                        if ((!mkSelMois || !mkSelAn) && mkArch) { mkArch = null; mkSwitchBase(); return; }
+                        mkRender(mkCtn);
+                    };
+                });
                 if (views.length) {
                     c.querySelectorAll('.mk-vbtn').forEach(function (b) {
                         b.onclick = function () {
@@ -12447,11 +12469,31 @@
                     .catch(function (e) { box.innerHTML = '<div style="padding:22px;color:#c0392b">Impossible de charger cette vue (' + esc(e.message) + ').</div>'; });
             }
 
-            /* ═══ RENDU FIDÈLE TABLEAU — chaque feuille CSV est reconstruite avec le
-               design de l'original (bandeau bleu titre/antenne/période, matrice
-               vert-jaune-rouge, coches, fractions n/N, légende) au lieu d'une table
-               brute. Libellés relevés sur les PNG originaux du classeur axdata. ═══ */
+            /* ═══ RENDU FIDÈLE TABLEAU v2 — chaque feuille reconstruite avec le design
+               de l'original : bandeau bleu, matrices colorées, coches, cartes
+               choroplèthes réelles (topojson ZS RDC + Vega-Lite), cards KPI avec
+               sparklines, tableaux de satisfaction pivotés, classement des antennes.
+               Libellés et maquettes relevés sur le classeur original axdata. ═══ */
             var MK_GREEN = '#2e9e48', MK_YELLOW = '#f2bd00', MK_RED = '#e03531', MK_BLUE = '#3b5cd6';
+            var MK_TOPO_URL = 'https://gist.githubusercontent.com/MBOMBOmamu1993/1297c206c046ee018d5ed6c392d6c20f/raw/24ce95b2935d2b4cc4ef71701138218ca870ff01/rdc_zs.topojson';
+            var MK_TOPO_FEATURE = 'Zone de SantéRDC';
+            /* Province de chaque antenne (relevé sur la feuille Ranking de l'original) */
+            var MK_PROV = {
+                'Buta': 'Bas Uele', 'Mbandaka': 'Equateur', 'Likasi': 'Haut Katanga', 'Lubumbashi': 'Haut Katanga',
+                'Kabondo-Dianda': 'Haut Lomami', 'Kamina': 'Haut Lomami', 'Isiro': 'Haut Uele', 'Watsa': 'Haut Uele',
+                'Aru': 'Ituri', 'Bunia': 'Ituri', 'Kananga': 'Kasai Central', 'Luiza': 'Kasai Central',
+                'Mbuji-Mayi': 'Kasai Oriental', 'Mweka': 'Kasai', 'Tshikapa': 'Kasai',
+                'Kinshasa-Centre': 'Kinshasa', 'Kinshasa-Est': 'Kinshasa', 'Kinshasa-Ouest': 'Kinshasa',
+                'Boma': 'Kongo Central', 'Matadi': 'Kongo Central', 'Mbanza Ngungu': 'Kongo Central',
+                'Kahemba': 'Kwango', 'Kenge': 'Kwango', 'Bandundu': 'Kwilu', 'Kikwit': 'Kwilu',
+                'Kabinda': 'Lomami', 'Mweneditu': 'Lomami', 'Kisenge': 'Lualaba', 'Kolwezi': 'Lualaba',
+                'Inongo': 'Maindombe', 'Nioki': 'Maindombe', 'Kasongo': 'Maniema', 'Kindu': 'Maniema',
+                'Lubutu': 'Maniema', 'Bumba': 'Mongala', 'Lisala': 'Mongala', 'Butembo': 'Nord Kivu',
+                'Goma': 'Nord Kivu', 'Gbadolite': 'Nord Ubangi', 'Lodja': 'Sankuru', 'Lusambo': 'Sankuru',
+                'Tshumbe': 'Sankuru', 'Bukavu': 'Sud Kivu', 'Uvira': 'Sud Kivu', 'Gemena': 'Sud Ubangi',
+                'Kabalo': 'Tanganyika', 'Kalemie': 'Tanganyika', 'Kisangani': 'Tshopo', 'Lokutu': 'Tshopo',
+                'Boende': 'Tshuapa', 'Bokungu': 'Tshuapa'
+            };
             function mkColorOf(name) {
                 var n = String(name == null ? '' : name).trim().toLowerCase();
                 if (n === 'green') return MK_GREEN;
@@ -12484,8 +12526,6 @@
                 if (!isFinite(n)) return null;
                 return n >= 80 ? MK_GREEN : (n >= 50 ? MK_YELLOW : MK_RED);
             }
-            /* colonne _COLOR compagne d'une colonne de valeur (tolère les variantes
-               de casse/underscores, ex. _perc_var_delivery_new_HZ_CYC ↔ _COLOR) */
             function mkColorColFor(c, cols) {
                 var base = mkNorm(c), best = null;
                 for (var i = 0; i < cols.length; i++) {
@@ -12496,13 +12536,18 @@
                 }
                 return best;
             }
+            function mkColByNorm(cols, frag) {
+                frag = mkNorm(frag);
+                for (var i = 0; i < cols.length; i++) if (mkNorm(cols[i]).indexOf(frag) >= 0) return cols[i];
+                return null;
+            }
             var MK_ICON_PIN = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" style="flex:none"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
             var MK_ICON_CAL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" style="flex:none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
-            /* Période du rapport (paramètre du classeur) : lue dans une petite feuille
-               Carte qui exporte _PARAM_month/_PARAM_year. Mise en cache globale. */
+            /* Période du rapport (_PARAM_month/_PARAM_year des feuilles Carte) */
             var mkPeriodCache = null, mkPeriodPending = false, mkPeriodCbs = [];
             function mkPeriodLoad(cb) {
                 if (mkPeriodCache) { cb(mkPeriodCache); return; }
+                if (mkMeta && mkMeta.period && mkMeta.period.month) { mkPeriodCache = { m: mkMeta.period.month, y: mkMeta.period.year }; cb(mkPeriodCache); return; }
                 mkPeriodCbs.push(cb);
                 if (mkPeriodPending) return;
                 mkPeriodPending = true;
@@ -12517,11 +12562,40 @@
                     })
                     .catch(function () { mkPeriodCbs.forEach(function (f) { f(null); }); mkPeriodCbs = []; });
             }
-            /* ── Configuration par feuille : titre/sous-titre/tri (relevés sur les
-               originaux), colonnes visibles avec libellés FR et type de rendu.
-               t: 'bar' (bloc coloré %), 'check' (✓/✗), 'zero' (vert=0/rouge>0),
-               'rednum' (nombre rouge), 'num'/'plain' ; f:[num,den] → « % (n/N) » ;
-               rx: la colonne est retrouvée par expression régulière. ── */
+            /* Chargement croisé d'une autre feuille (les cartes lisent leur feuille de
+               données, le Résumé et le Classement lisent la Heatmap) */
+            function mkFetchView(name, cb) {
+                var v = ((mkMeta && mkMeta.views) || []).filter(function (x) { return x.name === name && x.file; })[0];
+                if (!v) { cb(null); return; }
+                if (mkViewCache[v.file]) { cb(mkViewCache[v.file]); return; }
+                fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
+                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function (d) { mkViewCache[v.file] = d; cb(d); })
+                    .catch(function () { cb(null); });
+            }
+            /* Topojson ZS RDC : nom normalisé ("aketi") → nom complet ("bu Aketi Zone de Santé") */
+            var mkTopoNames = null, mkTopoPromise = null;
+            function mkTopoLoad(cb) {
+                if (mkTopoNames) { cb(mkTopoNames); return; }
+                if (!mkTopoPromise) {
+                    mkTopoPromise = fetch(MK_TOPO_URL).then(function (r) { return r.json(); }).then(function (t) {
+                        var map = {};
+                        var geoms = (t.objects && t.objects[MK_TOPO_FEATURE] && t.objects[MK_TOPO_FEATURE].geometries) || [];
+                        geoms.forEach(function (g) {
+                            var full = g.properties && g.properties.name;
+                            if (!full) return;
+                            var short_ = String(full).replace(/^[a-z]{2,3}\s+/, '').replace(/\s*Zone de Sant[ée]\s*$/i, '').trim().toLowerCase();
+                            map[short_] = full;
+                        });
+                        mkTopoNames = map;
+                        return map;
+                    }).catch(function () { return null; });
+                }
+                mkTopoPromise.then(cb);
+            }
+            var MK_MOIS_ORD = ['janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'];
+            function mkMoisRank(v) { var i = MK_MOIS_ORD.indexOf(String(v == null ? '' : v).toLowerCase()); if (i >= 0) return i < 5 ? i : (i === 5 ? 4 : (i <= 8 ? i - 1 : (i <= 13 ? i - 1 : i - 2))); var n = parseInt(v, 10); return isFinite(n) ? n - 1 : 99; }
+            /* ── Configuration par feuille — titres exacts de l'original ── */
             var MK_CFG = {
                 'HZ Scores_ANT': {
                     title: 'Aperçu des performances Mashako au niveau des zones',
@@ -12537,7 +12611,8 @@
                         { c: '_perc_fixed_outreach_achieved_CYCM', l: 'Réalisation des séances de vaccination', t: 'bar' },
                         { c: '_perc_dropout_CYCM', l: 'Récuperation des enfants', t: 'bar' },
                         { c: '_perc_HA_infirmier_CYCM', l: 'Infirmier Titulaire formés au PEV', t: 'bar' }
-                    ]
+                    ],
+                    foot: "<b>Pondération des indicateurs</b><br>Supervision des aires de santé (AS): 0% | Supervisions formatives de qualité (AS): 5% | Réunions de suivi fonctionnelles (ZS): 10% | Fonctionnalité de la chaîne de froid (AS): 10% | Disponibilité des vaccins (AS): 15% | Satisfaction des commandes (livraison ZS vers AS): 10% | Réalisation des séances de vaccination: 30% | Récupération des enfants: 10% | Formation des infirmier titulaire au PEV: 5%<br><br>L'objectif du <b>score Mashako</b> est de 80%"
                 },
                 'Performance Heatmap_ANT': {
                     title: "Évolution du score Mashako de l'antenne",
@@ -12559,6 +12634,11 @@
                         { l: 'Formation des infirmier titulaire au PEV', v: '_perc_HA_infirmier' }
                     ]
                 },
+                'Performance Résumé_ANT': {
+                    title: "Aperçu de l'antenne", mode: 'resume',
+                    foot: "• L'objectif du <b>score Mashako</b> est de 80%<br>• Les variations sont depuis le mois précédent<br>• *Satisfaction des besoins (livraison antenne vers ZS)"
+                },
+                'Ranking_ANT': { title: 'Classement des antennes sur le mois', sortBy: 'Score Mashako', mode: 'ranking' },
                 'Supervision_Quality_ANT': {
                     title: 'Suivi de la réalisation de la supervision des zones de santé',
                     sub: '% de supervisions de zones de santé répondant aux critères de qualité*',
@@ -12570,6 +12650,19 @@
                         { rx: /_BOOL_HZ_duration/i, l: 'ZS supervisée avec bonne durée', t: 'check' },
                         { rx: /Coh[ée]rence des recommendations/i, l: 'ZS supervisée avec cohérence des données', t: 'check' }
                     ]
+                },
+                'Carte Qualité Supervision_ANT': {
+                    title: 'Carte des supervisions formative de qualité des zones de santé',
+                    sub: '% de supervisions de zones de santé répondant aux critères de qualité*',
+                    mode: 'map',
+                    map: {
+                        data: 'Supervision_Quality_ANT',
+                        metrics: [{ frag: 'numhzsupervisionquality', title: 'Supervision de qualité', binary: true }],
+                        cards: [
+                            { nFrag: 'numsupervisedhealthzones', dFrag: 'numhealthzones', label: 'Zones de santés supervisées', fromData: { nFrag: 'numsupervisedhealthzones' } },
+                            { pFrag: 'perchzsupervisionquality', nFrag: 'numhzsupervisionquality', dFrag: 'numhealthzones', label: 'Supervisions formatives de qualité (ZS)' }
+                        ]
+                    }
                 },
                 'Supervision_ANT_P1': {
                     title: 'Supervisions formative de qualité des aires de santé',
@@ -12583,6 +12676,20 @@
                         { c: '_perc_HA_supervision_quality_CYCM', l: '% de supervision de qualité (AS)', t: 'bar', f: ['_num_HA_supervision_quality_CYCM', '_num_healthareas_CYCM'] }
                     ]
                 },
+                'Supervision_ANT_P2': {
+                    title: 'Synthèse des constats et des recommandations du superviseur',
+                    mode: 'image'
+                },
+                'Carte Réunion_ANT': {
+                    title: 'Carte des réunions de monitorage des zones de santé',
+                    sub: '% de réalisation des réunions de revue de la performance au niveau des zones de santé répondant aux critères de fonctionnalité*',
+                    mode: 'map',
+                    map: {
+                        data: 'Réunion_ANT',
+                        metrics: [{ frag: 'numhzreunioncycm', title: 'Réunion fonctionnelle', binary: true }],
+                        cards: [{ pFrag: 'perchzreunion', nFrag: 'numhzreunion', dFrag: 'numhealthzones', label: 'Réunions de suivi fonctionnelles (ZS)' }]
+                    }
+                },
                 'Réunion_ANT': {
                     title: 'Réunions de monitorage des zones de santé',
                     sub: '% de réalisation des réunions de revue de la performance au niveau des zones de santé répondant aux critères de fonctionnalité*',
@@ -12595,9 +12702,22 @@
                         { c: '_num_HZ_reunion_image_CYCM', l: "Partage du compte rendu de réunion avec points d'actions", t: 'check' }
                     ]
                 },
+                'Carte CDF_ANT': {
+                    title: 'Fonctionnalité de la chaîne de froid des zones de santé',
+                    sub: '% des zones de santé avec au moins une chaîne de froid fonctionnelle*',
+                    mode: 'map',
+                    map: {
+                        data: 'CDF_ANT',
+                        metrics: [{ frag: 'perccdffullyfunctionalhacycm', title: 'Fonctionnalité de la chaîne de froid (AS)' }],
+                        cards: [
+                            { pFrag: 'perccdffullyfunctionalhahzcycm', label: 'Fonctionnalité de la chaîne de froid (ZS)' },
+                            { pFrag: 'perccdffullyfunctionalhacycm', label: 'Score de fonctionnalité de la chaîne de froid (AS)' }
+                        ]
+                    }
+                },
                 'CDF_ANT': {
                     title: 'Fonctionnalité de la chaine de froid des zones et aires de santé',
-                    sub: "% des aires de santé avec au moins une chaîne de froid fonctionnelle*",
+                    sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*',
                     sortBy: 'Score de fonctionnalité de la CdF', row: 'Zone de santé', legend: 'pct',
                     foot: "*Un équipement de chaîne du froid est considéré comme fonctionnel lorsqu'il satisfait simultanément les deux critères suivants :<br>- <b>Dispositif de suivi :</b> Un système de monitorage continu (fridge tag) de la température est disponible et opérationnel<br>- <b>Performance :</b> Aucune alarme négative et moins de trois alarmes positives ont été enregistrées au cours des 30 derniers jours",
                     cols: [
@@ -12609,6 +12729,7 @@
                 },
                 'CDF_Problèmes_ANT': {
                     title: 'Chaîne du froid non fonctionnelle dans les zones et aires de santé',
+                    sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*',
                     row: 'Zone de sante', legend: 'cdf',
                     cols: [
                         { rx: /compresseur/i, l: 'Compresseurs dysfonctionnels', t: 'zero' },
@@ -12617,6 +12738,37 @@
                         { rx: /Panneau_solaire/i, l: "Panneaux solaires à l'ombre", t: 'zero' },
                         { rx: /Pr[ée]sence_de_givr/i, l: 'Frigo avec présence de givre', t: 'zero' }
                     ]
+                },
+                'Dispo_vaccins_ANT': {
+                    title: 'Disponibilité des vaccins des zones de santé',
+                    sub: '% des antennes sans rupture de stock en antigènes et intrants disponibles au niveau central',
+                    mode: 'image'
+                },
+                'Vaccine_expiration_ANT_P1': { title: 'Vaccine expiration (DRAFT)', mode: 'image' },
+                'Livraison_ANT_P1': {
+                    title: 'Satisfaction des besoins',
+                    sub: '% des zones de santé qui ont reçu une livraison satisfaisante en provenance des antennes*',
+                    sortBy: 'Zone de Santé', mode: 'livraison', variant: 'perc',
+                    foot: "Une commande livrée des antennes vers les ZS est considérée comme satisfaisante lorsqu'elle répond simultanément aux deux critères suivants :<br>- Il y a au moins une livraison en accord avec la fréquence d'approvisionnement (au cours des 30 derniers jours, ou des 60 à 90 derniers jours pour les AS situées en zones NGCA ou difficiles d'accès)<br>- Les quantités commandées correspondent aux besoins de 5 semaines (10 semaines pour les provinces NGCA)"
+                },
+                'Livraison_ANT_P2': {
+                    title: 'Taux de satisfaction des besoins',
+                    sub: '% des zones de santé qui ont reçu une livraison satisfaisante en provenance des antennes*',
+                    sortBy: 'Zone de Santé', mode: 'livraison', variant: 'calc'
+                },
+                'Carte Séances_ANT': {
+                    title: 'Suivi de la réalisation des séances de vaccination',
+                    sub: '% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée)',
+                    mode: 'map',
+                    map: {
+                        data: 'Séances_ANT',
+                        metrics: [
+                            { frag: 'percfixedachievedcycm', title: 'Séances fixes' },
+                            { frag: 'percoutreachachievedcycm', title: 'Séances avancées' },
+                            { frag: 'percfixedoutreachachievedcycm', title: 'Séances fixes et avancées' }
+                        ],
+                        cards: []
+                    }
                 },
                 'Séances_ANT': {
                     title: 'Réalisation des séances de vaccination',
@@ -12627,6 +12779,16 @@
                         { c: '_perc_fixed_achieved_CYCM', l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe)", t: 'bar', f: ['_num_healthareas_fixed_achieved_CYCM', '_num_healthareas_CYCM'] },
                         { c: '_perc_outreach_achieved_CYCM', l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (avancée)", t: 'bar', f: ['_num_healthareas_outreach_achieved_CYCM', '_num_healthareas_CYCM'] }
                     ]
+                },
+                "Carte Taux d'abandon_ANT": {
+                    title: 'Carte des récuperation des enfants par zone de santé',
+                    sub: "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1",
+                    mode: 'map',
+                    map: {
+                        data: "Taux d'abandon_ANT",
+                        metrics: [{ frag: 'percdropoutcycm', title: 'Récuperation des enfants' }],
+                        cards: [{ pFrag: 'percdropoutcycm', nFrag: 'numhealthareasdropout', dFrag: 'numhealthareasref', label: 'Récuperation des enfants' }]
+                    }
                 },
                 "Taux d'abandon_ANT": {
                     title: 'Récupération des enfants',
@@ -12639,6 +12801,16 @@
                         { c: '_perc_healthareas_BCG-VAR_dropout_CYCM', l: "% AS avec un taux d'abandon inférieur à 10% pour BCG-VAR", t: 'bar', f: ['_num_healthareas_BCG-VAR_dropout_CYCM', '_num_healthareas_CYCM'] }
                     ]
                 },
+                'Carte_Infirmier_ANT': {
+                    title: 'Carte des formation des infirmier titulaire au PEV au niveau des aires de santé',
+                    sub: "% des aires de santé disposent d'au moins un infirmier titulaire formé au PEV",
+                    mode: 'map',
+                    map: {
+                        data: 'Infirmier_ANT',
+                        metrics: [{ frag: 'perchainfirmiercycm', title: 'Formation des infirmier titulaire au PEV' }],
+                        cards: [{ pFrag: 'perchainfirmier', nFrag: 'numhainfirmier', dFrag: 'numhealthareasref', label: 'Formation des infirmier titulaire au PEV' }]
+                    }
+                },
                 'Infirmier_ANT': {
                     title: 'Formation des infirmier titulaire au PEV au niveau des aires de santé',
                     sub: "% des aires de santé disposent d'au moins un infirmier titulaire formé au PEV",
@@ -12646,19 +12818,8 @@
                     cols: [
                         { c: '_perc_HA_infirmier_CYCM', l: "Score d'infirmier formé", t: 'bar', f: ['_num_HA_infirmier_CYCM', '_num_healthareas_CYCM'] }
                     ]
-                },
-                'Livraison_ANT_P1': {
-                    title: 'Satisfaction des besoins',
-                    sub: '% des zones de santé qui ont reçu une livraison satisfaisante en provenance des antennes*',
-                    mode: 'image'
-                },
-                'Dispo_vaccins_ANT': {
-                    title: 'Disponibilité des vaccins des zones de santé',
-                    sub: '% des antennes sans rupture de stock en antigènes et intrants disponibles au niveau central',
-                    mode: 'image'
                 }
             };
-            /* colonnes techniques masquées dans le rendu générique */
             function mkIsJunkCol(c, cols) {
                 if (/_COLOR\s*$/i.test(c)) return true;
                 if (/^dummy/i.test(c) || /^_SELECTED/i.test(c) || /^_PARAM/i.test(c) || /^_BOOL/i.test(c)) return true;
@@ -12668,7 +12829,6 @@
                 if (/^Month$/i.test(c) && cols.indexOf('Month name FR') >= 0) return true;
                 return false;
             }
-            /* libellé lisible pour une colonne technique (rendu générique) */
             function mkNiceLabel(c) {
                 var s = String(c);
                 var isPct = /^_?perc_/i.test(s), isNum = /^_?num_/i.test(s);
@@ -12717,7 +12877,7 @@
                     (cfg && cfg.sub ? '<div style="font-size:12px;font-style:italic;opacity:.92;margin-top:4px">' + esc(cfg.sub) + '</div>' : '') +
                     (cfg && cfg.sortBy ? '<div style="font-size:11px;opacity:.72;margin-top:6px">ⓘ Tableau classé par : ' + esc(cfg.sortBy) + '</div>' : '') +
                     '</div>' +
-                    '<div style="display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800">' + MK_ICON_PIN + '<span class="mk-b-ant">' + esc(antLabel) + '</span></div>' +
+                    (antLabel === null ? '' : '<div style="display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800">' + MK_ICON_PIN + '<span class="mk-b-ant">' + esc(antLabel) + '</span></div>') +
                     '<div style="display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800">' + MK_ICON_CAL + '<span class="mk-b-per">…</span></div>' +
                     '</div>';
             }
@@ -12730,7 +12890,6 @@
                     else { try { el.textContent = new Date(mkMeta.generated_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); } catch (e) { el.textContent = ''; } }
                 });
             }
-            /* cellule « bloc coloré » du design Tableau */
             function mkBarCell(val, colorName, frac) {
                 var pct = mkFmtPct(val);
                 if (!pct) return '<td style="padding:3px 8px;border-bottom:1px solid #f1f5f9"></td>';
@@ -12744,6 +12903,93 @@
                 if (mkTruthy(v)) return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_GREEN + ';font-weight:900;font-size:15px">✓</td>';
                 if (mkFalsy(v)) return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:900;font-size:15px">✗</td>';
                 return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
+            }
+            function mkSparkline(pts) {
+                /* pts = [{v: 0-100 ou null}] → petite courbe façon Tableau */
+                var W = 150, H = 46, PAD = 4;
+                var vals = pts.map(function (p) { return p.v; });
+                var xs = [], seg = [], segs = [];
+                for (var i = 0; i < vals.length; i++) {
+                    var x = PAD + (W - 2 * PAD) * (vals.length === 1 ? 0.5 : i / (vals.length - 1));
+                    xs.push(x);
+                    if (vals[i] == null || !isFinite(vals[i])) { if (seg.length > 1) segs.push(seg); seg = []; continue; }
+                    var y = H - PAD - (H - 2 * PAD) * Math.max(0, Math.min(100, vals[i])) / 100;
+                    seg.push([x, y]);
+                }
+                if (seg.length > 1) segs.push(seg);
+                var lines = segs.map(function (s) {
+                    return '<polyline fill="none" stroke="#4e79a7" stroke-width="1.6" points="' + s.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>';
+                }).join('');
+                var dots = segs.map(function (s) {
+                    return s.map(function (p) { return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="1.8" fill="#4e79a7"/>'; }).join('');
+                }).join('');
+                var grid = '<line x1="' + PAD + '" y1="' + (H - PAD) + '" x2="' + (W - PAD) + '" y2="' + (H - PAD) + '" stroke="#e5e7eb" stroke-dasharray="2,2"/>' +
+                    '<line x1="' + PAD + '" y1="' + PAD + '" x2="' + (W - PAD) + '" y2="' + PAD + '" stroke="#e5e7eb" stroke-dasharray="2,2"/>';
+                return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="display:block">' + grid + lines + dots + '</svg>';
+            }
+            function mkDeltaHtml(delta, invert) {
+                if (delta == null || !isFinite(delta)) return '';
+                var up = delta > 0.05, down = delta < -0.05;
+                var good = invert ? down : up, bad = invert ? up : down;
+                var col = good ? MK_GREEN : (bad ? MK_RED : '#64748b');
+                var arrow = up ? '▲' : (down ? '▼' : '');
+                return '<span style="color:' + col + ';font-weight:800;font-size:11px">' + arrow + String(Math.abs(delta).toFixed(1)).replace('.', ',') + ' pp</span>';
+            }
+            /* mois d'un jeu heatmap, triés chronologiquement */
+            function mkHeatMonths(d) {
+                var cols = d.columns || [];
+                var mCol = cols.filter(function (c) { return /month name fr|mois/i.test(c); })[0] || 'Month name FR';
+                var yCol = cols.filter(function (c) { return /^year$|ann[ée]e/i.test(c); })[0] || 'Year';
+                return { mCol: mCol, yCol: yCol };
+            }
+            function mkVegaMapSpec(fullNames, valByFull, title, w, h) {
+                return {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                    width: w, height: h,
+                    title: title ? { text: title, fontSize: 13, dy: -4, color: '#1f2545', fontWeight: 700, font: 'Segoe UI' } : undefined,
+                    data: { url: MK_TOPO_URL, format: { type: 'topojson', feature: MK_TOPO_FEATURE } },
+                    projection: { type: 'mercator' },
+                    transform: [
+                        { filter: { field: 'properties.name', oneOf: fullNames } },
+                        { lookup: 'properties.name', from: { data: { values: valByFull }, key: 'k', fields: ['v', 'zs'] }, as: ['val_pct', 'zs_name'] },
+                        { calculate: "datum.val_pct == null ? 'NA' : (datum.val_pct < 50 ? '0-49%' : (datum.val_pct < 80 ? '50-79%' : '80-100%'))", as: 'tranche' }
+                    ],
+                    layer: [
+                        { mark: { type: 'geoshape', fill: '#eef1f8', stroke: '#c7cde0', strokeWidth: 0.4 } },
+                        {
+                            mark: { type: 'geoshape', stroke: '#fff', strokeWidth: 1 },
+                            encoding: {
+                                color: {
+                                    field: 'tranche', type: 'nominal',
+                                    scale: { domain: ['0-49%', '50-79%', '80-100%', 'NA'], range: [MK_RED, MK_YELLOW, MK_GREEN, '#e4e7f2'] },
+                                    legend: { title: null, orient: 'bottom', direction: 'horizontal', labelFontSize: 10 }
+                                },
+                                tooltip: [
+                                    { field: 'zs_name', title: 'Zone de Santé' },
+                                    { field: 'val_pct', title: '%', format: '.0f' }
+                                ]
+                            }
+                        }
+                    ]
+                };
+            }
+            function mkEmbedMap(el, spec) {
+                if (!window.vegaEmbed) {
+                    el.innerHTML = '<div style="padding:20px;color:#64748b;font-size:12.5px">Bibliothèque cartographique en cours de chargement… rouvrez la feuille dans un instant.</div>';
+                    return;
+                }
+                window.vegaEmbed(el, spec, { actions: false, renderer: 'svg' }).catch(function (e) {
+                    el.innerHTML = '<div style="padding:20px;color:#c0392b;font-size:12.5px">Carte indisponible (' + esc(e.message) + ')</div>';
+                });
+            }
+            function mkKpiCard(pct, frac, label, delta, dark, spark) {
+                return '<div style="background:' + (dark ? '#5b5f66' : '#f5f6f8') + ';color:' + (dark ? '#fff' : '#1f2937') + ';border-radius:4px;padding:14px 16px;min-width:170px;flex:1 1 170px;display:flex;flex-direction:column;gap:2px">' +
+                    '<div style="font-size:30px;font-weight:900;line-height:1">' + esc(pct) + '</div>' +
+                    (frac ? '<div style="font-size:11px;font-weight:700;opacity:.75">(' + esc(frac) + ')</div>' : '') +
+                    '<div style="font-size:11.5px;line-height:1.35;' + (dark ? 'opacity:.95' : 'color:#475467') + '">' + esc(label) + '</div>' +
+                    (spark ? '<div style="margin-top:6px">' + spark + '</div>' : '') +
+                    (delta || '') +
+                    '</div>';
             }
             function mkDrawView(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];
@@ -12760,35 +13006,344 @@
                 function _distinct(col) { var s = {}; rows.forEach(function (r) { var v = String(r[col] || '').trim(); if (v) s[v] = 1; }); return Object.keys(s); }
                 var moisCol = cols.filter(function (c) { return /mois|month.*fr|^month name/i.test(c); })[0] || null;
                 var anCol = cols.filter(function (c) { return /ann[eé]e|^year$/i.test(c); })[0] || null;
-                var MOIS_ORD = ['janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'];
-                function _moisRank(v) { var i = MOIS_ORD.indexOf(String(v).toLowerCase()); if (i >= 0) return i < 5 ? i : (i === 5 ? 4 : i - 1); var n = parseInt(v, 10); return isFinite(n) ? n - 1 : 99; }
-                var moisVals = moisCol ? _distinct(moisCol).sort(function (a, b) { return _moisRank(a) - _moisRank(b); }) : [];
+                var moisVals = moisCol ? _distinct(moisCol).sort(function (a, b) { return mkMoisRank(a) - mkMoisRank(b); }) : [];
                 var anVals = anCol ? _distinct(anCol).sort() : [];
-                var isHeat = cfg && cfg.mode === 'heatmap';
-                if (!isHeat && moisVals.length < 2) { moisCol = null; moisVals = []; }
-                if (!isHeat && anVals.length < 2) { anCol = null; anVals = []; }
-                /* image de la feuille (variante antenne si dispo) */
+                var mode = (cfg && cfg.mode) || 'table';
+                if (mode !== 'heatmap' && moisVals.length < 2) { moisCol = null; moisVals = []; }
+                if (mode !== 'heatmap' && anVals.length < 2) { anCol = null; anVals = []; }
                 var imgRel = vm ? ((mkAnt && vm.antImages && vm.antImages[mkAnt]) ? vm.antImages[mkAnt] : vm.image) : null;
                 var imgSrc = imgRel ? mkUrl(imgRel) + '?v=' + encodeURIComponent(mkMeta.generated_at || '') : null;
                 function wireImg() {
                     var im = box.querySelector('.mk-img');
                     if (im) im.onclick = function () { mkLightbox(this.src, name); };
                 }
-                if (!rows.length || !cols.length || (cfg && cfg.mode === 'image')) {
-                    /* pas de données exploitables (ou feuille à CSV inexploitable) :
-                       bandeau fidèle + image de l'original en principal */
-                    var hh = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' + mkBannerHtml(cfg, d, vm, mkAnt || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes'));
-                    if (imgSrc) hh += '<div style="padding:10px"><img class="mk-img" src="' + imgSrc + '" alt="' + esc(name) + '" style="width:100%;cursor:zoom-in;border-radius:6px"></div>' +
-                        '<div style="font-size:11px;color:#94a3b8;padding:0 14px 12px">🔍 Cliquez sur le visuel pour l\'agrandir — cette feuille est affichée telle que dans l\'original (ses données CSV ne sont pas exploitables en table).</div>';
-                    else hh += '<div style="padding:22px;color:#64748b">Pas de contenu disponible pour cette feuille.</div>';
+                if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
+
+                /* ═══ MODE IMAGE : la feuille est affichée telle que dans l'original
+                   (par antenne quand la variante existe) — sans double bandeau ═══ */
+                if (mode === 'image' || ((!rows.length || !cols.length) && mode === 'table' && !(vm && vm.synthetic))) {
+                    var hasAntImg = vm && vm.antImages && mkAnt && vm.antImages[mkAnt];
+                    var hh = '<div class="cb" style="padding:10px;border-radius:14px">';
+                    if (imgSrc) {
+                        hh += (mkAnt && !hasAntImg ? '<div style="margin-bottom:8px;padding:9px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:700">📍 La vue « ' + esc(mkAnt) + ' » de cette feuille sera disponible à la prochaine synchronisation — affichage de la vue par défaut en attendant.</div>' : '') +
+                            '<img class="mk-img" src="' + imgSrc + '" alt="' + esc(name) + '" title="Cliquer pour agrandir" style="width:100%;border-radius:8px;cursor:zoom-in">';
+                    } else {
+                        hh += '<div style="padding:22px;color:#64748b">Pas de contenu disponible pour cette feuille.</div>';
+                    }
                     hh += '</div>';
                     box.innerHTML = hh;
-                    mkFillPeriod(box); wireImg();
+                    wireImg();
                     return;
                 }
-                if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
+
+                /* ═══ MODE CARTE : vraie carte choroplèthe des ZS (topojson RDC) ═══ */
+                if (mode === 'map') {
+                    box.innerHTML = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                        mkBannerHtml(cfg, d, vm, antSel || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes')) +
+                        '<div class="mk-map-body" style="display:flex;gap:18px;flex-wrap:wrap;padding:16px"><div style="padding:14px;color:#64748b">⏳ Préparation de la carte…</div></div>' +
+                        mkLegendHtml('pct') + '</div>';
+                    mkFillPeriod(box);
+                    var mapCfg = cfg.map;
+                    mkFetchView(mapCfg.data, function (dd) {
+                        var body = box.querySelector('.mk-map-body');
+                        if (!body) return;
+                        if (!dd) { body.innerHTML = '<div style="padding:14px;color:#c0392b">Données de la carte indisponibles.</div>'; return; }
+                        mkTopoLoad(function (topoMap) {
+                            if (!body.isConnected) return;
+                            if (!topoMap) { body.innerHTML = '<div style="padding:14px;color:#c0392b">Fond de carte inaccessible.</div>'; return; }
+                            var dCols = dd.columns || [], dRows = dd.rows || [];
+                            var dAntCol = dCols.filter(function (c) { return /^antenne$/i.test(c); })[0];
+                            var zsCol = dCols.filter(function (c) { return /zone de sant/i.test(c); })[0];
+                            var scope = (antSel && dAntCol) ? dRows.filter(function (r) { return String(r[dAntCol] || '').trim() === antSel; }) : dRows;
+                            if (!zsCol || !scope.length) { body.innerHTML = '<div style="padding:14px;color:#64748b">Aucune zone de santé à cartographier pour cette sélection.</div>'; return; }
+                            /* cards de gauche : depuis la feuille Carte elle-même (1 ligne/antenne) */
+                            var cardRows = antSel && antCol ? rows.filter(function (r) { return String(r[antCol] || '').trim() === antSel; }) : rows;
+                            var cardsHtml = '';
+                            (mapCfg.cards || []).forEach(function (cd) {
+                                var pCol = cd.pFrag ? mkColByNorm(cols, cd.pFrag) : null;
+                                var nCol = cd.nFrag ? mkColByNorm(cols, cd.nFrag) : null;
+                                var dCol = cd.dFrag ? mkColByNorm(cols, cd.dFrag) : null;
+                                var pSum = 0, pCnt = 0, nSum = 0, dSum = 0, has = false;
+                                cardRows.forEach(function (r) {
+                                    if (pCol) { var pv = mkPctNum(r[pCol]); if (isFinite(pv)) { pSum += pv; pCnt++; has = true; } }
+                                    if (nCol) { var nv = Number(String(r[nCol] || '').replace(',', '.')); if (isFinite(nv)) { nSum += nv; has = true; } }
+                                    if (dCol) { var dv = Number(String(r[dCol] || '').replace(',', '.')); if (isFinite(dv)) dSum += dv; }
+                                });
+                                if (!has) return;
+                                var pct = pCol ? Math.round(pCnt ? pSum / pCnt : 0) + '%' : (dSum ? Math.round(nSum / dSum * 100) + '%' : String(nSum));
+                                var frac = (nCol && dCol && dSum) ? (Math.round(nSum) + ' / ' + Math.round(dSum)) : null;
+                                cardsHtml += mkKpiCard(pct, frac, cd.label, '', false, null);
+                            });
+                            /* données de carte : une valeur par ZS et par métrique */
+                            var maps = mapCfg.metrics.map(function (mt) {
+                                var vCol = mkColByNorm(dCols, mt.frag);
+                                var vals = [], names = [];
+                                var seen = {};
+                                scope.forEach(function (r) {
+                                    var zs = String(r[zsCol] || '').trim();
+                                    if (!zs || seen[zs]) return;
+                                    var full = topoMap[zs.toLowerCase()];
+                                    if (!full) return;
+                                    seen[zs] = 1;
+                                    var v = null;
+                                    if (vCol != null) {
+                                        if (mt.binary) v = mkTruthy(r[vCol]) ? 100 : (mkFalsy(r[vCol]) ? 0 : null);
+                                        else { var n = mkPctNum(r[vCol]); v = isFinite(n) ? n : null; }
+                                    }
+                                    names.push(full);
+                                    vals.push({ k: full, v: v, zs: zs });
+                                });
+                                return { title: mapCfg.metrics.length > 1 ? mt.title : null, names: names, vals: vals };
+                            });
+                            var single = maps.length === 1;
+                            var mw = single ? 560 : 360, mh = single ? 520 : 380;
+                            body.innerHTML =
+                                (cardsHtml ? '<div style="display:flex;flex-direction:column;gap:12px;min-width:190px;max-width:230px;flex:0 1 210px">' + cardsHtml + '</div>' : '') +
+                                '<div style="flex:1;display:flex;gap:14px;flex-wrap:wrap;justify-content:center">' +
+                                maps.map(function (m, i) { return '<div class="mk-map-el" data-i="' + i + '" style="min-width:280px"></div>'; }).join('') + '</div>';
+                            maps.forEach(function (m, i) {
+                                var el = body.querySelector('.mk-map-el[data-i="' + i + '"]');
+                                if (!m.names.length) { el.innerHTML = '<div style="padding:14px;color:#64748b">Aucun polygone trouvé.</div>'; return; }
+                                mkEmbedMap(el, mkVegaMapSpec(m.names, m.vals, m.title, mw, mh));
+                            });
+                        });
+                    });
+                    return;
+                }
+
+                /* ═══ MODE RÉSUMÉ : cards KPI + sparklines + écarts (depuis la Heatmap) ═══ */
+                if (mode === 'resume') {
+                    box.innerHTML = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                        mkBannerHtml(cfg, d, vm, antSel || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes')) +
+                        '<div class="mk-resume-body" style="padding:16px"><div style="color:#64748b">⏳ Calcul des indicateurs…</div></div>' +
+                        (cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
+                        '</div>';
+                    mkFillPeriod(box);
+                    mkFetchView('Performance Heatmap_ANT', function (hd) {
+                        var body = box.querySelector('.mk-resume-body');
+                        if (!body || !body.isConnected) return;
+                        if (!hd) { body.innerHTML = '<div style="color:#c0392b">Heatmap indisponible — impossible de construire le résumé.</div>'; return; }
+                        var hCols = hd.columns || [], hRows = hd.rows || [];
+                        var hAnt = hCols.filter(function (c) { return /^antenne$/i.test(c); })[0];
+                        var mm = mkHeatMonths(hd);
+                        var scope = (antSel && hAnt) ? hRows.filter(function (r) { return String(r[hAnt] || '').trim() === antSel; }) : hRows;
+                        if (!scope.length) { body.innerHTML = '<div style="color:#64748b">Aucune donnée pour cette antenne.</div>'; return; }
+                        /* série mensuelle par indicateur (moyenne si plusieurs antennes) */
+                        var keys = {};
+                        scope.forEach(function (r) {
+                            var k = String(r[mm.yCol] || '') + '-' + String(mkMoisRank(r[mm.mCol])).padStart(2, '0');
+                            (keys[k] = keys[k] || { y: r[mm.yCol], m: r[mm.mCol], rows: [] }).rows.push(r);
+                        });
+                        var months = Object.keys(keys).sort().map(function (k) { return keys[k]; });
+                        var inds = (MK_CFG['Performance Heatmap_ANT'].inds || []);
+                        function serie(vFrag) {
+                            var vCol = hCols.indexOf(vFrag) >= 0 ? vFrag : mkColByNorm(hCols, vFrag);
+                            return months.map(function (mo) {
+                                if (!vCol) return { v: null };
+                                var s = 0, n = 0;
+                                mo.rows.forEach(function (r) { var x = mkPctNum(r[vCol]); if (isFinite(x)) { s += x; n++; } });
+                                return { v: n ? s / n : null };
+                            });
+                        }
+                        var cards = '';
+                        inds.forEach(function (ind, idx) {
+                            var pts = serie(ind.v);
+                            var last = null, prev = null;
+                            for (var i = pts.length - 1; i >= 0; i--) { if (pts[i].v != null) { if (last == null) last = pts[i].v; else if (prev == null) { prev = pts[i].v; break; } } }
+                            var delta = (last != null && prev != null) ? (last - prev) : null;
+                            var pct = last == null ? '—' : Math.round(last) + '%';
+                            if (idx === 0) {
+                                var ecart = last == null ? null : last - 80;
+                                cards += mkKpiCard(pct, null, 'Score Mashako', '<div style="font-size:11px;margin-top:4px">Écart à l\'objectif : ' + (ecart == null ? '—' : mkDeltaHtml(ecart)) + '</div>', true, mkSparkline(pts));
+                            } else {
+                                cards += mkKpiCard(pct, null, ind.l, '<div style="text-align:right;margin-top:2px">' + mkDeltaHtml(delta, /abandon|dropout/i.test(ind.l) ? false : false) + '</div>', false, mkSparkline(pts));
+                            }
+                        });
+                        body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">' + cards + '</div>';
+                    });
+                    return;
+                }
+
+                /* ═══ MODE CLASSEMENT : reconstruit depuis les scores Heatmap ═══ */
+                if (mode === 'ranking') {
+                    box.innerHTML = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                        mkBannerHtml(cfg, d, vm, null) +
+                        '<div class="mk-rank-body" style="padding:10px 14px"><div style="color:#64748b;padding:10px">⏳ Calcul du classement…</div></div>' +
+                        '</div>';
+                    mkFillPeriod(box);
+                    mkFetchView('Performance Heatmap_ANT', function (hd) {
+                        var body = box.querySelector('.mk-rank-body');
+                        if (!body || !body.isConnected) return;
+                        if (!hd) { body.innerHTML = '<div style="color:#c0392b;padding:10px">Heatmap indisponible — classement impossible.</div>'; return; }
+                        var hCols = hd.columns || [], hRows = hd.rows || [];
+                        var hAnt = hCols.filter(function (c) { return /^antenne$/i.test(c); })[0];
+                        var mm = mkHeatMonths(hd);
+                        var sCol = mkColByNorm(hCols, 'perctotalscoreant');
+                        if (!hAnt || !sCol) { body.innerHTML = '<div style="color:#c0392b;padding:10px">Colonnes de score introuvables.</div>'; return; }
+                        var perAnt = {};
+                        hRows.forEach(function (r) {
+                            var a = String(r[hAnt] || '').trim();
+                            if (!a) return;
+                            var key = String(r[mm.yCol] || '') + '-' + String(mkMoisRank(r[mm.mCol])).padStart(2, '0');
+                            (perAnt[a] = perAnt[a] || {})[key] = mkPctNum(r[sCol]);
+                        });
+                        var allKeys = {};
+                        Object.keys(perAnt).forEach(function (a) { Object.keys(perAnt[a]).forEach(function (k) { allKeys[k] = 1; }); });
+                        var sorted = Object.keys(allKeys).sort();
+                        var curK = sorted[sorted.length - 1], prevK = sorted[sorted.length - 2];
+                        function ranksFor(k) {
+                            var list = Object.keys(perAnt).map(function (a) { return { a: a, s: (perAnt[a][k] != null && isFinite(perAnt[a][k])) ? perAnt[a][k] : -1 }; });
+                            list.sort(function (x, y) { return y.s - x.s || x.a.localeCompare(y.a); });
+                            var out = {};
+                            list.forEach(function (e, i) { out[e.a] = i + 1; });
+                            return { ranks: out, list: list };
+                        }
+                        var cur = ranksFor(curK), prev = prevK ? ranksFor(prevK) : null;
+                        var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' +
+                            ['Changement de position vs le mois précédent', 'Classement', 'Province', 'Antenne', 'Score Mashako', "Écart à l'objectif"].map(function (h) {
+                                return '<th style="padding:10px 12px;text-align:center;color:#475467;font-weight:700;font-size:11.5px;border-bottom:2px solid #e2e8f0">' + h + '</th>';
+                            }).join('') + '</tr></thead><tbody>';
+                        cur.list.forEach(function (e, i) {
+                            var score = e.s < 0 ? null : e.s;
+                            var chg = '';
+                            if (prev && prev.ranks[e.a] != null) {
+                                var dr = prev.ranks[e.a] - (i + 1);
+                                chg = dr > 0 ? '<span style="color:' + MK_GREEN + ';font-weight:800">▲' + dr + '</span>' :
+                                    (dr < 0 ? '<span style="color:' + MK_RED + ';font-weight:800">▼' + (-dr) + '</span>' : '<span style="color:#f2bd00;font-weight:800">–</span>');
+                            }
+                            var sCol_ = score == null ? '#94a3b8' : (score >= 80 ? MK_GREEN : (score >= 50 ? MK_YELLOW : MK_RED));
+                            var ec = score == null ? null : score - 80;
+                            var ecHtml = ec == null ? '' : (ec >= 0 ? '<span style="color:' + MK_GREEN + ';font-weight:800">▲' + Math.round(ec) + ' pp</span>' : '<span style="color:' + MK_RED + ';font-weight:800">▼' + Math.round(-ec) + ' pp</span>');
+                            html += '<tr style="background:' + (i % 2 ? '#f8fafc' : '#fff') + '">' +
+                                '<td style="padding:7px 12px;text-align:center;border-bottom:1px solid #f1f5f9">' + chg + '</td>' +
+                                '<td style="padding:7px 12px;text-align:center;border-bottom:1px solid #f1f5f9;font-weight:800;color:#334155"># ' + (i + 1) + '</td>' +
+                                '<td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#64748b">' + esc(MK_PROV[e.a] || '') + '</td>' +
+                                '<td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;font-weight:800;color:#1f2937">' + esc(e.a) + '</td>' +
+                                '<td style="padding:7px 12px;text-align:center;border-bottom:1px solid #f1f5f9;font-weight:800;color:' + sCol_ + '">' + (score == null ? '—' : Math.round(score) + '%') + '</td>' +
+                                '<td style="padding:7px 12px;text-align:center;border-bottom:1px solid #f1f5f9">' + ecHtml + '</td>' +
+                                '</tr>';
+                        });
+                        html += '</tbody></table></div>';
+                        body.innerHTML = html;
+                    });
+                    return;
+                }
+
+                /* ═══ MODE LIVRAISON : tableau pivoté « Taux de satisfaction » ═══ */
+                if (mode === 'livraison') {
+                    var VACC = [
+                        { l: 'BCG', k: 'bcg' }, { l: 'VPO', k: 'vpo' }, { l: 'DTC', k: 'dtc' }, { l: 'PCV', k: 'pcv' },
+                        { l: 'Rota', k: 'rota' }, { l: 'VPI', k: 'ipv' }, { l: 'VAR-RR', k: 'var' }, { l: 'VAA', k: 'vaa' },
+                        { l: 'TD', k: 'td' }, { l: 'SAB 0.05 ml', k: 'sab005' }, { l: 'SAB 0.5 ml', k: 'sab05' },
+                        { l: 'Sdil 2 ml', k: 'sdil2' }, { l: 'Sdil 5 ml', k: 'sdil5' }
+                    ];
+                    var zsCol2 = cols.filter(function (c) { return /zone de sant/i.test(c); })[0];
+                    var ordCol = mkColByNorm(cols, 'deliveryordered');
+                    var allCol = mkColByNorm(cols, 'booldeliveryall');
+                    var defs = VACC.map(function (vd) {
+                        return {
+                            l: vd.l,
+                            p: mkColByNorm(cols, 'perc' + vd.k + 'delivery'),
+                            kcol: (function () { var pc = mkColByNorm(cols, 'perc' + vd.k + 'delivery'); return pc ? mkColorColFor(pc, cols) : null; })(),
+                            tot: mkColByNorm(cols, 'delivery' + vd.k + 'total'),
+                            tgt: (function () {
+                                for (var i = 0; i < cols.length; i++) {
+                                    var n = mkNorm(cols[i]);
+                                    if (n.indexOf('delivery') === 0 && n.indexOf('target') > 0 && n.indexOf(vd.k) > 0) return cols[i];
+                                }
+                                return null;
+                            })()
+                        };
+                    });
+                    /* fusion par Antenne+ZS (les CSV éclatent les lignes par mesure) */
+                    var merged = {}, order = [];
+                    rows.forEach(function (r) {
+                        var kk = (antCol ? String(r[antCol] || '').trim() + '|' : '') + String(r[zsCol2] || '').trim();
+                        if (!merged[kk]) { var o = {}; cols.forEach(function (c) { o[c] = r[c]; }); merged[kk] = o; order.push(kk); }
+                        else { cols.forEach(function (c) { if (String(merged[kk][c] == null ? '' : merged[kk][c]).trim() === '') merged[kk][c] = r[c]; }); }
+                    });
+                    var mRows = order.map(function (k) { return merged[k]; });
+                    box.innerHTML = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
+                        '<input type="search" placeholder="🔍 Rechercher une ZS…" class="mk-q" style="flex:1;min-width:140px;padding:8px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px">' +
+                        '<button type="button" class="mk-csv" style="padding:8px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
+                        '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>' +
+                        '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                        mkBannerHtml(cfg, d, vm, antSel || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes')) +
+                        '<div style="padding:12px 18px 0;font-size:12px;color:#334155"><b>Taux de livraisons satisfaisantes en vaccins et intrants</b><br><i style="color:#64748b">Objectif : toutes les livraisons de vaccins et intrants sont satisfaisantes</i></div>' +
+                        '<div style="overflow-x:auto;padding:6px 10px 0"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead class="mk-head"></thead><tbody class="mk-body"></tbody></table></div>' +
+                        mkLegendHtml('pct') +
+                        (cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
+                        '</div>';
+                    mkFillPeriod(box);
+                    function livRows() {
+                        var out = mRows;
+                        if (antCol && antSel) out = out.filter(function (r) { return String(r[antCol] || '').trim() === antSel; });
+                        if (q) { var qq = q.toLowerCase(); out = out.filter(function (r) { return String(r[zsCol2] || '').toLowerCase().indexOf(qq) >= 0 || String(r[antCol] || '').toLowerCase().indexOf(qq) >= 0; }); }
+                        return out.filter(function (r) { return String(r[zsCol2] || '').trim(); });
+                    }
+                    function fmtInt(v) { var n = Number(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? Math.round(n).toLocaleString('fr-FR') : ''; }
+                    function livDraw() {
+                        var fr = livRows();
+                        var showAnt = multiAnt && !antSel;
+                        var head = '<tr>' + (showAnt ? '<th style="padding:9px 10px;text-align:left;color:#334155;font-weight:800;font-size:11px;border-bottom:2px solid #e2e8f0">Antenne</th>' : '') +
+                            '<th style="padding:9px 10px;text-align:left;color:#334155;font-weight:800;font-size:11px;border-bottom:2px solid #e2e8f0;white-space:nowrap">Zone de santé</th>' +
+                            (ordCol ? '<th style="padding:9px 8px;text-align:center;color:#475467;font-weight:600;font-size:10.5px;border-bottom:2px solid #e2e8f0;max-width:80px">Approv. en vaccins et intrants</th>' : '') +
+                            (allCol ? '<th style="padding:9px 8px;text-align:center;color:#475467;font-weight:600;font-size:10.5px;border-bottom:2px solid #e2e8f0;max-width:80px">Toutes les conditions remplies</th>' : '') +
+                            defs.map(function (df) { return '<th style="padding:9px 8px;text-align:center;color:#475467;font-weight:600;font-size:10.5px;border-bottom:2px solid #e2e8f0;white-space:nowrap">' + esc(df.l) + '</th>'; }).join('') + '</tr>';
+                        box.querySelector('.mk-head').innerHTML = head;
+                        var body = fr.map(function (r, i) {
+                            var t = '<tr style="background:' + (i % 2 ? '#f8fafc' : '#fff') + '">';
+                            if (showAnt) t += '<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#334155;white-space:nowrap">' + esc(r[antCol]) + '</td>';
+                            t += '<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#1f2937;white-space:nowrap">' + esc(r[zsCol2]) + '</td>';
+                            if (ordCol) t += mkCheckCell(r[ordCol]);
+                            if (allCol) t += mkCheckCell(r[allCol]);
+                            defs.forEach(function (df) {
+                                var pctN = null, colC = null;
+                                if (cfg.variant === 'perc' && df.p) {
+                                    pctN = mkPctNum(r[df.p]);
+                                    colC = df.kcol ? mkColorOf(r[df.kcol]) : null;
+                                } else if (df.tot && df.tgt) {
+                                    var tot = Number(String(r[df.tot] || '').replace(/\s/g, '').replace(',', '.'));
+                                    var tgt = Number(String(r[df.tgt] || '').replace(/\s/g, '').replace(',', '.'));
+                                    if (isFinite(tot) && isFinite(tgt) && tgt > 0) pctN = tot / tgt * 100;
+                                }
+                                if (pctN == null || !isFinite(pctN)) { t += '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9"></td>'; return; }
+                                var cc = colC || (pctN >= 80 ? MK_GREEN : (pctN >= 50 ? MK_YELLOW : MK_RED));
+                                var frac = (df.tot && df.tgt && fmtInt(r[df.tot]) && fmtInt(r[df.tgt])) ? '(' + fmtInt(r[df.tot]) + ' / ' + fmtInt(r[df.tgt]) + ')' : '';
+                                t += '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:center;white-space:nowrap"><div style="color:' + cc + ';font-weight:800">' + Math.round(pctN) + '%</div>' + (frac ? '<div style="color:' + cc + ';font-size:9.5px;opacity:.85">' + frac + '</div>' : '') + '</td>';
+                            });
+                            return t + '</tr>';
+                        }).join('') || '<tr><td colspan="20" style="padding:22px;text-align:center;color:#888">Aucun résultat.</td></tr>';
+                        box.querySelector('.mk-body').innerHTML = body;
+                        box.querySelector('.mk-count').textContent = fr.length + ' ligne(s)';
+                    }
+                    box.querySelector('.mk-q').oninput = function () { q = this.value; livDraw(); };
+                    box.querySelector('.mk-csv').onclick = function () {
+                        var lines = [cols.join(',')].concat(livRows().map(function (r) {
+                            return cols.map(function (c) { var v = String(r[c] == null ? '' : r[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
+                        }));
+                        var a = document.createElement('a');
+                        a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+                        a.download = 'mashako_' + (d.urlName || 'vue') + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+                    };
+                    livDraw();
+                    return;
+                }
+
+                /* ═══ MODE TABLE / HEATMAP (générique fidèle) ═══ */
+                var isHeat = mode === 'heatmap';
                 if (isHeat && !antSel && multiAnt) antSel = antVals[0];
-                /* ── résolution des colonnes visibles ── */
+                /* fusion des lignes éclatées par mesure */
+                var rowCol = (cfg && cfg.row && cols.indexOf(cfg.row) >= 0 ? cfg.row : null) || cols.filter(function (c) { return /zone de sant/i.test(c); })[0] || null;
+                if (!isHeat && rowCol) {
+                    var _m2 = {}, _o2 = [];
+                    rows.forEach(function (r) {
+                        var k = (antCol ? String(r[antCol] || '').trim() + '|' : '') + String(r[rowCol] || '').trim();
+                        if (!_m2[k]) { var o = {}; cols.forEach(function (c) { o[c] = r[c]; }); _m2[k] = o; _o2.push(k); }
+                        else { cols.forEach(function (c) { if (String(_m2[k][c] == null ? '' : _m2[k][c]).trim() === '') _m2[k][c] = r[c]; }); }
+                    });
+                    if (_o2.length && _o2.length < rows.length) rows = _o2.map(function (k) { return _m2[k]; });
+                }
                 var specs = [];
                 if (cfg && cfg.cols) {
                     cfg.cols.forEach(function (sp) {
@@ -12798,7 +13353,7 @@
                         if (!col) return;
                         specs.push({ col: col, l: sp.l, t: sp.t || 'bar', f: sp.f || null, k: mkColorColFor(col, cols) });
                     });
-                } else {
+                } else if (!isHeat) {
                     cols.forEach(function (c) {
                         if (mkIsJunkCol(c, cols)) return;
                         if (c === antCol || c === moisCol || c === anCol) return;
@@ -12809,30 +13364,11 @@
                         specs.push({ col: c, l: mkNiceLabel(c), t: pctish ? 'bar' : (numish ? 'num' : 'plain'), f: null, k: kc });
                     });
                 }
-                var rowCol = (cfg && cfg.row && cols.indexOf(cfg.row) >= 0 ? cfg.row : null) || cols.filter(function (c) { return /zone de sant/i.test(c); })[0] || null;
-                /* Les CSV Tableau éclatent parfois chaque zone en plusieurs lignes
-                   (une par mesure) → fusion par Antenne+Zone : première valeur non
-                   vide de chaque colonne. Sans cela, la table montre des lignes à
-                   moitié vides (constaté sur Supervision_ANT_P1 / Livraison). */
-                if (!isHeat && rowCol) {
-                    var _merged = {}, _order = [];
-                    rows.forEach(function (r) {
-                        var k = (antCol ? String(r[antCol] || '').trim() + '|' : '') + String(r[rowCol] || '').trim();
-                        if (!_merged[k]) { var o = {}; cols.forEach(function (c) { o[c] = r[c]; }); _merged[k] = o; _order.push(k); }
-                        else { cols.forEach(function (c) { var cur = String(_merged[k][c] == null ? '' : _merged[k][c]).trim(); if (cur === '') _merged[k][c] = r[c]; }); }
-                    });
-                    if (_order.length && _order.length < rows.length) rows = _order.map(function (k) { return _merged[k]; });
-                }
-                /* ── barre d'outils (filtres, recherche, export) — hors design original,
-                   gardée discrète au-dessus de la carte ── */
                 var h = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
-                    (multiAnt ? '<select class="mk-ant" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' + (isHeat ? '' : '<option value="">📍 Toutes les antennes</option>') + antVals.map(function (a) { return '<option value="' + esc(a) + '"' + (a === antSel ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
-                    (moisCol && !isHeat ? '<select class="mk-mois" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">🗓️ Tous les mois</option>' + moisVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
-                    (anCol && !isHeat && anVals.length > 1 ? '<select class="mk-an" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📅 Toutes années</option>' + anVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    (isHeat && multiAnt ? '<select class="mk-ant" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' + antVals.map(function (a) { return '<option value="' + esc(a) + '"' + (a === antSel ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     (!isHeat ? '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:140px;padding:8px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px">' : '<span style="flex:1"></span>') +
                     '<button type="button" class="mk-csv" style="padding:8px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
                     '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
-                /* ── carte « feuille Tableau » : bandeau + table + légende ── */
                 h += '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
                     mkBannerHtml(cfg, d, vm, antSel || mkAnt || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes')) +
                     '<div style="overflow-x:auto;padding:6px 10px 0"><table class="mk-tbl" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead class="mk-head"></thead><tbody class="mk-body"></tbody></table></div>' +
@@ -12843,18 +13379,11 @@
                     '<button type="button" class="mk-pv" style="padding:6px 14px;border-radius:8px;border:1.5px solid #e7edf5;background:#fff;cursor:pointer">◀</button>' +
                     '<span class="mk-pi" style="font-size:12.5px;color:#475467"></span>' +
                     '<button type="button" class="mk-nx" style="padding:6px 14px;border-radius:8px;border:1.5px solid #e7edf5;background:#fff;cursor:pointer">▶</button></div>';
-                if (imgSrc) {
-                    h += '<details style="margin-top:14px;border:1px solid #e7edf5;border-radius:12px;padding:10px 14px">' +
-                        '<summary style="cursor:pointer;font-weight:800;color:#1a237e;font-size:13px">🖼 Aperçu de l\'original (image Tableau)</summary>' +
-                        '<div style="margin:8px 0"><img class="mk-img" src="' + imgSrc + '" alt="' + esc(name) + '" style="width:100%;border:1px solid #e7edf5;border-radius:10px;cursor:zoom-in"></div></details>';
-                }
                 box.innerHTML = h;
-                mkFillPeriod(box); wireImg();
+                mkFillPeriod(box);
                 function fRows() {
                     var out = rows;
                     if (antCol && antSel) out = out.filter(function (r) { return String(r[antCol] || '').trim() === antSel; });
-                    if (moisCol && moisSel && !isHeat) out = out.filter(function (r) { return String(r[moisCol] || '').trim() === moisSel; });
-                    if (anCol && anSel && !isHeat) out = out.filter(function (r) { return String(r[anCol] || '').trim() === anSel; });
                     if (q && !isHeat) {
                         var qq = q.toLowerCase();
                         out = out.filter(function (r) { return cols.some(function (c) { return String(r[c]).toLowerCase().indexOf(qq) >= 0; }); });
@@ -12889,7 +13418,7 @@
                 function drawHeat() {
                     var fr = fRows();
                     var months = fr.map(function (r) {
-                        return { r: r, lbl: String(r[moisCol || 'Month name FR'] || ''), yr: String(r[anCol || 'Year'] || ''), m: _moisRank(r[moisCol || 'Month name FR']) };
+                        return { r: r, lbl: String(r[moisCol || 'Month name FR'] || ''), yr: String(r[anCol || 'Year'] || ''), m: mkMoisRank(r[moisCol || 'Month name FR']) };
                     }).sort(function (a, b) { return (a.yr === b.yr ? a.m - b.m : (a.yr < b.yr ? -1 : 1)); });
                     var head = '';
                     if (months.some(function (m) { return m.yr; })) {
@@ -12937,20 +13466,15 @@
                     box.querySelector('.mk-nx').disabled = pg >= nP - 1;
                     box.querySelector('.mk-nav').style.display = nP > 1 ? 'flex' : 'none';
                 }
-                function _afterFilter() {
-                    pg = 0;
-                    var ba = box.querySelector('.mk-b-ant');
-                    if (ba) ba.textContent = antSel || mkAnt || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes');
-                    draw();
-                }
                 var qEl = box.querySelector('.mk-q');
                 if (qEl) qEl.oninput = function () { q = this.value; pg = 0; draw(); };
                 var antEl = box.querySelector('.mk-ant');
-                if (antEl) { antEl.onchange = function () { antSel = this.value; _afterFilter(); }; }
-                var moisEl = box.querySelector('.mk-mois');
-                if (moisEl) moisEl.onchange = function () { moisSel = this.value; _afterFilter(); };
-                var anEl = box.querySelector('.mk-an');
-                if (anEl) anEl.onchange = function () { anSel = this.value; _afterFilter(); };
+                if (antEl) antEl.onchange = function () {
+                    antSel = this.value; pg = 0;
+                    var ba = box.querySelector('.mk-b-ant');
+                    if (ba) ba.textContent = antSel || 'Toutes les antennes';
+                    draw();
+                };
                 box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
                 box.querySelector('.mk-nx').onclick = function () { pg++; draw(); };
                 box.querySelector('.mk-csv').onclick = function () {
@@ -12963,7 +13487,6 @@
                 };
                 draw();
             }
-
             function mkDrawViewLegacy(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];
                 var PGS = 15, pg = 0, q = '', antSel = '', moisSel = '', anSel = '';
