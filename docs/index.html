@@ -12255,6 +12255,17 @@
                l'historique du dépôt ne grossit pas). Secours : ancien chemin Pages. */
             var MK_RAW = 'https://raw.githubusercontent.com/MBOMBOmamu1993/snis-vaccination-api/mashako-data';
             var mkMeta = null, mkViewCache = {}, mkBase = MK_RAW, mkAnt = '', mkCurView = null, mkCurBox = null;
+            /* ── Filtre Période (Mois/Année) : le classeur est un rapport mensuel
+               (_PARAM_month/_PARAM_year). Chaque synchro archive sa période dans
+               periods/<AAAA-MM>/ ; l'index les liste et les rend sélectionnables. ── */
+            var mkCtn = null, mkPeriods = null, mkArch = null, mkSelMois = '', mkSelAn = '', mkPeriodMiss = '';
+            var MK_MOIS12 = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            function mkMonthNum(m) {
+                var s = String(m == null ? '' : m).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                var L = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+                var i = L.indexOf(s); return i < 0 ? null : i + 1;
+            }
+            function mkPeriodKeyOf(mois, an) { var n = mkMonthNum(mois); return (n && an) ? an + '-' + (n < 10 ? '0' + n : n) : null; }
             function mkOrigin() {
                 try { return (typeof DATA_ORIGIN !== 'undefined' && DATA_ORIGIN !== '.') ? DATA_ORIGIN : '.'; } catch (e) { return '.'; }
             }
@@ -12265,8 +12276,13 @@
             function fmtDate(iso) { try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
 
             window.rMashako = function (c) {
+                mkCtn = c;
                 c.innerHTML = '<div class="cb" style="text-align:center;padding:44px;color:#64748b">⏳ Chargement des données Plan Mashako 3.0…</div>';
                 mkBase = MK_RAW;
+                fetch(MK_RAW + '/periods/index.json?_r=' + Date.now(), { cache: 'no-store' })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (j) { mkPeriods = j; })
+                    .catch(function () { mkPeriods = null; });
                 fetch(mkUrl('meta.json') + '?_r=' + Date.now(), { cache: 'no-store' })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                     .then(function (meta) { mkMeta = meta; mkRender(c); })
@@ -12321,9 +12337,41 @@
                     '</div>';
             }
 
+            /* Bascule vers une autre période (archive) ou retour au rapport courant */
+            function mkSwitchBase() {
+                mkViewCache = {};
+                mkPeriodCache = null; mkPeriodPending = false; mkPeriodCbs = [];
+                mkBase = mkArch ? (MK_RAW + '/periods/' + mkArch) : MK_RAW;
+                mkCtn.innerHTML = '<div class="cb" style="text-align:center;padding:44px;color:#64748b">⏳ Chargement de la période…</div>';
+                fetch(mkUrl('meta.json') + '?_r=' + Date.now(), { cache: 'no-store' })
+                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function (meta) { mkMeta = meta; mkRender(mkCtn); })
+                    .catch(function () { mkArch = null; mkBase = MK_RAW; mkEmpty(mkCtn); });
+            }
+            function mkApplyPeriod() {
+                mkPeriodMiss = '';
+                var key = mkPeriodKeyOf(mkSelMois, mkSelAn);
+                mkPeriodLoad(function (p) {
+                    var liveKey = p ? mkPeriodKeyOf(p.m, p.y) : null;
+                    var target = null;
+                    if (key && key !== liveKey) {
+                        if (mkPeriods && (mkPeriods.periods || []).indexOf(key) >= 0) target = key;
+                        else { mkPeriodMiss = (mkSelMois || '?') + ' ' + (mkSelAn || ''); mkRender(mkCtn); return; }
+                    }
+                    if (target === mkArch) { mkRender(mkCtn); return; }
+                    mkArch = target;
+                    mkSwitchBase();
+                });
+            }
             function mkRender(c) {
                 var m = mkMeta;
                 var views = (m.views || []).filter(function (v) { return (v.file || v.image) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
+                var yrs = [];
+                try { ((mkPeriods && mkPeriods.periods) || []).forEach(function (k) { var y = String(k).slice(0, 4); if (yrs.indexOf(y) < 0) yrs.push(y); }); } catch (e) { }
+                var gy = '';
+                try { gy = String(new Date(m.generated_at).getFullYear()); } catch (e) { }
+                if (gy && yrs.indexOf(gy) < 0) yrs.push(gy);
+                yrs.sort().reverse();
                 var h =
                     '<div class="pev-banner">🎯 Plan Mashako 3.0 — ' + esc(m.workbook && m.workbook.name || 'Rapport de l\'Antenne') +
                     '<span style="margin-left:auto;font-size:12px;font-weight:400;opacity:.92">Synchronisé le ' + esc(fmtDate(m.generated_at)) + '</span></div>' +
@@ -12334,9 +12382,21 @@
                         '<option value="">Vue par défaut</option>' +
                         m.antennes.values.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') +
                         '</select></label>' : '') +
+                    '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">🗓️ Mois :' +
+                    '<select id="mkMoisSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
+                    '<option value="">Rapport courant</option>' +
+                    MK_MOIS12.map(function (mo) { return '<option value="' + mo + '"' + (mo === mkSelMois ? ' selected' : '') + '>' + mo + '</option>'; }).join('') +
+                    '</select></label>' +
+                    '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📅 Année :' +
+                    '<select id="mkAnSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
+                    '<option value="">—</option>' +
+                    yrs.map(function (y) { return '<option value="' + y + '"' + (y === mkSelAn ? ' selected' : '') + '>' + y + '</option>'; }).join('') +
+                    '</select></label>' +
+                    (mkArch ? '<span style="padding:7px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:800">📂 Archive ' + esc(mkArch) + '</span>' : '') +
                     '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · synchronisation automatique.</span>' +
                     '<a href="' + esc(m.original_url || MK_URL_FALLBACK) + '" target="_blank" rel="noopener" style="margin-left:auto;padding:9px 18px;border-radius:10px;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;font-weight:800;font-size:12.5px;text-decoration:none;border-bottom:3px solid #ffd700;white-space:nowrap">Ouvrir l\'original ↗</a>' +
-                    '</div>';
+                    '</div>' +
+                    (mkPeriodMiss ? '<div class="cb" style="background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:13px;padding:12px 18px">📂 La période <b>' + esc(mkPeriodMiss) + '</b> n\'est pas encore archivée. La récupération des mois passés est en cours — cette période apparaîtra automatiquement dès qu\'elle sera synchronisée depuis Tableau.</div>' : '');
                 if (views.length) {
                     h += '<div class="cb"><h4>📑 Feuilles du classeur</h4><div id="mkTabs" style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px">';
                     views.forEach(function (v, i) {
@@ -12352,6 +12412,17 @@
                     mkAnt = this.value;
                     if (mkCurView && mkCurBox) mkLoadView(mkCurView, mkCurBox);
                 };
+                var moisSelEl = c.querySelector('#mkMoisSel'), anSelEl = c.querySelector('#mkAnSel');
+                function _onPer() {
+                    mkSelMois = moisSelEl ? moisSelEl.value : '';
+                    mkSelAn = anSelEl ? anSelEl.value : '';
+                    if (mkSelMois && !mkSelAn) { mkSelAn = yrs[0] || ''; if (anSelEl) anSelEl.value = mkSelAn; }
+                    if (!mkSelMois && !mkSelAn && mkArch) { mkArch = null; mkPeriodMiss = ''; mkSwitchBase(); return; }
+                    if (!mkSelMois || !mkSelAn) { return; }
+                    mkApplyPeriod();
+                }
+                if (moisSelEl) moisSelEl.onchange = _onPer;
+                if (anSelEl) anSelEl.onchange = _onPer;
                 if (views.length) {
                     c.querySelectorAll('.mk-vbtn').forEach(function (b) {
                         b.onclick = function () {
