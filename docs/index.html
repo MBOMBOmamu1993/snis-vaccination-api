@@ -12739,6 +12739,19 @@
                     });
                 }
                 var rowCol = (cfg && cfg.row && cols.indexOf(cfg.row) >= 0 ? cfg.row : null) || cols.filter(function (c) { return /zone de sant/i.test(c); })[0] || null;
+                /* Les CSV Tableau éclatent parfois chaque zone en plusieurs lignes
+                   (une par mesure) → fusion par Antenne+Zone : première valeur non
+                   vide de chaque colonne. Sans cela, la table montre des lignes à
+                   moitié vides (constaté sur Supervision_ANT_P1 / Livraison). */
+                if (!isHeat && rowCol) {
+                    var _merged = {}, _order = [];
+                    rows.forEach(function (r) {
+                        var k = (antCol ? String(r[antCol] || '').trim() + '|' : '') + String(r[rowCol] || '').trim();
+                        if (!_merged[k]) { var o = {}; cols.forEach(function (c) { o[c] = r[c]; }); _merged[k] = o; _order.push(k); }
+                        else { cols.forEach(function (c) { var cur = String(_merged[k][c] == null ? '' : _merged[k][c]).trim(); if (cur === '') _merged[k][c] = r[c]; }); }
+                    });
+                    if (_order.length && _order.length < rows.length) rows = _order.map(function (k) { return _merged[k]; });
+                }
                 /* ── barre d'outils (filtres, recherche, export) — hors design original,
                    gardée discrète au-dessus de la carte ── */
                 var h = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
