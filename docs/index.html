@@ -1664,7 +1664,7 @@
             { id: 'log', lb: 'Logistique', fl: ['province', 'antenne', 'zs', 'as', 'fosa', 'period'], pp: [{ t: '1. Rapportage', ic: '📋' }, { t: '2. Indicateurs clés de la logistique', ic: '📦' }, { t: '3. Rapport logistique', ic: '📄' }] },
             { id: 'dl', lb: 'Télécharger canevas revue formative', fl: ['province', 'antenne', 'zs', 'period'], pp: [{ t: 'Canevas de revue formative', ic: '📥' }] },
             { id: 'ia', lb: 'Génération des analyses et rapports', fl: [], pp: [{ t: '1. Analyses à la demande', ic: '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em;color:#d97757" fill="currentColor"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>' }, { t: '2. Génération de rapports (PDF · Word · PPTX)', ic: '📄' }] }
-            ,{ id: 'mashako', lb: 'Plan Mashako 3.0', fl: [], pp: [{ t: 'Plan Mashako 3.0 — Rapport de l\'Antenne (Tableau)', ic: '🎯' }, { t: 'Plan Mashako 3.0 — Rapport Zone de Santé (Tableau)', ic: '🩺' }] }
+            ,{ id: 'mashako', lb: 'Plan Mashako 3.0', fl: [], pp: [{ t: 'Plan Mashako 3.0 — Rapport de l\'Antenne (Tableau)', ic: '📡' }, { t: 'Plan Mashako 3.0 — Rapport Zone de Santé (Tableau)', ic: '🏥' }] }
         ];
 
         /* ═══ STATE ═══ */
@@ -2717,7 +2717,7 @@
                     tab.pp.forEach(function (pg, pi) {
                         var di = document.createElement('div');
                         di.className = 'di' + (ti === S.tab && pi === S.pg ? ' as' : '');
-                        di.innerHTML = '<span>' + pg.ic + '</span> ' + pg.t;
+                        di.innerHTML = '<span>' + ((window.PEV_ICO && window.PEV_ICO(pg.ic)) || pg.ic) + '</span> ' + pg.t;
 
                         /* Clic sur un item → navigation immédiate */
                         di.addEventListener('click', function (ev) {
@@ -3266,7 +3266,7 @@
             if (S.filters.period.length === 1) { _perLbl = mL(S.filters.period[0]); }
             else if (S.filters.period.length > 1) { var _ps = S.filters.period.slice().sort(); _perLbl = mL(_ps[0]) + ' \u2013 ' + mL(_ps[_ps.length - 1]); }
             if (_perLbl) _ctxParts.push('P\u00e9riode: ' + _perLbl);
-            db.appendChild(E('div', 'st', '<span>' + pg.ic + '</span> ' + pg.t + ' <span style="font-size:11.5px;font-weight:400;color:#fff;opacity:.92;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
+            db.appendChild(E('div', 'st', '<span>' + ((window.PEV_ICO && window.PEV_ICO(pg.ic)) || pg.ic) + '</span> ' + pg.t + ' <span style="font-size:11.5px;font-weight:400;color:#fff;opacity:.92;margin-left:12px">' + _ctxParts.join(' | ') + '</span>'));
             var ct = E('div', '', ''); ct.id = 'PC'; db.appendChild(ct);
             if (tab.id === 'oqd') { [rP1, rP2, rP3, rP4, rP5][S.pg](ct); }
             else if (tab.id === 'vacc') { [rVac, rAnalysesCV, rAnalysesCVCompare, rAnalysesCVAjust, rCourbesCV][S.pg](ct); }
@@ -8944,7 +8944,7 @@
                 log: { ic: '📦', d: 'Gestion des intrants : stocks, pertes, ruptures et disponibilité des vaccins.' },
                 dl: { ic: '📥', d: 'Canevas de revue formative — PPTX éditable, diapos 10–12 renseignées depuis DHIS2.' },
                 ia: { ic: '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-0.12em;color:#d97757" fill="currentColor"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>', d: 'Assistant IA : n\'importe quelle analyse des données DHIS2 (tableau, graphique, carte) et génération automatique de rapports professionnels PDF, Word ou PPTX.' }
-                ,mashako: { ic: '🎯', d: 'Plan Mashako 3.0 — scores des Zones de Santé par Antenne. Données synchronisées automatiquement depuis Tableau (axdata), avec aperçu du dashboard original.' }
+                ,mashako: { ic: '💉', d: 'Plan Mashako 3.0 — scores des Zones de Santé par Antenne. Données synchronisées automatiquement depuis Tableau (axdata), avec aperçu du dashboard original.' }
             };
             function go() {
                 var load = document.getElementById('pevLoad');
@@ -9018,6 +9018,9 @@
                et la barre latérale, indigo dans les pastilles d'accueil). Aucune dépendance CDN. */
             var _SVG_OPEN = '<svg class="pev-ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
             var PEV_ICONS = {
+                'vaccin': '<g transform="translate(-1,-1) scale(.8)"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></g><circle cx="18.4" cy="18.4" r="4.4"/><path d="m16.5 18.5 1.3 1.3 2.5-2.7"/>',
+                '📡': '<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
+                '🏥': '<path d="M12 6v4"/><path d="M14 8h-4"/><path d="M14 14h-4"/><path d="M14 18h-4"/><path d="M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h2"/><path d="M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"/>',
                 'db-check': '<ellipse cx="10.5" cy="5.5" rx="7.5" ry="3"/><path d="M3 5.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6"/><path d="M3 11.5v6c0 1.66 3.36 3 7.5 3 1.28 0 2.5-.13 3.55-.36"/><path class="pev-ok" d="m15.5 18.5 2 2 4.5-4.5"/>',
                 '📋': '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
                 '📈': '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
@@ -9043,6 +9046,7 @@
             };
             window.PEV_ICO = function (emoji, tabId) {
                 if (tabId === 'oqd') return _SVG_OPEN + PEV_ICONS['db-check'] + '</svg>';
+                if (tabId === 'mashako') return _SVG_OPEN + PEV_ICONS['vaccin'] + '</svg>';
                 if (!emoji) return null;
                 var k = String(emoji).replace(/[️‍]/g, '').trim();
                 return PEV_ICONS[k] ? _SVG_OPEN + PEV_ICONS[k] + '</svg>' : null;
@@ -12258,7 +12262,29 @@
             var mkPfx = '';
             function mkRawBase() { return MK_RAW + (mkPfx ? '/' + mkPfx.replace(/\/+$/, '') : ''); }
             function mkLocLbl() { return mkPfx ? 'Zone de Santé' : 'Antenne'; }
-            function mkAllLbl() { return mkPfx ? 'Toutes les ZS' : mkAllLbl(); }
+            function mkAllLbl() { return mkPfx ? 'Toutes les ZS' : 'Toutes les antennes'; }
+            /* Sélecteur de localisation : côté ZS la liste compte des centaines
+               d'entrées → regroupement par province avec l'antenne de rattachement.
+               La couverture est progressive (le miroir Tableau se remplit par
+               tranches) : on n'affiche que les ZS réellement synchronisées et on
+               indique le total. */
+            function mkLocOptions(m) {
+                var vals = (m.antennes && m.antennes.values) || [], gr = (m.antennes && m.antennes.groups) || null;
+                if (!gr) return vals.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
+                var byProv = {};
+                vals.forEach(function (a) { var p = (gr[a] && gr[a].province) || '—'; (byProv[p] = byProv[p] || []).push(a); });
+                return Object.keys(byProv).sort(function (a, b) { return a.localeCompare(b, 'fr'); }).map(function (p) {
+                    return '<optgroup label="' + esc(p) + '">' + byProv[p].sort(function (a, b) { return a.localeCompare(b, 'fr'); }).map(function (a) {
+                        var ant = gr[a] && gr[a].antenne;
+                        return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + (ant ? ' — ' + esc(ant) : '') + '</option>';
+                    }).join('') + '</optgroup>';
+                }).join('');
+            }
+            function mkCoverageHtml(m) {
+                var t = m.antennes && m.antennes.total, k = ((m.antennes && m.antennes.values) || []).length;
+                if (!t || t <= k) return '';
+                return '<span title="Le miroir Tableau est rempli par tranches de zones de santé : les suivantes apparaîtront automatiquement au fil des synchronisations." style="padding:7px 12px;border-radius:9px;background:#eef1f8;border:1.5px solid #c9d4ea;color:#1a237e;font-size:12px;font-weight:800">🔄 Couverture : ' + k + '/' + t + ' ZS</span>';
+            }
             var mkMeta = null, mkViewCache = {}, mkBase = MK_RAW, mkAnt = '', mkCurView = null, mkCurBox = null;
             /* ── Filtre Période (Mois/Année) : le classeur est un rapport mensuel
                (_PARAM_month/_PARAM_year). Chaque synchro archive sa période dans
@@ -12395,13 +12421,13 @@
                     '<span style="margin-left:auto;font-size:12px;font-weight:400;opacity:.92">Synchronisé le ' + esc(fmtDate(m.generated_at)) + '</span></div>' +
                     '<div class="cb" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px">' +
                     (m.antennes && m.antennes.values && m.antennes.values.length ?
-                        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📍 Antenne :' +
+                        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📍 ' + esc(mkLocLbl()) + ' :' +
                         '<select id="mkAntSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
                         '<option value="">Vue par défaut</option>' +
-                        m.antennes.values.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') +
+                        mkLocOptions(m) +
                         '</select>' +
                         '<button type="button" class="mk-rst" data-t="ant" title="Réinitialiser l\'antenne" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
-                        '</label>' : '') +
+                        '</label>' + mkCoverageHtml(m) : '') +
                     '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">🗓️ Mois :' +
                     '<select id="mkMoisSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
                     '<option value="">Rapport courant</option>' +
@@ -13133,7 +13159,7 @@
                         (cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
                         '</div>';
                     mkFillPeriod(box);
-                    mkFetchView('Performance Heatmap_ANT', function (hd) {
+                    mkFetchView(cfg.src || 'Performance Heatmap_ANT', function (hd) {
                         var body = box.querySelector('.mk-resume-body');
                         if (!body || !body.isConnected) return;
                         if (!hd) { body.innerHTML = '<div style="color:#c0392b">Heatmap indisponible — impossible de construire le résumé.</div>'; return; }
@@ -13149,7 +13175,7 @@
                             (keys[k] = keys[k] || { y: r[mm.yCol], m: r[mm.mCol], rows: [] }).rows.push(r);
                         });
                         var months = Object.keys(keys).sort().map(function (k) { return keys[k]; });
-                        var inds = (MK_CFG['Performance Heatmap_ANT'].inds || []);
+                        var inds = ((MK_CFG[cfg.src || 'Performance Heatmap_ANT'] || {}).inds || []);
                         function serie(vFrag) {
                             var vCol = hCols.indexOf(vFrag) >= 0 ? vFrag : mkColByNorm(hCols, vFrag);
                             return months.map(function (mo) {
@@ -13185,7 +13211,7 @@
                         '<div class="mk-rank-body" style="padding:10px 14px"><div style="color:#64748b;padding:10px">⏳ Calcul du classement…</div></div>' +
                         '</div>';
                     mkFillPeriod(box);
-                    mkFetchView('Performance Heatmap_ANT', function (hd) {
+                    mkFetchView(cfg.src || 'Performance Heatmap_ANT', function (hd) {
                         var body = box.querySelector('.mk-rank-body');
                         if (!body || !body.isConnected) return;
                         if (!hd) { body.innerHTML = '<div style="color:#c0392b;padding:10px">Heatmap indisponible — classement impossible.</div>'; return; }
@@ -13543,7 +13569,7 @@
                 var imgHtml = '';
                 if (imgRel) {
                     imgHtml = '<div style="margin:8px 0">' +
-                        (mkAnt && vm.antImages && vm.antImages[mkAnt] ? '<div style="font-size:12px;font-weight:800;color:#1a237e;margin-bottom:6px">📍 Antenne : ' + esc(mkAnt) + '</div>' : '') +
+                        (mkAnt && vm.antImages && vm.antImages[mkAnt] ? '<div style="font-size:12px;font-weight:800;color:#1a237e;margin-bottom:6px">📍 ' + esc(mkLocLbl()) + ' : ' + esc(mkAnt) + '</div>' : '') +
                         '<img class="mk-img" src="' + mkUrl(imgRel) + '?v=' + encodeURIComponent(mkMeta.generated_at || '') + '" alt="' + esc(d.name || vm.name) + '" title="Cliquer pour agrandir" style="width:100%;border:1px solid #e7edf5;border-radius:12px;box-shadow:0 6px 18px -12px rgba(15,23,42,.35);cursor:zoom-in">' +
                         '<div style="font-size:11px;color:#94a3b8;margin-top:4px">🔍 Cliquez sur le visuel pour l\'agrandir (zoom molette)</div></div>';
                 }
@@ -13556,7 +13582,7 @@
                 /* Filtre antenne global appliqué aussi aux tables */
                 if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
                 h += '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
-                    (antCol ? '<select class="mk-ant" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📍 Toutes les antennes</option>' + antVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    (antCol ? '<select class="mk-ant" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📍 ' + mkAllLbl() + '</option>' + antVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     (moisCol ? '<select class="mk-mois" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">🗓️ Tous les mois</option>' + moisVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     (anCol ? '<select class="mk-an" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📅 Toutes années</option>' + anVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:150px;padding:9px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px">' +
