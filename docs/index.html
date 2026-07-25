@@ -12376,7 +12376,511 @@
                     .catch(function (e) { box.innerHTML = '<div style="padding:22px;color:#c0392b">Impossible de charger cette vue (' + esc(e.message) + ').</div>'; });
             }
 
+            /* ═══ RENDU FIDÈLE TABLEAU — chaque feuille CSV est reconstruite avec le
+               design de l'original (bandeau bleu titre/antenne/période, matrice
+               vert-jaune-rouge, coches, fractions n/N, légende) au lieu d'une table
+               brute. Libellés relevés sur les PNG originaux du classeur axdata. ═══ */
+            var MK_GREEN = '#2e9e48', MK_YELLOW = '#f2bd00', MK_RED = '#e03531', MK_BLUE = '#3b5cd6';
+            function mkColorOf(name) {
+                var n = String(name == null ? '' : name).trim().toLowerCase();
+                if (n === 'green') return MK_GREEN;
+                if (n === 'yellow') return MK_YELLOW;
+                if (n === 'red') return MK_RED;
+                return null;
+            }
+            function mkTruthy(v) { v = String(v == null ? '' : v).trim().toLowerCase(); return v === '1' || v === 'oui' || v === 'vrai' || v === 'true' || v === 'yes'; }
+            function mkFalsy(v) { v = String(v == null ? '' : v).trim().toLowerCase(); return v === '0' || v === 'non' || v === 'faux' || v === 'false' || v === 'no'; }
+            function mkNorm(c) { return String(c == null ? '' : c).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+            function mkFmtPct(v) {
+                var s = String(v == null ? '' : v).trim();
+                if (!s) return '';
+                if (/%$/.test(s)) return s;
+                var n = Number(s.replace(/\s/g, '').replace(',', '.'));
+                if (isFinite(n)) { if (n >= -0.005 && n <= 1.2) return Math.round(n * 100) + '%'; return Math.round(n) + '%'; }
+                return s;
+            }
+            function mkPctNum(v) {
+                var s = String(v == null ? '' : v).trim();
+                if (!s) return NaN;
+                var hadPct = /%/.test(s);
+                var n = Number(s.replace(/%|\s/g, '').replace(',', '.'));
+                if (!isFinite(n)) return NaN;
+                if (!hadPct && n >= -0.005 && n <= 1.2) n *= 100;
+                return n;
+            }
+            function mkThresholdColor(v) {
+                var n = mkPctNum(v);
+                if (!isFinite(n)) return null;
+                return n >= 80 ? MK_GREEN : (n >= 50 ? MK_YELLOW : MK_RED);
+            }
+            /* colonne _COLOR compagne d'une colonne de valeur (tolère les variantes
+               de casse/underscores, ex. _perc_var_delivery_new_HZ_CYC ↔ _COLOR) */
+            function mkColorColFor(c, cols) {
+                var base = mkNorm(c), best = null;
+                for (var i = 0; i < cols.length; i++) {
+                    var cc = cols[i];
+                    if (!/_COLOR\s*$/i.test(cc)) continue;
+                    var cb = mkNorm(cc).replace(/color$/, '');
+                    if (cb === base || cb.indexOf(base) === 0 || base.indexOf(cb) === 0) { best = cc; break; }
+                }
+                return best;
+            }
+            var MK_ICON_PIN = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" style="flex:none"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+            var MK_ICON_CAL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" style="flex:none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+            /* Période du rapport (paramètre du classeur) : lue dans une petite feuille
+               Carte qui exporte _PARAM_month/_PARAM_year. Mise en cache globale. */
+            var mkPeriodCache = null, mkPeriodPending = false, mkPeriodCbs = [];
+            function mkPeriodLoad(cb) {
+                if (mkPeriodCache) { cb(mkPeriodCache); return; }
+                mkPeriodCbs.push(cb);
+                if (mkPeriodPending) return;
+                mkPeriodPending = true;
+                var v = ((mkMeta && mkMeta.views) || []).filter(function (x) { return x.file && /Carte (Taux|R)/i.test(x.name); })[0];
+                if (!v) { mkPeriodCbs.forEach(function (f) { f(null); }); mkPeriodCbs = []; return; }
+                fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (dd) {
+                        var r0 = (dd.rows || [])[0] || {};
+                        if (r0['_PARAM_month']) mkPeriodCache = { m: r0['_PARAM_month'], y: r0['_PARAM_year'] || '' };
+                        mkPeriodCbs.forEach(function (f) { f(mkPeriodCache); }); mkPeriodCbs = [];
+                    })
+                    .catch(function () { mkPeriodCbs.forEach(function (f) { f(null); }); mkPeriodCbs = []; });
+            }
+            /* ── Configuration par feuille : titre/sous-titre/tri (relevés sur les
+               originaux), colonnes visibles avec libellés FR et type de rendu.
+               t: 'bar' (bloc coloré %), 'check' (✓/✗), 'zero' (vert=0/rouge>0),
+               'rednum' (nombre rouge), 'num'/'plain' ; f:[num,den] → « % (n/N) » ;
+               rx: la colonne est retrouvée par expression régulière. ── */
+            var MK_CFG = {
+                'HZ Scores_ANT': {
+                    title: 'Aperçu des performances Mashako au niveau des zones',
+                    sortBy: 'Score Mashako', row: 'Zone de sante', legend: 'pct',
+                    cols: [
+                        { c: '_perc_total_score_HZ_CYCM', l: 'Score Mashako', t: 'bar' },
+                        { c: '_perc_supervised_healthareas_CYCM', l: 'Supervision des aires de santé (AS)', t: 'bar' },
+                        { c: '_perc_HA_supervision_quality_CYCM', l: 'Supervision formative de qualité (AS)', t: 'bar' },
+                        { c: '_perc_HZ_reunion_CYCM', l: 'Réunions de suivi fonctionnelles (ZS)', t: 'bar' },
+                        { c: '_perc_CDF_fully_functional_HA_CYCM', l: 'Fonctionnalité de la chaine de froid (AS)', t: 'bar' },
+                        { c: '_perc_vaccine_full_stock_HA_CYCM', l: 'Disponibilité des vaccins', t: 'bar' },
+                        { c: '_PERC_HA_delivery_CYCM', l: 'Satisfaction des commandes', t: 'bar' },
+                        { c: '_perc_fixed_outreach_achieved_CYCM', l: 'Réalisation des séances de vaccination', t: 'bar' },
+                        { c: '_perc_dropout_CYCM', l: 'Récuperation des enfants', t: 'bar' },
+                        { c: '_perc_HA_infirmier_CYCM', l: 'Infirmier Titulaire formés au PEV', t: 'bar' }
+                    ]
+                },
+                'Performance Heatmap_ANT': {
+                    title: "Évolution du score Mashako de l'antenne",
+                    mode: 'heatmap', legend: 'pct',
+                    inds: [
+                        { l: 'Score Mashako', v: '_perc_total_score_ANT' },
+                        { l: 'Supervision des zones de santé (ZS)', v: '_perc_supervised_healthzones' },
+                        { l: 'Suivi de la réalisation de la supervision (ZS)', v: '_perc_HZ_supervision_quality' },
+                        { l: 'Supervision des aires de santé (AS)', v: '_perc_supervised_healthareas' },
+                        { l: 'Suivi de la réalisation de la supervision (AS)', v: '_perc_HA_supervision_quality' },
+                        { l: 'Réunion de la revue et validation des données (ANT)', v: '_num_ANT_functional_monitoring_meeting' },
+                        { l: 'Réunions de monitorage (ZS)', v: '_perc_HZ_reunion_no_CYCM', k: '_PERC_HZ_reunion_COLOR' },
+                        { l: 'Fonctionnalité de la chaîne de froid (ZS)', v: '_perc_CDF_fully_functional_HZ' },
+                        { l: 'Fonctionnalité de la chaîne de froid (AS)', v: '_perc_CDF_fully_functional_HA' },
+                        { l: 'Disponibilité des vaccins (ZS)', v: '_perc_vaccine_full_stock_HZ' },
+                        { l: 'Satisfaction des besoins (livraison ANT vers ZS)', v: '_PERC_HZ_delivery' },
+                        { l: 'Suivi de la réalisation des séances de vaccination', v: '_perc_fixed_outreach_achieved' },
+                        { l: 'Récupération des enfants', v: '_perc_dropout' },
+                        { l: 'Formation des infirmier titulaire au PEV', v: '_perc_HA_infirmier' }
+                    ]
+                },
+                'Supervision_Quality_ANT': {
+                    title: 'Suivi de la réalisation de la supervision des zones de santé',
+                    sub: '% de supervisions de zones de santé répondant aux critères de qualité*',
+                    sortBy: 'ZS supervisées', row: 'Zone de santé', legend: 'pct',
+                    foot: "*Une supervision est considérée de qualité lorsqu'elle répond simultanément aux deux critères suivants :<br>- <b>Durée</b> : La supervision doit durer au moins 1 heure<br>- <b>Cohérence</b> : Cohérences des données entre les modules du caneva de supervision, et les recommandations alignées sur les principaux problèmes révélés par les indicateurs",
+                    cols: [
+                        { c: '_num_supervised_healthzones_CYCM', l: 'ZS supervisée', t: 'check' },
+                        { c: '_num_HZ_supervision_quality_CYCM', l: 'ZS supervisée de qualité', t: 'check' },
+                        { rx: /_BOOL_HZ_duration/i, l: 'ZS supervisée avec bonne durée', t: 'check' },
+                        { rx: /Coh[ée]rence des recommendations/i, l: 'ZS supervisée avec cohérence des données', t: 'check' }
+                    ]
+                },
+                'Supervision_ANT_P1': {
+                    title: 'Supervisions formative de qualité des aires de santé',
+                    sub: "% de supervisions d'aires de santé répondant aux critères de qualité*",
+                    sortBy: '% AS supervisées', row: 'Zone de santé', legend: 'pct',
+                    foot: "*Une supervision est considérée de qualité lorsqu'elle répond simultanément aux trois critères suivants :<br>- <b>Localisation</b> : La position doit être conforme à celle du Centre de Santé de Référence<br>- <b>Durée</b> : La supervision doit durer au moins 1 heure<br>- <b>Cohérence</b> : Les informations saisies dans chaque module du canevas de supervision doivent être cohérentes entre elles",
+                    cols: [
+                        { c: '_num_healthareas_CYCM', l: 'AS totales', t: 'num' },
+                        { c: '_perc_supervised_healthareas_CYCM', l: '% AS supervisées', t: 'bar', f: ['_num_supervised_healthareas_CYCM', '_num_healthareas_CYCM'] },
+                        { c: '_num_unsupervised_healthareas_CYCM', l: 'Supervisions manquées (AS)', t: 'rednum' },
+                        { c: '_perc_HA_supervision_quality_CYCM', l: '% de supervision de qualité (AS)', t: 'bar', f: ['_num_HA_supervision_quality_CYCM', '_num_supervised_healthareas_CYCM'] }
+                    ]
+                },
+                'Réunion_ANT': {
+                    title: 'Réunions de monitorage des zones de santé',
+                    sub: '% de réalisation des réunions de revue de la performance au niveau des zones de santé répondant aux critères de fonctionnalité*',
+                    row: 'Zone de sante', legend: 'pct',
+                    foot: "*Une réunion est considérée comme fonctionnelle lorsqu'elle satisfait simultanément les trois critères suivants :<br>- <b>Tenue :</b> La réunion a effectivement eu lieu pendant la période prévue.<br>- <b>Participation :</b> Les participants clés concernés étaient présents (MCZ ou MCZ ai, IS PEV, IT)<br>- <b>Suivi :</b> Des données de performance ont été présentées, un compte rendu incluant les points d'action a été partagé, et les points d'action de la réunion précédente ont été revus et suivis.",
+                    cols: [
+                        { c: '_num_HZ_reunion_CYCM', l: 'Réunion fonctionnelle', t: 'check' },
+                        { c: '_num_HZ_reunion_all_CYCM', l: 'Réunion tenue', t: 'check' },
+                        { c: '_num_HZ_reunion_participants_CYCM', l: 'Participation des participants concernés', t: 'check' },
+                        { c: '_num_HZ_reunion_image_CYCM', l: "Partage du compte rendu de réunion avec points d'actions", t: 'check' }
+                    ]
+                },
+                'CDF_ANT': {
+                    title: 'Fonctionnalité de la chaine de froid des zones et aires de santé',
+                    sub: "% des aires de santé avec au moins une chaîne de froid fonctionnelle*",
+                    sortBy: 'Score de fonctionnalité de la CdF', row: 'Zone de santé', legend: 'pct',
+                    foot: "*Un équipement de chaîne du froid est considéré comme fonctionnel lorsqu'il satisfait simultanément les deux critères suivants :<br>- <b>Dispositif de suivi :</b> Un système de monitorage continu (fridge tag) de la température est disponible et opérationnel<br>- <b>Performance :</b> Aucune alarme négative et moins de trois alarmes positives ont été enregistrées au cours des 30 derniers jours",
+                    cols: [
+                        { c: 'Problème ZS', l: 'Problème ZS', t: 'plain' },
+                        { c: '_num_HZ_CDF_Functional_CYCM', l: "ZS dispose d'au moins une chaine du froid fonctionnelle", t: 'check' },
+                        { c: '_perc_HZ_CDF_equipment_functional_CYCM', l: "% d'équipements de chaine du froid fonctionnels dans la ZS", t: 'bar', f: ['_num_HZ_CDF_equipment_functional_CYCM', '_num_HZ_CDF_equipment_all_CYCM'] },
+                        { c: '_perc_CDF_fully_functional_HA_CYCM', l: 'Score de fonctionnalité de la chaine de froid (%) AS', t: 'bar', f: ['_num_CDF_fully_functional_HA_CYCM', '_num_healthareas_CYCM'] }
+                    ]
+                },
+                'CDF_Problèmes_ANT': {
+                    title: 'Chaîne du froid non fonctionnelle dans les zones et aires de santé',
+                    row: 'Zone de sante', legend: 'cdf',
+                    cols: [
+                        { rx: /compresseur/i, l: 'Compresseurs dysfonctionnels', t: 'zero' },
+                        { rx: /[EÉé]vaporateur/i, l: 'Évaporateurs non fonctionnels', t: 'zero' },
+                        { rx: /Installation/i, l: 'Installations électriques défectueuses', t: 'zero' },
+                        { rx: /Panneau_solaire/i, l: "Panneaux solaires à l'ombre", t: 'zero' },
+                        { rx: /Pr[ée]sence_de_givr/i, l: 'Frigo avec présence de givre', t: 'zero' }
+                    ]
+                },
+                'Séances_ANT': {
+                    title: 'Réalisation des séances de vaccination',
+                    sub: "% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée)",
+                    sortBy: 'Score de réalisation des séances de vaccination', row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { c: '_perc_fixed_outreach_achieved_CYCM', l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe, avancée)", t: 'bar', f: ['_num_healthareas_fixed_outreach_achieved_CYCM', '_num_healthareas_CYCM'] },
+                        { c: '_perc_fixed_achieved_CYCM', l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe)", t: 'bar', f: ['_num_healthareas_fixed_achieved_CYCM', '_num_healthareas_CYCM'] },
+                        { c: '_perc_outreach_achieved_CYCM', l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (avancée)", t: 'bar', f: ['_num_healthareas_outreach_achieved_CYCM', '_num_healthareas_CYCM'] }
+                    ]
+                },
+                "Taux d'abandon_ANT": {
+                    title: 'Récupération des enfants',
+                    sub: "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1",
+                    sortBy: "% AS avec un taux d'abandon inférieur à 10%", row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { c: '_perc_dropout_CYCM', l: "% AS avec un taux d'abandon inférieur à 10%", t: 'bar', f: ['_num_healthareas_dropout_CYCM', '_num_healthareas_REF_CYCM'] },
+                        { c: '_perc_healthareas_DTC1-DTC3_dropout_CYCM', l: "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3", t: 'bar', f: ['_num_healthareas_DTC1-DTC3_dropout_CYCM', '_num_healthareas_CYCM'] },
+                        { c: '_perc_healthareas_DTC1-VAR2_dropout_CYCM', l: "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-VAR", t: 'bar', f: ['_num_healthareas_DTC1-VAR2_dropout_CYCM', '_num_healthareas_CYCM'] },
+                        { c: '_perc_healthareas_BCG-VAR_dropout_CYCM', l: "% AS avec un taux d'abandon inférieur à 10% pour BCG-VAR", t: 'bar', f: ['_num_healthareas_BCG-VAR_dropout_CYCM', '_num_healthareas_CYCM'] }
+                    ]
+                },
+                'Infirmier_ANT': {
+                    title: 'Formation des infirmier titulaire au PEV au niveau des aires de santé',
+                    sub: "% des aires de santé disposent d'au moins un infirmier titulaire formé au PEV",
+                    sortBy: "Score d'infirmier formé", row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { c: '_perc_HA_infirmier_CYCM', l: "Score d'infirmier formé", t: 'bar', f: ['_num_HA_infirmier_CYCM', '_num_healthareas_CYCM'] }
+                    ]
+                },
+                'Livraison_ANT_P1': {
+                    title: 'Satisfaction des besoins',
+                    sub: '% des zones de santé qui ont reçu une livraison satisfaisante en provenance des antennes*',
+                    mode: 'image'
+                },
+                'Dispo_vaccins_ANT': {
+                    title: 'Disponibilité des vaccins des zones de santé',
+                    sub: '% des antennes sans rupture de stock en antigènes et intrants disponibles au niveau central',
+                    mode: 'image'
+                }
+            };
+            /* colonnes techniques masquées dans le rendu générique */
+            function mkIsJunkCol(c, cols) {
+                if (/_COLOR\s*$/i.test(c)) return true;
+                if (/^dummy/i.test(c) || /^_SELECTED/i.test(c) || /^_PARAM/i.test(c) || /^_BOOL/i.test(c)) return true;
+                if (/^noms de mesures$/i.test(c) || /^min\(/i.test(c) || /^max\./i.test(c) || /^_COLOR_red$/i.test(c) || /^1$/.test(c)) return true;
+                if (/^wkt/i.test(c) || /latitude|longitude/i.test(c) || /\.csv/i.test(c)) return true;
+                if (/^Antenne En$/i.test(c)) return true;
+                if (/^Month$/i.test(c) && cols.indexOf('Month name FR') >= 0) return true;
+                return false;
+            }
+            /* libellé lisible pour une colonne technique (rendu générique) */
+            function mkNiceLabel(c) {
+                var s = String(c);
+                var isPct = /^_?perc_/i.test(s), isNum = /^_?num_/i.test(s);
+                s = s.replace(/^_?perc_/i, '').replace(/^_?num_/i, '').replace(/_CYCM/gi, '').replace(/_new$/i, '');
+                var DICT = [
+                    [/CDF_fully_functional/i, 'chaîne de froid fonctionnelle'],
+                    [/HZ_CDF_equipment_functional/i, 'équipements CdF fonctionnels (ZS)'],
+                    [/supervised_healthareas/i, 'AS supervisées'],
+                    [/supervised_healthzones/i, 'ZS supervisées'],
+                    [/unsupervised_healthareas/i, 'AS non supervisées'],
+                    [/supervision_quality/i, 'supervision de qualité'],
+                    [/healthareas_REF/i, 'AS de référence'],
+                    [/healthareas/i, 'aires de santé'],
+                    [/healthzones/i, 'zones de santé'],
+                    [/reunion_participants/i, 'participation aux réunions'],
+                    [/reunion_image/i, 'compte rendu partagé'],
+                    [/reunion_all/i, 'réunions tenues'],
+                    [/reunion/i, 'réunions fonctionnelles'],
+                    [/dropout/i, "taux d'abandon"],
+                    [/fixed_outreach_achieved/i, 'séances réalisées (fixe+avancée)'],
+                    [/fixed_achieved/i, 'séances fixes réalisées'],
+                    [/outreach_achieved/i, 'séances avancées réalisées'],
+                    [/HA_infirmier|infirmier/i, 'infirmier titulaire formé'],
+                    [/vaccine_full_stock/i, 'vaccins disponibles'],
+                    [/functional_monitoring_meeting/i, 'réunions de monitorage'],
+                    [/total_score/i, 'score Mashako'],
+                    [/delivery/i, 'livraison']
+                ];
+                for (var i = 0; i < DICT.length; i++) if (DICT[i][0].test(s)) { s = s.replace(DICT[i][0], DICT[i][1]); break; }
+                s = s.replace(/_HA\b/gi, ' (AS)').replace(/_HZ\b/gi, ' (ZS)').replace(/_ANT\b/gi, ' (ANT)').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+                if (isPct) s = '% ' + s; else if (isNum) s = 'Nb ' + s;
+                return s.charAt(0).toUpperCase() + s.slice(1);
+            }
+            function mkLegendHtml(kind) {
+                function sq(c) { return '<span style="display:inline-block;width:10px;height:10px;background:' + c + ';margin-right:5px;border-radius:2px"></span>'; }
+                if (kind === 'cdf') {
+                    return '<div style="display:flex;gap:18px;justify-content:flex-end;padding:12px 20px;font-size:11.5px;color:#475467"><b style="color:#334155">Chaîne du Froid :</b><span>' + sq(MK_RED) + 'non fonctionnelle &gt; 0</span><span>' + sq(MK_GREEN) + 'fonctionnelle = 0</span></div>';
+                }
+                return '<div style="display:flex;gap:18px;justify-content:flex-end;padding:12px 20px;font-size:11.5px;color:#475467"><span>' + sq(MK_RED) + '0-49%</span><span>' + sq(MK_YELLOW) + '50-79%</span><span>' + sq(MK_GREEN) + '80-100%</span></div>';
+            }
+            function mkBannerHtml(cfg, d, vm, antLabel) {
+                var title = (cfg && cfg.title) || (d.name || (vm && vm.name) || '').replace(/_ANT(_P\d)?$/i, '').replace(/_/g, ' ');
+                return '<div style="background:' + MK_BLUE + ';color:#fff;padding:18px 24px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">' +
+                    '<div style="flex:1;min-width:240px">' +
+                    '<div style="font-size:21px;font-weight:800;line-height:1.2">' + esc(title) + '</div>' +
+                    (cfg && cfg.sub ? '<div style="font-size:12px;font-style:italic;opacity:.92;margin-top:4px">' + esc(cfg.sub) + '</div>' : '') +
+                    (cfg && cfg.sortBy ? '<div style="font-size:11px;opacity:.72;margin-top:6px">ⓘ Tableau classé par : ' + esc(cfg.sortBy) + '</div>' : '') +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800">' + MK_ICON_PIN + '<span class="mk-b-ant">' + esc(antLabel) + '</span></div>' +
+                    '<div style="display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800">' + MK_ICON_CAL + '<span class="mk-b-per">…</span></div>' +
+                    '</div>';
+            }
+            function mkFillPeriod(box) {
+                var el = box.querySelector('.mk-b-per');
+                if (!el) return;
+                mkPeriodLoad(function (p) {
+                    if (!el.isConnected) return;
+                    if (p) el.textContent = p.m + ' ' + p.y;
+                    else { try { el.textContent = new Date(mkMeta.generated_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); } catch (e) { el.textContent = ''; } }
+                });
+            }
+            /* cellule « bloc coloré » du design Tableau */
+            function mkBarCell(val, colorName, frac) {
+                var pct = mkFmtPct(val);
+                if (!pct) return '<td style="padding:3px 8px;border-bottom:1px solid #f1f5f9"></td>';
+                var bg = mkColorOf(colorName) || mkThresholdColor(val) || '#e5e7eb';
+                var fg = bg === MK_YELLOW ? '#1f2937' : '#fff';
+                var fr = '';
+                if (frac && frac[0] !== '' && frac[1] !== '' && frac[0] != null && frac[1] != null) fr = ' <span style="font-weight:600;opacity:.9;font-size:11px">(' + esc(frac[0]) + '/' + esc(frac[1]) + ')</span>';
+                return '<td style="padding:3px 8px;border-bottom:1px solid #f1f5f9"><div style="background:' + bg + ';color:' + fg + ';text-align:center;font-weight:800;font-size:12px;padding:5px 8px;border-radius:2px;white-space:nowrap">' + esc(pct) + fr + '</div></td>';
+            }
+            function mkCheckCell(v) {
+                if (mkTruthy(v)) return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_GREEN + ';font-weight:900;font-size:15px">✓</td>';
+                if (mkFalsy(v)) return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:900;font-size:15px">✗</td>';
+                return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
+            }
             function mkDrawView(d, box, vm) {
+                var cols = d.columns || [], rows = d.rows || [];
+                var name = d.name || (vm && vm.name) || '';
+                var cfg = MK_CFG[name] || null;
+                var PGS = 40, pg = 0, q = '', antSel = '', moisSel = '', anSel = '';
+                var antCol = cols.filter(function (c) { return /^antenne$/i.test(c); })[0] || cols.filter(function (c) { return /antenne/i.test(c); })[0] || null;
+                var antVals = [];
+                if (antCol) {
+                    var _s = {}; rows.forEach(function (r) { var v = String(r[antCol] || '').trim(); if (v) _s[v] = 1; });
+                    antVals = Object.keys(_s).sort();
+                }
+                var multiAnt = antVals.length > 1;
+                function _distinct(col) { var s = {}; rows.forEach(function (r) { var v = String(r[col] || '').trim(); if (v) s[v] = 1; }); return Object.keys(s); }
+                var moisCol = cols.filter(function (c) { return /mois|month.*fr|^month name/i.test(c); })[0] || null;
+                var anCol = cols.filter(function (c) { return /ann[eé]e|^year$/i.test(c); })[0] || null;
+                var MOIS_ORD = ['janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'];
+                function _moisRank(v) { var i = MOIS_ORD.indexOf(String(v).toLowerCase()); if (i >= 0) return i < 5 ? i : (i === 5 ? 4 : i - 1); var n = parseInt(v, 10); return isFinite(n) ? n - 1 : 99; }
+                var moisVals = moisCol ? _distinct(moisCol).sort(function (a, b) { return _moisRank(a) - _moisRank(b); }) : [];
+                var anVals = anCol ? _distinct(anCol).sort() : [];
+                var isHeat = cfg && cfg.mode === 'heatmap';
+                if (!isHeat && moisVals.length < 2) { moisCol = null; moisVals = []; }
+                if (!isHeat && anVals.length < 2) { anCol = null; anVals = []; }
+                /* image de la feuille (variante antenne si dispo) */
+                var imgRel = vm ? ((mkAnt && vm.antImages && vm.antImages[mkAnt]) ? vm.antImages[mkAnt] : vm.image) : null;
+                var imgSrc = imgRel ? mkUrl(imgRel) + '?v=' + encodeURIComponent(mkMeta.generated_at || '') : null;
+                function wireImg() {
+                    var im = box.querySelector('.mk-img');
+                    if (im) im.onclick = function () { mkLightbox(this.src, name); };
+                }
+                if (!rows.length || !cols.length || (cfg && cfg.mode === 'image')) {
+                    /* pas de données exploitables (ou feuille à CSV inexploitable) :
+                       bandeau fidèle + image de l'original en principal */
+                    var hh = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' + mkBannerHtml(cfg, d, vm, mkAnt || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes'));
+                    if (imgSrc) hh += '<div style="padding:10px"><img class="mk-img" src="' + imgSrc + '" alt="' + esc(name) + '" style="width:100%;cursor:zoom-in;border-radius:6px"></div>' +
+                        '<div style="font-size:11px;color:#94a3b8;padding:0 14px 12px">🔍 Cliquez sur le visuel pour l\'agrandir — cette feuille est affichée telle que dans l\'original (ses données CSV ne sont pas exploitables en table).</div>';
+                    else hh += '<div style="padding:22px;color:#64748b">Pas de contenu disponible pour cette feuille.</div>';
+                    hh += '</div>';
+                    box.innerHTML = hh;
+                    mkFillPeriod(box); wireImg();
+                    return;
+                }
+                if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
+                if (isHeat && !antSel && multiAnt) antSel = antVals[0];
+                /* ── résolution des colonnes visibles ── */
+                var specs = [];
+                if (cfg && cfg.cols) {
+                    cfg.cols.forEach(function (sp) {
+                        var col = sp.c && cols.indexOf(sp.c) >= 0 ? sp.c : null;
+                        if (!col && sp.rx) col = cols.filter(function (c) { return sp.rx.test(c); })[0] || null;
+                        if (!col && sp.c) { var n0 = mkNorm(sp.c); col = cols.filter(function (c) { return mkNorm(c) === n0; })[0] || null; }
+                        if (!col) return;
+                        specs.push({ col: col, l: sp.l, t: sp.t || 'bar', f: sp.f || null, k: mkColorColFor(col, cols) });
+                    });
+                } else {
+                    cols.forEach(function (c) {
+                        if (mkIsJunkCol(c, cols)) return;
+                        if (c === antCol || c === moisCol || c === anCol) return;
+                        if (/zone de sant/i.test(c)) return;
+                        var kc = mkColorColFor(c, cols);
+                        var pctish = /^_?perc_/i.test(c) || kc;
+                        var numish = /^_?num_/i.test(c);
+                        specs.push({ col: c, l: mkNiceLabel(c), t: pctish ? 'bar' : (numish ? 'num' : 'plain'), f: null, k: kc });
+                    });
+                }
+                var rowCol = (cfg && cfg.row && cols.indexOf(cfg.row) >= 0 ? cfg.row : null) || cols.filter(function (c) { return /zone de sant/i.test(c); })[0] || null;
+                /* ── barre d'outils (filtres, recherche, export) — hors design original,
+                   gardée discrète au-dessus de la carte ── */
+                var h = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
+                    (multiAnt ? '<select class="mk-ant" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' + (isHeat ? '' : '<option value="">📍 Toutes les antennes</option>') + antVals.map(function (a) { return '<option value="' + esc(a) + '"' + (a === antSel ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    (moisCol && !isHeat ? '<select class="mk-mois" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">🗓️ Tous les mois</option>' + moisVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    (anCol && !isHeat && anVals.length > 1 ? '<select class="mk-an" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📅 Toutes années</option>' + anVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
+                    (!isHeat ? '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:140px;padding:8px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px">' : '<span style="flex:1"></span>') +
+                    '<button type="button" class="mk-csv" style="padding:8px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
+                    '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
+                /* ── carte « feuille Tableau » : bandeau + table + légende ── */
+                h += '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                    mkBannerHtml(cfg, d, vm, antSel || mkAnt || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes')) +
+                    '<div style="overflow-x:auto;padding:6px 10px 0"><table class="mk-tbl" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead class="mk-head"></thead><tbody class="mk-body"></tbody></table></div>' +
+                    mkLegendHtml(cfg && cfg.legend) +
+                    (cfg && cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
+                    '</div>' +
+                    '<div class="pev-pgnav mk-nav" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px">' +
+                    '<button type="button" class="mk-pv" style="padding:6px 14px;border-radius:8px;border:1.5px solid #e7edf5;background:#fff;cursor:pointer">◀</button>' +
+                    '<span class="mk-pi" style="font-size:12.5px;color:#475467"></span>' +
+                    '<button type="button" class="mk-nx" style="padding:6px 14px;border-radius:8px;border:1.5px solid #e7edf5;background:#fff;cursor:pointer">▶</button></div>';
+                if (imgSrc) {
+                    h += '<details style="margin-top:14px;border:1px solid #e7edf5;border-radius:12px;padding:10px 14px">' +
+                        '<summary style="cursor:pointer;font-weight:800;color:#1a237e;font-size:13px">🖼 Aperçu de l\'original (image Tableau)</summary>' +
+                        '<div style="margin:8px 0"><img class="mk-img" src="' + imgSrc + '" alt="' + esc(name) + '" style="width:100%;border:1px solid #e7edf5;border-radius:10px;cursor:zoom-in"></div></details>';
+                }
+                box.innerHTML = h;
+                mkFillPeriod(box); wireImg();
+                function fRows() {
+                    var out = rows;
+                    if (antCol && antSel) out = out.filter(function (r) { return String(r[antCol] || '').trim() === antSel; });
+                    if (moisCol && moisSel && !isHeat) out = out.filter(function (r) { return String(r[moisCol] || '').trim() === moisSel; });
+                    if (anCol && anSel && !isHeat) out = out.filter(function (r) { return String(r[anCol] || '').trim() === anSel; });
+                    if (q && !isHeat) {
+                        var qq = q.toLowerCase();
+                        out = out.filter(function (r) { return cols.some(function (c) { return String(r[c]).toLowerCase().indexOf(qq) >= 0; }); });
+                    }
+                    return out;
+                }
+                function headHtml(showAnt) {
+                    var t = '<tr>';
+                    if (showAnt) t += '<th style="padding:10px 12px;text-align:left;color:#334155;font-weight:800;font-size:12px;border-bottom:2px solid #e2e8f0;white-space:nowrap">Antenne</th>';
+                    t += '<th style="padding:10px 12px;text-align:left;color:#334155;font-weight:800;font-size:12px;border-bottom:2px solid #e2e8f0;white-space:nowrap">' + esc(rowCol || '') + '</th>';
+                    specs.forEach(function (sp) {
+                        t += '<th style="padding:10px 10px;text-align:center;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0;max-width:180px;line-height:1.35">' + esc(sp.l) + '</th>';
+                    });
+                    return t + '</tr>';
+                }
+                function cellHtml(sp, r) {
+                    var v = r[sp.col];
+                    if (sp.t === 'check') return mkCheckCell(v);
+                    if (sp.t === 'zero') {
+                        var s0 = String(v == null ? '' : v).trim();
+                        if (s0 === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
+                        var n0 = Number(s0.replace(',', '.'));
+                        var c0 = (isFinite(n0) && n0 > 0) ? MK_RED : MK_GREEN;
+                        return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + c0 + ';font-weight:800">' + esc(s0) + '</td>';
+                    }
+                    if (sp.t === 'rednum') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:700">' + esc(v) + '</td>';
+                    if (sp.t === 'num') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:#334155">' + esc(v) + '</td>';
+                    if (sp.t === 'plain') return '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#334155">' + esc(v) + '</td>';
+                    var frac = sp.f ? [r[sp.f[0]], r[sp.f[1]]] : null;
+                    return mkBarCell(v, sp.k ? r[sp.k] : null, frac);
+                }
+                function drawHeat() {
+                    var fr = fRows();
+                    var months = fr.map(function (r) {
+                        return { r: r, lbl: String(r[moisCol || 'Month name FR'] || ''), yr: String(r[anCol || 'Year'] || ''), m: _moisRank(r[moisCol || 'Month name FR']) };
+                    }).sort(function (a, b) { return (a.yr === b.yr ? a.m - b.m : (a.yr < b.yr ? -1 : 1)); });
+                    var head = '';
+                    if (months.some(function (m) { return m.yr; })) {
+                        head += '<tr><th style="border:none"></th>';
+                        var i = 0;
+                        while (i < months.length) {
+                            var y = months[i].yr, span = 0;
+                            while (i + span < months.length && months[i + span].yr === y) span++;
+                            head += '<th colspan="' + span + '" style="padding:6px;text-align:center;color:#475467;font-weight:700;font-size:12px">' + esc(y) + '</th>';
+                            i += span;
+                        }
+                        head += '</tr>';
+                    }
+                    head += '<tr><th style="border-bottom:2px solid #e2e8f0"></th>' + months.map(function (m) { return '<th style="padding:6px 8px;text-align:center;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0">' + esc(m.lbl) + '</th>'; }).join('') + '</tr>';
+                    box.querySelector('.mk-head').innerHTML = head;
+                    var body = '';
+                    (cfg.inds || []).forEach(function (ind) {
+                        var vcol = cols.indexOf(ind.v) >= 0 ? ind.v : cols.filter(function (c) { return mkNorm(c) === mkNorm(ind.v); })[0];
+                        if (!vcol) return;
+                        var kcol = ind.k && cols.indexOf(ind.k) >= 0 ? ind.k : mkColorColFor(vcol, cols);
+                        body += '<tr><th style="padding:6px 12px;text-align:right;color:#334155;font-weight:600;font-size:12px;white-space:nowrap;border-bottom:1px solid #f8fafc">' + esc(ind.l) + '</th>' +
+                            months.map(function (m) { return mkBarCell(m.r[vcol], kcol ? m.r[kcol] : null, null); }).join('') + '</tr>';
+                    });
+                    box.querySelector('.mk-body').innerHTML = body || '<tr><td style="padding:22px;color:#888">Aucune donnée.</td></tr>';
+                    box.querySelector('.mk-count').textContent = months.length + ' mois';
+                    box.querySelector('.mk-nav').style.display = 'none';
+                }
+                function draw() {
+                    if (isHeat) { drawHeat(); return; }
+                    var fr = fRows(), nP = Math.max(1, Math.ceil(fr.length / PGS));
+                    if (pg >= nP) pg = nP - 1;
+                    var showAnt = multiAnt && !antSel;
+                    box.querySelector('.mk-head').innerHTML = headHtml(showAnt);
+                    var body = fr.slice(pg * PGS, pg * PGS + PGS).map(function (r) {
+                        var t = '<tr>';
+                        if (showAnt) t += '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#334155;font-weight:700;white-space:nowrap">' + esc(r[antCol]) + '</td>';
+                        t += '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1f2937;font-weight:700;white-space:nowrap">' + esc(rowCol ? r[rowCol] : '') + '</td>';
+                        specs.forEach(function (sp) { t += cellHtml(sp, r); });
+                        return t + '</tr>';
+                    }).join('') || '<tr><td colspan="' + (specs.length + 2) + '" style="padding:22px;text-align:center;color:#888">Aucun résultat.</td></tr>';
+                    box.querySelector('.mk-body').innerHTML = body;
+                    box.querySelector('.mk-pi').textContent = 'Page ' + (pg + 1) + ' / ' + nP;
+                    box.querySelector('.mk-count').textContent = fr.length + ' ligne(s)';
+                    box.querySelector('.mk-pv').disabled = pg === 0;
+                    box.querySelector('.mk-nx').disabled = pg >= nP - 1;
+                    box.querySelector('.mk-nav').style.display = nP > 1 ? 'flex' : 'none';
+                }
+                function _afterFilter() {
+                    pg = 0;
+                    var ba = box.querySelector('.mk-b-ant');
+                    if (ba) ba.textContent = antSel || mkAnt || (antVals.length === 1 ? antVals[0] : 'Toutes les antennes');
+                    draw();
+                }
+                var qEl = box.querySelector('.mk-q');
+                if (qEl) qEl.oninput = function () { q = this.value; pg = 0; draw(); };
+                var antEl = box.querySelector('.mk-ant');
+                if (antEl) { antEl.onchange = function () { antSel = this.value; _afterFilter(); }; }
+                var moisEl = box.querySelector('.mk-mois');
+                if (moisEl) moisEl.onchange = function () { moisSel = this.value; _afterFilter(); };
+                var anEl = box.querySelector('.mk-an');
+                if (anEl) anEl.onchange = function () { anSel = this.value; _afterFilter(); };
+                box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
+                box.querySelector('.mk-nx').onclick = function () { pg++; draw(); };
+                box.querySelector('.mk-csv').onclick = function () {
+                    var lines = [cols.join(',')].concat(fRows().map(function (r) {
+                        return cols.map(function (c) { var v = String(r[c] == null ? '' : r[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
+                    }));
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+                    a.download = 'mashako_' + (d.urlName || 'vue') + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+                };
+                draw();
+            }
+
+            function mkDrawViewLegacy(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];
                 var PGS = 15, pg = 0, q = '', antSel = '', moisSel = '', anSel = '';
                 /* Filtre Antenne (demande Configuration_ANT) : dès qu'une colonne
