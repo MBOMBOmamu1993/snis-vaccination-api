@@ -12771,6 +12771,138 @@
             }
             /* ── Configuration par feuille — titres exacts de l'original ── */
             var MK_CFG = {
+                /* ── Séances de vaccination (ZS) ── */
+                'Séances_HZ_P1': {
+                    title: 'Réalisation des séances de vaccination',
+                    sub: '% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée)',
+                    row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { rx: /_perc_fixed_outreach_achieved_CYCM$/i, l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe, avancée)", t: 'bar', f: ['_num_healthareas_fixed_outreach_achieved_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_fixed_achieved_CYCM$/i, l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe)", t: 'bar', f: ['_num_healthareas_fixed_achieved_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_outreach_achieved_CYCM$/i, l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (avancée)", t: 'bar' }
+                    ]
+                },
+                'Séances_HZ_P2': {
+                    title: 'Réalisation des séances de vaccination',
+                    sub: '% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée) — suite',
+                    row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { rx: /_perc_fixed_outreach_achieved_CYCM$/i, l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe, avancée)", t: 'bar', f: ['_num_healthareas_fixed_outreach_achieved_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_fixed_achieved_CYCM$/i, l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe)", t: 'bar', f: ['_num_healthareas_fixed_achieved_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_outreach_achieved_CYCM$/i, l: "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (avancée)", t: 'bar' }
+                    ]
+                },
+                /* ── Récupération des enfants (ZS) ── */
+                "Taux d'abandon_HZ_P1": {
+                    title: 'Récupération des enfants',
+                    sub: "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1",
+                    row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { rx: /_perc_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10%", t: 'bar', f: ['_num_healthareas_dropout_CYCM', '_num_healthareas_REF_CYCM'] },
+                        { rx: /_perc_healthareas_DTC1-DTC3_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3", t: 'bar', f: ['_num_healthareas_DTC1-DTC3_dropout_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_healthareas_DTC1-VAR2_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-VAR", t: 'bar', f: ['_num_healthareas_DTC1-VAR2_dropout_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_healthareas_BCG-VAR_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10% pour BCG-VAR", t: 'bar', f: ['_num_healthareas_BCG-VAR_dropout_CYCM', '_num_healthareas_CYCM'] }
+                    ]
+                },
+                "Taux d'abandon_HZ_P2": {
+                    title: 'Récupération des enfants',
+                    sub: "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1 — suite",
+                    row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { rx: /_perc_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10%", t: 'bar', f: ['_num_healthareas_dropout_CYCM', '_num_healthareas_REF_CYCM'] },
+                        { rx: /_perc_healthareas_DTC1-DTC3_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3", t: 'bar', f: ['_num_healthareas_DTC1-DTC3_dropout_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_healthareas_DTC1-VAR2_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-VAR", t: 'bar', f: ['_num_healthareas_DTC1-VAR2_dropout_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_healthareas_BCG-VAR_dropout_CYCM$/i, l: "% AS avec un taux d'abandon inférieur à 10% pour BCG-VAR", t: 'bar', f: ['_num_healthareas_BCG-VAR_dropout_CYCM', '_num_healthareas_CYCM'] }
+                    ]
+                },
+                /* ── Supervisions formatives (ZS) ── */
+                'Supervision_HZ_P1': {
+                    title: 'Supervisions formatives de qualité des aires de santé',
+                    sub: "% de supervisions d'aires de santé répondant aux critères de qualité*",
+                    row: 'Zone de santé', legend: 'pct',
+                    foot: "*Une supervision est considérée de qualité lorsqu'elle répond simultanément aux trois critères suivants :<br>- <b>Localisation</b> : La position doit être conforme à celle du Centre de Santé<br>- <b>Durée</b> : La supervision doit durer au moins 1 heure<br>- <b>Cohérence</b> : Les informations saisies dans chaque module du canevas de supervision doivent être cohérentes entre elles",
+                    cols: [
+                        { rx: /_num_healthareas_CYCM$/i, l: 'AS totales', t: 'num' },
+                        { rx: /_perc_supervised_healthareas_CYCM$/i, l: '% AS supervisées', t: 'bar', f: ['_num_supervised_healthareas_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_HA_supervision_quality_CYCM$/i, l: '% de supervision de qualité (AS)', t: 'bar' },
+                        { rx: /perc_HA_duration_CYCM$/i, l: 'AS supervisée avec bonne durée', t: 'bar' },
+                        { rx: /perc_HA_Coh[ée]rence/i, l: 'AS supervisée avec cohérence des données', t: 'bar' },
+                        { rx: /perc_HA_localisation_CYCM$/i, l: 'AS supervisée avec bonne localisation', t: 'bar' }
+                    ]
+                },
+                'Supervision_HZ_P2': {
+                    title: 'Supervisions formatives de qualité des aires de santé',
+                    sub: "% de supervisions d'aires de santé répondant aux critères de qualité* — suite",
+                    row: 'Zone de santé', legend: 'pct',
+                    cols: [
+                        { rx: /_num_healthareas_CYCM$/i, l: 'AS totales', t: 'num' },
+                        { rx: /_perc_supervised_healthareas_CYCM$/i, l: '% AS supervisées', t: 'bar', f: ['_num_supervised_healthareas_CYCM', '_num_healthareas_CYCM'] },
+                        { rx: /_perc_HA_supervision_quality_CYCM$/i, l: '% de supervision de qualité (AS)', t: 'bar' },
+                        { rx: /perc_HA_duration_CYCM$/i, l: 'AS supervisée avec bonne durée', t: 'bar' },
+                        { rx: /perc_HA_Coh[ée]rence/i, l: 'AS supervisée avec cohérence des données', t: 'bar' },
+                        { rx: /perc_HA_localisation_CYCM$/i, l: 'AS supervisée avec bonne localisation', t: 'bar' }
+                    ]
+                },
+                /* ── Infirmiers titulaires formés (ZS), détail par aire de santé ── */
+                'Infirmier_HZ_P1': {
+                    title: 'Infirmiers Titulaires formés au PEV',
+                    sub: 'Objectif: au moins 1 agent formé au PEV Pratique',
+                    row: 'Aire de Santé',
+                    cols: [
+                        { rx: /identification_agenttrained/i, l: 'Agents formés au PEV', t: 'num' },
+                        { rx: /identification_numberofagent/i, l: "Nombre d'agents", t: 'num' }
+                    ]
+                },
+                'Infirmier_HZ_P2': {
+                    title: 'Infirmiers Titulaires formés au PEV',
+                    sub: 'Objectif: au moins 1 agent formé au PEV Pratique — suite',
+                    row: 'Aire de Santé',
+                    cols: [
+                        { rx: /identification_agenttrained/i, l: 'Agents formés au PEV', t: 'num' },
+                        { rx: /identification_numberofagent/i, l: "Nombre d'agents", t: 'num' }
+                    ]
+                },
+                /* ── Livraisons (ZS) : taux de satisfaction par aire de santé ── */
+                'Livraison_HZ_P1': {
+                    title: 'Satisfaction des besoins des aires de santé',
+                    sub: '% des aires de santé qui ont reçu une livraison satisfaisante en provenance des zones de santé',
+                    mode: 'livraison', variant: 'perc',
+                    vacc: [
+                        { l: 'BCG', k: 'bcg' },
+                        { l: 'Penta', k: 'DTC' },
+                        { l: 'PCV', k: 'pcv' },
+                        { l: 'VPO', k: 'vpo' },
+                        { l: 'Rota', k: 'rota' },
+                        { l: 'VPI', k: 'vpi' },
+                        { l: 'VAR-RR', k: 'var' },
+                        { l: 'VAA', k: 'vaa' },
+                        { l: 'TD', k: 'td' },
+                        { l: 'SAB 0,05ml', k: '005' },
+                        { l: 'SAB 0,5ml', k: '05' },
+                        { l: 'Sdil 2ml', k: '2ml' },
+                        { l: 'Sdil 5ml', k: '5ml' }
+                    ]
+                },
+                'Livraison_HZ_P2': {
+                    title: 'Satisfaction des besoins des aires de santé',
+                    sub: '% des aires de santé qui ont reçu une livraison satisfaisante en provenance des zones de santé — suite',
+                    mode: 'livraison', variant: 'perc',
+                    vacc: [
+                        { l: 'BCG', k: 'bcg' },
+                        { l: 'Penta', k: 'DTC' },
+                        { l: 'PCV', k: 'pcv' },
+                        { l: 'VPO', k: 'vpo' },
+                        { l: 'Rota', k: 'rota' },
+                        { l: 'VPI', k: 'vpi' },
+                        { l: 'VAR-RR', k: 'var' },
+                        { l: 'VAA', k: 'vaa' },
+                        { l: 'TD', k: 'td' },
+                        { l: 'SAB 0,05ml', k: '005' },
+                        { l: 'SAB 0,5ml', k: '05' },
+                        { l: 'Sdil 2ml', k: '2ml' },
+                        { l: 'Sdil 5ml', k: '5ml' }
+                    ]
+                },
                 /* ── Chaîne du froid (ZS) : synthèse de la zone puis détail par aire de santé ── */
                 'CDF_HZ_P1': {
                     title: 'Fonctionnalité de la chaîne du froid des aires de santé',
@@ -12802,7 +12934,7 @@
                 },
                 'CDF_HZ_NF': {
                     title: 'Chaîne du froid non fonctionnelle dans les aires de santé',
-                    sub: 'Causes de non-fonctionnalité relevées lors de la supervision',
+                    sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*',
                     row: 'Aire de Santé', legend: 'cdf',
                     cols: [
                         { rx: /compresseur/i, l: 'Compresseurs dysfonctionnels', t: 'zero' },
@@ -12814,8 +12946,8 @@
                 },
                 /* ── Expiration des vaccins (ZS) : statut de risque par antigène ── */
                 'Vaccine_expiration_HZ_P1': {
-                    title: 'Expiration des vaccins',
-                    sub: "Statut de risque d'expiration par antigène, au niveau des aires de santé",
+                    title: 'Risque lié à la péremption des vaccins',
+                    sub: 'Aires de santé ne présentant aucun risque de péremption des vaccins',
                     row: 'Aire de Santé',
                     cols: [
                         { rx: /_vaccine_expiry_risk_status_HA_BCG$/i, l: 'BCG', t: 'statut' },
@@ -12830,8 +12962,8 @@
                     ]
                 },
                 'Vaccine_expiration_HZ_P2': {
-                    title: 'Expiration des vaccins',
-                    sub: "Statut de risque d'expiration par antigène, au niveau des aires de santé (suite)",
+                    title: 'Risque lié à la péremption des vaccins',
+                    sub: 'Aires de santé ne présentant aucun risque de péremption des vaccins — suite',
                     row: 'Aire de Santé',
                     cols: [
                         { rx: /_vaccine_expiry_risk_status_HA_BCG$/i, l: 'BCG', t: 'statut' },
@@ -13090,8 +13222,8 @@
                     }
                 },
                 'Infirmier_ANT': {
-                    title: 'Formation des infirmier titulaire au PEV au niveau des aires de santé',
-                    sub: "% des aires de santé disposent d'au moins un infirmier titulaire formé au PEV",
+                    title: 'Infirmiers Titulaires formés au PEV',
+                    sub: 'Objectif: au moins 1 agent formé au PEV Pratique',
                     sortBy: "Score d'infirmier formé", row: 'Zone de santé', legend: 'pct',
                     cols: [
                         { c: '_perc_HA_infirmier_CYCM', l: "Score d'infirmier formé", t: 'bar', f: ['_num_HA_infirmier_CYCM', '_num_healthareas_CYCM'] }
