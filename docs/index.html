@@ -12658,8 +12658,128 @@
                 var num = parseInt(s, 10);
                 return (isFinite(num) && num >= 1 && num <= 12) ? num - 1 : 99;
             }
+
+            /* ══ PAGES STATIQUES DU CLASSEUR — retranscrites de l'original ══
+               Contenu fixe (définitions, contacts, configuration, page de garde) :
+               Tableau ne l'exporte pas, il est donc reproduit fidèlement en HTML
+               plutôt qu'affiché en image. Seuls la localisation et le mois sont
+               dynamiques. */
+            var MKS_BLUE = '#2b52c9';
+            function mkKpiTable(rows, foot, num) {
+                var th = function (t, w) { return '<th style="background:#eef3fb;text-align:left;padding:11px 13px;color:#0f172a;font-weight:800;font-size:12px' + (w ? ';width:' + w : '') + '">' + t + '</th>'; };
+                var h = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                    '<div style="background:' + MKS_BLUE + ';color:#fff;padding:16px 24px;font-size:19px;font-weight:800">Définition des indicateurs | RDC</div>' +
+                    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:separate;border-spacing:2px;font-size:11.5px;line-height:1.45">' +
+                    '<thead><tr>' + th('Indicateur', '15%') + th('Description', '17%') + th('Numérateur', '15%') + th('Dénominateur', '12%') + th('Paramètres de calcul') + '</tr></thead><tbody>';
+                rows.forEach(function (r) {
+                    h += '<tr style="vertical-align:middle">' +
+                        '<td style="background:#f1f1f1;padding:13px;font-weight:800;color:#111">' + r[0] + '</td>' +
+                        '<td style="padding:13px;color:#333">' + r[1] + '</td>' +
+                        '<td style="background:#f1f1f1;padding:13px;color:#333">' + r[2] + '</td>' +
+                        '<td style="background:#f1f1f1;padding:13px;color:#333">' + r[3] + '</td>' +
+                        (r[4] === null ? '' : '<td style="padding:13px;color:#333"' + (r[5] ? ' rowspan="' + r[5] + '"' : '') + '>' + r[4] + '</td>') +
+                        '</tr>';
+                });
+                h += '</tbody></table></div>' +
+                    '<div style="display:flex;align-items:flex-end;gap:14px;padding:12px 20px 16px">' +
+                    '<div style="flex:1"><div style="color:' + MKS_BLUE + ';font-size:12px;margin-bottom:3px">Pondération des indicateurs</div>' +
+                    '<div style="color:#555;font-size:11px;line-height:1.6">' + foot + '</div></div>' +
+                    '<div style="color:' + MKS_BLUE + ';font-weight:800;font-size:13px">' + num + '</div></div></div>';
+                return h;
+            }
+            var MKS_CRIT_SUP2 = "*Une supervision est considérée de qualité lorsqu'elle répond simultanément aux deux critères suivants :<br>- <b>Durée</b> : La supervision doit durer au moins 1 heure<br>- <b>Cohérence</b> : Cohérences des données entre les modules du caneva de supervision, et les recommandations alignées sur les principaux problèmes révélés par les indicateurs";
+            var MKS_CRIT_SUP3 = "*Une supervision est considérée de qualité lorsqu'elle répond simultanément aux trois critères suivants :<br>- <b>Localisation</b> : La position doit être conforme à celle du Centre de Santé de Référence<br>- <b>Durée</b> : La supervision doit durer au moins 1 heure<br>- <b>Cohérence</b> : Les informations saisies dans chaque module du canevas de supervision doivent être cohérentes entre elles, et les recommandations doivent être clairement alignées sur les principaux problèmes identifiés par les indicateurs";
+            var MKS_CDF = "*Un équipement de chaîne du froid est considéré comme fonctionnel lorsqu'il satisfait simultanément aux deux critères suivants:<br>- <b>Dispositif de suivi:</b> Un système de monitorage continu (fridge tag) de la température est disponible et opérationnel<br>- <b>Performance:</b> Aucune alarme négative et moins de trois alarmes positives ont été enregistrées au cours des 30 derniers jours";
+            function mkReunionCrit(part, rem) {
+                return "*Une réunion est considérée comme fonctionnelle lorsqu'elle satisfait simultanément aux trois critères suivants :<br>- <b>Tenue:</b> La réunion a effectivement eu lieu pendant la période prévue.<br>- <b>Participation:</b> Les participants clés concernés étaient présents (" + part + ")<br>- <b>Suivi:</b> Des données de performance ont été présentées, un compte rendu incluant les points d'action a été partagé, et les points d'action de la réunion précédente (si elle a eu lieu) ont été revus et suivis.<br><br><b>Remarque:</b> " + rem;
+            }
+            function mkStaticHtml(pageKey, loc, per) {
+                var locLbl = loc || mkLocLbl();
+                if (pageKey === 'kpi1') return mkKpiTable([
+                    ['Supervision des zones de santé (ZS)', '% des zones de santé supervisées', 'Nombre de ZS supervisées', 'Nombre total de ZS', ''],
+                    ['Suivi de la réalisation de la supervision (ZS)', '% de supervisions de zones de santé répondant aux critères de qualité*', 'Nombre de supervisions de ZS répondant aux critères de qualité', 'Nombre total de ZS', MKS_CRIT_SUP2],
+                    ['Supervision des aires de santé (AS)', '% des aires de santé supervisées', "Nombre d'AS supervisées", "Nombre total d'AS", "Il s'agit ici des centres de santé de référence"],
+                    ['Suivi de la réalisation de la supervision (AS)', "% de supervisions d'aires de santé répondant aux critères de qualité*", "Nombre de supervisions d'AS répondant aux critères de qualité", "Nombre total d'AS", MKS_CRIT_SUP3]
+                ], 'Supervision des zones de santé (ZS): 0% &nbsp;|&nbsp; Suivi de la réalisation de la supervision (ZS): 5% &nbsp;|&nbsp; Supervision des aires de santé (AS): 0% &nbsp;|&nbsp; Suivi de la réalisation de la supervision (AS): 5%', '1a');
+                if (pageKey === 'kpi2') return mkKpiTable([
+                    ['Réunion de la revue et validation des données (ANT)', '% de réalisation des réunions de revue de la performance au niveau des antennes répondant aux critères de fonctionnalité*', "Nombre de réunions de suivi fonctionnelles dans l'antenne", "Nombre total de réunions de suivi à tenir dans l'antenne", mkReunionCrit('MCA ou MCA ai, Logisticien', 'Les réunions de revue de performance au niveau des antennes comprennent quatre réunions Mashako par antenne ainsi qu\'une réunion de monitorage par antenne')],
+                    ['Réunions de monitorage (ZS)', '% de réalisation des réunions de revue de la performance au niveau des zones de santé répondant aux critères de fonctionnalité*', 'Nombre de réunions de suivi fonctionnelles dans la ZS', 'Nombre total de réunions de suivi à tenir dans la ZS', mkReunionCrit('MCZ ou MCZ ai, IS PEV, IT', 'La réunion de revue de performance au niveau des ZS correspond à une réunion de monitorage par ZS')],
+                    ['Fonctionnalité de la chaîne de froid (Antenne)', '% des antennes avec au moins une chaîne de froid fonctionnelle*', "Nombre d'antennes avec au moins un équipement de chaîne de froid fonctionnel", "Nombre total d'antennes", MKS_CDF, 3],
+                    ['Fonctionnalité de la chaîne de froid (ZS)', '% des zones de santé avec au moins une chaîne de froid fonctionnelle*', 'Nombre de ZS avec au moins un équipement de chaîne de froid fonctionnel', 'Nombre total de ZS', null],
+                    ['Fonctionnalité de la chaîne de froid (AS)', '% des aires de santé avec au moins une chaîne de froid fonctionnelle*', "Nombre d'AS avec au moins un équipement de chaîne de froid fonctionnel", "Nombre total d'AS", null]
+                ], 'Réunion de la revue et validation des données (ANT): 5% &nbsp;|&nbsp; Réunions de suivi fonctionnelles (ZS): 5% &nbsp;|&nbsp; Fonctionnalité de la chaîne de froid (Antenne): 0% &nbsp;|&nbsp; Fonctionnalité de la chaîne de froid (ZS): 5% &nbsp;|&nbsp; Fonctionnalité de la chaîne de froid (AS): 5%', '1b');
+                if (pageKey === 'kpi3') return mkKpiTable([
+                    ['Disponibilité des vaccins (Antenne)', '% des antennes sans rupture de stock en antigènes et intrants disponibles au niveau central', "Nombre d'antennes sans rupture de stock en antigènes et intrants disponibles au niveau central", "Nombre total d'antennes", "*Cet indicateur a été mis à jour au mois de mars 2026. Précedemment, de juillet 2025 à février 2026, le nombre d'antennes ayant au minimum un stock de réserve dans les 16 antigènes et intrants étaient comptabilisées"],
+                    ['Disponibilité des vaccins (ZS)', "% des ZS sans rupture de stock en antigènes et intrants disponibles au niveau de l'antenne", 'Nombre de ZS sans rupture de stock en antigènes et intrants disponibles au niveau antenne', 'Nombre total de ZS', '*Cet indicateur a été mis à jour au mois de mars 2026. Précedemment, de juillet 2025 à février 2026, le nombre de ZS ayant un stock de réserve étaient comptabilisées'],
+                    ['Satisfaction des besoins (livraison antenne vers HZ)', '% des zones de santé qui ont reçu une livraison satisfaisante en provenance des antennes*', 'Nombre de ZS ayant reçu des commandes livrées satisfaisantes', 'Nombre total de ZS', "* Une commande livrée des antennes vers les ZS est considérée comme satisfaisante lorsqu'elle répond simultanément aux deux critères suivants :<br>- Au moins une livraison dans les 60 derniers jours<br>- Les stocks au moment de la commande + quantité livrées ont correspondent aux besoins de 5 semaines (10 semaines pour les provinces NGCA)"],
+                    ['Suivi de la réalisation des séances de vaccination', '% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée)', "Nombre d'AS ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie", "Nombre total d'AS", ''],
+                    ['Récupération des enfants', "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1", "Nombre d'AS avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1", "Nombre total d'AS", "Cet indicateur est satisfait uniquement lorsque les trois conditions relatives aux taux d'abandon sont respectées simultanément"],
+                    ['Formation des infirmier titulaire au PEV', "% des aires de santé disposent d'au moins un infirmier titulaire formé au PEV", "Nombre d'AS disposant d'au moins un infirmier titulaire formé au PEV", "Nombre total d'AS", '']
+                ], 'Disponibilité des vaccins (Antenne): 0% &nbsp;|&nbsp; Disponibilité des vaccins (ZS): 15% &nbsp;|&nbsp; Satisfaction des besoins (livraison antenne vers HZ): 10% &nbsp;|&nbsp; Suivi de la réalisation des séances de vaccination: 30% &nbsp;|&nbsp; Récupération des enfants: 10% &nbsp;|&nbsp; Formation des infirmier titulaire au PEV: 5%', '1c');
+                if (pageKey === 'cover') {
+                    var chip = function (ic, t) {
+                        return '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">' +
+                            '<div style="width:52px;height:52px;border-radius:4px;background:#eceff4;display:flex;align-items:center;justify-content:center;color:#fff">' + ic + '</div>' +
+                            '<div style="font-size:17px;font-weight:800;color:#333">' + t + '</div></div>';
+                    };
+                    return '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px;display:flex;min-height:420px">' +
+                        '<div style="flex:0 0 22%;background:' + MKS_BLUE + ';display:flex;align-items:center;justify-content:center">' +
+                        '<svg viewBox="0 0 120 120" style="width:70%;max-width:150px" aria-hidden="true"><path d="M18 40 L40 18 L92 26 L104 62 L84 104 L40 100 L14 74 Z" fill="#2196f3"/><path d="M26 96 L96 30 L104 44 L36 104 Z" fill="#f7d117"/><path d="M32 98 L96 38 L100 48 L40 102 Z" fill="#d62828"/><path d="M34 34 l5 14 h15 l-12 9 5 14 -13 -9 -13 9 5 -14 -12 -9 h15 z" fill="#f7d117"/></svg>' +
+                        '</div>' +
+                        '<div style="flex:1;padding:34px 40px;position:relative">' +
+                        '<div style="display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-bottom:26px">' +
+                        '<img src="' + mkOrigin() + '/pev-logo-officiel.png" alt="PEV — Programme Élargi de Vaccination, République Démocratique du Congo" style="height:46px">' +
+                        '</div>' +
+                        '<h2 style="font-size:26px;font-weight:800;color:#333;line-height:1.25;margin:0 0 26px;max-width:640px">Rapport mensuel des activités de vaccination - suivi du processus</h2>' +
+                        chip(MK_ICON_PIN, (mkPfx ? 'Zone de Santé' : 'Antenne') + ' | ' + esc(locLbl)) +
+                        chip(MK_ICON_CAL, esc(per || '')) +
+                        '<div style="position:absolute;right:40px;bottom:26px;text-align:right">' +
+                        '<div style="font-style:italic;font-weight:700;color:#555;font-size:12.5px;margin-bottom:4px">En partenariat avec :</div>' +
+                        '<div style="font-size:22px;font-weight:800;color:#0f6cbd;letter-spacing:.5px">Gavi<span style="font-size:11px;font-weight:600;color:#5b7f2e;margin-left:6px">The Vaccine Alliance</span></div>' +
+                        '</div></div></div>';
+                }
+                if (pageKey === 'contacts') {
+                    var mail = function (a) { return '<a href="mailto:' + a + '" style="color:' + MKS_BLUE + ';font-weight:800;text-decoration:none">' + a + '</a>'; };
+                    return '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px;display:flex;min-height:340px">' +
+                        '<div style="flex:0 0 22%;background:' + MKS_BLUE + '"></div>' +
+                        '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center">' +
+                        '<div style="color:#9aa3ae;font-size:16px;margin-bottom:14px">Pour plus d\'information:</div>' +
+                        '<div style="line-height:1.9;font-size:14.5px">' + mail('directionpevrdc@gmail.com') + '<br>' + mail('suivievaluationpev@gmail.com') + '<br>' + mail('drc-team@acasus.com') + '</div>' +
+                        '</div></div>';
+                }
+                if (pageKey === 'config') {
+                    var sec = function (t) { return '<div style="background:#555;color:#fff;padding:7px 12px;font-weight:800;font-size:12.5px">' + t + '</div>'; };
+                    var fld = function (l, v) { return '<div style="padding:8px 12px 2px"><div style="font-size:11.5px;color:#555">' + l + '</div><div style="font-size:12.5px;color:#111">' + esc(v) + '</div></div>'; };
+                    var btn = function (t) { return '<div style="margin:16px auto;width:min(320px,80%);background:#9a9a9a;color:#fff;text-align:center;font-weight:800;padding:12px;font-size:14px;letter-spacing:.4px">' + t + '</div>'; };
+                    return '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                        '<div style="background:' + MKS_BLUE + ';color:#fff;padding:16px 24px;font-size:19px;font-weight:800">Configuration</div>' +
+                        '<div style="display:flex;justify-content:center;padding:26px 16px">' +
+                        '<div style="width:min(560px,100%);background:#f4f4f4">' +
+                        sec('Period filters') +
+                        fld('Select year', (mkSelAn || (mkMeta.period && mkMeta.period.year) || '')) +
+                        fld('Select month', (mkSelMois || (mkMeta.period && mkMeta.period.month) || '')) +
+                        '<div style="height:10px"></div>' +
+                        sec(mkPfx ? 'Zone de Santé' : 'Antenna filter') +
+                        fld('', locLbl) +
+                        btn('TÉLÉCHARGER PDF') +
+                        '<div style="padding:0 14px 6px;color:#666;font-size:11.5px;line-height:1.7">Paramètres recommandés :<br><br>1. Inclure : <b>Feuilles spécifiques de ce classeur</b> (sélectionnez-les toutes, désélectionnez celles dont vous n\'avez pas besoin)<br>2. Échelle : <b>100 %</b><br>3. Taille de page : <b>Non spécifié</b><br>4. Orientation : <b>Paysage</b><br>5. Télécharger</div>' +
+                        btn('TÉLÉCHARGER PPT') +
+                        '<div style="padding:0 14px 18px;color:#666;font-size:11.5px;line-height:1.7">1. Inclure : <b>les feuilles spécifiques de ce classeur</b> (sélectionnez-les toutes, décochez celles dont vous n\'avez pas besoin)<br>2. Télécharger</div>' +
+                        '</div></div></div>';
+                }
+                return null;
+            }
             /* ── Configuration par feuille — titres exacts de l'original ── */
             var MK_CFG = {
+                'Contacts Page': { mode: 'static', page: 'contacts' },
+                'Configuration_ANT': { mode: 'static', page: 'config' },
+                'Configuration_Z': { mode: 'static', page: 'config' },
+                'KPI Manuel_ANT_P1': { mode: 'static', page: 'kpi1' },
+                'KPI Manuel_ANT_P2': { mode: 'static', page: 'kpi2' },
+                'KPI Manuel_ANT_P3': { mode: 'static', page: 'kpi3' },
+                'KPI Manuel_HZ_P1': { mode: 'static', page: 'kpi1' },
+                'KPI Manuel_HZ_P2': { mode: 'static', page: 'kpi2' },
+                'KPI Manuel_HZ_P3': { mode: 'static', page: 'kpi3' },
                 'HZ Scores_ANT': {
                     title: 'Aperçu des performances Mashako au niveau des zones',
                     sortBy: 'Score Mashako', row: 'Zone de sante', legend: 'pct',
@@ -13086,6 +13206,12 @@
                    antennes, ce que l'original ne fait jamais). */
                 if (antCol && mkAnt) antSel = mkAnt;
 
+                /* ═══ MODE STATIQUE : page à contenu fixe, retranscrite en HTML ═══ */
+                if (mode === 'static') {
+                    var _per = (mkSelMois && mkSelAn) ? (mkSelMois + ' ' + mkSelAn) : ((mkMeta.period && mkMeta.period.month) ? (mkMeta.period.month + ' ' + mkMeta.period.year) : '');
+                    var _h = mkStaticHtml(cfg.page, antSel || mkAnt || (antVals.length === 1 ? antVals[0] : ''), _per);
+                    if (_h) { box.innerHTML = _h; return; }
+                }
                 /* ═══ MODE IMAGE : la feuille est affichée telle que dans l'original
                    (par antenne quand la variante existe) — sans double bandeau ═══ */
                 if (mode === 'image' || ((!rows.length || !cols.length) && mode === 'table' && !(vm && vm.synthetic))) {
