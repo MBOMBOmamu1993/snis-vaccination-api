@@ -12647,7 +12647,17 @@
                 mkTopoPromise.then(cb);
             }
             var MK_MOIS_ORD = ['janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'];
-            function mkMoisRank(v) { var i = MK_MOIS_ORD.indexOf(String(v == null ? '' : v).toLowerCase()); if (i >= 0) return i < 5 ? i : (i === 5 ? 4 : (i <= 8 ? i - 1 : (i <= 13 ? i - 1 : i - 2))); var n = parseInt(v, 10); return isFinite(n) ? n - 1 : 99; }
+            var MK_MOIS_FR = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+            var MK_MOIS_EN = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+            function mkMoisRank(v) {
+                var s = String(v == null ? '' : v).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+                if (!s) return 99;
+                var i = MK_MOIS_FR.indexOf(s); if (i >= 0) return i;
+                i = MK_MOIS_EN.indexOf(s); if (i >= 0) return i;
+                for (i = 0; i < 12; i++) { if (s.indexOf(MK_MOIS_FR[i].slice(0, 4)) === 0 || s.indexOf(MK_MOIS_EN[i].slice(0, 4)) === 0) return i; }
+                var num = parseInt(s, 10);
+                return (isFinite(num) && num >= 1 && num <= 12) ? num - 1 : 99;
+            }
             /* ── Configuration par feuille — titres exacts de l'original ── */
             var MK_CFG = {
                 'HZ Scores_ANT': {
@@ -13070,7 +13080,11 @@
                     var im = box.querySelector('.mk-img');
                     if (im) im.onclick = function () { mkLightbox(this.src, name); };
                 }
-                if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
+                /* Filtre strict : si l'entité choisie n'a aucune ligne dans cette
+                   feuille, on n'affiche PAS les autres à la place (constaté le 26/07 sur
+                   Livraison_ANT_P2 : Buta absente → la page listait 44 lignes de 11 autres
+                   antennes, ce que l'original ne fait jamais). */
+                if (antCol && mkAnt) antSel = mkAnt;
 
                 /* ═══ MODE IMAGE : la feuille est affichée telle que dans l'original
                    (par antenne quand la variante existe) — sans double bandeau ═══ */
@@ -13237,13 +13251,19 @@
                         hRows.forEach(function (r) {
                             var a = String(r[hAnt] || '').trim();
                             if (!a) return;
-                            var key = String(r[mm.yCol] || '') + '-' + String(mkMoisRank(r[mm.mCol])).padStart(2, '0');
+                            var rk = mkMoisRank(r[mm.mCol]);
+                            if (rk > 11) return; /* mois illisible → ligne ignorée */
+                            var key = String(r[mm.yCol] || '') + '-' + String(rk + 1).padStart(2, '0');
                             (perAnt[a] = perAnt[a] || {})[key] = mkPctNum(r[sCol]);
                         });
                         var allKeys = {};
                         Object.keys(perAnt).forEach(function (a) { Object.keys(perAnt[a]).forEach(function (k) { allKeys[k] = 1; }); });
                         var sorted = Object.keys(allKeys).sort();
-                        var curK = sorted[sorted.length - 1], prevK = sorted[sorted.length - 2];
+                        /* Le classement suit la période affichée (sélecteurs Mois/Année),
+                           et à défaut le dernier mois réellement présent. */
+                        var wantK = mkPeriodKeyOf(mkSelMois, mkSelAn);
+                        var ci = (wantK && sorted.indexOf(wantK) >= 0) ? sorted.indexOf(wantK) : sorted.length - 1;
+                        var curK = sorted[ci], prevK = ci > 0 ? sorted[ci - 1] : null;
                         function ranksFor(k) {
                             var list = Object.keys(perAnt).map(function (a) { return { a: a, s: (perAnt[a][k] != null && isFinite(perAnt[a][k])) ? perAnt[a][k] : -1 }; });
                             list.sort(function (x, y) { return y.s - x.s || x.a.localeCompare(y.a); });
@@ -13366,7 +13386,7 @@
                                 t += '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:center;white-space:nowrap"><div style="color:' + cc + ';font-weight:800">' + Math.round(pctN) + '%</div>' + (frac ? '<div style="color:' + cc + ';font-size:9.5px;opacity:.85">' + frac + '</div>' : '') + '</td>';
                             });
                             return t + '</tr>';
-                        }).join('') || '<tr><td colspan="20" style="padding:22px;text-align:center;color:#888">Aucun résultat.</td></tr>';
+                        }).join('') || '<tr><td colspan="20" style="padding:22px;text-align:center;color:#888">' + (antSel ? 'Aucune donnée pour « ' + esc(antSel) + ' » sur cette période dans cette feuille.' : 'Aucun résultat.') + '</td></tr>';
                         box.querySelector('.mk-body').innerHTML = body;
                         box.querySelector('.mk-count').textContent = fr.length + ' ligne(s)';
                     }
@@ -13593,7 +13613,11 @@
                     return;
                 }
                 /* Filtre antenne global appliqué aussi aux tables */
-                if (antCol && mkAnt && antVals.indexOf(mkAnt) >= 0) antSel = mkAnt;
+                /* Filtre strict : si l'entité choisie n'a aucune ligne dans cette
+                   feuille, on n'affiche PAS les autres à la place (constaté le 26/07 sur
+                   Livraison_ANT_P2 : Buta absente → la page listait 44 lignes de 11 autres
+                   antennes, ce que l'original ne fait jamais). */
+                if (antCol && mkAnt) antSel = mkAnt;
                 h += '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center">' +
                     (antCol ? '<select class="mk-ant" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">📍 ' + mkAllLbl() + '</option>' + antVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     (moisCol ? '<select class="mk-mois" style="padding:9px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer"><option value="">🗓️ Tous les mois</option>' + moisVals.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
