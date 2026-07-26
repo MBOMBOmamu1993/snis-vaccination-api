@@ -12771,6 +12771,27 @@
             }
             /* ── Configuration par feuille — titres exacts de l'original ── */
             var MK_CFG = {
+                /* ══ Classeur ZONE DE SANTÉ (_HZ) — mêmes visuels que l'Antenne ══ */
+                'Performance Résumé_HZ': {
+                    title: 'Aperçu de la zone de santé', mode: 'resume', src: 'Performance Heatmap_HZ',
+                    foot: "• L'objectif du <b>score Mashako</b> est de 80%<br>• Les variations sont depuis le mois précédent<br>• *Satisfaction des besoins (livraison ZS vers AS)"
+                },
+                'Performance Heatmap_HZ': {
+                    title: 'Évolution du score Mashako de la zone de santé',
+                    mode: 'heatmap', legend: 'pct',
+                    inds: [
+                        { l: 'Score Mashako', v: '_perc_total_score_HZ' },
+                        { l: 'Aires de santé supervisées (AS)', v: '_perc_supervised_healthareas' },
+                        { l: 'Suivi de la réalisation de la supervision (AS)', v: '_perc_HA_supervision_quality' },
+                        { l: 'Réunions de monitorage (ZS)', v: '_num_HZ_reunion_no_CYCM' },
+                        { l: 'Fonctionnalité de la chaîne de froid (AS)', v: '_perc_CDF_fully_functional_HA' },
+                        { l: 'Disponibilité des vaccins (AS)', v: '_perc_vaccine_full_stock_HA' },
+                        { l: 'Satisfaction des besoins (livraison ZS vers AS)', v: '_PERC_HA_delivery' },
+                        { l: 'Suivi de la réalisation des séances de vaccination', v: '_perc_fixed_outreach_achieved' },
+                        { l: 'Récupération des enfants', v: '_perc_dropout' },
+                        { l: 'Formation des infirmier titulaire au PEV', v: '_perc_HA_infirmier' }
+                    ]
+                },
                 'Contacts Page': { mode: 'static', page: 'contacts' },
                 'Configuration_ANT': { mode: 'static', page: 'config' },
                 'Configuration_Z': { mode: 'static', page: 'config' },
