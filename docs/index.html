@@ -13152,7 +13152,27 @@
                 'Dispo_vaccins_ANT': {
                     title: 'Disponibilité des vaccins des zones de santé',
                     sub: '% des antennes sans rupture de stock en antigènes et intrants disponibles au niveau central',
-                    row: 'Zone de Santé', legend: 'pct'
+                    sortBy: 'Antenne', mergeAnt: true,
+                    /* Ordre et libellés relevés sur le visuel original. Le nom de la
+                       colonne de valeur et celui de la colonne de couleur diffèrent
+                       parfois (PCV14 ↔ PCV_13) → couleur donnée explicitement. */
+                    cols: [
+                        { c: 'BCG_P__riodeensem', l: 'BCG', t: 'flag', k: 'BCG_P__riode_en_sem_COLOR' },
+                        { c: 'PENTA_P__riodeensem', l: 'Penta', t: 'flag', k: 'PENTA_P__riode_en_sem_COLOR' },
+                        { c: 'PCV14_P__riodeensem', l: 'PCV', t: 'flag', k: 'PCV_13_P__riode_en_sem_COLOR' },
+                        { c: 'VPO_P__riodeensem', l: 'VPO', t: 'flag', k: 'VPO_P__riode_en_sem_COLOR' },
+                        { c: 'Rota_lyo_P__riodeensem', l: 'Rota', t: 'flag', k: 'Rota_lyo_P__riode_en_sem_COLOR' },
+                        { c: 'VPI_P__riodeensem', l: 'VPI', t: 'flag', k: 'VPI_P__riode_en_sem_COLOR' },
+                        { c: 'VAR_P__riodeensem', l: 'VAR-RR', t: 'flag', k: 'VAR_P__riode_en_sem_COLOR' },
+                        { c: 'VAA_P__riodeensem', l: 'VAA', t: 'flag', k: 'VAA_P__riode_en_sem_COLOR' },
+                        { c: 'Td_P__riodeensem', l: 'TD', t: 'flag', k: 'Td_P__riode_en_sem_COLOR' },
+                        { c: 'SAB_0_05ml_P__riodeensem', l: 'SAB 0,05ml', t: 'flag', k: 'SAB_0_05ml_P__riode_en_sem_COLOR' },
+                        { c: 'SAB_0_5ml_P__riodeensem', l: 'SAB 0,5ml', t: 'flag', k: 'SAB_0_5ml_P__riode_en_sem_COLOR' },
+                        { c: 'Sdil_2ml_P__riodeensem', l: 'Sdil 2ml', t: 'flag', k: 'Sdil_2ml_P__riode_en_sem_COLOR' },
+                        { c: 'Sdil_5ml_P__riodeensem', l: 'Sdil 5ml', t: 'flag', k: 'Sdil_5ml_P__riode_en_sem_COLOR' },
+                        { c: 'BS_5l_P__riodeensem', l: 'Box de Sécurité', t: 'flag', k: 'BS_5l_P__riode_en_sem_COLOR' }
+                    ],
+                    foot: "Nombre de semaines de stock disponibles au niveau central, par antenne — <b>vert</b> : stock suffisant, <b>rouge</b> : rupture ou stock critique. Le détail par zone de santé figure dans le visuel original mais n'est pas exporté par Tableau : seule la ligne de synthèse de l'antenne est disponible en données."
                 },
                 'Vaccine_expiration_ANT_P1': { title: 'Vaccine expiration (DRAFT)', row: 'Zone de santé' },
                 'Livraison_ANT_P1': {
@@ -13720,7 +13740,7 @@
                     function fmtInt(v) { var n = Number(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? Math.round(n).toLocaleString('fr-FR') : ''; }
                     function livDraw() {
                         var fr = livRows();
-                        var showAnt = multiAnt && !antSel;
+                        var showAnt = multiAnt && !antSel && rowCol !== antCol;
                         var head = '<tr>' + (showAnt ? '<th style="padding:9px 10px;text-align:left;color:#334155;font-weight:800;font-size:11px;border-bottom:2px solid #e2e8f0">Antenne</th>' : '') +
                             '<th style="padding:9px 10px;text-align:left;color:#334155;font-weight:800;font-size:11px;border-bottom:2px solid #e2e8f0;white-space:nowrap">Zone de santé</th>' +
                             (ordCol ? '<th style="padding:9px 8px;text-align:center;color:#475467;font-weight:600;font-size:10.5px;border-bottom:2px solid #e2e8f0;max-width:80px">Approv. en vaccins et intrants</th>' : '') +
@@ -13771,6 +13791,12 @@
                 if (isHeat && !antSel && multiAnt) antSel = antVals[0];
                 /* fusion des lignes éclatées par mesure */
                 var rowCol = (cfg && cfg.row && cols.indexOf(cfg.row) >= 0 ? cfg.row : null) || cols.filter(function (c) { return /zone de sant/i.test(c); })[0] || null;
+                /* Certaines feuilles n'exportent QUE la ligne de synthèse de l'antenne
+                   (Dispo_vaccins_ANT : le tableau par zone de santé du visuel original
+                   n'est pas exporté par Tableau). Le CSV y est éclaté en une ligne par
+                   antigène → sans clé de fusion, on obtenait un escalier d'une valeur
+                   par ligne. mergeAnt : l'antenne EST la ligne. */
+                if (!rowCol && antCol && cfg && cfg.mergeAnt) rowCol = antCol;
                 if (!isHeat && rowCol) {
                     var _m2 = {}, _o2 = [];
                     rows.forEach(function (r) {
@@ -13787,7 +13813,7 @@
                         if (!col && sp.rx) col = cols.filter(function (c) { return sp.rx.test(c); })[0] || null;
                         if (!col && sp.c) { var n0 = mkNorm(sp.c); col = cols.filter(function (c) { return mkNorm(c) === n0; })[0] || null; }
                         if (!col) return;
-                        specs.push({ col: col, l: sp.l, t: sp.t || 'bar', f: sp.f || null, k: mkColorColFor(col, cols) });
+                        specs.push({ col: col, l: sp.l, t: sp.t || 'bar', f: sp.f || null, k: (sp.k && cols.indexOf(sp.k) >= 0) ? sp.k : mkColorColFor(col, cols) });
                     });
                 } else if (!isHeat) {
                     cols.forEach(function (c) {
@@ -13845,6 +13871,13 @@
                         var n0 = Number(s0.replace(',', '.'));
                         var c0 = (isFinite(n0) && n0 > 0) ? MK_RED : MK_GREEN;
                         return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + c0 + ';font-weight:800">' + esc(s0) + '</td>';
+                    }
+                    if (sp.t === 'flag') {
+                        var sf = String(v == null ? '' : v).trim();
+                        if (sf === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
+                        var kf = sp.k ? String(r[sp.k] == null ? '' : r[sp.k]).trim().toLowerCase() : '';
+                        var cf = /^(vrai|true|1|oui)$/.test(kf) ? MK_GREEN : (/^(faux|false|0|non)$/.test(kf) ? MK_RED : '#334155');
+                        return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + cf + ';font-weight:800">' + esc(sf) + '</td>';
                     }
                     if (sp.t === 'rednum') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:700">' + esc(v) + '</td>';
                     if (sp.t === 'num') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:#334155">' + esc(v) + '</td>';
