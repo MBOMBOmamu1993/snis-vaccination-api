@@ -12771,6 +12771,80 @@
             }
             /* ── Configuration par feuille — titres exacts de l'original ── */
             var MK_CFG = {
+                /* ── Chaîne du froid (ZS) : synthèse de la zone puis détail par aire de santé ── */
+                'CDF_HZ_P1': {
+                    title: 'Fonctionnalité de la chaîne du froid des aires de santé',
+                    sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*',
+                    sortBy: 'Réfrigerateur fonctionnel', row: 'Aire de Santé',
+                    cols: [
+                        { rx: /^Probl[èe]me AS$/i, l: 'Problème AS', t: 'plain' },
+                        { rx: /^R[ée]frig[ée]rateur disponible$/i, l: 'Réfrigerateur disponible', t: 'check' },
+                        { rx: /_BOOL_CDF_fully_functional_HA/i, l: 'Réfrigerateur fonctionnel', t: 'check' },
+                        { rx: /^Tag r[ée]frig[ée]rateur disponible$/i, l: 'Tag réfrigerateur disponible', t: 'check' },
+                        { rx: /_cold_?chain_min_temperature_INDICATOR/i, l: 'Alerte de Température minimale', t: 'zero' },
+                        { rx: /_cold_?chain_max_temperature_INDICATOR/i, l: 'Alerte de Température maximale', t: 'zero' }
+                    ],
+                    foot: "<b>Alerte de Température :</b> <span style='color:#e03531'>■</span> alerte de température minimal &gt;0 / alerte de température maximal &gt;=3 &nbsp;&nbsp; <span style='color:#2e9e48'>■</span> alerte de température minimal = 0 / alerte de température maximal &lt;3<br><br>*Un équipement de chaîne du froid est considéré comme fonctionnel lorsqu'il satisfait simultanément aux deux critères suivants:<br>- <b>Dispositif de suivi:</b> Un système de monitorage continu (fridge tag) de la température est disponible et opérationnel<br>- <b>Performance:</b> Aucune alarme négative et moins de trois alarmes positives ont été enregistrées au cours des 30 derniers jours"
+                },
+                'CDF_HZ_P2': {
+                    title: 'Fonctionnalité de la chaîne du froid des aires de santé',
+                    sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle* (suite)',
+                    sortBy: 'Réfrigerateur fonctionnel', row: 'Aire de Santé',
+                    cols: [
+                        { rx: /^Probl[èe]me AS$/i, l: 'Problème AS', t: 'plain' },
+                        { rx: /^R[ée]frig[ée]rateur disponible$/i, l: 'Réfrigerateur disponible', t: 'check' },
+                        { rx: /_BOOL_CDF_fully_functional_HA/i, l: 'Réfrigerateur fonctionnel', t: 'check' },
+                        { rx: /^Tag r[ée]frig[ée]rateur disponible$/i, l: 'Tag réfrigerateur disponible', t: 'check' },
+                        { rx: /_cold_?chain_min_temperature_INDICATOR/i, l: 'Alerte de Température minimale', t: 'zero' },
+                        { rx: /_cold_?chain_max_temperature_INDICATOR/i, l: 'Alerte de Température maximale', t: 'zero' }
+                    ],
+                    foot: "<b>Alerte de Température :</b> <span style='color:#e03531'>■</span> alerte de température minimal &gt;0 / alerte de température maximal &gt;=3 &nbsp;&nbsp; <span style='color:#2e9e48'>■</span> alerte de température minimal = 0 / alerte de température maximal &lt;3<br><br>*Un équipement de chaîne du froid est considéré comme fonctionnel lorsqu'il satisfait simultanément aux deux critères suivants:<br>- <b>Dispositif de suivi:</b> Un système de monitorage continu (fridge tag) de la température est disponible et opérationnel<br>- <b>Performance:</b> Aucune alarme négative et moins de trois alarmes positives ont été enregistrées au cours des 30 derniers jours"
+                },
+                'CDF_HZ_NF': {
+                    title: 'Chaîne du froid non fonctionnelle dans les aires de santé',
+                    sub: 'Causes de non-fonctionnalité relevées lors de la supervision',
+                    row: 'Aire de Santé', legend: 'cdf',
+                    cols: [
+                        { rx: /compresseur/i, l: 'Compresseurs dysfonctionnels', t: 'zero' },
+                        { rx: /[EÉé]vaporateur/i, l: 'Évaporateurs non fonctionnels', t: 'zero' },
+                        { rx: /Installation/i, l: 'Installations électriques défectueuses', t: 'zero' },
+                        { rx: /Panneau_?solaire/i, l: "Panneaux solaires à l'ombre", t: 'zero' },
+                        { rx: /givre/i, l: 'Frigo avec présence de givre', t: 'zero' }
+                    ]
+                },
+                /* ── Expiration des vaccins (ZS) : statut de risque par antigène ── */
+                'Vaccine_expiration_HZ_P1': {
+                    title: 'Expiration des vaccins',
+                    sub: "Statut de risque d'expiration par antigène, au niveau des aires de santé",
+                    row: 'Aire de Santé',
+                    cols: [
+                        { rx: /_vaccine_expiry_risk_status_HA_BCG$/i, l: 'BCG', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_Penta$/i, l: 'Penta', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_PCV$/i, l: 'PCV', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VPO$/i, l: 'VPO', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_Rota$/i, l: 'Rota', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VPI$/i, l: 'VPI', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VAR$/i, l: 'VAR', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VAA$/i, l: 'VAA', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_TD$/i, l: 'TD', t: 'statut' },
+                    ]
+                },
+                'Vaccine_expiration_HZ_P2': {
+                    title: 'Expiration des vaccins',
+                    sub: "Statut de risque d'expiration par antigène, au niveau des aires de santé (suite)",
+                    row: 'Aire de Santé',
+                    cols: [
+                        { rx: /_vaccine_expiry_risk_status_HA_BCG$/i, l: 'BCG', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_Penta$/i, l: 'Penta', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_PCV$/i, l: 'PCV', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VPO$/i, l: 'VPO', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_Rota$/i, l: 'Rota', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VPI$/i, l: 'VPI', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VAR$/i, l: 'VAR', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_VAA$/i, l: 'VAA', t: 'statut' },
+                        { rx: /_vaccine_expiry_risk_status_HA_TD$/i, l: 'TD', t: 'statut' },
+                    ]
+                },
                 /* ══ Classeur ZONE DE SANTÉ (_HZ) — mêmes visuels que l'Antenne ══ */
                 'Performance Résumé_HZ': {
                     title: 'Aperçu de la zone de santé', mode: 'resume', src: 'Performance Heatmap_HZ',
@@ -13024,6 +13098,15 @@
                     ]
                 }
             };
+            /* Cellule « statut de risque » (expiration des vaccins) : le texte
+               renvoyé par Tableau est repris tel quel, coloré selon sa gravité. */
+            function mkStatutCell(v) {
+                var t = String(v == null ? '' : v).trim();
+                if (!t) return '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9"></td>';
+                var n = t.toLowerCase();
+                var c = /normal|ok|bon/.test(n) ? MK_GREEN : (/expir|p[ée]rim|critique/.test(n) ? MK_RED : (/risque|proche|attention|alerte/.test(n) ? MK_YELLOW : '#475467'));
+                return '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:' + c + '">' + esc(t) + '</td>';
+            }
             function mkIsJunkCol(c, cols) {
                 if (/_COLOR\s*$/i.test(c)) return true;
                 if (/^dummy/i.test(c) || /^_SELECTED/i.test(c) || /^_PARAM/i.test(c) || /^_BOOL/i.test(c)) return true;
@@ -13451,13 +13534,14 @@
 
                 /* ═══ MODE LIVRAISON : tableau pivoté « Taux de satisfaction » ═══ */
                 if (mode === 'livraison') {
-                    var VACC = [
+                    var VACC = cfg.vacc || [
                         { l: 'BCG', k: 'bcg' }, { l: 'VPO', k: 'vpo' }, { l: 'DTC', k: 'dtc' }, { l: 'PCV', k: 'pcv' },
                         { l: 'Rota', k: 'rota' }, { l: 'VPI', k: 'ipv' }, { l: 'VAR-RR', k: 'var' }, { l: 'VAA', k: 'vaa' },
                         { l: 'TD', k: 'td' }, { l: 'SAB 0.05 ml', k: 'sab005' }, { l: 'SAB 0.5 ml', k: 'sab05' },
                         { l: 'Sdil 2 ml', k: 'sdil2' }, { l: 'Sdil 5 ml', k: 'sdil5' }
                     ];
-                    var zsCol2 = cols.filter(function (c) { return /zone de sant/i.test(c); })[0];
+                    /* Rapport Antenne : lignes = zones de santé ; rapport ZS : lignes = aires de santé */
+                    var zsCol2 = cols.filter(function (c) { return /zone de sant/i.test(c); })[0] || cols.filter(function (c) { return /aire de sant/i.test(c); })[0];
                     var ordCol = mkColByNorm(cols, 'deliveryordered');
                     var allCol = mkColByNorm(cols, 'booldeliveryall');
                     var defs = VACC.map(function (vd) {
@@ -13622,6 +13706,7 @@
                 function cellHtml(sp, r) {
                     var v = r[sp.col];
                     if (sp.t === 'check') return mkCheckCell(v);
+                    if (sp.t === 'statut') return mkStatutCell(v);
                     if (sp.t === 'zero') {
                         var s0 = String(v == null ? '' : v).trim();
                         if (s0 === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
