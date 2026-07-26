@@ -12404,6 +12404,19 @@
             }
             function mkRender(c) {
                 var m = mkMeta;
+                /* Vue par défaut = PREMIÈRE entité de la liste et période du rapport
+                   courant (demande Felly 26/07 : ne pas ouvrir sur « toutes les
+                   antennes », qui empile des lignes de toutes les antennes et ne
+                   correspond à aucune vue de l'original). L'utilisateur reste libre
+                   de filtrer ensuite, y compris de revenir à la vue d'ensemble. */
+                if (!mkAnt && m.antennes && m.antennes.values && m.antennes.values.length) mkAnt = m.antennes.values[0];
+                if (!mkSelMois && !mkSelAn && !mkArch) {
+                    var _pm = (m.period && m.period.month) || '', _py = (m.period && m.period.year) ? String(m.period.year) : '';
+                    /* Repli tant que la synchro n'a pas publié meta.period : la période
+                       du rapport courant est le mois de la synchronisation. */
+                    if (!_pm) { try { var _d = new Date(m.generated_at); _pm = MK_MOIS12[_d.getMonth()]; _py = String(_d.getFullYear()); } catch (e) { } }
+                    if (_pm) { mkSelMois = _pm; mkSelAn = _py; }
+                }
                 var views = (m.views || []).filter(function (v) { return (v.file || v.image) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
                 if (!views.some(function (v) { return v.name === 'Ranking_ANT'; }) && views.some(function (v) { return v.name === 'Performance Heatmap_ANT' && v.file; })) {
                     var _ri = -1;
@@ -13065,7 +13078,7 @@
                     var hasAntImg = vm && vm.antImages && mkAnt && vm.antImages[mkAnt];
                     var hh = '<div class="cb" style="padding:10px;border-radius:14px">';
                     if (imgSrc) {
-                        hh += (mkAnt && !hasAntImg ? '<div style="margin-bottom:8px;padding:9px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:700">📍 La vue « ' + esc(mkAnt) + ' » de cette feuille sera disponible à la prochaine synchronisation — affichage de la vue par défaut en attendant.</div>' : '') +
+                        hh += (mkAnt && !hasAntImg && vm && vm.antImages && Object.keys(vm.antImages).length ? '<div style="margin-bottom:8px;padding:9px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:700">📍 La vue « ' + esc(mkAnt) + ' » de cette feuille sera disponible à la prochaine synchronisation — affichage de la vue par défaut en attendant.</div>' : '') +
                             '<img class="mk-img" src="' + imgSrc + '" alt="' + esc(name) + '" title="Cliquer pour agrandir" style="width:100%;border-radius:8px;cursor:zoom-in">';
                     } else {
                         hh += '<div style="padding:22px;color:#64748b">Pas de contenu disponible pour cette feuille.</div>';
