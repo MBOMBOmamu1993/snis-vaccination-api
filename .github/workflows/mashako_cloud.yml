@@ -45,6 +45,10 @@ on:
         description: "1 = expliquer la décision sans rien lancer"
         required: false
         default: ""
+      test_alerte:
+        description: "1 = ouvrir puis refermer une alerte de test (vérifie que l'e-mail arrive)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -93,6 +97,21 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"   # on utilise le Chrome du runner
         run: npm ci --no-audit --no-fund
+
+      # Vérifie le VRAI circuit d'alerte : l'issue est créée par
+      # github-actions[bot], donc par quelqu'un d'autre que Felly — c'est la
+      # seule façon de savoir si l'e-mail arrive vraiment. (Une issue créée par
+      # Felly lui-même ne déclenche aucune notification : GitHub ne notifie
+      # jamais de ses propres actions.)
+      - name: Test volontaire de la chaîne d'alerte
+        if: inputs.test_alerte == '1'
+        working-directory: tools/mashako-sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node cloud/alerte.mjs --ouvrir "TEST volontaire — aucune panne réelle"
+          sleep 30
+          node cloud/alerte.mjs --fermer
 
       - name: Canal et tâche, selon l'horaire déclencheur
         run: |
