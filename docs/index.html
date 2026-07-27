@@ -13172,9 +13172,49 @@
                         { c: 'Sdil_5ml_P__riodeensem', l: 'Sdil 5ml', t: 'flag', k: 'Sdil_5ml_P__riode_en_sem_COLOR' },
                         { c: 'BS_5l_P__riodeensem', l: 'Box de Sécurité', t: 'flag', k: 'BS_5l_P__riode_en_sem_COLOR' }
                     ],
-                    foot: "Nombre de semaines de stock disponibles au niveau central, par antenne — <b>vert</b> : stock suffisant, <b>rouge</b> : rupture ou stock critique. Le détail par zone de santé figure dans le visuel original mais n'est pas exporté par Tableau : seule la ligne de synthèse de l'antenne est disponible en données."
+                    foot: "Nombre de semaines de stock disponibles au niveau central, par antenne — <b>vert</b> : stock suffisant, <b>rouge</b> : rupture ou stock critique. 👉 Le détail par zone de santé est disponible dans la feuille « Disponibilité des vaccins — détail par zone de santé »."
                 },
                 'Vaccine_expiration_ANT_P1': { title: 'Vaccine expiration (DRAFT)', row: 'Zone de santé' },
+                /* ── Détail par zone de santé (export crosstab Excel des feuilles
+                   masquées _TABLE_… — le CSV ne porte que la synthèse antenne) ── */
+                'Disponibilité des vaccins — détail par zone de santé': {
+                    title: 'Disponibilité des vaccins des zones de santé — détail par ZS',
+                    sub: 'Semaines de stock disponibles, par zone de santé et par antigène',
+                    sortBy: 'Zone de santé', row: 'Zone de santé',
+                    cols: [
+                        { c: 'BCG', l: 'BCG', t: 'flag', k: 'BCG_avail' },
+                        { c: 'Penta', l: 'Penta', t: 'flag', k: 'Penta_avail' },
+                        { c: 'PCV', l: 'PCV', t: 'flag', k: 'PCV_avail' },
+                        { c: 'VPO', l: 'VPO', t: 'flag', k: 'VPO_avail' },
+                        { c: 'Rota', l: 'Rota', t: 'flag', k: 'Rota_avail' },
+                        { c: 'VPI', l: 'VPI', t: 'flag', k: 'VPI_avail' },
+                        { c: 'VAR', l: 'VAR-RR', t: 'flag', k: 'VAR_avail' },
+                        { c: 'VAA', l: 'VAA', t: 'flag', k: 'VAA_avail' },
+                        { c: 'TD', l: 'TD', t: 'flag', k: 'TD_avail' },
+                        { c: 'SAB_005ml', l: 'SAB 0,05ml', t: 'flag', k: 'SAB_005ml_avail' },
+                        { c: 'SAB_05ml', l: 'SAB 0,5ml', t: 'flag', k: 'SAB_05ml_avail' },
+                        { c: 'Sdil2ml', l: 'Sdil 2ml', t: 'flag', k: 'Sdil2ml_avail' },
+                        { c: 'Sdil5ml', l: 'Sdil 5ml', t: 'flag', k: 'Sdil5ml_avail' },
+                        { c: 'BS', l: 'Box de Sécurité', t: 'flag', k: 'BS_avail' }
+                    ],
+                    foot: "Nombre de semaines de stock disponibles, par zone de santé — <b>vert</b> : stock disponible (« Vrai » dans la source Tableau). Cellule vide : aucune donnée rapportée pour cette ZS sur la période. Source : export du visuel original (feuille _TABLE_vaccine_av)."
+                },
+                'Expiration des vaccins — détail par zone de santé': {
+                    title: 'Expiration des vaccins — alertes par zone de santé',
+                    sub: "% du stock expirant prochainement, par zone de santé et par antigène",
+                    sortBy: 'Zone de santé', row: 'Zone de santé',
+                    cols: [
+                        { c: '_perc_HA_expiry_alert_BCG', l: 'BCG', t: 'bar', k: '_perc_HA_expiry_alert_BCG_COLOR' },
+                        { c: '_perc_HA_expiry_alert_Penta', l: 'Penta', t: 'bar', k: '_perc_HA_expiry_alert_Penta_COLOR' },
+                        { c: '_perc_HA_expiry_alert_PCV', l: 'PCV', t: 'bar', k: '_perc_HA_expiry_alert_PCV_COLOR' },
+                        { c: '_perc_HA_expiry_alert_vpo', l: 'VPO', t: 'bar', k: '_perc_HA_expiry_alert_vpo_COLOR' },
+                        { c: '_perc_HA_expiry_alert_rota', l: 'Rota', t: 'bar', k: '_perc_HA_expiry_alert_rota_COLOR' },
+                        { c: '_perc_HA_expiry_alert_vpi', l: 'VPI', t: 'bar', k: '_perc_HA_expiry_alert_vpi_COLOR' },
+                        { c: '_perc_HA_expiry_alert_var', l: 'VAR-RR', t: 'bar', k: '_perc_HA_expiry_alert_var_COLOR' },
+                        { c: '_perc_HA_expiry_alert_td', l: 'TD', t: 'bar', k: '_perc_HA_expiry_alert_td_COLOR' }
+                    ],
+                    foot: "% du stock expirant prochainement par zone de santé — couleurs de la source Tableau (<b>rouge</b> : alerte expiration). Source : export du visuel original (feuille _TABLE_vaccine_expiry)."
+                },
                 'Livraison_ANT_P1': {
                     title: 'Satisfaction des besoins',
                     sub: '% des zones de santé qui ont reçu une livraison satisfaisante en provenance des antennes*',
