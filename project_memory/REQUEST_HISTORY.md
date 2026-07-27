@@ -9,6 +9,40 @@ Résultat :
 
 ---
 
+Date : 27/07/2026
+Demande : Prendre la relève sur la synchro Mashako qui échoue depuis 2 jours
+  (synchro qui tourne avec beaucoup d'échecs, backfills en attente) + finir la
+  chaîne d'export Excel « tableau croisé » (sonde en échec à la dernière étape)
+  + Dispo_vaccins_ANT en tableau vivant éclaté par zone de santé (pas des
+  images) + Vaccine_expiration_ANT_P1 vide dans le dashboard alors que le
+  Tableau original a des données + consigner en mémoire que certaines vues ne
+  donnent leurs vraies données Excel qu'avec un filtre (pas « All »).
+Fichiers concernés : mashako-sync/sync.mjs, backfill-periods.mjs,
+  publish-cache.mjs, probe-crosstab-http.mjs, probe-multizs.mjs,
+  probe-multicsv.mjs, probe-param.mjs, test-batch.mjs, repair-sheets.mjs,
+  project_memory/*
+Action faite : (1) Diagnostic complet : 7 tentatives/0 succès le 26/07 — crash
+  ENOENT à la publication (fusion anti-perte référençant des PNG absents du
+  disque), garde-fou 180 min trop court, morts silencieuses (veille PC + runs
+  tués par lancement non détaché), verrous backfill/synchro, gh 400 transitoire.
+  (2) Correctifs sync.mjs : réutilisation des SHA de blobs en ligne (anti-ENOENT)
+  + garde absolue base_tree (protection zs/ et archives) ; garde-fou 300 min ;
+  handlers de crash journalisés ; retry ×5 sur appels API GitHub ; BATCHING
+  MULTI-VALEURS (_SELECTED_location_level=A,B,C — 1 requête par feuille ANT,
+  paquets de ~100 ZS) avec LISTE BLANCHE validée par run réel (les feuilles
+  pivots/classements/cartes COLLAPSENT en groupé → export unitaire conservé).
+  (3) Chaîne crosstab Excel réparée et validée : 410 au téléchargement (en-têtes
+  de routage manquants) + liste de feuilles fausse (hash SPA non rechargé →
+  passer par about:blank ; Global-Session-Header lu dans les en-têtes de
+  RÉPONSE /vizql/) ; sessions « jeunes » (~10-40 s, sans rendu canvas) ;
+  feuilles masquées _TABLE_… = détail ZS/AS (Dispo : 514 ZS × 16 antigènes ;
+  Expiry : % + couleur × 8 antigènes) inaccessibles en CSV.
+  (4) Publication ANT Juillet complète (a1aab66cf : 30 feuilles, 21 avec
+  données — Livraison_P1 950, CDF_Problèmes 511, Ranking 51 réparés en
+  unitaire) ; backfill restructuré (1 mois/run + groupé).
+Résultat : synchro ANT réparée et publiée ; méthode Excel crosstab validée de
+  bout en bout ; en cours : détail ZS Dispo/Expiration + synchro ZS + backfills.
+
 Date : 20/07/2026 (journée)
 Demande : Vente de codes IA intégrée sans WhatsApp (commande → approbation →
   dépôt M-Pesa → capture → livraison instantanée) + alertes téléphone + e-mails +
