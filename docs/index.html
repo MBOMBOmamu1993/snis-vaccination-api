@@ -12418,6 +12418,22 @@
                     if (_pm) { mkSelMois = _pm; mkSelAn = _py; }
                 }
                 var views = (m.views || []).filter(function (v) { return (v.file || v.image) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
+                /* Branchement des feuilles « vivantes » par zone de santé (demande Felly
+                   27/07) : pour la période courante, Dispo_vaccins_ANT n'a AUCUN CSV
+                   (Tableau répond « vide » — seules les images existent) et le CSV de
+                   Vaccine_expiration_ANT_P1 est dégénéré (2 colonnes → table vide). Leurs
+                   vraies données vivent dans les exports crosstab _TABLE (…_ZS.json) : on
+                   les greffe sur la feuille d'origine et on masque l'entrée doublon. Si la
+                   feuille d'origine a ses propres données (ex. juin pour Dispo), le détail
+                   ZS reste affiché comme un vrai complément. */
+                var _zsD = null, _zsE = null;
+                views.forEach(function (v) { if (v.urlName === 'Dispo_vaccins_ZS') _zsD = v; else if (v.urlName === 'Vaccine_expiration_ZS') _zsE = v; });
+                var _dupD = false, _dupE = false;
+                views.forEach(function (v) {
+                    if (v.name === 'Dispo_vaccins_ANT' && !v.file && _zsD) { v.file = _zsD.file; v.rows = _zsD.rows; _dupD = true; }
+                    if (v.name === 'Vaccine_expiration_ANT_P1' && _zsE) { v.file = _zsE.file; v.rows = _zsE.rows; _dupE = true; }
+                });
+                if (_dupD || _dupE) views = views.filter(function (v) { return !((_dupD && v === _zsD) || (_dupE && v === _zsE)); });
                 if (!views.some(function (v) { return v.name === 'Ranking_ANT'; }) && views.some(function (v) { return v.name === 'Performance Heatmap_ANT' && v.file; })) {
                     var _ri = -1;
                     views.forEach(function (v, i) { if (_ri < 0 && /^Configuration_ANT$/i.test(v.name)) _ri = i; });
