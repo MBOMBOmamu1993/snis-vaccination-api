@@ -10,6 +10,8 @@
     <!-- Bibliothèques pour les exports PDF et PowerPoint -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
+    <!-- html2canvas : capture des visuels Mashako à l'identique pour l'export PPTX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- JSZip : remplissage du canevas PPTX existant (diapos 10–12) en conservant son design -->
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
@@ -12263,29 +12265,28 @@
             function mkRawBase() { return MK_RAW + (mkPfx ? '/' + mkPfx.replace(/\/+$/, '') : ''); }
             function mkLocLbl() { return mkPfx ? 'Zone de Santé' : 'Antenne'; }
             function mkAllLbl() { return mkPfx ? 'Toutes les ZS' : 'Toutes les antennes'; }
-            /* Sélecteur de localisation : côté ZS la liste compte des centaines
-               d'entrées → regroupement par province avec l'antenne de rattachement.
-               La couverture est progressive (le miroir Tableau se remplit par
+            /* La couverture ZS est progressive (le miroir Tableau se remplit par
                tranches) : on n'affiche que les ZS réellement synchronisées et on
-               indique le total. */
-            function mkLocOptions(m) {
-                var vals = (m.antennes && m.antennes.values) || [], gr = (m.antennes && m.antennes.groups) || null;
-                if (!gr) return vals.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
-                var byProv = {};
-                vals.forEach(function (a) { var p = (gr[a] && gr[a].province) || '—'; (byProv[p] = byProv[p] || []).push(a); });
-                return Object.keys(byProv).sort(function (a, b) { return a.localeCompare(b, 'fr'); }).map(function (p) {
-                    return '<optgroup label="' + esc(p) + '">' + byProv[p].sort(function (a, b) { return a.localeCompare(b, 'fr'); }).map(function (a) {
-                        var ant = gr[a] && gr[a].antenne;
-                        return '<option value="' + esc(a) + '"' + (a === mkAnt ? ' selected' : '') + '>' + esc(a) + (ant ? ' — ' + esc(ant) : '') + '</option>';
-                    }).join('') + '</optgroup>';
-                }).join('');
-            }
+               indique le total. Le choix de la localisation passe désormais par la
+               cascade Province → Antenne → ZS de mkBarHtml. */
             function mkCoverageHtml(m) {
                 var t = m.antennes && m.antennes.total, k = ((m.antennes && m.antennes.values) || []).length;
                 if (!t || t <= k) return '';
                 return '<span title="Le miroir Tableau est rempli par tranches de zones de santé : les suivantes apparaîtront automatiquement au fil des synchronisations." style="padding:7px 12px;border-radius:9px;background:#eef1f8;border:1.5px solid #c9d4ea;color:#1a237e;font-size:12px;font-weight:800">🔄 Couverture : ' + k + '/' + t + ' ZS</span>';
             }
             var mkMeta = null, mkViewCache = {}, mkBase = MK_RAW, mkAnt = '', mkCurView = null, mkCurBox = null;
+            /* ── Filtres enrichis (demande Felly 27/07 (3)) ──
+               mkAnts   : sélection MULTIPLE d'antennes (page Antenne) — vide = toutes.
+               mkProv   : province choisie ( cascade Province → Antenne sur les 2 pages ).
+               mkAntZS  : antenne choisie sur la page ZS (cascade Province → Antenne → ZS).
+               mkMoisArr/mkAnArr : périodes MULTIPLES — les visuels affichent alors
+               la MOYENNE des périodes cochées (fusion des archives par moyenne). */
+            var mkAnts = [], mkProv = '', mkAntZS = '', mkMoisArr = [], mkAnArr = [], mkMultiPer = null;
+            /* Libellé de la ligne « moyenne » quand plusieurs antennes sont cochées.
+               Volontairement distinct de mkAnt : mkAnt sert aussi à retrouver l'image
+               par antenne (vm.antImages) — le laisser vide évite le bandeau trompeur
+               « la vue X sera disponible à la prochaine synchronisation ». */
+            var mkAntAvg = '';
             /* ── Filtre Période (Mois/Année) : le classeur est un rapport mensuel
                (_PARAM_month/_PARAM_year). Chaque synchro archive sa période dans
                periods/<AAAA-MM>/ ; l'index les liste et les rend sélectionnables. ── */
@@ -12306,11 +12307,464 @@
             function toNum(v) { return Number(String(v).replace(/ | /g, '').replace(',', '.')); }
             function fmtDate(iso) { try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
 
+            /* ══ MOYENNES GÉNÉRIQUES (multi-antennes / multi-périodes) ══
+               mkAvgNum : « 85% », « 1 234 », « 12,5 » → nombre ; sinon null.
+               mkAvgRowsBy : regroupe les lignes par colonnes-clés et fait la
+               MOYENNE des colonnes majoritairement numériques (les autres
+               gardent la première valeur non vide). */
+            function mkAvgNum(v) {
+                var s = String(v == null ? '' : v).trim();
+                if (!s) return null;
+                /* Séparateur de milliers des exports Tableau FR : espace insécable
+                   (U+00A0) ou insécable étroite (U+202F). Échappées explicitement —
+                   les écrire en clair les expose au moindre accident d'encodage. */
+                var n = Number(s.replace(/%/g, '').replace(/[\s\u00A0\u202F]/g, '').replace(',', '.'));
+                return isFinite(n) ? n : null;
+            }
+            function mkAvgFmt(a, pct) {
+                if (pct) return Math.round(a) + '%';
+                var r = Math.round(a * 10) / 10;
+                return String(r % 1 === 0 ? Math.round(a) : r).replace('.', ',');
+            }
+            function mkAvgRowsBy(rows, cols, keyCols) {
+                var numC = {}, pctC = {};
+                cols.forEach(function (c) {
+                    if (keyCols.indexOf(c) >= 0) { numC[c] = false; return; }
+                    var t = 0, n = 0, p = false;
+                    rows.forEach(function (r) {
+                        var v = r[c]; if (v === '' || v == null) return;
+                        t++; if (mkAvgNum(v) != null) { n++; if (/%/.test(String(v))) p = true; }
+                    });
+                    numC[c] = t > 0 && n / t >= 0.6; pctC[c] = p;
+                });
+                var map = {}, order = [];
+                rows.forEach(function (r) {
+                    var k = keyCols.map(function (c) { return String(r[c] == null ? '' : r[c]); }).join('|');
+                    var o = map[k];
+                    if (!o) { o = { row: {}, acc: {}, cnt: {} }; cols.forEach(function (c) { o.row[c] = numC[c] ? '' : r[c]; }); map[k] = o; order.push(k); }
+                    cols.forEach(function (c) {
+                        if (!numC[c]) { if ((o.row[c] === '' || o.row[c] == null) && r[c] != null) o.row[c] = r[c]; return; }
+                        var n = mkAvgNum(r[c]); if (n != null) { o.acc[c] = (o.acc[c] || 0) + n; o.cnt[c] = (o.cnt[c] || 0) + 1; }
+                    });
+                });
+                return order.map(function (k) {
+                    var o = map[k];
+                    cols.forEach(function (c) { if (numC[c]) o.row[c] = o.cnt[c] ? mkAvgFmt(o.acc[c] / o.cnt[c], pctC[c]) : ''; });
+                    return o.row;
+                });
+            }
+            /* Colonnes « mesure » (à moyenner) vs « dimension » (clés de regroupement) :
+               une colonne est une mesure si au moins 60% de ses valeurs non vides
+               sont numériques. Même seuil que mkAvgRowsBy — gardé en un seul endroit. */
+            function mkNumCols(cols, rows) {
+                var numC = {};
+                cols.forEach(function (c) {
+                    var t = 0, n = 0;
+                    rows.forEach(function (r) { var v = r[c]; if (v === '' || v == null) return; t++; if (mkAvgNum(v) != null) n++; });
+                    numC[c] = t > 0 && n / t >= 0.6;
+                });
+                return numC;
+            }
+            /* Fusion de plusieurs exports de la MÊME feuille (périodes différentes) :
+               moyenne des valeurs numériques à clés identiques. */
+            function mkAvgDatasets(list) {
+                if (list.length === 1) return list[0];
+                var cols = list[0].columns || [];
+                var allRows = [];
+                list.forEach(function (d) { (d.rows || []).forEach(function (r) { allRows.push(r); }); });
+                var numC = mkNumCols(cols, allRows);
+                var dimC = cols.filter(function (c) { return !numC[c]; });
+                var out = { name: list[0].name, urlName: list[0].urlName, columns: cols, rows: mkAvgRowsBy(allRows, cols, dimC) };
+                if (list[0].antennaRows) {
+                    var ar = {};
+                    list.forEach(function (d) {
+                        var rows = d.antennaRows || {};
+                        Object.keys(rows).forEach(function (a) {
+                            var dst = ar[a] = ar[a] || {}, src = rows[a] || {};
+                            Object.keys(src).forEach(function (c) {
+                                var n = mkAvgNum(src[c]);
+                                if (n == null) { if (dst[c] == null || dst[c] === '') dst[c] = src[c]; return; }
+                                var k = '__' + c;
+                                dst[k] = (dst[k] || 0) + n; dst[k + '_n'] = (dst[k + '_n'] || 0) + 1;
+                                dst[c] = mkAvgFmt(dst[k] / dst[k + '_n'], /%/.test(String(src[c])));
+                            });
+                        });
+                    });
+                    Object.keys(ar).forEach(function (a) { Object.keys(ar[a]).forEach(function (c) { if (/^__/.test(c)) delete ar[a][c]; }); });
+                    out.antennaRows = ar;
+                }
+                return out;
+            }
+
+            /* ══ MOYENNE DE PLUSIEURS ANTENNES (page Antenne) ══
+               Les feuilles portent une colonne « Antenne » : on ne garde que les
+               antennes cochées, puis on regroupe sur les AUTRES dimensions en
+               moyennant les mesures. La colonne Antenne porte alors le libellé de
+               la moyenne, que mkDrawView utilise comme périmètre affiché. */
+            function mkAntColOf(cols) {
+                return cols.filter(function (c) { return /^antenne$/i.test(c); })[0] ||
+                    cols.filter(function (c) { return /antenne/i.test(c); })[0] || null;
+            }
+            function mkAntAvgData(d) {
+                mkAntAvg = '';
+                if (mkPfx || !d || mkAnts.length < 2) return d;
+                var cols = d.columns || [], rows = d.rows || [];
+                var lbl = 'Moyenne — ' + mkAnts.length + ' antennes';
+                var out = {}; Object.keys(d).forEach(function (k) { out[k] = d[k]; });
+                var ac = mkAntColOf(cols);
+                if (ac && rows.length) {
+                    var keep = rows.filter(function (r) { return mkAnts.indexOf(String(r[ac] == null ? '' : r[ac]).trim()) >= 0; });
+                    if (keep.length) {
+                        var numC = mkNumCols(cols, keep);
+                        var dims = cols.filter(function (c) { return c !== ac && !numC[c]; });
+                        var avg = mkAvgRowsBy(keep, cols, dims);
+                        avg.forEach(function (r) { r[ac] = lbl; });
+                        out.rows = avg; mkAntAvg = lbl;
+                    }
+                }
+                /* Ligne de synthèse par antenne (bandeaux/cartes KPI) : même moyenne */
+                if (d.antennaRows) {
+                    var acc = {}, cnt = {}, pct = {}, keepTxt = {}, any = false;
+                    mkAnts.forEach(function (a) {
+                        var r = d.antennaRows[a]; if (!r) return; any = true;
+                        Object.keys(r).forEach(function (c) {
+                            var n = mkAvgNum(r[c]);
+                            if (n == null) { if (keepTxt[c] == null || keepTxt[c] === '') keepTxt[c] = r[c]; return; }
+                            acc[c] = (acc[c] || 0) + n; cnt[c] = (cnt[c] || 0) + 1;
+                            if (/%/.test(String(r[c]))) pct[c] = 1;
+                        });
+                    });
+                    if (any) {
+                        var ar = {};
+                        Object.keys(keepTxt).forEach(function (c) { ar[c] = keepTxt[c]; });
+                        Object.keys(acc).forEach(function (c) { ar[c] = mkAvgFmt(acc[c] / cnt[c], !!pct[c]); });
+                        out.antennaRows = {}; out.antennaRows[lbl] = ar;
+                        mkAntAvg = lbl;
+                    }
+                }
+                return out;
+            }
+
+            /* ══ LISTE DÉROULANTE À CHOIX MULTIPLES (cases à cocher) ══ */
+            var MK_MS_OPEN = null;
+            document.addEventListener('click', function () { if (MK_MS_OPEN) { MK_MS_OPEN.style.display = 'none'; MK_MS_OPEN = null; } });
+            function mkMsLabel(sel, ph) { return !sel.length ? ph : (sel.length === 1 ? sel[0] : sel.length + ' sélectionnés'); }
+            function mkMsHtml(id, opts, sel, ph) {
+                return '<div class="mk-ms" id="' + id + '" style="position:relative">' +
+                    '<button type="button" class="mk-ms-btn" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><b>' + esc(mkMsLabel(sel, ph)) + '</b> ▾</button>' +
+                    '<div class="mk-ms-panel" style="display:none;position:absolute;z-index:99999;top:calc(100% + 4px);left:0;background:#fff;border:1.5px solid var(--tb,#0d47a1);border-radius:10px;box-shadow:0 14px 34px -10px rgba(15,23,42,.35);padding:6px;max-height:300px;overflow-y:auto;min-width:230px">' +
+                    opts.map(function (o) { return '<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;font-size:12.5px;font-weight:600;color:#334155;cursor:pointer;white-space:nowrap;border-radius:6px" onmouseover="this.style.background=\'#eef1f8\'" onmouseout="this.style.background=\'\'"><input type="checkbox" value="' + esc(o) + '"' + (sel.indexOf(o) >= 0 ? ' checked' : '') + ' style="accent-color:#0d47a1"> ' + esc(o) + '</label>'; }).join('') +
+                    '</div></div>';
+            }
+            function mkMsWire(root, id, ph, onchange) {
+                var ms = root.querySelector('#' + id); if (!ms) return;
+                var btn = ms.querySelector('.mk-ms-btn'), panel = ms.querySelector('.mk-ms-panel');
+                btn.onclick = function (e) {
+                    e.stopPropagation();
+                    var open = panel.style.display !== 'none';
+                    if (MK_MS_OPEN && MK_MS_OPEN !== panel) MK_MS_OPEN.style.display = 'none';
+                    panel.style.display = open ? 'none' : 'block';
+                    MK_MS_OPEN = open ? null : panel;
+                };
+                panel.onclick = function (e) { e.stopPropagation(); };
+                panel.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                    cb.onchange = function () {
+                        var sel = [];
+                        panel.querySelectorAll('input:checked').forEach(function (x) { sel.push(x.value); });
+                        btn.querySelector('b').textContent = mkMsLabel(sel, ph);
+                        onchange(sel);
+                    };
+                });
+            }
+
+            /* ══ PÉRIODES MULTIPLES : liste des archives à moyenner ══ */
+            function mkLiveKey() {
+                var p = mkPeriodCache || ((mkMeta && mkMeta.period && mkMeta.period.month) ? { m: mkMeta.period.month, y: mkMeta.period.year } : null);
+                return p ? mkPeriodKeyOf(p.m, String(p.y)) : null;
+            }
+            function mkPeriodBase(k) { return (k && k === mkLiveKey()) ? mkRawBase() : mkRawBase() + '/periods/' + k; }
+            function mkFetchJson(url) {
+                return fetch(url + '?_r=' + Date.now(), { cache: 'no-store' })
+                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .catch(function () { return null; });
+            }
+            /* Caches du mode « moyenne de plusieurs périodes » : un meta.json et des
+               feuilles par période. Le nom de fichier d'une feuille peut changer d'une
+               synchro à l'autre → on le relit dans le meta.json de chaque période
+               plutôt que de réutiliser celui de la période courante. */
+            var mkPerMetaCache = {}, mkPerViewCache = {};
+            function mkPerMeta(k, cb) {
+                if (mkPerMetaCache[k] !== undefined) { cb(mkPerMetaCache[k]); return; }
+                mkFetchJson(mkPeriodBase(k) + '/meta.json').then(function (j) { mkPerMetaCache[k] = j; cb(j); });
+            }
+            function mkLoadPeriods(v, keys, cb) {
+                var out = [], left = keys.length;
+                if (!left) { cb([]); return; }
+                keys.forEach(function (k, i) {
+                    function fin(d) { out[i] = d; if (--left === 0) cb(out.filter(Boolean)); }
+                    mkPerMeta(k, function (meta) {
+                        var file = null;
+                        ((meta && meta.views) || []).forEach(function (x) {
+                            if (file) return;
+                            if ((v.urlName && x.urlName === v.urlName) || (x.name && x.name === v.name)) file = x.file;
+                        });
+                        if (!file) { fin(null); return; }
+                        var u = mkPeriodBase(k) + '/' + file;
+                        if (mkPerViewCache[u] !== undefined) { fin(mkPerViewCache[u]); return; }
+                        mkFetchJson(u).then(function (d) { mkPerViewCache[u] = d; fin(d); });
+                    });
+                });
+            }
+            function mkApplyPeriods() {
+                mkPeriodMiss = '';
+                mkPeriodLoad(function (p) {
+                    var liveM = p ? p.m : '', liveY = p ? String(p.y || '') : '';
+                    var months = mkMoisArr.length ? mkMoisArr : (liveM ? [liveM] : []);
+                    var years = mkAnArr.length ? mkAnArr : (liveY ? [liveY] : []);
+                    if (!months.length || !years.length) { mkMultiPer = null; if (mkArch) { mkArch = null; mkSwitchBase(); } return; }
+                    var liveKey = mkPeriodKeyOf(liveM, liveY);
+                    var avail = (mkPeriods && mkPeriods.periods) || [];
+                    var keys = [], miss = [];
+                    months.forEach(function (mo) {
+                        years.forEach(function (y) {
+                            var k = mkPeriodKeyOf(mo, y); if (!k) return;
+                            if (k === liveKey || avail.indexOf(k) >= 0) { if (keys.indexOf(k) < 0) keys.push(k); }
+                            else miss.push(mo + ' ' + y);
+                        });
+                    });
+                    if (!keys.length) { mkMultiPer = null; mkPeriodMiss = miss.join(', ') || '?'; mkRender(mkCtn); return; }
+                    if (miss.length) mkPeriodMiss = miss.join(', ');
+                    /* Les libellés de période (bandeaux des feuilles, mois du
+                       classement) suivent la sélection — la PREMIÈRE période cochée
+                       en mode moyenne. Les renseigner empêche aussi mkRender de les
+                       réinitialiser sur la période du rapport courant. */
+                    var k0 = keys.slice().sort()[0];
+                    mkSelMois = MK_MOIS12[Number(k0.slice(5, 7)) - 1] || '';
+                    mkSelAn = k0.slice(0, 4);
+                    if (keys.length === 1) {
+                        mkMultiPer = null;
+                        var t = keys[0] !== liveKey ? keys[0] : null;
+                        if (t === mkArch) { mkRender(mkCtn); return; }
+                        mkArch = t; mkSwitchBase(); return;
+                    }
+                    /* Plusieurs périodes → mode MOYENNE : base courante + fusion */
+                    mkMultiPer = keys; mkArch = null; mkSwitchBase();
+                });
+            }
+
+            /* ══ BARRE DE FILTRES (Province → Antenne [→ ZS], Mois & Année multi) ══ */
+            function mkBarHtml(m) {
+                var selSty = 'padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer;max-width:230px';
+                var rstB = function (t, tt) { return '<button type="button" class="mk-rst" data-t="' + t + '" title="' + tt + '" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>'; };
+                var lab = function (ic, tx) { return '<span style="font-size:13px;font-weight:800;color:#1a237e">' + ic + ' ' + tx + ' :</span>'; };
+                var vals = (m.antennes && m.antennes.values) || [];
+                var gr = (m.antennes && m.antennes.groups) || null;
+                var yrs = [];
+                try { ((mkPeriods && mkPeriods.periods) || []).forEach(function (k) { var y = String(k).slice(0, 4); if (yrs.indexOf(y) < 0) yrs.push(y); }); } catch (e) { }
+                try { var gy = String(new Date(m.generated_at).getFullYear()); if (gy && yrs.indexOf(gy) < 0) yrs.push(gy); } catch (e) { }
+                yrs.sort().reverse();
+                /* .cb porte `contain: content` (donc paint) : sans neutralisation, la
+                   carte ROGNE les panneaux déroulants positionnés en absolu des listes
+                   à cocher, qui deviennent invisibles. */
+                var h = '<div class="cb" id="mkBar" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px;contain:none;overflow:visible">';
+                if (vals.length) {
+                    if (!mkPfx) {
+                        /* Page ANTENNE : Province (simple) puis Antennes (multi), en cascade */
+                        var provs = [];
+                        vals.forEach(function (a) { var p = MK_PROV[a] || '—'; if (provs.indexOf(p) < 0) provs.push(p); });
+                        provs.sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+                        var antsOf = mkProv ? vals.filter(function (a) { return (MK_PROV[a] || '—') === mkProv; }) : vals;
+                        h += '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('🗺️', 'Province') +
+                            '<select id="mkProvSel" style="' + selSty + '"><option value="">Toutes les provinces</option>' +
+                            provs.map(function (p) { return '<option value="' + esc(p) + '"' + (p === mkProv ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') +
+                            '</select>' + rstB('prov', 'Réinitialiser la province') + '</span>' +
+                            '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('📍', 'Antenne') +
+                            mkMsHtml('mkAntMs', antsOf, mkAnts, 'Toutes les antennes') + rstB('ant', 'Réinitialiser les antennes') + '</span>' + mkCoverageHtml(m);
+                    } else {
+                        /* Page ZS : Province → Antenne → ZS, trois champs SÉPARÉS en cascade */
+                        var provs2 = [], ants2 = [];
+                        vals.forEach(function (z) {
+                            var p = (gr && gr[z] && gr[z].province) || '—';
+                            if (provs2.indexOf(p) < 0) provs2.push(p);
+                        });
+                        vals.forEach(function (z) {
+                            var g = gr && gr[z] || {};
+                            if (mkProv && (g.province || '—') !== mkProv) return;
+                            if (ants2.indexOf(g.antenne || '—') < 0) ants2.push(g.antenne || '—');
+                        });
+                        provs2.sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+                        ants2.sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+                        var zsOf = vals.filter(function (z) {
+                            var g = gr && gr[z] || {};
+                            if (mkProv && (g.province || '—') !== mkProv) return false;
+                            if (mkAntZS && (g.antenne || '—') !== mkAntZS) return false;
+                            return true;
+                        }).sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+                        h += '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('🗺️', 'Province') +
+                            '<select id="mkProvSel" style="' + selSty + '"><option value="">Toutes les provinces</option>' +
+                            provs2.map(function (p) { return '<option value="' + esc(p) + '"' + (p === mkProv ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') +
+                            '</select>' + rstB('prov', 'Réinitialiser la province') + '</span>' +
+                            '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('📍', 'Antenne') +
+                            '<select id="mkAntZSSel" style="' + selSty + '"><option value="">Toutes les antennes</option>' +
+                            ants2.map(function (a) { return '<option value="' + esc(a) + '"' + (a === mkAntZS ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') +
+                            '</select>' + rstB('antzs', 'Réinitialiser l\'antenne') + '</span>' +
+                            '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('🏥', 'Zone de Santé') +
+                            '<select id="mkZSSel" style="' + selSty + '"><option value="">Toutes les ZS</option>' +
+                            zsOf.map(function (z) { return '<option value="' + esc(z) + '"' + (z === mkAnt ? ' selected' : '') + '>' + esc(z) + '</option>'; }).join('') +
+                            '</select>' + rstB('ant', 'Réinitialiser la ZS') + '</span>' + mkCoverageHtml(m);
+                    }
+                }
+                h += '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('🗓️', 'Mois') +
+                    mkMsHtml('mkMoisMs', MK_MOIS12, mkMoisArr, 'Rapport courant') + rstB('mois', 'Réinitialiser le mois') + '</span>' +
+                    '<span style="display:inline-flex;align-items:center;gap:8px">' + lab('📅', 'Année') +
+                    mkMsHtml('mkAnMs', yrs, mkAnArr, '—') + rstB('an', 'Réinitialiser l\'année') + '</span>' +
+                    '<button type="button" class="mk-rst" data-t="all" title="Réinitialiser tous les filtres" style="border:none;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;border-radius:9px;padding:9px 16px;cursor:pointer;font-size:12.5px;font-weight:800">↺ Réinitialiser</button>' +
+                    (mkArch ? '<span style="padding:7px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:800">📂 Archive ' + esc(mkArch) + '</span>' : '') +
+                    (mkMultiPer ? '<span style="padding:7px 14px;border-radius:9px;background:#e8f5e9;border:1.5px solid #2e9e48;color:#1b5e20;font-size:12px;font-weight:800">∑ Moyenne de ' + mkMultiPer.length + ' périodes</span>' : '') +
+                    '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · synchronisation automatique.</span>' +
+                    '</div>';
+                return h;
+            }
+            function mkReloadView() { if (mkCurView && mkCurBox) mkLoadView(mkCurView, mkCurBox); }
+            function mkWireBar() {
+                var c = mkCtn, m = mkMeta;
+                if (!c || !m) return;
+                var vals = (m.antennes && m.antennes.values) || [];
+                var provSel = c.querySelector('#mkProvSel');
+                if (provSel) provSel.onchange = function () {
+                    mkProv = this.value;
+                    if (!mkPfx) {
+                        mkAnts = mkAnts.filter(function (a) { return !mkProv || (MK_PROV[a] || '—') === mkProv; });
+                        mkAnt = mkAnts.length === 1 ? mkAnts[0] : '';
+                    } else {
+                        mkAntZS = ''; mkAnt = '';
+                    }
+                    mkRefreshBar(); mkReloadView();
+                };
+                var antZSSel = c.querySelector('#mkAntZSSel');
+                if (antZSSel) antZSSel.onchange = function () { mkAntZS = this.value; mkAnt = ''; mkRefreshBar(); mkReloadView(); };
+                var zsSel = c.querySelector('#mkZSSel');
+                if (zsSel) zsSel.onchange = function () { mkAnt = this.value; mkReloadView(); };
+                mkMsWire(c, 'mkAntMs', 'Toutes les antennes', function (sel) {
+                    mkAnts = sel; mkAnt = sel.length === 1 ? sel[0] : '';
+                    mkReloadView();
+                });
+                mkMsWire(c, 'mkMoisMs', 'Rapport courant', function (sel) { mkMoisArr = sel; mkApplyPeriods(); });
+                mkMsWire(c, 'mkAnMs', '—', function (sel) { mkAnArr = sel; mkApplyPeriods(); });
+                c.querySelectorAll('.mk-rst').forEach(function (b) {
+                    b.onclick = function () {
+                        var t = this.getAttribute('data-t');
+                        if (t === 'prov' || t === 'all') mkProv = '';
+                        if (t === 'ant' || t === 'all') { mkAnts = []; mkAnt = ''; }
+                        if (t === 'antzs' || t === 'all') mkAntZS = '';
+                        if (t === 'mois' || t === 'all') mkMoisArr = [];
+                        if (t === 'an' || t === 'all') mkAnArr = [];
+                        /* mkSelMois/mkSelAn pilotent encore les libellés de période :
+                           les vider laisse mkRender revenir au rapport courant. */
+                        if (t === 'mois' || t === 'an' || t === 'all') { mkSelMois = ''; mkSelAn = ''; }
+                        mkPeriodMiss = '';
+                        if (t === 'all') { mkMultiPer = null; if (mkArch) { mkArch = null; mkSwitchBase(); return; } mkRender(mkCtn); return; }
+                        if ((t === 'mois' || t === 'an')) {
+                            if (mkMultiPer || mkArch) { mkMultiPer = null; mkArch = null; mkSwitchBase(); return; }
+                        }
+                        mkRefreshBar(); mkReloadView();
+                    };
+                });
+            }
+            function mkRefreshBar() {
+                var el = document.getElementById('mkBar');
+                if (el && mkMeta) { el.outerHTML = mkBarHtml(mkMeta); mkWireBar(); }
+            }
+
+            /* ══ EXPORT EXCEL + PPTX (design conservé) — sur CHAQUE visuel ══
+               Excel : le tableau rendu (styles inline → couleurs gardées par Excel).
+               PPTX  : capture à l'identique du visuel (html2canvas) dans une diapo. */
+            function mkFname(name) { return 'mashako_' + String(name || 'vue').replace(/[^\w\-]+/g, '_'); }
+            /* Repli quand le visuel n'a pas de tableau rendu (feuilles en image, carte) :
+               on reconstruit un tableau depuis le jeu de données du visuel, avec
+               l'en-tête indigo de la charte pour rester dans le même design. */
+            function mkXlsFromData(box) {
+                var d = box._mkData;
+                if (!d || !(d.columns || []).length || !(d.rows || []).length) return null;
+                var cols = d.columns;
+                return '<table border="1" style="border-collapse:collapse;font-family:Segoe UI,Arial;font-size:11pt"><thead><tr>' +
+                    cols.map(function (c) { return '<th style="background:#1a237e;color:#fff;font-weight:700;padding:6px 10px">' + esc(c) + '</th>'; }).join('') +
+                    '</tr></thead><tbody>' +
+                    d.rows.map(function (r) {
+                        return '<tr>' + cols.map(function (c) { return '<td style="padding:5px 10px">' + esc(r[c] == null ? '' : r[c]) + '</td>'; }).join('') + '</tr>';
+                    }).join('') + '</tbody></table>';
+            }
+            function mkExportXls(box, name) {
+                var inner = null;
+                try { if (typeof box._mkXls === 'function') inner = box._mkXls(); } catch (e) { }
+                /* Le tableau rendu porte ses styles en ligne : Excel garde les couleurs
+                   (matrices, coches, seuils) — c'est lui qui conserve le design. */
+                if (!inner) { var t = box.querySelector('.cb table') || box.querySelector('table'); if (t) inner = '<table border="1" style="border-collapse:collapse;font-family:Segoe UI,Arial">' + t.innerHTML + '</table>'; }
+                if (!inner) inner = mkXlsFromData(box);
+                if (!inner) { alert('Pas de tableau à exporter sur ce visuel — utilisez le bouton PPTX.'); return; }
+                var per = (mkSelMois && mkSelAn) ? (mkSelMois + ' ' + mkSelAn) : '';
+                var scope = mkAntAvg || mkAnt || '';
+                var sub = [scope, per, mkMultiPer ? 'Moyenne de ' + mkMultiPer.length + ' périodes' : ''].filter(Boolean).join(' · ');
+                var tmpl = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+                    '<head><meta charset="utf-8"></head><body style="font-family:Segoe UI,Arial">' +
+                    '<h3 style="color:#1a237e;font-family:Segoe UI,Arial">Plan Mashako 3.0 — ' + esc(name) + '</h3>' +
+                    (sub ? '<p style="color:#475467;font-size:10pt">' + esc(sub) + '</p>' : '') + inner + '</body></html>';
+                var a = document.createElement('a'); a.download = mkFname(name) + '.xls';
+                a.href = 'data:application/vnd.ms-excel;base64,' + window.btoa(unescape(encodeURIComponent(tmpl))); a.click();
+            }
+            function mkExportPptx(box, name) {
+                if (typeof PptxGenJS === 'undefined' || typeof html2canvas === 'undefined') { alert('Composants d\'export en cours de chargement… réessayez dans un instant.'); return; }
+                /* Les barres de commandes ne font pas partie du visuel : on les masque
+                   le temps de la capture pour que la diapo rende le design seul. */
+                var hid = [];
+                box.querySelectorAll('.mk-exp, .pev-tbar').forEach(function (n) { hid.push([n, n.style.display]); n.style.display = 'none'; });
+                function restore() { hid.forEach(function (p) { p[0].style.display = p[1]; }); }
+                var target = box.querySelector('.cb') || box;
+                html2canvas(target, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false }).then(function (cv) {
+                    restore();
+                    var pptx = new PptxGenJS(); pptx.layout = 'LAYOUT_16x9';
+                    var sl = pptx.addSlide(); sl.background = { color: 'FFFFFF' };
+                    var per = (mkSelMois && mkSelAn) ? (mkSelMois + ' ' + mkSelAn) : '';
+                    var sub = [mkAntAvg || mkAnt || '', per, mkMultiPer ? 'Moyenne de ' + mkMultiPer.length + ' périodes' : ''].filter(Boolean).join('  ·  ');
+                    sl.addText('Plan Mashako 3.0 — ' + String(name || ''), { x: 0.3, y: 0.12, w: 9.4, h: 0.32, fontSize: 15, bold: true, color: '1a237e', fontFace: 'Segoe UI' });
+                    if (sub) sl.addText(sub, { x: 0.3, y: 0.45, w: 9.4, h: 0.24, fontSize: 10, color: '475467', fontFace: 'Segoe UI' });
+                    var top = sub ? 0.75 : 0.62, maxW = 9.4, maxH = 5.5 - top, r = cv.width / cv.height;
+                    var w = maxW, h = w / r; if (h > maxH) { h = maxH; w = h * r; }
+                    sl.addImage({ data: cv.toDataURL('image/png'), x: (10 - w) / 2, y: top, w: w, h: h });
+                    pptx.writeFile({ fileName: mkFname(name) + '.pptx' });
+                }).catch(function () { restore(); alert('Capture impossible pour ce visuel.'); });
+            }
+            /* Barre d'export autonome, pour les visuels sans barre d'outils propre
+               (feuilles en image, cartes, pages statiques). mkDrawView réécrit le
+               innerHTML du conteneur à chaque chargement : on ne mémorise donc rien
+               sur la boîte, on vérifie simplement qu'une barre n'est pas déjà posée. */
+            function mkWireExports(box, name) {
+                if (!box || (box.firstChild && box.firstChild.className === 'mk-exp')) return;
+                var bar = document.createElement('div');
+                bar.className = 'mk-exp';
+                bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px';
+                bar.innerHTML = mkExpBtns();
+                box.insertBefore(bar, box.firstChild);
+                mkWireExpBtns(bar, box, name);
+            }
+            /* Mêmes deux boutons, réutilisés dans les barres d'outils existantes */
+            function mkExpBtns() {
+                return '<button type="button" class="mk-xls" title="Télécharger en Excel (design conservé)" style="padding:8px 16px;border-radius:9px;border:none;background:#1d6f42;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ Excel</button>' +
+                    '<button type="button" class="mk-pptx" title="Télécharger en PowerPoint (visuel à l\'identique)" style="padding:8px 16px;border-radius:9px;border:none;background:#c2410c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ PPTX</button>';
+            }
+            function mkWireExpBtns(root, box, name) {
+                var x = root.querySelector('.mk-xls'), p = root.querySelector('.mk-pptx');
+                if (x) x.onclick = function () { mkExportXls(box, name); };
+                if (p) p.onclick = function () { mkExportPptx(box, name); };
+            }
+
+
             window.rMashako = function (c, pgi) {
                 var pfx = pgi === 1 ? 'zs/' : '';
                 if (pfx !== mkPfx) {
                     mkPfx = pfx;
                     mkMeta = null; mkViewCache = {}; mkAnt = ''; mkArch = null;
+                    mkAnts = []; mkProv = ''; mkAntZS = ''; mkMoisArr = []; mkAnArr = []; mkMultiPer = null;
                     mkSelMois = ''; mkSelAn = ''; mkPeriods = null; mkPeriodMiss = '';
                     mkPeriodCache = null; mkPeriodPending = false; mkPeriodCbs = [];
                     mkCurView = null; mkCurBox = null;
@@ -12387,21 +12841,6 @@
                     .then(function (meta) { mkMeta = meta; mkRender(mkCtn); })
                     .catch(function () { mkArch = null; mkBase = MK_RAW; mkEmpty(mkCtn); });
             }
-            function mkApplyPeriod() {
-                mkPeriodMiss = '';
-                var key = mkPeriodKeyOf(mkSelMois, mkSelAn);
-                mkPeriodLoad(function (p) {
-                    var liveKey = p ? mkPeriodKeyOf(p.m, p.y) : null;
-                    var target = null;
-                    if (key && key !== liveKey) {
-                        if (mkPeriods && (mkPeriods.periods || []).indexOf(key) >= 0) target = key;
-                        else { mkPeriodMiss = (mkSelMois || '?') + ' ' + (mkSelAn || ''); mkRender(mkCtn); return; }
-                    }
-                    if (target === mkArch) { mkRender(mkCtn); return; }
-                    mkArch = target;
-                    mkSwitchBase();
-                });
-            }
             function mkRender(c) {
                 var m = mkMeta;
                 /* Vue par défaut = PREMIÈRE entité de la liste et période du rapport
@@ -12409,7 +12848,11 @@
                    antennes », qui empile des lignes de toutes les antennes et ne
                    correspond à aucune vue de l'original). L'utilisateur reste libre
                    de filtrer ensuite, y compris de revenir à la vue d'ensemble. */
-                if (!mkAnt && m.antennes && m.antennes.values && m.antennes.values.length) mkAnt = m.antennes.values[0];
+                if (!mkAnt && !mkAnts.length && m.antennes && m.antennes.values && m.antennes.values.length) {
+                    mkAnt = m.antennes.values[0];
+                    /* La liste à cocher doit refléter ce choix par défaut (page Antenne) */
+                    if (!mkPfx) mkAnts = [mkAnt];
+                }
                 if (!mkSelMois && !mkSelAn && !mkArch) {
                     var _pm = (m.period && m.period.month) || '', _py = (m.period && m.period.year) ? String(m.period.year) : '';
                     /* Repli tant que la synchro n'a pas publié meta.period : la période
@@ -12441,42 +12884,10 @@
                     views.forEach(function (v, i) { if (_ri < 0 && /^Configuration_ANT$/i.test(v.name)) _ri = i; });
                     views.splice(_ri >= 0 ? _ri + 1 : 4, 0, { name: 'Ranking_ANT', urlName: 'Ranking_ANT', synthetic: 'ranking', rows: 0, file: null, image: null });
                 }
-                var yrs = [];
-                try { ((mkPeriods && mkPeriods.periods) || []).forEach(function (k) { var y = String(k).slice(0, 4); if (yrs.indexOf(y) < 0) yrs.push(y); }); } catch (e) { }
-                var gy = '';
-                try { gy = String(new Date(m.generated_at).getFullYear()); } catch (e) { }
-                if (gy && yrs.indexOf(gy) < 0) yrs.push(gy);
-                yrs.sort().reverse();
                 var h =
                     '<div class="pev-banner">🎯 Plan Mashako 3.0 — ' + esc(m.workbook && m.workbook.name || 'Rapport de l\'Antenne') +
                     '<span style="margin-left:auto;font-size:12px;font-weight:400;opacity:.92">Synchronisé le ' + esc(fmtDate(m.generated_at)) + '</span></div>' +
-                    '<div class="cb" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px">' +
-                    (m.antennes && m.antennes.values && m.antennes.values.length ?
-                        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📍 ' + esc(mkLocLbl()) + ' :' +
-                        '<select id="mkAntSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
-                        '<option value="">Vue par défaut</option>' +
-                        mkLocOptions(m) +
-                        '</select>' +
-                        '<button type="button" class="mk-rst" data-t="ant" title="Réinitialiser l\'antenne" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
-                        '</label>' + mkCoverageHtml(m) : '') +
-                    '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">🗓️ Mois :' +
-                    '<select id="mkMoisSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
-                    '<option value="">Rapport courant</option>' +
-                    MK_MOIS12.map(function (mo) { return '<option value="' + mo + '"' + (mo === mkSelMois ? ' selected' : '') + '>' + mo + '</option>'; }).join('') +
-                    '</select>' +
-                    '<button type="button" class="mk-rst" data-t="mois" title="Réinitialiser le mois" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
-                    '</label>' +
-                    '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1a237e">📅 Année :' +
-                    '<select id="mkAnSel" style="padding:9px 14px;border:2px solid var(--tb,#0d47a1);border-radius:10px;font-size:13px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' +
-                    '<option value="">—</option>' +
-                    yrs.map(function (y) { return '<option value="' + y + '"' + (y === mkSelAn ? ' selected' : '') + '>' + y + '</option>'; }).join('') +
-                    '</select>' +
-                    '<button type="button" class="mk-rst" data-t="an" title="Réinitialiser l\'année" style="border:none;background:#eef1f8;color:#1a237e;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;font-weight:900">↺</button>' +
-                    '</label>' +
-                    '<button type="button" class="mk-rst" data-t="all" title="Réinitialiser tous les filtres" style="border:none;background:linear-gradient(120deg,#1a237e,#0d47a1);color:#fff;border-radius:9px;padding:9px 16px;cursor:pointer;font-size:12.5px;font-weight:800">↺ Réinitialiser</button>' +
-                    (mkArch ? '<span style="padding:7px 14px;border-radius:9px;background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:12px;font-weight:800">📂 Archive ' + esc(mkArch) + '</span>' : '') +
-                    '<span style="font-size:13px;color:#475467">Source : <b>Tableau Cloud</b> (site ' + esc(m.site || 'axdata') + ') · synchronisation automatique.</span>' +
-                    '</div>' +
+                    mkBarHtml(m) +
                     (mkPeriodMiss ? '<div class="cb" style="background:#fff7e6;border:1.5px solid #f2bd00;color:#8a6d00;font-size:13px;padding:12px 18px">📂 La période <b>' + esc(mkPeriodMiss) + '</b> n\'est pas encore archivée. La récupération des mois passés est en cours — cette période apparaîtra automatiquement dès qu\'elle sera synchronisée depuis Tableau.</div>' : '');
                 if (views.length) {
                     h += '<div class="cb"><h4>📑 Feuilles du classeur</h4><div id="mkTabs" style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px">';
@@ -12488,34 +12899,7 @@
                     h += '<div class="cb" style="color:#64748b">Aucune feuille synchronisée pour l\'instant — utilisez le lien vers l\'original.</div>';
                 }
                 c.innerHTML = h;
-                var antSelEl = c.querySelector('#mkAntSel');
-                if (antSelEl) antSelEl.onchange = function () {
-                    mkAnt = this.value;
-                    if (mkCurView && mkCurBox) mkLoadView(mkCurView, mkCurBox);
-                };
-                var moisSelEl = c.querySelector('#mkMoisSel'), anSelEl = c.querySelector('#mkAnSel');
-                function _onPer() {
-                    mkSelMois = moisSelEl ? moisSelEl.value : '';
-                    mkSelAn = anSelEl ? anSelEl.value : '';
-                    if (mkSelMois && !mkSelAn) { mkSelAn = yrs[0] || ''; if (anSelEl) anSelEl.value = mkSelAn; }
-                    if (!mkSelMois && !mkSelAn && mkArch) { mkArch = null; mkPeriodMiss = ''; mkSwitchBase(); return; }
-                    if (!mkSelMois || !mkSelAn) { return; }
-                    mkApplyPeriod();
-                }
-                if (moisSelEl) moisSelEl.onchange = _onPer;
-                if (anSelEl) anSelEl.onchange = _onPer;
-                c.querySelectorAll('.mk-rst').forEach(function (b) {
-                    b.onclick = function () {
-                        var t = this.getAttribute('data-t');
-                        if (t === 'ant' || t === 'all') mkAnt = '';
-                        if (t === 'mois' || t === 'all') mkSelMois = '';
-                        if (t === 'an' || t === 'all') mkSelAn = '';
-                        mkPeriodMiss = '';
-                        /* période incomplète ou effacée → retour au rapport courant */
-                        if ((!mkSelMois || !mkSelAn) && mkArch) { mkArch = null; mkSwitchBase(); return; }
-                        mkRender(mkCtn);
-                    };
-                });
+                mkWireBar();
                 if (views.length) {
                     c.querySelectorAll('.mk-vbtn').forEach(function (b) {
                         b.onclick = function () {
@@ -12531,12 +12915,28 @@
             function mkLoadView(v, box) {
                 if (!box) return;
                 mkCurView = v; mkCurBox = box;
-                if (!v.file) { mkDrawView({ name: v.name, urlName: v.urlName, columns: [], rows: [] }, box, v); return; }
-                if (mkViewCache[v.file]) { mkDrawView(mkViewCache[v.file], box, v); return; }
-                box.innerHTML = '<div style="padding:26px;text-align:center;color:#64748b">⏳ Chargement de « ' + esc(v.name) + ' »…</div>';
+                /* Toute donnée traverse mkAntAvgData : plusieurs antennes cochées →
+                   moyenne, sinon le jeu de données passe tel quel. */
+                function show(d) { mkDrawView(mkAntAvgData(d), box, v); }
+                function wait() { box.innerHTML = '<div style="padding:26px;text-align:center;color:#64748b">⏳ Chargement de « ' + esc(v.name) + ' »…</div>'; }
+                /* Plusieurs périodes cochées → moyenne des archives correspondantes */
+                if (mkMultiPer && mkMultiPer.length > 1) {
+                    wait();
+                    mkLoadPeriods(v, mkMultiPer, function (list) {
+                        if (!list.length) {
+                            box.innerHTML = '<div style="padding:22px;color:#c0392b">Cette feuille n\'est disponible dans aucune des périodes sélectionnées.</div>';
+                            return;
+                        }
+                        show(list.length === 1 ? list[0] : mkAvgDatasets(list));
+                    });
+                    return;
+                }
+                if (!v.file) { show({ name: v.name, urlName: v.urlName, columns: [], rows: [] }); return; }
+                if (mkViewCache[v.file]) { show(mkViewCache[v.file]); return; }
+                wait();
                 fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(function (d) { mkViewCache[v.file] = d; mkDrawView(d, box, v); })
+                    .then(function (d) { mkViewCache[v.file] = d; show(d); })
                     .catch(function (e) { box.innerHTML = '<div style="padding:22px;color:#c0392b">Impossible de charger cette vue (' + esc(e.message) + ').</div>'; });
             }
 
@@ -13556,13 +13956,18 @@
                    feuille, on n'affiche PAS les autres à la place (constaté le 26/07 sur
                    Livraison_ANT_P2 : Buta absente → la page listait 44 lignes de 11 autres
                    antennes, ce que l'original ne fait jamais). */
-                if (antCol && mkAnt) antSel = mkAnt;
+                /* mkAntAvg : plusieurs antennes cochées → les lignes ont déjà été
+                   moyennées en amont sous ce libellé, qui devient le périmètre. */
+                if (antCol && (mkAnt || mkAntAvg)) antSel = mkAnt || mkAntAvg;
+                /* Le visuel garde une référence à ses données : l'export Excel peut
+                   ainsi reconstruire un tableau même sur les feuilles en image. */
+                box._mkData = d;
 
                 /* ═══ MODE STATIQUE : page à contenu fixe, retranscrite en HTML ═══ */
                 if (mode === 'static') {
                     var _per = (mkSelMois && mkSelAn) ? (mkSelMois + ' ' + mkSelAn) : ((mkMeta.period && mkMeta.period.month) ? (mkMeta.period.month + ' ' + mkMeta.period.year) : '');
                     var _h = mkStaticHtml(cfg.page, antSel || mkAnt || (antVals.length === 1 ? antVals[0] : ''), _per);
-                    if (_h) { box.innerHTML = _h; return; }
+                    if (_h) { box.innerHTML = _h; mkWireExports(box, name); return; }
                 }
                 /* ═══ MODE IMAGE : la feuille est affichée telle que dans l'original
                    (par antenne quand la variante existe) — sans double bandeau ═══ */
@@ -13578,6 +13983,7 @@
                     hh += '</div>';
                     box.innerHTML = hh;
                     wireImg();
+                    mkWireExports(box, name);
                     return;
                 }
 
@@ -13653,6 +14059,7 @@
                             });
                         });
                     });
+                    mkWireExports(box, name);
                     return;
                 }
 
@@ -13706,6 +14113,7 @@
                         });
                         body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">' + cards + '</div>';
                     });
+                    mkWireExports(box, name);
                     return;
                 }
 
@@ -13777,6 +14185,7 @@
                         html += '</tbody></table></div>';
                         body.innerHTML = html;
                     });
+                    mkWireExports(box, name);
                     return;
                 }
 
@@ -13817,7 +14226,7 @@
                     var mRows = order.map(function (k) { return merged[k]; });
                     box.innerHTML = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
                         '<input type="search" placeholder="🔍 Rechercher une ZS…" class="mk-q" style="flex:1;min-width:140px;padding:8px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px">' +
-                        '<button type="button" class="mk-csv" style="padding:8px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
+                        mkExpBtns() +
                         '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>' +
                         '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
                         mkBannerHtml(cfg, d, vm, antSel || (antVals.length === 1 ? antVals[0] : mkAllLbl())) +
@@ -13870,14 +14279,9 @@
                         box.querySelector('.mk-count').textContent = fr.length + ' ligne(s)';
                     }
                     box.querySelector('.mk-q').oninput = function () { q = this.value; livDraw(); };
-                    box.querySelector('.mk-csv').onclick = function () {
-                        var lines = [cols.join(',')].concat(livRows().map(function (r) {
-                            return cols.map(function (c) { var v = String(r[c] == null ? '' : r[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
-                        }));
-                        var a = document.createElement('a');
-                        a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
-                        a.download = 'mashako_' + (d.urlName || 'vue') + '.csv'; a.click(); URL.revokeObjectURL(a.href);
-                    };
+                    /* Cette feuille n'est pas paginée : le tableau rendu porte déjà
+                       toutes les lignes filtrées, l'export Excel le reprend tel quel. */
+                    mkWireExpBtns(box, box, name);
                     livDraw();
                     return;
                 }
@@ -13925,7 +14329,7 @@
                 var h = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
                     (isHeat && multiAnt ? '<select class="mk-ant" style="padding:8px 12px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px;font-weight:700;color:#1a237e;background:#fff;cursor:pointer">' + antVals.map(function (a) { return '<option value="' + esc(a) + '"' + (a === antSel ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>' : '') +
                     (!isHeat ? '<input type="search" placeholder="🔍 Rechercher…" class="mk-q" style="flex:1;min-width:140px;padding:8px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px">' : '<span style="flex:1"></span>') +
-                    '<button type="button" class="mk-csv" style="padding:8px 16px;border-radius:9px;border:none;background:#2ca02c;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">⬇ CSV</button>' +
+                    mkExpBtns() +
                     '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
                 h += '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
                     mkBannerHtml(cfg, d, vm, antSel || mkAnt || (antVals.length === 1 ? antVals[0] : mkAllLbl())) +
@@ -14064,14 +14468,19 @@
                 };
                 box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
                 box.querySelector('.mk-nx').onclick = function () { pg++; draw(); };
-                box.querySelector('.mk-csv').onclick = function () {
-                    var lines = [cols.join(',')].concat(fRows().map(function (r) {
-                        return cols.map(function (c) { var v = String(r[c] == null ? '' : r[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
-                    }));
-                    var a = document.createElement('a');
-                    a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
-                    a.download = 'mashako_' + (d.urlName || 'vue') + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+                /* Le tableau à l'écran est paginé : pour l'export Excel on le redessine
+                   d'un bloc (mêmes cellules, mêmes couleurs), on prend le HTML, puis on
+                   restaure la page affichée. Le classeur contient donc TOUTES les lignes
+                   filtrées avec le design de l'écran. */
+                box._mkXls = function () {
+                    var savedPg = pg, savedPgs = PGS;
+                    PGS = 1e9; pg = 0; draw();
+                    var t = box.querySelector('.mk-tbl');
+                    var html = t ? '<table border="1" style="border-collapse:collapse;font-family:Segoe UI,Arial">' + t.innerHTML + '</table>' : null;
+                    PGS = savedPgs; pg = savedPg; draw();
+                    return html;
                 };
+                mkWireExpBtns(box, box, name);
                 draw();
             }
             function mkDrawViewLegacy(d, box, vm) {
