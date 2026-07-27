@@ -10,6 +10,11 @@ name: Test session Tableau (cloud)
 
 on:
   workflow_dispatch:
+    inputs:
+      simuler_echec:
+        description: "1 = faire echouer ce test volontairement (verifie la notification par e-mail)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -83,3 +88,12 @@ jobs:
             process.exitCode = 1;
           }
           JS
+
+      # Verifie que la notification par e-mail « echec de workflow » arrive
+      # vraiment. Ce workflow-ci ne sert qu'aux tests : y provoquer un echec
+      # ne laisse aucune croix rouge trompeuse sur la synchro de secours.
+      - name: Echec volontaire (test de la notification)
+        if: inputs.simuler_echec == '1'
+        run: |
+          echo "::error::TEST VOLONTAIRE — ceci n'est PAS une panne. Verification de la notification par e-mail."
+          exit 1
