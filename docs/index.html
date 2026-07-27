@@ -13190,32 +13190,37 @@
                         { c: 'Sdil_5ml_P__riodeensem', l: 'Sdil 5ml', t: 'flag', k: 'Sdil_5ml_P__riode_en_sem_COLOR' },
                         { c: 'BS_5l_P__riodeensem', l: 'Box de Sécurité', t: 'flag', k: 'BS_5l_P__riode_en_sem_COLOR' }
                     ],
-                    foot: "Nombre de semaines de stock disponibles au niveau central, par antenne — <b>vert</b> : stock suffisant, <b>rouge</b> : rupture ou stock critique. 👉 Le détail par zone de santé est disponible dans la feuille « Disponibilité des vaccins — détail par zone de santé »."
+                    foot: "Nombre de semaines de stock disponibles — la feuille affiche le détail par zone de santé comme dans le visuel original (seuil ZS : <b>rouge</b> 0-1, <b>vert</b> 2+ ; antenne centrale : <b>rouge</b> 0-3, <b>vert</b> 4+)."
                 },
                 'Vaccine_expiration_ANT_P1': { title: 'Vaccine expiration (DRAFT)', row: 'Zone de santé' },
-                /* ── Détail par zone de santé (export crosstab Excel des feuilles
-                   masquées _TABLE_… — le CSV ne porte que la synthèse antenne) ── */
-                'Disponibilité des vaccins — détail par zone de santé': {
-                    title: 'Disponibilité des vaccins des zones de santé — détail par ZS',
-                    sub: 'Semaines de stock disponibles, par zone de santé et par antigène',
+                /* ── Disponibilité des vaccins par ZS — CONFORME au visuel original
+                   (captures Felly 27/07) : ligne de synthèse antenne en haut (stock
+                   central, seuil 0-3/4+), table par ZS avec « Vaccins disponibles »
+                   ✓/✗ (stock de réserve dans les 14 antigènes, dérivé) + semaines
+                   colorées au seuil ZS (0-1 rouge, 2+ vert), légende + note. ── */
+                'Disponibilité des vaccins des zones de santé': {
+                    title: 'Disponibilité des vaccins des zones de santé',
+                    sub: '% des antennes sans rupture de stock en antigènes et intrants disponibles au niveau central',
                     sortBy: 'Zone de santé', row: 'Zone de santé',
+                    antRow: true, legend: 'sema',
                     cols: [
-                        { c: 'BCG', l: 'BCG', t: 'flag', k: 'BCG_avail' },
-                        { c: 'Penta', l: 'Penta', t: 'flag', k: 'Penta_avail' },
-                        { c: 'PCV', l: 'PCV', t: 'flag', k: 'PCV_avail' },
-                        { c: 'VPO', l: 'VPO', t: 'flag', k: 'VPO_avail' },
-                        { c: 'Rota', l: 'Rota', t: 'flag', k: 'Rota_avail' },
-                        { c: 'VPI', l: 'VPI', t: 'flag', k: 'VPI_avail' },
-                        { c: 'VAR', l: 'VAR-RR', t: 'flag', k: 'VAR_avail' },
-                        { c: 'VAA', l: 'VAA', t: 'flag', k: 'VAA_avail' },
-                        { c: 'TD', l: 'TD', t: 'flag', k: 'TD_avail' },
-                        { c: 'SAB_005ml', l: 'SAB 0,05ml', t: 'flag', k: 'SAB_005ml_avail' },
-                        { c: 'SAB_05ml', l: 'SAB 0,5ml', t: 'flag', k: 'SAB_05ml_avail' },
-                        { c: 'Sdil2ml', l: 'Sdil 2ml', t: 'flag', k: 'Sdil2ml_avail' },
-                        { c: 'Sdil5ml', l: 'Sdil 5ml', t: 'flag', k: 'Sdil5ml_avail' },
-                        { c: 'BS', l: 'Box de Sécurité', t: 'flag', k: 'BS_avail' }
+                        { c: 'Vaccins disponibles', l: 'Vaccins disponibles', t: 'check' },
+                        { c: 'BCG', l: 'BCG', t: 'semaiz' },
+                        { c: 'Penta', l: 'Penta', t: 'semaiz' },
+                        { c: 'PCV', l: 'PCV', t: 'semaiz' },
+                        { c: 'VPO', l: 'VPO', t: 'semaiz' },
+                        { c: 'Rota', l: 'Rota', t: 'semaiz' },
+                        { c: 'VPI', l: 'VPI', t: 'semaiz' },
+                        { c: 'VAR', l: 'VAR-RR', t: 'semaiz' },
+                        { c: 'VAA', l: 'VAA', t: 'semaiz' },
+                        { c: 'TD', l: 'TD', t: 'semaiz' },
+                        { c: 'SAB_005ml', l: 'SAB 0,05ml', t: 'semaiz' },
+                        { c: 'SAB_05ml', l: 'SAB 0,5ml', t: 'semaiz' },
+                        { c: 'Sdil2ml', l: 'Sdil 2ml', t: 'semaiz' },
+                        { c: 'Sdil5ml', l: 'Sdil 5ml', t: 'semaiz' },
+                        { c: 'BS', l: 'Box de Sécurité', t: 'semaiz' }
                     ],
-                    foot: "Nombre de semaines de stock disponibles, par zone de santé — <b>vert</b> : stock disponible (« Vrai » dans la source Tableau). Cellule vide : aucune donnée rapportée pour cette ZS sur la période. Source : export du visuel original (feuille _TABLE_vaccine_av)."
+                    foot: "*Cet indicateur a été mis à jour au mois de mars 2026. Précédemment, de juillet 2025 à février 2026, le nombre d'antennes ayant au minimum un stock de réserve dans les 16 antigènes et intrants étaient comptabilisées. Cellule vide : aucune donnée rapportée pour cette ZS sur la période. Source : export du visuel original (feuille _TABLE_vaccine_av)."
                 },
                 'Expiration des vaccins — détail par zone de santé': {
                     title: 'Expiration des vaccins — alertes par zone de santé',
@@ -13364,7 +13369,40 @@
                 if (kind === 'cdf') {
                     return '<div style="display:flex;gap:18px;justify-content:flex-end;padding:12px 20px;font-size:11.5px;color:#475467"><b style="color:#334155">Chaîne du Froid :</b><span>' + sq(MK_RED) + 'non fonctionnelle &gt; 0</span><span>' + sq(MK_GREEN) + 'fonctionnelle = 0</span></div>';
                 }
+                /* Légende du visuel original « Disponibilité des vaccins » (seuils
+                   différents ZS / antenne centrale) */
+                if (kind === 'sema') {
+                    return '<div style="display:flex;gap:26px;justify-content:flex-end;padding:12px 20px;font-size:11.5px;color:#475467;flex-wrap:wrap">' +
+                        '<span style="display:inline-flex;gap:8px;align-items:center"><b style="color:#334155">Semaine de disponibilité (ZS)</b>' + sq(MK_RED) + '0-1&nbsp;&nbsp;' + sq(MK_GREEN) + '2+</span>' +
+                        '<span style="display:inline-flex;gap:8px;align-items:center"><b style="color:#334155">Semaine de disponibilité (ANT)</b>' + sq(MK_RED) + '0-3&nbsp;&nbsp;' + sq(MK_GREEN) + '4+</span></div>';
+                }
                 return '<div style="display:flex;gap:18px;justify-content:flex-end;padding:12px 20px;font-size:11.5px;color:#475467"><span>' + sq(MK_RED) + '0-49%</span><span>' + sq(MK_YELLOW) + '50-79%</span><span>' + sq(MK_GREEN) + '80-100%</span></div>';
+            }
+            /* Ligne de synthèse ANTENNE (stock central) du visuel original
+               « Disponibilité des vaccins » : mini-table au-dessus de la table
+               ZS, seuil ANT 0-3 rouge / 4+ vert. Données : d.antennaRows. */
+            function mkAntRowHtml(cfg, d, antName) {
+                var rows = d.antennaRows || {};
+                var keys = Object.keys(rows);
+                if (!keys.length) return '';
+                var agCols = (cfg.cols || []).filter(function (c) { return c.t === 'semaiz'; });
+                if (!agCols.length) return '';
+                var list = (antName && rows[antName]) ? [antName] : keys.slice(0, 12);
+                var h = '<div style="overflow-x:auto;padding:14px 16px 0"><table style="border-collapse:collapse;font-size:12.5px;min-width:60%">' +
+                    '<thead><tr><th style="text-align:left;padding:6px 12px;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0">Antenna</th>' +
+                    agCols.map(function (c) { return '<th style="padding:6px 10px;text-align:center;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0">' + esc(c.l) + '</th>'; }).join('') + '</tr></thead><tbody>';
+                list.forEach(function (a) {
+                    var o = rows[a] || {};
+                    h += '<tr><td style="padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#334155">' + esc(a) + '</td>' +
+                        agCols.map(function (c) {
+                            var w = String(o[c.c] == null ? '' : o[c.c]).trim();
+                            if (w === '') return '<td style="padding:7px 10px;border-bottom:1px solid #f1f5f9"></td>';
+                            var n = Number(w.replace(',', '.'));
+                            var col = (isFinite(n) && n >= 4) ? MK_GREEN : MK_RED;
+                            return '<td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + col + ';font-weight:800">' + esc(w) + '</td>';
+                        }).join('') + '</tr>';
+                });
+                return h + '</tbody></table></div>';
             }
             function mkBannerHtml(cfg, d, vm, antLabel) {
                 var title = (cfg && cfg.title) || (d.name || (vm && vm.name) || '').replace(/_ANT(_P\d)?$/i, '').replace(/_/g, ' ');
@@ -13891,6 +13929,7 @@
                     '<span class="mk-count" style="font-size:12px;color:#64748b"></span></div>';
                 h += '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
                     mkBannerHtml(cfg, d, vm, antSel || mkAnt || (antVals.length === 1 ? antVals[0] : mkAllLbl())) +
+                    ((cfg && cfg.antRow && d.antennaRows) ? mkAntRowHtml(cfg, d, antSel || mkAnt) : '') +
                     '<div style="overflow-x:auto;padding:6px 10px 0"><table class="mk-tbl" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead class="mk-head"></thead><tbody class="mk-body"></tbody></table></div>' +
                     mkLegendHtml(cfg && cfg.legend) +
                     (cfg && cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
@@ -13945,6 +13984,17 @@
                         if (sc === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
                         var cc = sp.k ? mkColorOf(r[sp.k]) : null;
                         return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + (cc || '#334155') + ';font-weight:800">' + esc(sc) + '</td>';
+                    }
+                    /* semaiz / semaint : semaines de stock colorées au SEUIL de la
+                       légende originale « Disponibilité des vaccins » :
+                       ZS 0-1 rouge / 2+ vert — antenne centrale 0-3 rouge / 4+ vert. */
+                    if (sp.t === 'semaiz' || sp.t === 'semaint') {
+                        var sw = String(v == null ? '' : v).trim();
+                        if (sw === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
+                        var nw = Number(sw.replace(',', '.'));
+                        var seuil = sp.t === 'semaiz' ? 2 : 4;
+                        var cw = (isFinite(nw) && nw >= seuil) ? MK_GREEN : MK_RED;
+                        return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + cw + ';font-weight:800">' + esc(sw) + '</td>';
                     }
                     if (sp.t === 'rednum') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:700">' + esc(v) + '</td>';
                     if (sp.t === 'num') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:#334155">' + esc(v) + '</td>';
