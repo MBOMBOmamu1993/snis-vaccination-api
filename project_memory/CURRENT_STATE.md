@@ -157,6 +157,63 @@ B) Export Excel « tableau croisé » Tableau (chaîne validée, probes
      couleur par ZS × 8 antigènes) alors que le CSV ne donne que la synthèse
      antenne. Le CSV .csv ne suffit PAS pour le détail ZS/AS → crosstab Excel.
 
+État 27/07/2026 (2) — DÉTAIL ZS EN LIGNE + CONFORMITÉ DASHBOARD (déployé) :
+
+C) Feuilles « vivantes » Dispo/Expiration (demandes Felly 27/07) :
+- export-ant-zs-detail.mjs : exporte le détail ZS de Dispo_vaccins_ANT et
+  Vaccine_expiration_ANT_P1 via la chaîne crosstab (1 session filtrée 51
+  antennes par dashboard) → out/views/Dispo_vaccins_ZS.json (517 ZS × 14
+  antigènes : semaines de stock + flag Vrai/Faux) et Vaccine_expiration_ZS.json
+  (juin 435 ZS / juil. 367 ZS × 8 antigènes : % alerte + couleur green/red).
+  Carte ZS→antenne : zs_ant_map.json (517 ZS).
+- Publié : juin (periods/2026-06, 7a72202c4 via publish-zs-detail.mjs) ET
+  juillet (racine + periods/2026-07, 1cebcf9f7 via publish-cache.mjs — il
+  publie tout out/views/, donc y déposer les *_ZS.json suffit).
+- ⚠ CONSTATS CLÉS : (1) Dispo_vaccins_ANT n'a AUCUN CSV pour juillet (Tableau
+  répond « aucune donnée pour cette période », 51/51 vides — la période n'est
+  pas encore consolidée) → seules les images + le détail ZS existent ;
+  (2) le CSV de Vaccine_expiration_ANT_P1 est TOUJOURS dégénéré (2 colonnes)
+  car l'export .csv d'un DASHBOARD ne ramène que sa 1re feuille
+  (_PAGE_TITLE_location_ANT) — d'où la « table vide ».
+- Branchement dashboard (docs/index.html, fe792aeaa, mkRender) : si
+  Dispo_vaccins_ANT n'a pas de file → on greffe le file …_ZS ; idem
+  Vaccine_expiration_ANT_P1 (toujours). L'entrée …_ZS en doublon est masquée.
+  À juin, Dispo garde SON fichier (686 lignes) et le détail ZS reste un vrai
+  complément. ⚠ Le dashboard de Felly = snis-vaccination-dhis2.vercel.app
+  (Vercel auto-déploie main ; GitHub Pages = miroir). En cas de « pas en
+  ligne » → penser Ctrl+F5 (cache navigateur).
+- Rendu : flag = valeur colorée par la colonne …_avail (Vrai→vert/Faux→rouge) ;
+  % expiration = mkBarCell coloré par …_COLOR (green/red littéraux Tableau).
+
+D) Leçons techniques du 27/07 (corrections des notes B) :
+- ⚠ SID VizQL : l'en-tête x-session-id est SANS suffixe, l'URL /sessions/ le
+  porte AVEC (« XXXX-0:0 ») — les commandes exigent le suffixe. Ne JAMAIS
+  laisser l'en-tête écraser le SID capté d'URL (sinon 410 aléatoires).
+- ⚠ Le dialogue crosstab peut répondre 200 VIDE ou 410 en rafale quand la
+  session migre de nœud (surtout serveur chargé ~9h) : RAZ SID/GSH/XSRF avant
+  chaque navigation de vue, bootstrap par la feuille légère FILTER_VALUES_ANT,
+  attendre le canvas, puis REJOUER le dialogue en adoptant le
+  global-session-header des réponses 410 (session migrée).
+- DATES « Expiration la plus proche » : présentes à l'écran mais ABSENTES du
+  crosstab Excel (qui ne porte que % + couleur) et du pres-model bootstrap
+  (fenêtres paginées). Piste validée : tableauscraper api.py → commandes
+  tabdoc/get-summary-data et tabdoc/get-underlying-data (POST
+  …/sessions/{sid}/commands/tabdoc/get-underlying-data, champs maxRows,
+  includeAllColumns=true, visualIdPresModel={worksheet, dashboard}). Pas
+  tabsrv ! Page Tableau 2026.2 = shell JS (tsConfigContainer vide) →
+  tableauscraper.loads() inutilisable tel quel ; piloter les commandes depuis
+  le contexte page Playwright. Venv Python : mashako-sync/.venv
+  (tableauscraper installé). À RETENTER quand le canal commandes est stable.
+- Validation ZS (validate-zs-batch.mjs) : fetch .csv SANS garde-temps = gel
+  total (>60 min sur Vaccine_dispo_HZ_P2) → AbortController 90 s + course
+  Node 120 s + reprise incrémentale (verdicts écrits par feuille, skip des
+  déjà verdictées). Verdicts partiels : COLLAPSE = Résumé, Heatmap, Carte
+  Supervision, Dispo_HZ_P1 (le multi-valeurs ne ramène que la 1re ZS) ;
+  OK = Supervision_P1/P2.
+- sync.mjs : liste blanche ZS lue dans zs_batch_verdicts.json (ok:false →
+  repli unitaire) + pullZsLegacy PARALLÉLISÉ ×3 (519 ZS ≈ 30 min/feuille au
+  lieu de 1,5-2 h ; ×3 = seuil file d'attente serveur, voir note runBatch).
+
 État 22/07/2026 (2) — FIABILITÉ TOOL_CALLS + CARTOGRAPHIE (déployé) :
 
 - Function-calling durci (docs/index.html, tous fournisseurs) : les identifiants
