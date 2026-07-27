@@ -9,6 +9,43 @@ Résultat :
 
 ---
 
+Date : 27/07/2026 (2) — reprise après interruption OpenCode (abonnement)
+Demande : Finaliser la session : « enlever les images et remplacer avec
+  tableau vivant, conforme à l'original » (Dispo_vaccins_ANT +
+  Vaccine_expiration_ANT_P1) + « les modifs ne sont pas en ligne sur mon
+  dashboard » + finir la synchro ZS.
+Fichiers concernés : mashako-sync/export-ant-zs-detail.mjs,
+  publish-zs-detail.mjs, validate-zs-batch.mjs, sync.mjs, probe-*.mjs,
+  docs/index.html, project_memory/*
+Action faite : (1) Diagnostic « pas en ligne » : les données ÉTAIENT publiées
+  mais sur 2 boutons séparés en fin de liste ; les feuilles d'origine restaient
+  images/vide. Le dashboard de Felly = snis-vaccination-dhis2.vercel.app
+  (Vercel auto-déploie main). (2) Export détail ZS juillet (517 ZS dispo, 367
+  expiration) + publication racine (1cebcf9f7). (3) Patch mkRender : greffe du
+  file …_ZS sur Dispo_vaccins_ANT (si sans données — juillet) et
+  Vaccine_expiration_ANT_P1 (toujours, CSV dégénéré = 1re feuille du dashboard
+  _PAGE_TITLE) ; doublons masqués ; juin conserve son propre fichier + détail
+  ZS en complément (fe792aeaa, testé sur les 2 meta.json, déployé Vérifié).
+  (4) Chasse aux dates « Expiration la plus proche » : absentes du crosstab
+  Excel (qui ne porte que % + couleur) et du pres-model bootstrap (fenêtres
+  paginées) ; CSV direct des feuilles _TABLE = 404 (masquées) ; page 2026.2 =
+  shell JS (tableauscraper.loads inutilisable) ; piste validée =
+  tabdoc/get-summary-data/get-underlying-data (api.py) — NON aboutie : canal
+  commandes en rafale de 410 (session migre de nœud). Leçons consignées :
+  SID avec suffixe « -0:0 » obligatoire (x-session-id n'en a pas), RAZ des
+  jetons avant navigation, adoption du global-session-header des réponses 410.
+  (5) Validation ZS : gel >60 min (fetch .csv sans garde-temps sur
+  Vaccine_dispo_HZ_P2) → AbortController 90 s + reprise incrémentale
+  (zs_batch_verdicts.json) ; verdicts partiels : Résumé/Heatmap/CarteSup/
+  Dispo_HZ_P1 COLLAPSE (multi-valeurs = 1re ZS seule), Supervision_P1/P2 OK.
+  (6) sync.mjs : liste blanche ZS lue dans les verdicts + pullZsLegacy
+  parallélisé ×3 (≈30 min/feuille collapse au lieu de 1,5-2 h).
+Résultat : dashboard conforme (tables vivantes sur les feuilles d'origine,
+  images remplacées) ; dates d'expiration en attente (piste tabdoc à retenter) ;
+  validation ZS relancée ; synchro ZS prête à lancer avec liste blanche.
+
+---
+
 Date : 27/07/2026
 Demande : Prendre la relève sur la synchro Mashako qui échoue depuis 2 jours
   (synchro qui tourne avec beaucoup d'échecs, backfills en attente) + finir la
