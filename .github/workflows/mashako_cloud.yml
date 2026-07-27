@@ -48,6 +48,7 @@ on:
 
 permissions:
   contents: write
+  issues: write     # ouverture/fermeture de l'alerte « session Tableau expirée »
 
 # Une seule exécution à la fois : si une synchro de 5 h tourne, la ronde
 # suivante attend au lieu de doubler les exports (Tableau bride le compte).
@@ -104,6 +105,13 @@ jobs:
             *)              echo "CANAL=${{ inputs.canal }}" >> "$GITHUB_ENV"
                             echo "TACHE=${{ inputs.tache || 'sync' }}" >> "$GITHUB_ENV" ;;
           esac
+          # Une fois par jour (créneau ANT du matin), on contrôle la session
+          # MÊME s'il n'y a rien à synchroniser : c'est ce qui détecte une
+          # session morte au plus tôt, et qui la maintient en vie — ainsi que la
+          # licence Tableau, révoquée après un mois sans connexion.
+          if [ "${{ github.event.schedule }}" = "45 6 * * *" ]; then
+            echo "CONTROLE_SESSION=1" >> "$GITHUB_ENV"
+          fi
 
       # Décision AVANT de réveiller quoi que ce soit : si le PC a fait le
       # travail, on s'arrête ici sans toucher à Tableau.
@@ -118,7 +126,8 @@ jobs:
             ${{ inputs.force == '1' && '--force' || '' }}
 
       - name: Injecter la session Tableau du PC dans un profil Chrome
-        if: env.MASHAKO_A_FAIRE == '1' && inputs.dry != '1'
+        id: session
+        if: (env.MASHAKO_A_FAIRE == '1' || env.CONTROLE_SESSION == '1') && inputs.dry != '1'
         working-directory: tools/mashako-sync
         env:
           TABLEAU_COOKIES: ${{ secrets.TABLEAU_COOKIES }}
@@ -128,6 +137,23 @@ jobs:
             exit 1
           fi
           node cloud/seed-profile.mjs
+
+      # Le SEUL incident qui exige Felly : plus personne dans le cloud ne peut
+      # se reconnecter à Tableau à sa place. On ouvre une issue GitHub assignée
+      # au propriétaire du dépôt → e-mail immédiat, même PC éteint.
+      - name: Alerter — session Tableau expirée
+        if: always() && steps.session.outcome == 'failure'
+        working-directory: tools/mashako-sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node cloud/alerte.mjs --ouvrir "seed-profile.mjs refusé par Tableau (exécution ${{ github.run_id }})"
+
+      - name: Lever l'alerte — la session refonctionne
+        if: steps.session.outcome == 'success'
+        working-directory: tools/mashako-sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node cloud/alerte.mjs --fermer
 
       - name: Synchroniser
         if: env.MASHAKO_A_FAIRE == '1' && inputs.dry != '1'
