@@ -1,0 +1,85 @@
+# Test décisif : la session Tableau du PC fonctionne-t-elle depuis un runner
+# GitHub (autre pays, autre adresse IP, aucun navigateur) ?
+#
+# Si les exports répondent « text/csv », la synchro Mashako peut tourner
+# gratuitement dans le cloud GitHub quand le PC de Felly est éteint.
+# Si on reçoit du HTML (page de connexion), la piste est morte.
+#
+# Secret utilisé : TABLEAU_COOKIES (export des cookies du profil Chrome du PC).
+name: Test session Tableau (cloud)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Exports Tableau depuis le cloud
+        env:
+          TABLEAU_COOKIES: ${{ secrets.TABLEAU_COOKIES }}
+        run: |
+          node --input-type=module - <<'JS'
+          const cookies = JSON.parse(process.env.TABLEAU_COOKIES);
+          const jar = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+          const SERVER = "https://eu-west-1a.online.tableau.com";
+          const SITE = "axdata";
+          const WB = "Mashako3_0RapportdelAntenne";
+          const P = "_PARAM_month=Juillet&_PARAM_year=2026";
+          const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+
+          console.log(`Cookies fournis : ${cookies.map(c => c.name).join(", ")}`);
+
+          async function essai(nom, url) {
+            const t0 = Date.now();
+            let r;
+            try {
+              r = await fetch(url, { headers: { cookie: jar, "user-agent": UA }, redirect: "manual" });
+            } catch (e) {
+              console.log(`${nom} : ✖ échec réseau — ${e.message}`);
+              return false;
+            }
+            const ct = r.headers.get("content-type") || "";
+            const buf = Buffer.from(await r.arrayBuffer());
+            const s = ((Date.now() - t0) / 1000).toFixed(1);
+            console.log(`${nom} : HTTP ${r.status} | ${ct.split(";")[0]} | ${buf.length} octets | ${s}s`);
+            if (r.status >= 300 && r.status < 400) {
+              console.log(`   → redirigé vers ${r.headers.get("location")}`);
+              return false;
+            }
+            if (/text\/csv/.test(ct)) {
+              const l1 = buf.toString("utf8").split("\n")[0].slice(0, 160);
+              console.log(`   ✅ CSV reçu — 1re ligne : ${l1}`);
+              return true;
+            }
+            if (/image\/png/.test(ct)) {
+              console.log(`   ✅ PNG reçu (${(buf.length / 1024).toFixed(0)} Ko)`);
+              return true;
+            }
+            console.log(`   ✖ réponse inattendue : ${buf.toString("utf8").slice(0, 240).replace(/\s+/g, " ")}`);
+            return false;
+          }
+
+          const url = (n, ext, p) => `${SERVER}/t/${SITE}/views/${WB}/${encodeURIComponent(n)}.${ext}?${P}${p ? "&" + p : ""}`;
+
+          const r1 = await essai("CSV  Performance Heatmap_ANT", url("PerformanceHeatmap_ANT", "csv", ":refresh=yes"));
+          const r2 = await essai("CSV  filtré sur une antenne ", url("PerformanceHeatmap_ANT", "csv", "_SELECTED_location_level=" + encodeURIComponent("Bas Uele_Buta") + "&:refresh=yes"));
+          const r3 = await essai("PNG  Cover Page             ", url("CoverPage", "png"));
+
+          console.log("\n────────────────────────────────────────────────");
+          if (r1 && r3) {
+            console.log("✅ VERDICT : la session du PC fonctionne depuis GitHub Actions.");
+            console.log("   La synchro Mashako peut tourner gratuitement dans le cloud.");
+          } else {
+            console.log("✖ VERDICT : la session n'est pas utilisable telle quelle depuis le cloud.");
+            process.exitCode = 1;
+          }
+          JS
