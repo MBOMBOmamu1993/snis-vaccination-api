@@ -93,7 +93,72 @@ Contexte permanent :
   LAST_12_WEEKS) ; programIndicators = canevas DV ABANDONNÉS sans données →
   ne pas utiliser.
 
+État 27/07/2026 — SYNCHRO MASHAKO RÉPARÉE + EXPORT EXCEL CROSSTAB (déployé) :
+
+A) Synchro Mashako (snis-vaccination-api, onglet Plan Mashako 3.0) :
+- La synchro tourne en LOCAL sur le PC (C:\Users\felly\mashako-sync) — le
+  workflow GitHub est en veille (PAT désactivés par l'admin axdata le 24/07).
+  5 tâches planifiées : ANT 07:00 (+rattrapages), ZS 10:30, backfills ANT 20:00
+  et ZS 23:30, rattrapage au démarrage (catchup.mjs).
+- PUBLICATION ANT Juillet COMPLÈTE (a1aab66cf) : 30 feuilles, 21 avec données
+  vivantes, 286 images par antenne. Référence corrigée : Livraison_P1 950
+  lignes, CDF_Problèmes 511, Ranking 51.
+- Causes d'échec d'avant, toutes corrigées dans sync.mjs :
+  1. Crash ENOENT à la publication (fusion anti-perte référençait des PNG
+     absents du disque local) → réutilisation des SHA des blobs déjà en ligne
+     + GARDE ABSOLUE : publication annulée si base_tree illisible (protection
+     zs/ et archives periods/).
+  2. Garde-fou 180 min toujours atteint → 300 min + phase data ~3× plus
+     rapide grâce au batching.
+  3. Morts silencieuses (4-5/jour) → handlers unhandledRejection/
+     uncaughtException qui journalisent avant de mourir.
+  4. Appels API GitHub qui hoquettent (« malformed request » 400 transitoire,
+     vérifié rejouable à la main) → retry ×5 avec pause croissante dans
+     sync.mjs et publish-cache.mjs.
+- BATCHING MULTI-VALEURS (découverte du 27/07) : l'export .csv accepte
+  PLUSIEURS valeurs de filtre séparées par des virgules
+  (_SELECTED_location_level=A,B,C) → UNE requête par feuille pour les 51
+  antennes (~30 s au lieu de ~7 min) ; paquets de ~100 ZS côté ZS (couverture
+  complète en 1 run au lieu de ~7 nuits). Attribution de la colonne Antenne
+  par le contenu (colonne « Antenne En », sinon carte ZS→antenne
+  zs_ant_map.json construite depuis les FILTER_VALUES du classeur ZS).
+  ⚠ LISTE BLANCHE : certaines feuilles COLLAPSENT en groupé (livraisons
+  pivots, classements, cartes — ex. Livraison_P1 : 30 lignes vides au lieu de
+  950) → export unitaire conservé pour elles (BATCH_OK dans sync.mjs).
+- Backfill : 1 mois par exécution (fini les verrous de 27 h) + groupé
+  multi-valeurs → ~20 min/mois. ANT : 10 mois à rattraper (2026-04→2025-07),
+  ~10 soirs à 20:00. ZS : déblocage automatique du seuil 500/519 dès la 1re
+  synchro ZS complète.
+
+B) Export Excel « tableau croisé » Tableau (chaîne validée, probes
+   probe-crosstab-http.mjs / probe-multizs.mjs / probe-multicsv.mjs) :
+   ① POST …/commands/tabsrv/export-crosstab-server-dialog → liste les
+     feuilles réelles + sheetdocId (découverte des feuilles masquées _TABLE_…)
+   ② POST …/commands/tabsrv/export-crosstab-to-excel-server (sheetdocId) →
+     clé de fichier temporaire
+   ③ GET …/tempfile/sessions/{sid}?key=…&keepfile=yes&attachment=yes → .xlsx
+   Clés techniques :
+   - global-session-header = nœud VizQL (sinon 410 Gone) : lu dans les
+     EN-TÊTES DE RÉPONSE /vizql/ (pas besoin de capturer les requêtes).
+   - Session « jeune » suffisante (~10-40 s) : pas besoin d'attendre le rendu
+     canvas (~4 min) pour lancer les commandes.
+   - x-tsi-active-tab / la vue de la session détermine la liste de feuilles :
+     réinitialiser la capture à chaque navigation (le hash ne recharge pas la
+     page — passer par about:blank).
+   - Filtres multi-valeurs acceptés (virgules) sur commands ET sur .csv.
+   - ⚠ DEMANDE FELLY 27/07, À RETENIR : certaines vues ne livrent leurs
+     VRAIES données Excel QUE lorsqu'on les exporte AVEC UN FILTRE appliqué
+     (mono ou multi-valeurs) — SANS filtre (« All »), le tableau de bord
+     retombe sur sa localisation par défaut (ex. Aketi seule) au lieu de
+     tout donner. Toujours exporter avec un filtre explicite.
+   - Le détail par ZS/Aire de Santé vit dans les feuilles masquées _TABLE_…
+     (ex. _TABLE_vaccine_av_ANT : 514 ZS × 16 antigènes — semaines de stock +
+     dispo « Vrai » ; _TABLE_vaccine_expiry_ANT_P1 : % alerte expiration +
+     couleur par ZS × 8 antigènes) alors que le CSV ne donne que la synthèse
+     antenne. Le CSV .csv ne suffit PAS pour le détail ZS/AS → crosstab Excel.
+
 État 22/07/2026 (2) — FIABILITÉ TOOL_CALLS + CARTOGRAPHIE (déployé) :
+
 - Function-calling durci (docs/index.html, tous fournisseurs) : les identifiants
   NATIFS des tool_calls (Kimi call_*, Anthropic toolu_*) sont conservés de bout
   en bout (flux SSE → historique interne → conversions) ; les réponses tool
