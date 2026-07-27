@@ -13220,14 +13220,14 @@
                     sub: "% du stock expirant prochainement, par zone de santé et par antigène",
                     sortBy: 'Zone de santé', row: 'Zone de santé',
                     cols: [
-                        { c: '_perc_HA_expiry_alert_BCG', l: 'BCG', t: 'bar', k: '_perc_HA_expiry_alert_BCG_COLOR' },
-                        { c: '_perc_HA_expiry_alert_Penta', l: 'Penta', t: 'bar', k: '_perc_HA_expiry_alert_Penta_COLOR' },
-                        { c: '_perc_HA_expiry_alert_PCV', l: 'PCV', t: 'bar', k: '_perc_HA_expiry_alert_PCV_COLOR' },
-                        { c: '_perc_HA_expiry_alert_vpo', l: 'VPO', t: 'bar', k: '_perc_HA_expiry_alert_vpo_COLOR' },
-                        { c: '_perc_HA_expiry_alert_rota', l: 'Rota', t: 'bar', k: '_perc_HA_expiry_alert_rota_COLOR' },
-                        { c: '_perc_HA_expiry_alert_vpi', l: 'VPI', t: 'bar', k: '_perc_HA_expiry_alert_vpi_COLOR' },
-                        { c: '_perc_HA_expiry_alert_var', l: 'VAR-RR', t: 'bar', k: '_perc_HA_expiry_alert_var_COLOR' },
-                        { c: '_perc_HA_expiry_alert_td', l: 'TD', t: 'bar', k: '_perc_HA_expiry_alert_td_COLOR' }
+                        { c: '_perc_HA_expiry_alert_BCG', l: 'BCG', t: 'colornum', k: '_perc_HA_expiry_alert_BCG_COLOR' },
+                        { c: '_perc_HA_expiry_alert_Penta', l: 'Penta', t: 'colornum', k: '_perc_HA_expiry_alert_Penta_COLOR' },
+                        { c: '_perc_HA_expiry_alert_PCV', l: 'PCV', t: 'colornum', k: '_perc_HA_expiry_alert_PCV_COLOR' },
+                        { c: '_perc_HA_expiry_alert_vpo', l: 'VPO', t: 'colornum', k: '_perc_HA_expiry_alert_vpo_COLOR' },
+                        { c: '_perc_HA_expiry_alert_rota', l: 'Rota', t: 'colornum', k: '_perc_HA_expiry_alert_rota_COLOR' },
+                        { c: '_perc_HA_expiry_alert_vpi', l: 'VPI', t: 'colornum', k: '_perc_HA_expiry_alert_vpi_COLOR' },
+                        { c: '_perc_HA_expiry_alert_var', l: 'VAR-RR', t: 'colornum', k: '_perc_HA_expiry_alert_var_COLOR' },
+                        { c: '_perc_HA_expiry_alert_td', l: 'TD', t: 'colornum', k: '_perc_HA_expiry_alert_td_COLOR' }
                     ],
                     foot: "% du stock expirant prochainement par zone de santé — couleurs de la source Tableau (<b>rouge</b> : alerte expiration). Source : export du visuel original (feuille _TABLE_vaccine_expiry)."
                 },
@@ -13934,6 +13934,15 @@
                         var kf = sp.k ? String(r[sp.k] == null ? '' : r[sp.k]).trim().toLowerCase() : '';
                         var cf = /^(vrai|true|1|oui)$/.test(kf) ? MK_GREEN : (/^(faux|false|0|non)$/.test(kf) ? MK_RED : '#334155');
                         return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + cf + ';font-weight:800">' + esc(sf) + '</td>';
+                    }
+                    /* colornum : TEXTE coloré par la colonne couleur littérale Tableau
+                       (green/red/orange) — rendu conforme à l'original (expiration :
+                       % et dates en texte rouge/vert, pas de pastilles). */
+                    if (sp.t === 'colornum') {
+                        var sc = String(v == null ? '' : v).trim();
+                        if (sc === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
+                        var cc = sp.k ? mkColorOf(r[sp.k]) : null;
+                        return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + (cc || '#334155') + ';font-weight:800">' + esc(sc) + '</td>';
                     }
                     if (sp.t === 'rednum') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:700">' + esc(v) + '</td>';
                     if (sp.t === 'num') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:#334155">' + esc(v) + '</td>';
