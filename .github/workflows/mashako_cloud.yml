@@ -1,0 +1,120 @@
+# =============================================================================
+#  Mashako 3.0 — SYNCHRO DE SECOURS DANS LE CLOUD (gratuit, GitHub Actions)
+#
+#  Le PC de Felly reste PRIORITAIRE. Ce workflow se réveille 45 min après
+#  chaque horaire du PC et ne fait quelque chose QUE si le PC n'a pas fait le
+#  travail (arbitre.mjs décide : publication du jour ? bail frais ? heure
+#  passée ?).
+#
+#  Authentification : pas de PAT Tableau (désactivés par l'admin axdata) et pas
+#  de connexion Google automatisable — on réutilise donc la SESSION du PC,
+#  déposée dans le secret TABLEAU_COOKIES par cloud/publier-cookies.mjs.
+#  Vérifié le 27/07/2026 : la session Tableau n'est PAS liée à l'adresse IP,
+#  les exports répondent 200 text/csv depuis un runner GitHub.
+#
+#  Aucun script de synchro n'est modifié : on prépare un profil Chrome déjà
+#  connecté (cloud/seed-profile.mjs), puis on lance le sync.mjs habituel.
+# =============================================================================
+name: Mashako 3.0 — synchro de secours (cloud)
+
+on:
+  schedule:
+    # Heures de Kinshasa (UTC+1), 45 min après les tâches planifiées du PC.
+    - cron: "45 6 * * *"    # 07h45 — rapport Antenne (PC : 7h00)
+    - cron: "15 10 * * *"   # 11h15 — rapport Zone de Santé (PC : 10h30)
+  workflow_dispatch:
+    inputs:
+      canal:
+        description: "ant, zs, ou vide pour les deux"
+        required: false
+        default: ""
+      force:
+        description: "1 = ignorer l'heure et la publication du jour"
+        required: false
+        default: ""
+      dry:
+        description: "1 = expliquer la décision sans rien lancer"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mashako-cloud
+  cancel-in-progress: false
+
+jobs:
+  synchro:
+    runs-on: ubuntu-latest
+    # sync.mjs s'arrête tout seul à 5 h (garde-fou MAX_MINUTES) puis publie ;
+    # on laisse 50 min de marge, sous le plafond de 6 h de GitHub.
+    timeout-minutes: 350
+
+    steps:
+      # Le dépôt pèse ~21 Go (ndjson bruts) : on ne récupère que l'outillage.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools/mashako-sync
+          sparse-checkout-cone-mode: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # État qui doit survivre d'une exécution à l'autre : registre de couverture
+      # ZS (quelles zones ont été faites en premier), noms d'URL résolus, garde
+      # « déjà synchronisé aujourd'hui », et les exports déjà obtenus.
+      - name: Restaurer l'état de la dernière exécution
+        uses: actions/cache@v4
+        with:
+          path: |
+            tools/mashako-sync/zs_ledger.json
+            tools/mashako-sync/urlnames.json
+            tools/mashako-sync/urlnames-zs.json
+            tools/mashako-sync/best_count.json
+            tools/mashako-sync/best_count_zs.json
+          key: mashako-etat-${{ github.run_id }}
+          restore-keys: mashako-etat-
+
+      - name: Dépendances Node
+        working-directory: tools/mashako-sync
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"   # on utilise le Chrome du runner
+        run: npm ci --no-audit --no-fund
+
+      - name: Choisir le canal selon l'horaire déclencheur
+        run: |
+          case "${{ github.event.schedule }}" in
+            "45 6 * * *")  echo "CANAL=ant" >> "$GITHUB_ENV" ;;
+            "15 10 * * *") echo "CANAL=zs"  >> "$GITHUB_ENV" ;;
+            *)             echo "CANAL=${{ inputs.canal }}" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Injecter la session Tableau du PC dans un profil Chrome
+        working-directory: tools/mashako-sync
+        env:
+          TABLEAU_COOKIES: ${{ secrets.TABLEAU_COOKIES }}
+        run: |
+          if [ -z "$TABLEAU_COOKIES" ]; then
+            echo "::error::Secret TABLEAU_COOKIES absent. Sur le PC : node cloud/publier-cookies.mjs"
+            exit 1
+          fi
+          node cloud/seed-profile.mjs
+
+      - name: Arbitre — synchroniser seulement si le PC ne l'a pas fait
+        working-directory: tools/mashako-sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MASHAKO_ROLE: actions
+          MASHAKO_HEADLESS: "1"
+        run: |
+          node cloud/arbitre.mjs \
+            ${CANAL:+--canal "$CANAL"} \
+            ${{ inputs.force == '1' && '--force' || '' }} \
+            ${{ inputs.dry == '1' && '--dry' || '' }}
+
+      - name: Journal de l'arbitre
+        if: always()
+        working-directory: tools/mashako-sync
+        run: tail -n 60 cloud/arbitre.log 2>/dev/null || echo "(aucun journal)"
