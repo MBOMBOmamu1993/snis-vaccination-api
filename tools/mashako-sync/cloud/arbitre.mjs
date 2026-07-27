@@ -45,7 +45,12 @@ const GRACE_MIN = Number(process.env.MASHAKO_GRACE_MIN || 45);
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
-const DRY = args.includes("--dry");
+/* --decider : comme --dry, mais écrit MASHAKO_A_FAIRE=0/1 dans $GITHUB_ENV.
+   Sert au workflow à ne réveiller Chrome et Tableau QUE s'il y a du travail :
+   une ronde de rattrapage qui n'a rien à faire coûte alors 5 secondes et
+   n'ajoute aucune charge sur le compte Tableau. */
+const DECIDER = args.includes("--decider");
+const DRY = args.includes("--dry") || DECIDER;
 const FORCE = args.includes("--force");
 const TACHE = opt("--tache", "sync");
 const CANAUX = opt("--canal") ? [opt("--canal")] : ["ant", "zs"];
@@ -145,7 +150,7 @@ function examiner(canal) {
     return "attente";
   }
 
-  if (DRY) { log(`${prefixe} — ✅ la VM prendrait la main (mode --dry, rien lancé).`); return "dry"; }
+  if (DRY) { log(`${prefixe} — ✅ il y a du travail : le secours prendrait la main (rien lancé).`); return "dry"; }
   return lancer(canal, TACHE) === 0 ? "fait" : "echec";
 }
 
@@ -169,8 +174,18 @@ log(`— Arbitre (${TITULAIRE}) : ${CANAUX.join(", ")} / ${TACHE}${DRY ? " [dry]
 const moi = occupeParMoiMeme();
 if (moi && !DRY) {
   log(`⏭ Cette machine synchronise déjà « ${moi.canal} » (${moi.note || "en cours"}, battement ${moi.battement}) — on ne lance rien d'autre.`);
+  if (DECIDER && process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, "MASHAKO_A_FAIRE=0\n");
 } else {
+  const verdicts = [];
   for (const c of CANAUX) {
-    try { examiner(c); } catch (e) { log(`✖ ${c} : ${e.stack || e}`); }
+    try { verdicts.push(examiner(c)); } catch (e) { log(`✖ ${c} : ${e.stack || e}`); }
+  }
+  if (DECIDER && process.env.GITHUB_ENV) {
+    const aFaire = verdicts.includes("dry") ? "1" : "0";
+    /* Le canal est transmis au workflow : inutile de relancer les deux quand
+       un seul a du travail. */
+    const canalUtile = CANAUX[verdicts.indexOf("dry")] || "";
+    appendFileSync(process.env.GITHUB_ENV, `MASHAKO_A_FAIRE=${aFaire}\nMASHAKO_CANAL_UTILE=${canalUtile}\n`);
+    log(`→ décision transmise au workflow : ${aFaire === "1" ? "AGIR sur " + canalUtile : "rien à faire"}`);
   }
 }
