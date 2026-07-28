@@ -12710,7 +12710,7 @@
             function mkLoadView(v, box) {
                 if (!box) return;
                 mkCurView = v; mkCurBox = box;
-                function show(d) { mkDrawView(d, box, v); }
+                function show(d) { mkDrawView(d, box, v); mkAsAppend(v, box); }
                 function wait() { box.innerHTML = '<div style="padding:26px;text-align:center;color:#64748b">⏳ Chargement de « ' + esc(v.name) + ' »…</div>'; }
                 if (!v.file) { show({ name: v.name, urlName: v.urlName, columns: [], rows: [] }); return; }
                 if (mkViewCache[v.file]) { show(mkViewCache[v.file]); return; }
@@ -12719,6 +12719,123 @@
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                     .then(function (d) { mkViewCache[v.file] = d; show(d); })
                     .catch(function (e) { box.innerHTML = '<div style="padding:22px;color:#c0392b">Impossible de charger cette vue (' + esc(e.message) + ').</div>'; });
+            }
+
+            /* ═══ DÉTAIL PAR AIRE DE SANTÉ ═══════════════════════════════════
+               Dans le classeur original, chaque feuille du rapport Zone de Santé
+               montre la synthèse de la zone PUIS le tableau de ses aires de santé.
+               La synthèse vient du CSV de la feuille ; le détail par aire n'est
+               exportable que par tableau croisé, publié à part dans
+               zs/views/<feuille>_AS.json (mashako-sync/export-zs-as.mjs).
+
+               Ces fichiers sont des tableaux croisés : Tableau y éclate la feuille
+               en blocs de mesures, et le nom de colonne porte souvent la VALEUR
+               (« Oui », « Vrai », « Qualité satisfaisante »). Les colonnes sont
+               donc préfixées « b<n>· » par bloc, et c'est le rang du bloc qui
+               identifie le critère — d'où les libellés de MK_AS_LABELS. */
+            var mkAsCache = {};
+            function mkAsLoad(urlName, cb) {
+                if (Object.prototype.hasOwnProperty.call(mkAsCache, urlName)) { cb(mkAsCache[urlName]); return; }
+                fetch(mkUrl('views/' + urlName + '_AS.json') + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (d) { mkAsCache[urlName] = d; cb(d); })
+                    .catch(function () { mkAsCache[urlName] = null; cb(null); });
+            }
+            /* Libellés des colonnes du détail, dans l'ordre des blocs, relevés sur
+               le classeur original. Un bloc sans libellé garde le nom exporté. */
+            var MK_AS_LABELS = {
+                'Supervision_HZ_P1': ['AS supervisée', 'Supervision de qualité', 'Bonne durée', 'Cohérence des données', 'Bonne localisation'],
+                'Supervision_HZ_P2': ['AS supervisée', 'Supervision de qualité', 'Bonne durée', 'Cohérence des données', 'Bonne localisation'],
+                'Livraison_HZ_P1': ['Approv. en vaccins et intrants', 'Toutes les conditions de livraison respectées'],
+                'Livraison_HZ_P2': ['Approv. en vaccins et intrants', 'Toutes les conditions de livraison respectées'],
+                'Infirmier_HZ_P1': ['Agents formés au PEV', "Nombre d'agents"],
+                'Infirmier_HZ_P2': ['Agents formés au PEV', "Nombre d'agents"]
+            };
+            /* Colonnes techniques du tableau croisé : index, compteurs de mise en
+               forme et formules recopiées par Tableau. */
+            function mkAsJunk(c) {
+                return !c || /^(1|2|3|MIN\(1\)|index\(\))$/i.test(c) || /^(zone de sant)/i.test(c) ||
+                    /^(ZN|SUM|zn|Min\.|IF )/.test(c) || /_COLOR$/i.test(c) || /^_/.test(c);
+            }
+            /* → [{ bloc, cols:[…], couleur }] dans l'ordre d'affichage */
+            function mkAsBlocs(colonnes) {
+                var par = {}, ordre = [];
+                colonnes.forEach(function (c) {
+                    var m = /^b(\d+)·(.*)$/.exec(c);
+                    if (!m) return;
+                    var n = Number(m[1]);
+                    if (!par[n]) { par[n] = { bloc: n, cols: [], couleur: null }; ordre.push(par[n]); }
+                    if (/_COLOR$/i.test(m[2])) { par[n].couleur = c; return; }
+                    if (mkAsJunk(m[2]) || /^aire de sant/i.test(m[2]) || /^centre de sant/i.test(m[2])) return;
+                    par[n].cols.push({ cle: c, nom: m[2] });
+                });
+                ordre.sort(function (a, b) { return a.bloc - b.bloc; });
+                return ordre.filter(function (b) { return b.cols.length; });
+            }
+            function mkAsVal(r, cle) { var v = r[cle]; return v == null ? '' : String(v).trim(); }
+            /* Une colonne dont toutes les valeurs valent « 1 » est un pivot booléen :
+               la présence de la valeur EST l'information → coche verte / croix rouge. */
+            function mkAsBooleen(rows, cle) {
+                var vus = 0;
+                for (var i = 0; i < rows.length; i++) {
+                    var s = mkAsVal(rows[i], cle);
+                    if (s === '') continue;
+                    if (s !== '1') return false;
+                    vus++;
+                }
+                return vus > 0;
+            }
+            function mkAsAppend(v, box) {
+                if (!box || !mkPfx || !mkAnt || !v || !v.urlName) return;
+                var zone = mkAnt;
+                mkAsLoad(v.urlName, function (d) {
+                    if (!d || !d.rows || !box.isConnected) return;
+                    var lignes = d.rows.filter(function (r) { return r._ZS === zone && r._ROLE === 'AS' && r._AS; });
+                    if (!lignes.length) return;
+                    var blocs = mkAsBlocs(d.columns || []);
+                    if (!blocs.length) return;
+                    var libelles = MK_AS_LABELS[v.urlName] || [];
+                    var centre = (d.columns || []).filter(function (c) { return /·\s*centre de sant/i.test(c); })[0];
+
+                    var t = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px;margin-top:14px">' +
+                        '<div style="background:linear-gradient(90deg,#1a237e,#3b5cd6);color:#fff;padding:12px 18px;font-weight:800;font-size:13px">' +
+                        'Détail par aire de santé — ' + esc(zone) +
+                        '<span style="font-weight:600;opacity:.85;font-size:11.5px;margin-left:10px">' + lignes.length + ' aire' + (lignes.length > 1 ? 's' : '') + ' de santé</span></div>' +
+                        '<div style="overflow-x:auto;padding:6px 10px 10px"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' +
+                        '<th style="padding:10px 12px;text-align:left;color:#334155;font-weight:800;font-size:12px;border-bottom:2px solid #e2e8f0;white-space:nowrap">Aire de santé</th>' +
+                        (centre ? '<th style="padding:10px 12px;text-align:left;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0">Centre de Santé</th>' : '');
+                    blocs.forEach(function (b, i) {
+                        var titre = libelles[i] || b.cols.map(function (c) { return c.nom; }).join(' / ');
+                        t += '<th style="padding:10px 10px;text-align:center;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0;max-width:170px;line-height:1.35">' + esc(titre) + '</th>';
+                    });
+                    t += '</tr></thead><tbody>';
+                    var bool = blocs.map(function (b) { return b.cols.length === 1 && mkAsBooleen(lignes, b.cols[0].cle); });
+                    lignes.forEach(function (r) {
+                        t += '<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#1a237e;white-space:nowrap">' + esc(r._AS) + '</td>';
+                        if (centre) t += '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#475467">' + esc(mkAsVal(r, centre)) + '</td>';
+                        blocs.forEach(function (b, i) {
+                            if (bool[i]) { t += mkCheckCell(mkAsVal(r, b.cols[0].cle) === '1' ? 'oui' : 'non'); return; }
+                            var txt = b.cols.map(function (c) {
+                                var s = mkAsVal(r, c.cle);
+                                if (s === '') return '';
+                                var n = Number(s.replace(',', '.'));
+                                /* Les taux sortent en fraction (0,63) : on les rend en % comme l'original. */
+                                if (isFinite(n) && /perc|taux|%/i.test(c.nom) && n <= 1) return Math.round(n * 100) + '%';
+                                return s;
+                            }).filter(Boolean).join(' · ');
+                            var coul = b.couleur ? mkColorOf(r[b.couleur]) : null;
+                            t += '<td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:' + (coul || '#334155') + '">' + esc(txt) + '</td>';
+                        });
+                        t += '</tr>';
+                    });
+                    t += '</tbody></table></div></div>';
+                    var hote = document.createElement('div');
+                    hote.className = 'mk-as-detail';
+                    hote.innerHTML = t;
+                    var vieux = box.querySelector('.mk-as-detail');
+                    if (vieux) vieux.remove();
+                    box.appendChild(hote);
+                });
             }
 
             /* ═══ RENDU FIDÈLE TABLEAU v2 — chaque feuille reconstruite avec le design
