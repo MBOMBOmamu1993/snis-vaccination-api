@@ -61,8 +61,12 @@ const NO_ANT = /^(Cover ?Page|Contacts ?Page|FILTER|Configuration)/i;
    PAS d'export data — image PAR ANTENNE à la place, pour que le filtre marche.
    ⚠ Dispo_vaccins_ANT et Vaccine_expiration_ANT_P1 en ont été RETIRÉS le 26/07
    (demande Felly : ces deux feuilles doivent être des tableaux vivants, pas des
-   images) → leur CSV est de nouveau exporté par antenne. */
-const FORCE_IMG = /^(Supervision_ANT_P2)$/i;
+   images) → leur CSV est de nouveau exporté par antenne.
+   KPI Manuel_* (P1/P2/P3, ANT comme HZ) ajoutés le 28/07 (précision Felly) : ce
+   sont des NOTES EXPLICATIVES d'interprétation des indicateurs, il n'y a AUCUN
+   tableau ni donnée derrière — les « aucune donnée pour cette période » des runs
+   étaient donc normaux, et chaque export CSV tenté était du temps perdu. */
+const FORCE_IMG = /^(Supervision_ANT_P2|KPI\s*Manuel)/i;
 /* Feuilles ABSENTES de la barre d'onglets mais bien publiées (accessibles par
    URL) : Ranking_ANT est le classement officiel des antennes — il était
    RECONSTRUIT à partir de la Heatmap, d'où des scores vides en mois courant
@@ -227,12 +231,36 @@ async function main() {
   mkdirSync(path.join(OUT, "views"), { recursive: true });
   log(`— Début synchro Mashako 3.0 v3 (feuilles + antennes)${HEADLESS ? " [arrière-plan]" : ""} —`);
   const t0 = Date.now();
+  /* ⏸ VEILLE DU PC EXCLUE DU BUDGET (crash du 28/07) : le PC s'est mis en
+     veille 6,5 h pendant la phase data ZS → au réveil, le garde-fou 300 min
+     (basé sur l'heure horloge) a coupé la synchro alors qu'il restait ~5 h de
+     travail utile. On mesure désormais le temps ACTIF : tout trou > 30 min
+     entre deux itérations est compté comme une veille et exclu du budget. */
+  let veilleMs = 0, dernierTick = Date.now();
+  const tick = () => {
+    const n = Date.now(), gap = n - dernierTick; dernierTick = n;
+    if (gap > 30 * 60000) { veilleMs += gap; log(`⏸ Pause de ${Math.round(gap / 60000)} min détectée (veille ?) — exclue du budget temps.`); }
+  };
+  const minutesActives = () => (Date.now() - t0 - veilleMs) / 60000;
 
-  const ctx = await chromium.launchPersistentContext(PROFILE, {
-    channel: "chrome", headless: HEADLESS, ignoreDefaultArgs: ["--enable-automation"],
-    viewport: { width: 1600, height: 950 }, acceptDownloads: true,
-    args: ["--window-position=10,10", "--window-size=1680,1050", "--no-first-run", "--no-default-browser-check"],
-  });
+  /* Le profil Chrome peut être encore verrouillé par la synchro précédente en
+     cours de fermeture (crash exitCode 21 du 28/07 à 06:40, 19 s après la fin
+     du run ZS) : 3 essais espacés de 30 s avant d'abandonner. */
+  let ctx = null, launchErr = null;
+  for (let essai = 1; essai <= 3 && !ctx; essai++) {
+    try {
+      ctx = await chromium.launchPersistentContext(PROFILE, {
+        channel: "chrome", headless: HEADLESS, ignoreDefaultArgs: ["--enable-automation"],
+        viewport: { width: 1600, height: 950 }, acceptDownloads: true,
+        args: ["--window-position=10,10", "--window-size=1680,1050", "--no-first-run", "--no-default-browser-check"],
+      });
+    } catch (e) {
+      launchErr = e;
+      log(`  ⟳ Lancement de Chrome impossible (essai ${essai}/3 : ${String(e.message || e).slice(0, 80)})${essai < 3 ? " — nouvel essai dans 30 s…" : ""}`);
+      if (essai < 3) await new Promise((r) => setTimeout(r, 30000));
+    }
+  }
+  if (!ctx) { rmSync(LOCK, { force: true }); throw launchErr; }
   const page = ctx.pages()[0] || await ctx.newPage();
 
   try {
@@ -747,9 +775,10 @@ async function main() {
          feuille « collapse » — inviable. ×3 reste sous le seuil de file
          d'attente du serveur (voir la note de runBatch). */
       const pullZsLegacy = async (sh) => {
-        let nRows = 0;
+        let nRows = 0, lotsVides = 0;
         for (let i = 0; i < cible.length; i += 60) {
-          if ((Date.now() - t0) / 60000 > MAX_MINUTES) break;
+          tick();
+          if (minutesActives() > MAX_MINUTES) break;
           const lots = await runBatch(cible.slice(i, i + 60), 3, async (ant) => {
             const r = await fetchBin(exportUrl(sh.urlName, "csv",
               `${encodeURIComponent(antField)}=${encodeURIComponent(ant)}&:refresh=yes`), 150000);
@@ -757,6 +786,7 @@ async function main() {
             const rows = parseCsv(Buffer.from(r.b64, "base64").toString("utf8"));
             return rows.length > 1 ? { ant, rows } : null;
           });
+          let lotRows = 0;
           for (const lot of lots) {
             if (!lot) continue;
             const a = acc[sh.slug] || (acc[sh.slug] = { label: sh.label, columns: [], rows: [] });
@@ -765,11 +795,24 @@ async function main() {
             for (const rr of lot.rows.slice(1)) {
               const o = { Antenne: lbl(lot.ant) };
               hdr.forEach((c, ii) => { o[c] = rr[ii] ?? ""; });
-              a.rows.push(o); nRows++;
+              a.rows.push(o); nRows++; lotRows++;
             }
             (refreshedBySheet[sh.slug] = refreshedBySheet[sh.slug] || new Set()).add(lbl(lot.ant));
             globalDone.add(lbl(lot.ant));
           }
+          /* WATCHDOG THROTTLING (28/07) : « Carte de Supervision_HZ » a passé
+             des HEURES à recevoir des réponses vides à la chaîne (le serveur
+             bride le compte) — 106 lignes en 6 h, pendant que les 21 autres
+             feuilles attendaient. 2 paquets de 60 ZS consécutifs sans AUCUNE
+             ligne = bridage (ou feuille vide pour la période) : on arrête
+             cette feuille, les lignes déjà collectées sont conservées et
+             fusionnées, la feuille sera reprise au prochain run. */
+          if (!lotRows) {
+            if (++lotsVides >= 2) {
+              log(`    ⛔ ${sh.label} : 120 ZS consécutives sans aucune ligne — throttling présumé. Feuille interrompue à ${i}/${cible.length} ZS (${nRows} lignes conservées, reprise au prochain run).`);
+              break;
+            }
+          } else lotsVides = 0;
           log(`    … ${sh.label} : ${Math.min(i + 60, cible.length)}/${cible.length} ZS (${nRows} lignes)`);
         }
         return nRows;
@@ -784,7 +827,8 @@ async function main() {
         if (ko.length) log(`→ Liste blanche ZS active : ${ko.length} feuille(s) en unitaire (${ko.join(" | ")}).`);
       }
       for (const sh of dataSheets) {
-        if ((Date.now() - t0) / 60000 > MAX_MINUTES) { log(`⚠ Garde-fou ${MAX_MINUTES} min — arrêt phase data.`); break; }
+        tick();
+        if (minutesActives() > MAX_MINUTES) { log(`⚠ Garde-fou ${MAX_MINUTES} min actives — arrêt phase data.`); break; }
         if (zsVerdicts && zsVerdicts[sh.label] && zsVerdicts[sh.label].ok === false) {
           log(`  ▶ ${sh.label} : groupé non fiable (validation) — export unitaire.`);
           const nU = await pullZsLegacy(sh);
@@ -983,7 +1027,8 @@ async function main() {
          constaté le 27/07. Doute → unitaire : la correction prime la vitesse. */
       const BATCH_OK = /^(HZ Scores_ANT|Supervision_Quality_ANT|Supervision_ANT_P1|R.+union_ANT|CDF_ANT|S.+ances_ANT|Taux d.abandon_ANT|Infirmier_ANT|Livraison_ANT_P2)$/i;
       for (const sh of dataSheets) {
-        if ((Date.now() - t0) / 60000 > MAX_MINUTES) { log(`⚠ Garde-fou ${MAX_MINUTES} min — arrêt phase data.`); break; }
+        tick();
+        if (minutesActives() > MAX_MINUTES) { log(`⚠ Garde-fou ${MAX_MINUTES} min actives — arrêt phase data.`); break; }
         if (!BATCH_OK.test(sh.label)) { await exportSheetLegacy(sh); continue; }
         const qs = `${encodeURIComponent(antField)}=${activeAnt.map(encodeURIComponent).join(",")}&:refresh=yes`;
         errReset();
@@ -1074,8 +1119,9 @@ async function main() {
       outer:
       for (const sh of visualSheets) {
         for (const ant of imgLocs) {
-          if ((Date.now() - t0) / 60000 > MAX_MINUTES) {
-            log(`⚠ Garde-fou ${MAX_MINUTES} min atteint — arrêt des variantes (${done}/${total}).`);
+          tick();
+          if (minutesActives() > MAX_MINUTES) {
+            log(`⚠ Garde-fou ${MAX_MINUTES} min actives atteint — arrêt des variantes (${done}/${total}).`);
             break outer;
           }
           const rel = `views/${sh.slug}__${slug(lbl(ant))}.png`;
@@ -1125,9 +1171,40 @@ async function main() {
        la résolution → les trois ont disparu de la publication.
        Ici on reprend de la publication précédente TOUTE feuille absente de ce
        run, ou présente mais vidée. Les fichiers eux-mêmes restent en ligne
-       (publication par base_tree), il suffit de les re-référencer. ── */
-    try {
-      const prevMeta = await (await fetch(`https://raw.githubusercontent.com/MBOMBOmamu1993/snis-vaccination-api/${DATA_BRANCH}/${PFX}meta.json?_=${Date.now()}`)).json();
+       (publication par base_tree), il suffit de les re-référencer.
+       ⚠ 28/07 : cette lecture a échoué SILENCIEUSEMENT (catch vide, réseau
+       instable au réveil du PC) → les 15 feuilles non ré-exportées n'ont pas
+       été restaurées, le garde anti-régression a compté « 3 feuilles » et
+       annulé la publication — une nuit d'exports 519 ZS perdue (récupérée à
+       la main via republish-zs.mjs). Désormais : 3 essais espacés, et si la
+       lecture reste impossible alors qu'une publication existe déjà, on
+       ANNULE la publication bruyamment (les exports locaux restent dans le
+       dossier out/ ou out-zs/ — republish-zs.mjs permet de les publier plus
+       tard) plutôt que de publier une version amputée ou de déclencher le
+       garde à tort. ── */
+    let prevMeta = null;
+    for (let essai = 1; essai <= 3 && !prevMeta; essai++) {
+      try {
+        const r = await fetch(`https://raw.githubusercontent.com/MBOMBOmamu1993/snis-vaccination-api/${DATA_BRANCH}/${PFX}meta.json?_=${Date.now()}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        if (!j || !Array.isArray(j.views)) throw new Error("meta.json sans liste de vues");
+        prevMeta = j;
+      } catch (e) {
+        log(`  ⟳ meta en ligne illisible (essai ${essai}/3 : ${String(e.message || e).slice(0, 100)})${essai < 3 ? ` — nouvel essai dans ${5 * essai} s…` : ""}`);
+        if (essai < 3) await new Promise((res) => setTimeout(res, 5000 * essai));
+      }
+    }
+    if (!prevMeta) {
+      let dejaPublie = false;
+      try { dejaPublie = (JSON.parse(readFileSync(BEST_COUNT_FILE, "utf8")).count || 0) > 0; } catch (e) { }
+      if (dejaPublie) {
+        log("⛔ Fusion anti-perte IMPOSSIBLE (meta en ligne illisible après 3 essais) — publication ANNULÉE pour ne rien écraser. Les exports locaux sont conservés : relancer `node republish-zs.mjs` quand le réseau revient.");
+        notify("Synchro Mashako : publication annulee (meta en ligne illisible, reseau ?) — exports conserves localement, rien n'a ete ecrase.");
+        return;
+      }
+      log("  ⚠ meta en ligne illisible — première publication présumée, on continue sans fusion.");
+    } else {
       const byName = {};
       metaViews.forEach((v, i) => { byName[v.urlName] = i; });
       const kept = [];
@@ -1149,7 +1226,7 @@ async function main() {
         if (!nv.image && pv.image) nv.image = pv.image;
       });
       if (kept.length) log(`⚠ Conservé de la publication précédente : ${kept.join(", ")}.`);
-    } catch (e) { /* première publication : rien à conserver */ }
+    }
     const meta = {
       generated_at: new Date().toISOString(),
       server: SERVER.replace("https://", ""), site: SITE,

@@ -81,11 +81,19 @@ function sheetRows(xml, ss) {
   let r;
   while ((r = rowRe.exec(xml))) {
     const cells = [];
-    const cRe = /<c([^>]*)>([\s\S]*?)<\/c>|<c([^>]*)\/>/g;
+    /* ⚠ La cellule VIDE s'écrit `<c r="A3" s="1"/>`. Si l'alternative ouvrante
+       est testée d'abord, `([^>]*)` avale le `/` final et `([\s\S]*?)</c>` va
+       chercher la fermeture de la cellule SUIVANTE : deux cellules fusionnent,
+       toute la ligne se décale d'une colonne et l'index de chaîne partagée de
+       la voisine s'affiche à la place du libellé (constaté 28/07 sur les
+       exports « Aire de Santé » : « 52, 55, 58 » au lieu des noms d'aires).
+       L'alternative auto-fermante doit donc passer EN PREMIER. */
+    const cRe = /<c([^>]*?)\/>|<c([^>]*?)>([\s\S]*?)<\/c>/g;
     let c;
     while ((c = cRe.exec(r[1]))) {
-      const attrs = c[1] || c[3] || "";
-      const inner = c[2] || "";
+      const vide = c[1] !== undefined;
+      const attrs = vide ? c[1] : (c[2] || "");
+      const inner = vide ? "" : (c[3] || "");
       const ref = (/r="([A-Z]+\d+)"/.exec(attrs) || [])[1] || "";
       const type = (/t="([^"]+)"/.exec(attrs) || [])[1] || "";
       let v = "";
