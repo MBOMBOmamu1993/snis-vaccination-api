@@ -342,6 +342,31 @@ async function main() {
       const commit = JSON.parse(gh([`${REPO}/git/commits`, "-X", "POST"], cp)).sha;
       gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`, "-X", "PATCH", "-f", `sha=${commit}`, "-F", "force=true"]);
       log(`✓ Archive ${t.key} publiée (${commit.slice(0, 9)}) — ${okSheets} feuilles de données.`);
+
+      /* ── Détail par aire de santé de la période archivée ───────────────────
+         Hors flux par défaut, et c'est délibéré : le tableau croisé du détail
+         AS est paginé à 20 lignes sans colonne « zone de santé », donc une
+         session Tableau PAR ZONE — environ 16 h pour les 517 zones d'UN mois.
+         Rejouer les 12 mois d'archives coûterait des jours d'export continu.
+         Le détail est donc tenu à jour pour le mois courant (tâche « Mashako
+         3.0 ZS Detail aire de sante », 01h00) ; pour reconstituer un mois
+         passé, lancer ce backfill avec MASHAKO_BACKFILL_AS=1 — le journal de
+         reprise fait qu'on peut l'étaler sur plusieurs nuits. */
+      if (IS_ZS && process.env.MASHAKO_BACKFILL_AS === "1") {
+        log(`→ Détail par aire de santé de ${t.key} (reprenable, budget ${process.env.MASHAKO_AS_MINUTES || 240} min)…`);
+        try {
+          execFileSync(process.execPath, [path.join(HERE, "export-zs-as.mjs"), t.month, t.year], {
+            stdio: "inherit",
+            env: { ...process.env, MASHAKO_MINUTES: process.env.MASHAKO_AS_MINUTES || "240" },
+          });
+          execFileSync(process.execPath, [path.join(HERE, "publish-zs-as.mjs"), "--fusion"], { stdio: "inherit" });
+          log(`✓ Détail par aire de santé de ${t.key} publié.`);
+        } catch (e) {
+          /* Un détail AS incomplet ne doit jamais compromettre l'archive du
+             mois, qui vient d'être publiée avec succès. */
+          log(`⚠ Détail par aire de santé de ${t.key} interrompu (${String(e.message).slice(0, 90)}) — repris au prochain run.`);
+        }
+      }
       await sleep(3 * 60 * 1000); // pause entre périodes (ménage le serveur)
     }
     if (exitCode === 0) log("— Backfill terminé : toutes les périodes demandées sont archivées —");
