@@ -44,8 +44,14 @@ const DIAG = path.join(HERE, "diag-sheets");
 const SERVER = "https://eu-west-1a.online.tableau.com";
 const SITE = "axdata";
 const WB = "Mashako3_0RapportdelaZone";
-const MONTH = process.argv[2] || process.env.MASHAKO_MONTH || "Juillet";
-const YEAR = process.argv[3] || process.env.MASHAKO_YEAR || "2026";
+/* Période : mois CALENDAIRE COURANT par défaut, comme sync.mjs — sans quoi la
+   tâche quotidienne resterait figée sur le mois où elle a été écrite et ne
+   collecterait jamais le mois suivant. Un mois est explicitable en argument
+   (backfill d'une archive). */
+const MOIS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const _maintenant = new Date();
+const MONTH = process.argv[2] || process.env.MASHAKO_MONTH || MOIS_FR[_maintenant.getMonth()];
+const YEAR = process.argv[3] || process.env.MASHAKO_YEAR || String(_maintenant.getFullYear());
 const PER = `_PARAM_month=${encodeURIComponent(MONTH)}&_PARAM_year=${encodeURIComponent(YEAR)}`;
 const MAX_MINUTES = Number(process.env.MASHAKO_MINUTES || 300);
 const ONLY = (process.env.MASHAKO_ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
