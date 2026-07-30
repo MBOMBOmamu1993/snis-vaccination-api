@@ -1,25 +1,20 @@
 # Prochaine étape
 
-1. Synchro ZS complète (519 ZS) : attendre la fin de validate-zs-batch.mjs
-   (reprise incrémentale — verdicts dans zs_batch_verdicts.json), puis lancer
-   `set MASHAKO_CFG=zs && node sync.mjs --background` (liste blanche lue dans
-   les verdicts ; feuilles collapse → repli unitaire parallélisé ×3). Vérifier
-   la publication et la couverture (registre zs_ledger.json → débloque le
-   backfill ZS de 23:30, seuil 500/519).
-2. Dates « Expiration la plus proche » (conformité Vaccine_expiration avec
-   l'original — demande Felly 27/07) : retenter l'extraction quand le canal
-   commandes est stable (410 en rafale ~9h) : POST tabdoc/get-underlying-data
-   (includeAllColumns=true, visualIdPresModel) depuis le contexte page — voir
-   CURRENT_STATE §D. Puis régénérer Vaccine_expiration_ZS.json (juin+juillet)
-   avec les colonnes date+%, republier, config dashboard (paires date/% par
-   antigène, texte coloré).
-3. Backfills : ANT 2026-04→2025-07 (1 mois/soir à 20:00, ~10 soirs — 2026-05
-   déjà fait) puis ZS (23:30, débloqué par l'étape 1).
-4. Industrialiser le détail ZS : intégrer export-ant-zs-detail.mjs à la
-   synchro quotidienne (sinon les *_ZS.json ne se rafraîchissent pas — ils
-   survivent aux publications grâce à la fusion, mais datent).
-5. Quand le RCCM sera obtenu : créer le compte CinetPay, poser CINETPAY_APIKEY
+1. Dates « Expiration la plus proche » (conformité Vaccine_expiration — demande
+   Felly 27/07) : lancer `node probe-underlying-dates.mjs` sur browser-profile
+   dès qu'une synchro libère le profil Chrome (fenêtre entre deux runs — la
+   sonde est prête, piste tabdoc/get-underlying-data). Si dates présentes :
+   étendre export-ant-zs-detail.mjs (colonnes _date_expiry_*), régénérer
+   Vaccine_expiration_ZS.json (juin+juillet), republier — le rendu dashboard
+   (paires date/%, sous-ligne colorée) est DÉJÀ en place (29/07).
+2. Backfills : ANT 2026-04→2025-07 (1 mois/soir à 20:00 — fix du 29/07 en
+   place : heartbeat verrou + lancement Chrome protégé, le crash de lancement
+   est résolu) puis ZS (23:30, débloqué depuis le 28/07 — ledger 519/519).
+3. Vérifier à la synchro ANT du 30/07 que le détail ZS quotidien tourne
+   (sync.log → « ✓ Détail ZS quotidien : Dispo_vaccins_ZS… ») et que les
+   *_ZS.json sont frais dans le commit publié.
+4. Quand le RCCM sera obtenu : créer le compte CinetPay, poser CINETPAY_APIKEY
    + CINETPAY_SITE_ID → bascule automatique en paiement 100 % automatique.
-6. Dépôt local : fichiers de données docs/data* non synchronisés localement
-   (clone partiel, réseau instable) — faire `git checkout -- docs/` quand la
-   connexion est stable (télécharge ~2000 blobs, reprise possible).
+5. Copie Documents\snis-vaccination-api : retard 705+ commits, fichiers non
+   commités — laissée telle quelle (décision Felly 29/07 : pas d'écrasement).
+   Le repo principal est synchronisé et git y est redevenu sain.

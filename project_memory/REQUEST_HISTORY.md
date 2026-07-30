@@ -9,6 +9,45 @@ Résultat :
 
 ---
 
+Date : 29/07/2026
+Demande : Lire la mémoire, vérifier les actions du jour + l'état de
+  synchronisation et backfill, procéder aux deux modifications prévues en
+  mémoire (dates « Expiration la plus proche » + industrialiser le détail ZS
+  dans la synchro quotidienne), et synchroniser le repo local avec le distant
+  (« en retard ou vice versa », sans écrasement).
+Fichiers concernés : mashako-sync/sync.mjs, backfill-periods.mjs,
+  export-ant-zs-detail.mjs, probe-underlying-dates.mjs (nouveau),
+  tools/mashako-sync/* (repo), docs/index.html, project_memory/*
+Action faite : (1) État des lieux : synchro ANT du jour en cours (publiée
+  ae25ba583, 33 feuilles/922 images) ; ledger ZS 519/519 (28/07) → backfill ZS
+  débloqué ; backfills ANT (20h) et ZS (23h30) plantés au lancement Chrome
+  depuis 2 jours. (2) Diagnostic git : retard simple de 112 commits, ZÉRO
+  divergence (artefact shallow) ; modifs locales = bruit CRLF/périmé (aucune
+  perte). Synchro complète : checkout docs/ en 2 passes (les lazy-fetches
+  arrivent en petits paquets promisor malgré les erreurs affichées) + ff-merge
+  → HEAD == origin/main == d0eeeacf4 ; 7 Go de tmp_pack nettoyés (disque 95 %
+  → 93 %) ; git classique redevenu sain. Copie Documents non touchée (décision
+  Felly). (3) Fix backfill (cause racine) : verrou écrit une fois pour un run
+  de 10 h mais considéré périmé à 2 h → concurrents lançaient Chrome sur le
+  profil occupé (crash exitCode 21) ; heartbeat du verrou 15 min dans sync.mjs
+  + lancement protégé (3 essais, abandon propre) dans backfill-periods.mjs.
+  (4) Détail ZS industrialisé : export-ant-zs-detail.mjs refactoré (fonction
+  exportée réutilisant la session) + hook sync.mjs après fusion (mode ANT,
+  non bloquant) → *_ZS.json régénérés et publiés à chaque synchro quotidienne.
+  (5) Dates expiration : sonde probe-underlying-dates.mjs écrite
+  (tabdoc/get-underlying-data) ; auth impossible à chaud (profil dates sans
+  session Google, cookies récoltés périmés, DB Cookies verrouillée par Chrome)
+  → sonde à lancer dès qu'un profil se libère ; patch rendu docs/index.html
+  appliqué (config d: '_date_expiry_*' + sous-ligne date dans colornum,
+  rétrocompatible, 5/5 blocs valides). (6) Outillage poussé vers
+  tools/mashako-sync/ (2 modifiés + 4 nouveaux) — le veilleur cloud ne propage
+  pas le code (surveillance seule).
+Résultat : repo synchronisé et réparé ; crashs backfill résolus (effet dès le
+  prochain créneau) ; détail ZS quotidien en place (effet au run du 30/07) ;
+  rendu dates prêt — extraction des dates en attente d'une fenêtre de profil.
+
+---
+
 Date : 27/07/2026 (2) — reprise après interruption OpenCode (abonnement)
 Demande : Finaliser la session : « enlever les images et remplacer avec
   tableau vivant, conforme à l'original » (Dispo_vaccins_ANT +

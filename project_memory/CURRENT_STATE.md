@@ -93,6 +93,63 @@ Contexte permanent :
   LAST_12_WEEKS) ; programIndicators = canevas DV ABANDONNÉS sans données →
   ne pas utiliser.
 
+État 29/07/2026 — GIT LOCAL RÉPARÉ + FIX BACKFILL + DÉTAIL ZS INDUSTRIALISÉ :
+
+A) Synchro git (repo principal C:\Users\felly\snis-vaccination-api) :
+- Le repo local était simplement EN RETARD de 112 commits (zéro divergence —
+  prouvé après `fetch --deepen=400`, HEAD 4e742c260 = ancêtre de origin/main).
+  Les « 242 commits d'avance » affichés = artefact du clone shallow.
+- Toutes les « modifications » locales étaient du BRUIT : worker.js et
+  docs/index.html identiques au distant modulo CRLF ; scripts/aggregate_*.py =
+  versions PÉRIMÉES (le distant a le RECO) ; docs/data*.gz = régénérations
+  locales (gzip non déterministe). AUCUNE perte à la synchro.
+- Le lazy-fetch massif pend, MAIS il télécharge en fait en PETITS paquets
+  promisor (~22/min) pendant que checkout affiche ses erreurs — procédure qui
+  marche : laisser la 1re passe de `git checkout -- docs/` finir (rc=255 avec
+  erreurs, mais tous les blobs arrivent), puis RELANCER la même commande
+  (2e passe locale, ~12 s). ff-merge ensuite trivial.
+- Résultat : HEAD == origin/main == d0eeeacf4, arbre propre, git classique
+  redevenu sain (blobs locaux → plus de pendaison). 7 Go de tmp_pack résiduels
+  supprimés (disque était à 95 %).
+- La copie Documents\snis-vaccination-api (retard 705+) n'est PAS touchée
+  (décision Felly : pas d'écrasement).
+
+B) Fix backfill (cause racine des crashs Chrome 27-29/07) :
+- sync.mjs écrivait son verrou UNE fois au démarrage ; or le backfill (et toute
+  synchro concurrente) le considère périmé après 2 h → pendant un run de ~10 h,
+  le backfill de 20h/23h30 lançait Chrome sur le profil occupé → crash
+  launchPersistentContext (exitCode 21) non intercepté.
+- Correctif : heartbeat du verrou toutes les 15 min dans sync.mjs (netoyé dans
+  finally) + lancement Chrome protégé dans backfill-periods.mjs (3 essais ×
+  30 s, puis abandon PROPRE code 3, verrou libéré). Backfills restants : ANT
+  2026-04→2025-07 (1 mois/soir 20h), ZS débloqué (ledger 519/519 le 28/07).
+
+C) Détail ZS industrialisé (NEXT_STEP #4 du 27/07 — FAIT) :
+- export-ant-zs-detail.mjs refactoré : cœur exporté
+  `exportAntZsDetail(page, {month, year, log})` (réutilise la session Playwright
+  fournie) + entrée CLI autonome conservée.
+- sync.mjs : hook en mode ANT après la fusion anti-perte, avant meta.json —
+  régénère out/views/Dispo_vaccins_ZS.json + Vaccine_expiration_ZS.json à
+  CHAQUE synchro quotidienne et les publie dans le même commit (remplace
+  l'entrée fusionnée stale ; échec non bloquant). Effet à la synchro du 30/07.
+- Outillage poussé vers tools/mashako-sync/ du repo (le veilleur cloud ne
+  propage PAS le code — surveillance seule) : sync.mjs, backfill-periods.mjs
+  modifiés + export-ant-zs-detail.mjs, probe-underlying-dates.mjs,
+  validate-zs-batch.mjs, publish-zs-detail.mjs ajoutés.
+
+D) Dates « Expiration la plus proche » (demande 27/07 — EN COURS) :
+- Sonde probe-underlying-dates.mjs écrite (tabdoc/get-underlying-data,
+  includeAllColumns, visualIdPresModel — piste §D du 27/07).
+- Blocage auth : browser-profile-dates sans session (Google SSO vit dans le
+  profil principal seul) ; cookies-tableau.json (récolte 00:48) déjà périmé ;
+  DB Cookies du profil principal non copiable à chaud (verrou Chrome,
+  robocopy /B sans privilège). → Sonde à lancer sur browser-profile dès qu'une
+  synchro libère le profil (fenêtre entre deux runs).
+- Patch rendu docs/index.html DÉJÀ EN PLACE (rétrocompatible) : config
+  Expiration → `d: '_date_expiry_<AG>'` sur les 8 antigènes ; cellHtml colornum
+  affiche la date en sous-ligne 10 px sous le % si présente. Sans données date
+  → rendu identique. 5/5 blocs script valides (vm.Script).
+
 État 27/07/2026 — SYNCHRO MASHAKO RÉPARÉE + EXPORT EXCEL CROSSTAB (déployé) :
 
 A) Synchro Mashako (snis-vaccination-api, onglet Plan Mashako 3.0) :
