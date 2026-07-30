@@ -29,8 +29,8 @@
  *                            capture, livraison) + création manuelle de codes.
  *                            /admin/codes → API JSON.
  *   5. /verifier?code=     → solde restant d'un code
- *   6. /essai              → code d'essai gratuit : 7 jours / 50 requêtes,
- *                            1 par appareil (empreinte IP+UA), puis paiement
+ *   6. /essai              → code d'essai gratuit : 7 jours, 5 analyses/rapports
+ *                            par jour, 1 par appareil (empreinte IP+UA)
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
@@ -113,10 +113,27 @@ const NUM_PREDICT_CAP = 16000; /* plafond de tokens générés (équiv. max_toke
 const MAX_TOKENS_CAP = 16000;
 
 /* ── Essai gratuit : TRIAL_DAYS jours (ou TRIAL_REQUESTS requêtes, la 1re
-   échéance compte) PAR APPAREIL. Empreinte = hash(IP + User-Agent) ;
-   un nouvel appui sur « Essai gratuit » rend le même code. ── */
+   échéance compte) PAR APPAREIL — plafond théorique 5 × 7, car la limite
+   QUOTIDIENNE (TRIAL_DAILY_LIMIT analyses/rapports par jour) prime toujours.
+   Empreinte = hash(IP + User-Agent) ; un nouvel appui sur « Essai gratuit »
+   rend le même code. ── */
 const TRIAL_DAYS = 7;
-const TRIAL_REQUESTS = 50;
+const TRIAL_REQUESTS = 35;
+const TRIAL_DAILY_LIMIT = 5;
+/* Jour calendaire à Kinshasa (UTC+1, pas d'heure d'été) : la limite quotidienne
+   de l'essai se réinitialise à minuit heure locale. */
+function kinDay() { return new Date(Date.now() + 3600e3).toISOString().slice(0, 10); }
+/* Compteur quotidien d'un code d'ESSAI (clé KV td:<code>, remise à zéro au
+   changement de jour). Codes PAYANTS et clés personnelles non concernés. */
+async function trialDayCount(env, code) {
+  const v = await env.CODES.get('td:' + code);
+  if (!v) return 0;
+  try { const j = JSON.parse(v); return j && j.day === kinDay() ? (j.n | 0) : 0; } catch (e) { return 0; }
+}
+async function trialDayBump(env, code) {
+  const n = await trialDayCount(env, code);
+  await env.CODES.put('td:' + code, JSON.stringify({ day: kinDay(), n: n + 1 }), { expirationTtl: (TRIAL_DAYS + 2) * 86400 });
+}
 
 export default {
   async fetch(request, env) {
@@ -235,10 +252,11 @@ async function fpHash(request) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-/* ═══ Essai gratuit : 7 jours (ou TRIAL_REQUESTS requêtes) par appareil ═══
+/* ═══ Essai gratuit : 7 jours, TRIAL_DAILY_LIMIT analyses/rapports par jour ═══
    Idempotent : un nouvel appel depuis le même appareil rend le même code
    (pratique si l'utilisateur l'a perdu), sans jamais créer de second essai.
-   Le code d'essai fonctionne avec tous les fournisseurs IA et le proxy DHIS2. */
+   Le code d'essai fonctionne avec tous les fournisseurs IA et le proxy DHIS2,
+   MAIS PAS avec les modèles payants (k3 — voir PAID_ONLY_MODELS). */
 async function trialGrant(request, env, cors) {
   if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
   const fp = await fpHash(request);
@@ -280,6 +298,10 @@ async function resolveIaAuth(request, env, ownKeyHeader, serviceKeyName) {
   const auth = await requireCode(request, env); /* lève une erreur si invalide */
   /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
   if (auth.rec.dhis2_only) throw Object.assign(new Error('Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.'), { status: 403 });
+  /* Plafond QUOTIDIEN de l'essai gratuit (5 analyses/rapports par jour) — vérifié
+     AVANT l'appel au fournisseur : au-delà, le client attend demain ou achète. */
+  if (auth.rec.trial && (await trialDayCount(env, auth.code)) >= TRIAL_DAILY_LIMIT)
+    throw Object.assign(new Error("Limite quotidienne de l'essai gratuit atteinte : " + TRIAL_DAILY_LIMIT + " analyses ou rapports par jour. Réessayez demain, ou achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour continuer aujourd'hui."), { status: 403 });
   if (!env[serviceKeyName]) throw Object.assign(new Error('Ce fournisseur n\'est pas configuré sur le proxy (' + serviceKeyName + ' absent). Choisissez l\'autre fournisseur dans ⚙ Accès, ou utilisez votre propre clé.'), { status: 503 });
   return { key: env[serviceKeyName], auth: auth };
 }
@@ -292,6 +314,7 @@ async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
     if (upstream.ok) {
       resolved.auth.rec.remaining -= 1;
       await putCode(env, resolved.auth.code, resolved.auth.rec);
+      if (resolved.auth.rec.trial) await trialDayBump(env, resolved.auth.code);
     }
     headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
   }

@@ -11969,8 +11969,8 @@
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit</b> — bouton « Essai gratuit » ci-dessous. Ensuite, achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
-                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 7 jours</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
+                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit — 5 analyses ou rapports par jour</b> (Kimi K3 non inclus) — bouton « Essai gratuit » ci-dessous. Au-delà : attendez le lendemain ou achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
+                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 7 jours · 5 analyses/jour</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
                     '<div class="ia-hint" id="iaTrialMsg" style="margin-top:6px"></div></div>' +
                     '<div id="iaPaneKey"><label id="iaKeyLbl">Clé API</label><input type="password" id="iaKey" placeholder="">' +
                     '<div class="ia-hint" id="iaKeyHint"></div>' +
@@ -12057,8 +12057,8 @@
                                 if (trMsg) {
                                     var d = j.expire ? new Date(j.expire).toLocaleDateString('fr-FR') : '';
                                     trMsg.innerHTML = (j.deja
-                                        ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (reste <b>' + j.restant + '</b> requêtes, jusqu\'au <b>' + d + '</b>) a été replacé dans le champ.'
-                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : ' + j.restant + ' requêtes IA, valables jusqu\'au <b>' + d + '</b>.') +
+                                        ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (<b>5 analyses ou rapports par jour</b>, jusqu\'au <b>' + d + '</b>) a été replacé dans le champ.'
+                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : <b>5 analyses ou rapports par jour</b> (Kimi K2.7 Code / Highspeed — Kimi K3 non inclus), jusqu\'au <b>' + d + '</b>.') +
                                         ' Cliquez « Enregistrer » pour terminer.';
                                 }
                             })
