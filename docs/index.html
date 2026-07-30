@@ -12741,13 +12741,15 @@
                     .then(function (d) { mkAsCache[urlName] = d; cb(d); })
                     .catch(function () { mkAsCache[urlName] = null; cb(null); });
             }
-            /* Libellés des colonnes du détail, dans l'ordre des blocs, relevés sur
-               le classeur original. Un bloc sans libellé garde le nom exporté. */
+            /* Libellés des colonnes du détail, dans l'ordre RÉEL des blocs du
+               crosstab (relevé sur les exports fusionnés du 29/07) :
+               Supervision b2..b6 = taux, localisation, cohérence, durée, qualité ;
+               Livraison b1..b16 = ensemble, 13 antigènes, conditions, approv. */
             var MK_AS_LABELS = {
-                'Supervision_HZ_P1': ['AS supervisée', 'Supervision de qualité', 'Bonne durée', 'Cohérence des données', 'Bonne localisation'],
-                'Supervision_HZ_P2': ['AS supervisée', 'Supervision de qualité', 'Bonne durée', 'Cohérence des données', 'Bonne localisation'],
-                'Livraison_HZ_P1': ['Approv. en vaccins et intrants', 'Toutes les conditions de livraison respectées'],
-                'Livraison_HZ_P2': ['Approv. en vaccins et intrants', 'Toutes les conditions de livraison respectées'],
+                'Supervision_HZ_P1': ['AS supervisée', 'Bonne localisation', 'Cohérence des données', 'Bonne durée', 'Supervision de qualité'],
+                'Supervision_HZ_P2': ['AS supervisée', 'Bonne localisation', 'Cohérence des données', 'Bonne durée', 'Supervision de qualité'],
+                'Livraison_HZ_P1': ['Ensemble', 'SAB 0,5ml', 'Sdil 2ml', 'Sdil 5ml', 'BCG', 'DTC HepB-Hib', 'PCV13', 'VPO', 'VPI', 'SAB 0,05ml', 'Td', 'VAA', 'VAR', 'Rota', 'Toutes les conditions de livraison respectées', 'Approv. en vaccins et intrants'],
+                'Livraison_HZ_P2': ['Ensemble', 'SAB 0,5ml', 'Sdil 2ml', 'Sdil 5ml', 'BCG', 'DTC HepB-Hib', 'PCV13', 'VPO', 'VPI', 'SAB 0,05ml', 'Td', 'VAA', 'VAR', 'Rota', 'Toutes les conditions de livraison respectées', 'Approv. en vaccins et intrants'],
                 'Infirmier_HZ_P1': ['Agents formés au PEV', "Nombre d'agents"],
                 'Infirmier_HZ_P2': ['Agents formés au PEV', "Nombre d'agents"]
             };
@@ -12755,7 +12757,7 @@
                forme et formules recopiées par Tableau. */
             function mkAsJunk(c) {
                 return !c || /^(1|2|3|MIN\(1\)|index\(\))$/i.test(c) || /^(zone de sant)/i.test(c) ||
-                    /^(ZN|SUM|zn|Min\.|IF )/.test(c) || /_COLOR$/i.test(c) || /^_/.test(c);
+                    /^(ZN|SUM|zn|Min\.|IF )/.test(c) || /_COLOR(_new)?$/i.test(c) || /^_/.test(c) || /^SUPERVISION$/i.test(c);
             }
             /* → [{ bloc, cols:[…], couleur }] dans l'ordre d'affichage */
             function mkAsBlocs(colonnes) {
@@ -12765,7 +12767,12 @@
                     if (!m) return;
                     var n = Number(m[1]);
                     if (!par[n]) { par[n] = { bloc: n, cols: [], couleur: null }; ordre.push(par[n]); }
-                    if (/_COLOR$/i.test(m[2])) { par[n].couleur = c; return; }
+                    /* couleur de la source : _COLOR ou _COLOR_new (Livraison) */
+                    if (/_COLOR(_new)?$/i.test(m[2])) { par[n].couleur = c; return; }
+                    /* les _perc_… sont la donnée par antigène (Livraison) : on les
+                       garde AVANT le filtre junk (qui jette tout préfixe « _ ») ;
+                       les compteurs _num_/_delivery_total restent filtrés. */
+                    if (/perc/i.test(m[2]) && !/_num|_BOOL|_COLOR/i.test(m[2])) { par[n].cols.push({ cle: c, nom: m[2], perc: true }); return; }
                     if (mkAsJunk(m[2]) || /^aire de sant/i.test(m[2]) || /^centre de sant/i.test(m[2])) return;
                     par[n].cols.push({ cle: c, nom: m[2] });
                 });
@@ -12773,18 +12780,6 @@
                 return ordre.filter(function (b) { return b.cols.length; });
             }
             function mkAsVal(r, cle) { var v = r[cle]; return v == null ? '' : String(v).trim(); }
-            /* Une colonne dont toutes les valeurs valent « 1 » est un pivot booléen :
-               la présence de la valeur EST l'information → coche verte / croix rouge. */
-            function mkAsBooleen(rows, cle) {
-                var vus = 0;
-                for (var i = 0; i < rows.length; i++) {
-                    var s = mkAsVal(rows[i], cle);
-                    if (s === '') continue;
-                    if (s !== '1') return false;
-                    vus++;
-                }
-                return vus > 0;
-            }
             function mkAsAppend(v, box) {
                 if (!box || !mkPfx || !mkAnt || !v || !v.urlName) return;
                 var zone = mkAnt;
@@ -12795,7 +12790,30 @@
                     var blocs = mkAsBlocs(d.columns || []);
                     if (!blocs.length) return;
                     var libelles = MK_AS_LABELS[v.urlName] || [];
+                    /* Colonne « Centre de Santé » : seulement si au moins une ligne a
+                       une valeur (sinon l'en-tête s'affichait sur une colonne vide). */
                     var centre = (d.columns || []).filter(function (c) { return /·\s*centre de sant/i.test(c); })[0];
+                    if (centre && !lignes.some(function (r) { return mkAsVal(r, centre) !== ''; })) centre = null;
+                    /* Colonnes PIVOT (Oui/Non, Faux/Vrai, Qualité…, 0) : toutes leurs
+                       valeurs ∈ {'1',''} — la valeur « 1 » signifie « ce critère est
+                       vrai pour cette AS » → on affiche le NOM de la colonne, pas « 1 ». */
+                    var pivot = {};
+                    blocs.forEach(function (b) {
+                        b.cols.forEach(function (c) {
+                            if (pivot[c.cle] != null) return;
+                            var vus = 0, estPivot = true;
+                            for (var i = 0; i < lignes.length; i++) {
+                                var s = mkAsVal(lignes[i], c.cle);
+                                if (s === '') continue;
+                                if (s !== '1') { estPivot = false; break; }
+                                vus++;
+                            }
+                            pivot[c.cle] = estPivot && vus > 0;
+                        });
+                    });
+                    /* Globales répétées par le crosstab sur chaque bloc (Livraison) :
+                       affichées une seule fois, dans le premier bloc où elles ont une valeur. */
+                    var GLOBAL = /^Approv\. en vaccins et intrants$|^Toutes les conditions de livraisons respectées$/i;
 
                     var t = '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px;margin-top:14px">' +
                         '<div style="background:linear-gradient(90deg,#1a237e,#3b5cd6);color:#fff;padding:12px 18px;font-weight:800;font-size:13px">' +
@@ -12809,22 +12827,26 @@
                         t += '<th style="padding:10px 10px;text-align:center;color:#475467;font-weight:600;font-size:11.5px;border-bottom:2px solid #e2e8f0;max-width:170px;line-height:1.35">' + esc(titre) + '</th>';
                     });
                     t += '</tr></thead><tbody>';
-                    var bool = blocs.map(function (b) { return b.cols.length === 1 && mkAsBooleen(lignes, b.cols[0].cle); });
                     lignes.forEach(function (r) {
                         t += '<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#1a237e;white-space:nowrap">' + esc(r._AS) + '</td>';
                         if (centre) t += '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#475467">' + esc(mkAsVal(r, centre)) + '</td>';
-                        blocs.forEach(function (b, i) {
-                            if (bool[i]) { t += mkCheckCell(mkAsVal(r, b.cols[0].cle) === '1' ? 'oui' : 'non'); return; }
-                            var txt = b.cols.map(function (c) {
+                        var globVus = {};
+                        blocs.forEach(function (b) {
+                            var morceaux = [];
+                            b.cols.forEach(function (c) {
+                                if (GLOBAL.test(c.nom) && globVus[c.nom]) return;
                                 var s = mkAsVal(r, c.cle);
-                                if (s === '') return '';
+                                if (s === '') return;
+                                if (pivot[c.cle]) { if (s === '1') { morceaux.push(c.nom); if (GLOBAL.test(c.nom)) globVus[c.nom] = 1; } return; }
                                 var n = Number(s.replace(',', '.'));
-                                /* Les taux sortent en fraction (0,63) : on les rend en % comme l'original. */
-                                if (isFinite(n) && /perc|taux|%/i.test(c.nom) && n <= 1) return Math.round(n * 100) + '%';
-                                return s;
-                            }).filter(Boolean).join(' · ');
+                                /* Les taux sortent en fraction (0,63) — ou en ratio (>1
+                                   pour les livraisons) : on les rend en % comme l'original. */
+                                if (isFinite(n) && (c.perc || /perc|taux|%/i.test(c.nom))) morceaux.push(Math.round(n * 100) + '%');
+                                else morceaux.push(s);
+                                if (GLOBAL.test(c.nom)) globVus[c.nom] = 1;
+                            });
                             var coul = b.couleur ? mkColorOf(r[b.couleur]) : null;
-                            t += '<td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:' + (coul || '#334155') + '">' + esc(txt) + '</td>';
+                            t += '<td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:' + (coul || '#334155') + '">' + esc(morceaux.join(' · ')) + '</td>';
                         });
                         t += '</tr>';
                     });
