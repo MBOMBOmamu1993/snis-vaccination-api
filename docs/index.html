@@ -9507,6 +9507,14 @@
                 keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
                 keyHint: IA_CLAUDE_KEYHINT
             };
+            /* Claude Opus 5 — dernier modèle Opus, le plus compétent avec Fable 5
+               sur le prompt système (conventions PEV, UID DHIS2, cartes, rapports). */
+            var IA_CLAUDE_OPUS5 = {
+                label: 'Claude Opus 5', model: 'claude-opus-5', kind: 'anthropic',
+                path: '/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
+                keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
+                keyHint: IA_CLAUDE_KEYHINT
+            };
             var IA_OLLAMA_KEYMETA = {
                 keyLabel: 'Clé API Ollama Cloud (commune à tous les modèles Ollama)', keyPlaceholder: 'votre clé ollama.com',
                 keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
@@ -9526,29 +9534,21 @@
             ];
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
-            var IA_DEFAULT_PROVIDER = 'minimax-m3';
-            /* Liste FIXE proposée aux clients (l'admin, lui, voit la liste complète
-               dynamique Ollama + Kimi + Claude) */
+            var IA_DEFAULT_PROVIDER = 'claude-opus5';
+            /* Liste FIXE proposée aux clients : UNIQUEMENT des modèles puissants,
+               tous payants — plus de modèles Ollama côté client. L'essai gratuit
+               (7 jours, à raison d'1 analyse par jour) donne accès à CES MÊMES
+               modèles ; au-delà du rythme ou après les 7 jours, le proxy renvoie
+               vers l'achat. (L'admin, lui, voit la liste complète dynamique
+               Ollama + Kimi + Claude.) */
             var IA_CLIENT_MODELS = [
-                { v: 'minimax-m3', label: 'MiniMax M3' },
-                { v: 'glm-5.2', label: 'GLM 5.2' },
-                { v: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
-                { v: 'kimi-k2.7-code', label: 'Kimi K2.7' },
-                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
-                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
-                { v: 'claude-fable', label: 'Claude Fable 5 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true }
+                { v: 'claude-opus5', label: 'Claude Opus 5 — 💳 Payant (le plus compétent, adapté aux tâches très complexes et compliquées)' },
+                { v: 'claude-fable', label: 'Claude Fable 5 — 💳 Payant (analyses et rapports de niveau expert)' },
+                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)' },
+                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)' }
             ];
-            function iaProvIsPaid(pk) { for (var i = 0; i < IA_CLIENT_MODELS.length; i++) if (IA_CLIENT_MODELS[i].v === pk) return !!IA_CLIENT_MODELS[i].paid; return false; }
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
             function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
-            /* Abonné payant ? code valide, NON-essai et non expiré. cb(true|false). */
-            function iaCheckPaying(cb) {
-                var code = cfg('code'); if (!code || !IA_PROXY_URL) { cb(false); return; }
-                fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/verifier?code=' + encodeURIComponent(code))
-                    .then(function (r) { return r.json(); })
-                    .then(function (j) { cb(!!(j && j.valide && !j.essai && !j['expire_passé'])); })
-                    .catch(function () { cb(false); });
-            }
             var iaThinkOff = {}; /* modèles ayant refusé le raisonnement (mémorisé pour la session) */
 
             /* Libellé lisible : 'kimi-k2.7-code' → 'Kimi K2.7 Code' ; 'gemma4:31b' → 'Gemma4 (31B)' */
@@ -9562,7 +9562,7 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
-                if (p === 'claude' || p === 'claude-fable') return p;
+                if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
                 if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
                 if (p === 'minimax' || !p) return IA_DEFAULT_PROVIDER; /* migration ancien réglage */
                 return p.replace(/:cloud$/, '');
@@ -9571,6 +9571,7 @@
                 pk = pk || iaProvKey();
                 if (pk === 'claude') return IA_CLAUDE;
                 if (pk === 'claude-fable') return IA_CLAUDE_FABLE;
+                if (pk === 'claude-opus5') return IA_CLAUDE_OPUS5;
                 if (pk.indexOf('kimi:') === 0) {
                     var km = pk.slice(5) || 'kimi-k3';
                     var kmMeta = null;
@@ -9591,7 +9592,7 @@
             /* Clés personnelles : une pour Anthropic, une pour Kimi, UNE seule pour tous
                les modèles Ollama (même compte). Reprend les anciens réglages : migration douce. */
             function iaUserKey(pk) {
-                if (pk === 'claude' || pk === 'claude-fable') return cfg('key_claude') || cfg('key');
+                if (String(pk).indexOf('claude') === 0) return cfg('key_claude') || cfg('key');
                 if (String(pk).indexOf('kimi:') === 0) return cfg('key_kimi');
                 return cfg('key_ollama') || cfg('key_minimax');
             }
@@ -11967,12 +11968,11 @@
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
                     '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
-                    '<div id="iaPaidBadge" style="display:none;margin:-6px 0 14px;padding:10px 12px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;font-size:13px;font-weight:600"></div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit</b> — bouton « Essai gratuit » ci-dessous. Ensuite, achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
+                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit, à raison d\'1 analyse par jour</b> — bouton « Essai gratuit » ci-dessous. Au-delà (2e analyse le même jour, ou après les 7 jours), achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
                     '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 7 jours</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
                     '<div class="ia-hint" id="iaTrialMsg" style="margin-top:6px"></div></div>' +
                     '<div id="iaPaneKey"><label id="iaKeyLbl">Clé API</label><input type="password" id="iaKey" placeholder="">' +
@@ -11997,14 +11997,14 @@
                         return;
                     }
                     var models = IA_OLLAMA_MODELS.slice();
-                    if (pk !== 'claude' && pk !== 'claude-fable' && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
+                    if (pk.indexOf('claude') !== 0 && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
                     var html = '<optgroup label="Ollama Cloud — abonnement forfaitaire">' +
                         models.map(function (id) { return '<option value="' + esc(id) + '">' + esc(iaModelLabel(id)) + '</option>'; }).join('') +
                         '</optgroup>' +
                         '<optgroup label="Moonshot AI — API à crédits (usage)">' +
                         IA_KIMI_MODELS.map(function (x) { return '<option value="kimi:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
                         '</optgroup>' +
-                        '<optgroup label="Anthropic — API à crédits (usage)"><option value="claude">' + esc(IA_CLAUDE.label) + '</option><option value="claude-fable">' + esc(IA_CLAUDE_FABLE.label) + '</option></optgroup>';
+                        '<optgroup label="Anthropic — API à crédits (usage)"><option value="claude-opus5">' + esc(IA_CLAUDE_OPUS5.label) + '</option><option value="claude">' + esc(IA_CLAUDE.label) + '</option><option value="claude-fable">' + esc(IA_CLAUDE_FABLE.label) + '</option></optgroup>';
                     selEl.innerHTML = html;
                     selEl.value = pk;
                     if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
@@ -12012,7 +12012,7 @@
 
                 /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
                 var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: iaUserKey(IA_DEFAULT_PROVIDER) };
-                function keySlot(p) { return (p === 'claude' || p === 'claude-fable') ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
+                function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
                     pk = np;
@@ -12029,24 +12029,10 @@
                     var rk = m.querySelector('#iaRadKey'), rc = m.querySelector('#iaRadCode');
                     if (rk) rk.classList.toggle('on', mo === 'key'); if (rc) rc.classList.toggle('on', mo === 'code');
                 }
-                /* Gating des modèles PAYANTS (Kimi K3, Opus 4.8, Fable 5) pour les
-                   clients non abonnés : insigne rouge « mettre à jour » + achat. */
-                var paidBadge = m.querySelector('#iaPaidBadge');
-                var iaPaying = null; /* null=inconnu, true, false */
-                function refreshPaidBadge() {
-                    if (!paidBadge) return;
-                    if (!isAdm && iaProvIsPaid(pk) && iaPaying !== true) {
-                        paidBadge.style.display = '';
-                        paidBadge.innerHTML = '🔒 Ce modèle est <b>réservé aux abonnés</b> — l\'essai gratuit ne l\'inclut pas. <button class="ia-btn" id="iaUpgradeBtn" style="margin-left:6px;background:#dc2626;color:#fff;border-color:#dc2626">⬆ Mettre à jour — obtenir un code</button>';
-                        var ub = paidBadge.querySelector('#iaUpgradeBtn');
-                        if (ub) ub.onclick = function () { window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank'); };
-                    } else { paidBadge.style.display = 'none'; }
-                }
-                if (!isAdm) iaCheckPaying(function (p) { iaPaying = p; refreshPaidBadge(); });
                 renderModelOptions();
                 setProv(pk);
                 if (isAdm) iaFetchModels(function () { if (document.body.contains(bg)) renderModelOptions(); });
-                selEl.onchange = function () { setProv(selEl.value); refreshPaidBadge(); };
+                selEl.onchange = function () { setProv(selEl.value); };
                 if (hasProxy) {
                     if (isAdm) {
                         m.querySelector('#iaRadKey').onclick = function () { setMode('key'); };
@@ -12067,8 +12053,8 @@
                                 if (trMsg) {
                                     var d = j.expire ? new Date(j.expire).toLocaleDateString('fr-FR') : '';
                                     trMsg.innerHTML = (j.deja
-                                        ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (reste <b>' + j.restant + '</b> requêtes, jusqu\'au <b>' + d + '</b>) a été replacé dans le champ.'
-                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : ' + j.restant + ' requêtes IA, valables jusqu\'au <b>' + d + '</b>.') +
+                                        ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (encore <b>' + j.restant + '</b> jour(s), jusqu\'au <b>' + d + '</b>, à raison d\'<b>1 analyse par jour</b>) a été replacé dans le champ.'
+                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : <b>1 analyse par jour</b>, jusqu\'au <b>' + d + '</b>. Pour une 2e analyse le même jour, achetez un code via « Obtenir un code ».') +
                                         ' Cliquez « Enregistrer » pour terminer.';
                                 }
                             })
@@ -12078,12 +12064,6 @@
                 } else setMode(isAdm ? 'key' : 'code');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {
-                    /* Client non abonné choisissant un modèle payant → redirection achat, pas d'enregistrement. */
-                    if (!isAdm && iaProvIsPaid(pk) && iaPaying === false) {
-                        refreshPaidBadge();
-                        window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank');
-                        return;
-                    }
                     keys[keySlot(pk)] = kEl.value.trim();
                     cfg('mode', mode); cfg('provider', pk);
                     cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || ''); cfg('key_kimi', keys.kimi || '');
