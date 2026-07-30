@@ -9564,6 +9564,10 @@
                 var p = cfg('provider') || '';
                 if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
                 if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
+                /* Ollama retiré de la liste client : tout ancien réglage Ollama
+                   (ex. MiniMax M3) d'un CLIENT bascule définitivement sur le
+                   modèle par défaut ; l'admin garde le libre choix. */
+                if (!iaIsAdmin()) { cfg('provider', IA_DEFAULT_PROVIDER); return IA_DEFAULT_PROVIDER; }
                 if (p === 'minimax' || !p) return IA_DEFAULT_PROVIDER; /* migration ancien réglage */
                 return p.replace(/:cloud$/, '');
             }
