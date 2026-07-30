@@ -9497,13 +9497,13 @@
             var IA_CLAUDE_KEYHINT = 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.';
             var IA_CLAUDE = {
                 label: 'Claude Opus 4.8', model: 'claude-opus-4-8', kind: 'anthropic',
-                path: '/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
+                path: '/anthropic/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
                 keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
                 keyHint: IA_CLAUDE_KEYHINT
             };
             var IA_CLAUDE_FABLE = {
                 label: 'Claude Fable 5', model: 'claude-fable-5', kind: 'anthropic',
-                path: '/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
+                path: '/anthropic/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
                 keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
                 keyHint: IA_CLAUDE_KEYHINT
             };
@@ -9529,10 +9529,18 @@
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'kimi:kimi-for-coding';
-            /* Liste FIXE proposée aux clients : Kimi (abonnement Kimi Code) uniquement.
-               K3 reste PAYANT (réservé aux abonnés) ; K2.7 Code et K2.7 Code
-               Highspeed sont inclus dans l'essai gratuit de 7 jours. */
+            /* Modèle de RÉFÉRENCE de l'assistant : Claude Fable 5. C'est lui qui
+               exploite réellement les compétences du prompt système (conventions
+               PEV, UID DHIS2, cartes, rapports Word/PPTX) — les modèles Kimi
+               restent proposés pour les demandes simples et l'essai gratuit,
+               mais ils ne les maîtrisent pas au même niveau. Défaut de l'admin. */
+            var IA_ADMIN_PROVIDER = 'claude-fable';
+            /* Liste FIXE proposée aux clients. Modèles PAYANTS (réservés aux
+               abonnés) : Claude Fable 5, Claude Opus 4.8 et Kimi K3. K2.7 Code et
+               K2.7 Code Highspeed sont inclus dans l'essai gratuit de 7 jours. */
             var IA_CLIENT_MODELS = [
+                { v: 'claude-fable', label: 'Claude Fable 5 — ⭐ Recommandé · 💳 Payant (analyses et rapports de niveau expert)', paid: true },
+                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
                 { v: 'kimi:kimi-for-coding', label: 'Kimi K2.7 Code' },
                 { v: 'kimi:kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed' },
                 { v: 'kimi:k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true }
@@ -9561,8 +9569,18 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
+                /* Restauration du 30/07/2026 : le passage « Kimi uniquement » avait
+                   écrasé le réglage enregistré dans le navigateur — l'admin, qui
+                   travaillait avec Claude Fable 5, s'est retrouvée basculée sur Kimi
+                   sans rien avoir demandé. On lui rend Fable UNE fois, puis son choix
+                   est toujours respecté (les clients, eux, gardent leur réglage). */
+                if (!cfg('provmig_fable')) {
+                    cfg('provmig_fable', '1');
+                    if (iaIsAdmin() && p.indexOf('kimi:') === 0) { cfg('provider', IA_ADMIN_PROVIDER); return IA_ADMIN_PROVIDER; }
+                }
+                if (p === 'claude' || p === 'claude-fable') return p; /* Anthropic */
                 if (p.indexOf('kimi:') === 0) return p; /* Kimi Code : 'kimi:k3', 'kimi:kimi-for-coding'… */
-                return IA_DEFAULT_PROVIDER; /* migration : seuls les modèles Kimi (Moonshot) sont proposés */
+                return iaIsAdmin() ? IA_ADMIN_PROVIDER : IA_DEFAULT_PROVIDER; /* migration des anciens réglages Ollama */
             }
             function iaProv(pk) {
                 pk = pk || iaProvKey();
@@ -10506,6 +10524,12 @@
                     /* Ollama : {"error":"…"} · Anthropic et le proxy : {"error":{"message":"…"}} */
                     try { var j = JSON.parse(t); msg = (j.error && (j.error.message || j.error)) || t; } catch (e) { }
                     msg = String(msg);
+                    /* Solde Anthropic à zéro : message explicite et actionnable —
+                       c'est la seule chose qui empêche Claude Fable 5 / Opus 4.8 de
+                       répondre (le compte API est distinct de l'abonnement Claude). */
+                    if (/credit balance is too low|insufficient.{0,20}credit/i.test(msg)) {
+                        throw new Error('Crédits API Anthropic épuisés : ' + prov.label + ' ne peut pas répondre tant que le solde n\'est pas rechargé sur console.anthropic.com (Plans & Billing). ⚠ L\'abonnement Claude Pro/Max ne couvre PAS l\'API. En attendant, basculez sur un modèle Kimi dans ⚙ Accès (qualité moindre sur les analyses fines et les rapports).');
+                    }
                     /* Le modèle refuse le mode raisonnement : mémoriser et réessayer sans. */
                     if (resp.status === 400 && prov.think && /think/i.test(msg)) {
                         iaThinkOff[prov.model] = true;
@@ -11963,13 +11987,13 @@
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Basculez librement — y compris en cours de conversation.</div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Mais la <b>maîtrise réelle</b> de ces compétences dépend du modèle : <b>Claude Fable 5</b> (recommandé) et Opus 4.8 sont les plus fiables pour les analyses fines, les cartes et les rapports ; les modèles Kimi conviennent aux demandes simples. Basculez librement — y compris en cours de conversation.</div>' +
                     '<div id="iaPaidBadge" style="display:none;margin:-6px 0 14px;padding:10px 12px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;font-size:13px;font-weight:600"></div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit — 5 analyses ou rapports par jour</b> (Kimi K3 non inclus) — bouton « Essai gratuit » ci-dessous. Au-delà : attendez le lendemain ou achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
+                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit — 5 analyses ou rapports par jour</b> (modèles payants — Claude Fable 5, Opus 4.8 et Kimi K3 — non inclus) — bouton « Essai gratuit » ci-dessous. Au-delà : attendez le lendemain ou achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
                     '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 7 jours · 5 analyses/jour</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
                     '<div class="ia-hint" id="iaTrialMsg" style="margin-top:6px"></div></div>' +
                     '<div id="iaPaneKey"><label id="iaKeyLbl">Clé API</label><input type="password" id="iaKey" placeholder="">' +
@@ -11993,12 +12017,16 @@
                         if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
                         return;
                     }
-                    var html = '<optgroup label="Moonshot AI — Kimi">' +
+                    var html = '<optgroup label="Anthropic — Claude (modèles de référence)">' +
+                        '<option value="claude-fable">' + esc(IA_CLAUDE_FABLE.label) + '</option>' +
+                        '<option value="claude">' + esc(IA_CLAUDE.label) + '</option>' +
+                        '</optgroup>' +
+                        '<optgroup label="Moonshot AI — Kimi">' +
                         IA_KIMI_MODELS.map(function (x) { return '<option value="kimi:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
                         '</optgroup>';
                     selEl.innerHTML = html;
                     selEl.value = pk;
-                    if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
+                    if (!selEl.value) { selEl.value = IA_ADMIN_PROVIDER; pk = IA_ADMIN_PROVIDER; }
                 }
 
                 /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
@@ -12058,7 +12086,7 @@
                                     var d = j.expire ? new Date(j.expire).toLocaleDateString('fr-FR') : '';
                                     trMsg.innerHTML = (j.deja
                                         ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (<b>5 analyses ou rapports par jour</b>, jusqu\'au <b>' + d + '</b>) a été replacé dans le champ.'
-                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : <b>5 analyses ou rapports par jour</b> (Kimi K2.7 Code / Highspeed — Kimi K3 non inclus), jusqu\'au <b>' + d + '</b>.') +
+                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : <b>5 analyses ou rapports par jour</b> (Kimi K2.7 Code / Highspeed — modèles payants non inclus), jusqu\'au <b>' + d + '</b>.') +
                                         ' Cliquez « Enregistrer » pour terminer.';
                                 }
                             })

@@ -3,14 +3,17 @@
  *  PROXY IA — Dashboard PEV de routine (snis-vaccination-api)
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
- *   1. DEUX fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
- *        /api/chat        → Ollama Cloud (MiniMax M3)      — clé OLLAMA_API_KEY
- *        /v1/messages     → Kimi Code (abonnement,         — clé KIMI_API_KEY
- *                            api.kimi.com/coding, API
- *                            compatible Anthropic)
- *      Dans les deux cas : soit un code d'accès valide (quota décompté, clé du
+ *   1. TROIS fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
+ *        /api/chat                → Ollama Cloud (MiniMax M3) — clé OLLAMA_API_KEY
+ *        /v1/messages             → Kimi Code (abonnement,     — clé KIMI_API_KEY
+ *                                    api.kimi.com/coding, API
+ *                                    compatible Anthropic)
+ *        /anthropic/v1/messages   → Anthropic (Claude Fable 5, — clé ANTHROPIC_API_KEY
+ *                                    Opus 4.8) — les modèles
+ *                                    de référence de l'onglet
+ *      Dans les trois cas : soit un code d'accès valide (quota décompté, clé du
  *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
- *      x-kimi-key (relais pur, aucun quota consommé).
+ *      x-kimi-key / x-anthropic-key (relais pur, aucun quota consommé).
  *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
  *      CORS, un appel direct depuis le navigateur est donc impossible.
  *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
@@ -38,7 +41,9 @@
  *                         Console → Create API Key) : fournisseur Kimi (K3 /
  *                         K2.7 Code) du dashboard + assistant de lecture des
  *                         captures (endpoint api.kimi.com/coding)
- *                         (les deux sont facultatives : un fournisseur sans clé
+ *   ANTHROPIC_API_KEY   — clé API console.anthropic.com : fournisseur Claude
+ *                         (Fable 5, Opus 4.8) du dashboard
+ *                         (les trois sont facultatives : un fournisseur sans clé
  *                          reste utilisable par les clients ayant leur propre clé)
  *   DHIS2_BASE_URL      — ex. https://snisrdc.com (sans /api)
  *   DHIS2_USERNAME      — compte DHIS2 (lecture seule recommandé)
@@ -88,10 +93,16 @@ const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
    Modèles du palier Allegretto : k3 (vedette), kimi-for-coding (K2.7 Code),
    kimi-for-coding-highspeed. Le 1er de la liste sert de défaut. */
 const ALLOWED_KIMI_MODELS = ['kimi-for-coding', 'kimi-for-coding-highspeed', 'k3'];
+/* Anthropic (Claude) — route DÉDIÉE /anthropic/v1/messages, puisque /v1/messages
+   sert désormais à Kimi Code. Fable 5 et Opus 4.8 sont les modèles de RÉFÉRENCE
+   de l'assistant : ce sont eux qui exploitent réellement les compétences du
+   prompt système (conventions PEV, UID DHIS2, cartes, rapports Word/PPTX).
+   Ne JAMAIS les retirer du dashboard sans demande explicite de la cliente. */
+const ALLOWED_ANTHROPIC_MODELS = ['claude-fable-5', 'claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
 /* Modèles PUISSANTS réservés aux abonnés PAYANTS : un code d'ESSAI gratuit ne
    peut PAS les utiliser (réponse 402 → le dashboard redirige vers l'achat).
-   Les clés personnelles (x-kimi-key) ne sont jamais bloquées. */
-const PAID_ONLY_MODELS = new Set(['k3']);
+   Les clés personnelles (x-kimi-key / x-anthropic-key) ne sont jamais bloquées. */
+const PAID_ONLY_MODELS = new Set(['k3', 'claude-fable-5', 'claude-opus-4-8']);
 function blockIfTrialPaidModel(resolved, model, cors) {
   if (resolved && resolved.auth && resolved.auth.rec && resolved.auth.rec.trial && PAID_ONLY_MODELS.has(String(model))) {
     return json({ error: { type: 'paid_required', message: "Le modèle « " + model + " » est réservé aux abonnés. L'essai gratuit ne donne accès qu'aux modèles standard. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour l'utiliser." } }, 402, cors);
@@ -104,6 +115,7 @@ const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
    dans la Kimi Code Console (kimi.com) ; elles ne sont PAS acceptées par
    api.moonshot.ai (plateforme au compteur) ni api.anthropic.com. */
 const KIMI_CODING_URL = 'https://api.kimi.com/coding/v1/messages';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 /* Moonshot : plateforme internationale api.moonshot.ai (platform.kimi.ai).
    Si la clé vient de la plateforme chinoise : poser KIMI_API_BASE =
    https://api.moonshot.cn dans les vars. */
@@ -148,6 +160,7 @@ export default {
       if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/kimi/v1/chat/completions' && request.method === 'POST') return await proxyKimi(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
+      if (url.pathname === '/anthropic/v1/messages' && request.method === 'POST') return await proxyClaude(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
       if (url.pathname === '/essai') return await trialGrant(request, env, cors);
@@ -425,6 +438,34 @@ async function proxyAnthropic(request, env, cors) {
       'user-agent': 'claude-cli/2.0.0 (external, cli)',
       accept: 'application/json',
       'accept-language': 'en-US,en;q=0.9',
+    },
+    body: JSON.stringify(body),
+  });
+  return await finishIaResponse(env, upstream, resolved, cors, 'application/json');
+}
+
+/* Proxy Anthropic (Claude Fable 5 / Opus 4.8) — API Messages (SSE). Même logique
+   que les autres fournisseurs : code d'accès (quota) OU clé personnelle
+   x-anthropic-key. Route /anthropic/v1/messages : /v1/messages appartient à Kimi. */
+async function proxyClaude(request, env, cors) {
+  let resolved;
+  try { resolved = await resolveIaAuth(request, env, 'x-anthropic-key', 'ANTHROPIC_API_KEY'); }
+  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
+
+  if (!ALLOWED_ANTHROPIC_MODELS.includes(body.model)) body.model = ALLOWED_ANTHROPIC_MODELS[0];
+  { const blk = blockIfTrialPaidModel(resolved, body.model, cors); if (blk) return blk; }
+  if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
+
+  const upstream = await fetch(ANTHROPIC_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'anthropic-version': request.headers.get('anthropic-version') || '2023-06-01',
+      'x-api-key': resolved.key,
     },
     body: JSON.stringify(body),
   });
