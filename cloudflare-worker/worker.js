@@ -3,17 +3,12 @@
  *  PROXY IA — Dashboard PEV de routine (snis-vaccination-api)
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
- *   1. TROIS fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
- *        /api/chat                → Ollama Cloud (MiniMax M3) — clé OLLAMA_API_KEY
- *        /v1/messages             → Kimi Code (abonnement,     — clé KIMI_API_KEY
- *                                    api.kimi.com/coding, API
- *                                    compatible Anthropic)
- *        /anthropic/v1/messages   → Anthropic (Claude Fable 5, — clé ANTHROPIC_API_KEY
- *                                    Opus 5, Opus 4.8) — les
- *                                    modèles de référence
- *      Dans les trois cas : soit un code d'accès valide (quota décompté, clé du
+ *   1. DEUX fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
+ *        /api/chat        → Ollama Cloud (MiniMax M3)   — clé OLLAMA_API_KEY
+ *        /v1/messages     → Anthropic (Claude)          — clé ANTHROPIC_API_KEY
+ *      Dans les deux cas : soit un code d'accès valide (quota décompté, clé du
  *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
- *      x-kimi-key / x-anthropic-key (relais pur, aucun quota consommé).
+ *      x-anthropic-key (relais pur, aucun quota consommé).
  *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
  *      CORS, un appel direct depuis le navigateur est donc impossible.
  *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
@@ -32,17 +27,14 @@
  *                            capture, livraison) + création manuelle de codes.
  *                            /admin/codes → API JSON.
  *   5. /verifier?code=     → solde restant d'un code
- *   6. /essai              → code d'essai gratuit : 7 jours, 5 analyses/rapports
- *                            par jour, 1 par appareil (empreinte IP+UA)
+ *   6. /essai              → code d'essai gratuit : 7 jours / 50 requêtes,
+ *                            1 par appareil (empreinte IP+UA), puis paiement
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
- *   KIMI_API_KEY        — clé d'abonnement Kimi Code (kimi.com → Kimi Code
- *                         Console → Create API Key) : fournisseur Kimi (K3 /
- *                         K2.7 Code) du dashboard + assistant de lecture des
- *                         captures (endpoint api.kimi.com/coding)
- *   ANTHROPIC_API_KEY   — clé API console.anthropic.com : fournisseur Claude
- *                         (Fable 5, Opus 4.8) du dashboard
+ *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
+ *   KIMI_API_KEY        — clé API platform.kimi.ai (Moonshot) : assistant de
+ *                         lecture des captures + fournisseur Kimi K3 du dashboard
  *                         (les trois sont facultatives : un fournisseur sans clé
  *                          reste utilisable par les clients ayant leur propre clé)
  *   DHIS2_BASE_URL      — ex. https://snisrdc.com (sans /api)
@@ -89,20 +81,11 @@ const OFFERS = [
    forme + un défaut. Le tag « :cloud » (ou suffixe -cloud) est obligatoire —
    sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
 const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
-/* Kimi Code (abonnement) — API compatible Anthropic sur api.kimi.com/coding.
-   Modèles du palier Allegretto : k3 (vedette), kimi-for-coding (K2.7 Code),
-   kimi-for-coding-highspeed. Le 1er de la liste sert de défaut. */
-const ALLOWED_KIMI_MODELS = ['kimi-for-coding', 'kimi-for-coding-highspeed', 'k3'];
-/* Anthropic (Claude) — route DÉDIÉE /anthropic/v1/messages, puisque /v1/messages
-   sert désormais à Kimi Code. Fable 5 et Opus 4.8 sont les modèles de RÉFÉRENCE
-   de l'assistant : ce sont eux qui exploitent réellement les compétences du
-   prompt système (conventions PEV, UID DHIS2, cartes, rapports Word/PPTX).
-   Ne JAMAIS les retirer du dashboard sans demande explicite de la cliente. */
-const ALLOWED_ANTHROPIC_MODELS = ['claude-fable-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
+const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
 /* Modèles PUISSANTS réservés aux abonnés PAYANTS : un code d'ESSAI gratuit ne
    peut PAS les utiliser (réponse 402 → le dashboard redirige vers l'achat).
-   Les clés personnelles (x-kimi-key / x-anthropic-key) ne sont jamais bloquées. */
-const PAID_ONLY_MODELS = new Set(['k3', 'claude-fable-5', 'claude-opus-5', 'claude-opus-4-8']);
+   Les clés personnelles (x-anthropic-key / x-kimi-key) ne sont jamais bloquées. */
+const PAID_ONLY_MODELS = new Set(['claude-opus-4-8', 'claude-fable-5', 'kimi-k3']);
 function blockIfTrialPaidModel(resolved, model, cors) {
   if (resolved && resolved.auth && resolved.auth.rec && resolved.auth.rec.trial && PAID_ONLY_MODELS.has(String(model))) {
     return json({ error: { type: 'paid_required', message: "Le modèle « " + model + " » est réservé aux abonnés. L'essai gratuit ne donne accès qu'aux modèles standard. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour l'utiliser." } }, 402, cors);
@@ -111,10 +94,6 @@ function blockIfTrialPaidModel(resolved, model, cors) {
 }
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
 const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
-/* Kimi Code (abonnement) — endpoint compatible Anthropic. Les clés se créent
-   dans la Kimi Code Console (kimi.com) ; elles ne sont PAS acceptées par
-   api.moonshot.ai (plateforme au compteur) ni api.anthropic.com. */
-const KIMI_CODING_URL = 'https://api.kimi.com/coding/v1/messages';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 /* Moonshot : plateforme internationale api.moonshot.ai (platform.kimi.ai).
    Si la clé vient de la plateforme chinoise : poser KIMI_API_BASE =
@@ -125,27 +104,10 @@ const NUM_PREDICT_CAP = 16000; /* plafond de tokens générés (équiv. max_toke
 const MAX_TOKENS_CAP = 16000;
 
 /* ── Essai gratuit : TRIAL_DAYS jours (ou TRIAL_REQUESTS requêtes, la 1re
-   échéance compte) PAR APPAREIL — plafond théorique 5 × 7, car la limite
-   QUOTIDIENNE (TRIAL_DAILY_LIMIT analyses/rapports par jour) prime toujours.
-   Empreinte = hash(IP + User-Agent) ; un nouvel appui sur « Essai gratuit »
-   rend le même code. ── */
+   échéance compte) PAR APPAREIL. Empreinte = hash(IP + User-Agent) ;
+   un nouvel appui sur « Essai gratuit » rend le même code. ── */
 const TRIAL_DAYS = 7;
-const TRIAL_REQUESTS = 35;
-const TRIAL_DAILY_LIMIT = 5;
-/* Jour calendaire à Kinshasa (UTC+1, pas d'heure d'été) : la limite quotidienne
-   de l'essai se réinitialise à minuit heure locale. */
-function kinDay() { return new Date(Date.now() + 3600e3).toISOString().slice(0, 10); }
-/* Compteur quotidien d'un code d'ESSAI (clé KV td:<code>, remise à zéro au
-   changement de jour). Codes PAYANTS et clés personnelles non concernés. */
-async function trialDayCount(env, code) {
-  const v = await env.CODES.get('td:' + code);
-  if (!v) return 0;
-  try { const j = JSON.parse(v); return j && j.day === kinDay() ? (j.n | 0) : 0; } catch (e) { return 0; }
-}
-async function trialDayBump(env, code) {
-  const n = await trialDayCount(env, code);
-  await env.CODES.put('td:' + code, JSON.stringify({ day: kinDay(), n: n + 1 }), { expirationTtl: (TRIAL_DAYS + 2) * 86400 });
-}
+const TRIAL_REQUESTS = 50;
 
 export default {
   async fetch(request, env) {
@@ -160,7 +122,6 @@ export default {
       if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/kimi/v1/chat/completions' && request.method === 'POST') return await proxyKimi(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
-      if (url.pathname === '/anthropic/v1/messages' && request.method === 'POST') return await proxyClaude(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
       if (url.pathname === '/essai') return await trialGrant(request, env, cors);
@@ -265,11 +226,10 @@ async function fpHash(request) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-/* ═══ Essai gratuit : 7 jours, TRIAL_DAILY_LIMIT analyses/rapports par jour ═══
+/* ═══ Essai gratuit : 7 jours (ou TRIAL_REQUESTS requêtes) par appareil ═══
    Idempotent : un nouvel appel depuis le même appareil rend le même code
    (pratique si l'utilisateur l'a perdu), sans jamais créer de second essai.
-   Le code d'essai fonctionne avec tous les fournisseurs IA et le proxy DHIS2,
-   MAIS PAS avec les modèles payants (k3 — voir PAID_ONLY_MODELS). */
+   Le code d'essai fonctionne avec tous les fournisseurs IA et le proxy DHIS2. */
 async function trialGrant(request, env, cors) {
   if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
   const fp = await fpHash(request);
@@ -311,10 +271,6 @@ async function resolveIaAuth(request, env, ownKeyHeader, serviceKeyName) {
   const auth = await requireCode(request, env); /* lève une erreur si invalide */
   /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
   if (auth.rec.dhis2_only) throw Object.assign(new Error('Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.'), { status: 403 });
-  /* Plafond QUOTIDIEN de l'essai gratuit (5 analyses/rapports par jour) — vérifié
-     AVANT l'appel au fournisseur : au-delà, le client attend demain ou achète. */
-  if (auth.rec.trial && (await trialDayCount(env, auth.code)) >= TRIAL_DAILY_LIMIT)
-    throw Object.assign(new Error("Limite quotidienne de l'essai gratuit atteinte : " + TRIAL_DAILY_LIMIT + " analyses ou rapports par jour. Réessayez demain, ou achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour continuer aujourd'hui."), { status: 403 });
   if (!env[serviceKeyName]) throw Object.assign(new Error('Ce fournisseur n\'est pas configuré sur le proxy (' + serviceKeyName + ' absent). Choisissez l\'autre fournisseur dans ⚙ Accès, ou utilisez votre propre clé.'), { status: 503 });
   return { key: env[serviceKeyName], auth: auth };
 }
@@ -327,7 +283,6 @@ async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
     if (upstream.ok) {
       resolved.auth.rec.remaining -= 1;
       await putCode(env, resolved.auth.code, resolved.auth.rec);
-      if (resolved.auth.rec.trial) await trialDayBump(env, resolved.auth.code);
     }
     headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
   }
@@ -410,44 +365,7 @@ async function proxyKimi(request, env, cors) {
   return await finishIaResponse(env, upstream, resolved, cors, 'text/event-stream');
 }
 
-/* Proxy Kimi Code (abonnement) — API compatible Anthropic (SSE). Même logique
-   que les autres fournisseurs : code d'accès (quota) OU clé personnelle x-kimi-key. */
 async function proxyAnthropic(request, env, cors) {
-  let resolved;
-  try { resolved = await resolveIaAuth(request, env, 'x-kimi-key', 'KIMI_API_KEY'); }
-  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
-
-  let body;
-  try { body = await request.json(); }
-  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
-
-  if (!ALLOWED_KIMI_MODELS.includes(body.model)) body.model = ALLOWED_KIMI_MODELS[0];
-  { const blk = blockIfTrialPaidModel(resolved, body.model, cors); if (blk) return blk; }
-  if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
-
-  /* api.kimi.com est protégé par le WAF Cloudflare : les sous-requêtes de
-     Workers (IP datacenter) sont bloquées (« Attention Required! »). On passe
-     donc par le relais muet de la rewrite Vercel (KIMI_RELAY_URL, IP AWS) —
-     simple proxy inverse qui transmet tel quels corps, en-têtes et flux SSE. */
-  const upstream = await fetch(env.KIMI_RELAY_URL || KIMI_CODING_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'anthropic-version': request.headers.get('anthropic-version') || '2023-06-01',
-      'x-api-key': resolved.key,
-      'user-agent': 'claude-cli/2.0.0 (external, cli)',
-      accept: 'application/json',
-      'accept-language': 'en-US,en;q=0.9',
-    },
-    body: JSON.stringify(body),
-  });
-  return await finishIaResponse(env, upstream, resolved, cors, 'application/json');
-}
-
-/* Proxy Anthropic (Claude Fable 5 / Opus 4.8) — API Messages (SSE). Même logique
-   que les autres fournisseurs : code d'accès (quota) OU clé personnelle
-   x-anthropic-key. Route /anthropic/v1/messages : /v1/messages appartient à Kimi. */
-async function proxyClaude(request, env, cors) {
   let resolved;
   try { resolved = await resolveIaAuth(request, env, 'x-anthropic-key', 'ANTHROPIC_API_KEY'); }
   catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
@@ -1098,9 +1016,9 @@ async function sendMail(env, toEmail, toName, subject, html) {
 
 /* ═══ Assistant IA de gestion des paiements ═══
    Lit la capture mobile money et résume : montant, opérateur, référence, date.
-   Prestataire : AI_HELPER_PROVIDER = kimi (défaut, KIMI_API_KEY — endpoint
-   abonnement api.kimi.com/coding) | ollama.
-   Modèle      : AI_HELPER_MODEL (défauts : kimi-for-coding · minimax-m3:cloud).
+   Prestataire : AI_HELPER_PROVIDER = kimi (défaut, KIMI_API_KEY) | claude | ollama.
+   Modèle      : AI_HELPER_MODEL (défauts : kimi-k3 · claude-opus-4-8
+                 · minimax-m3:cloud).
    ⚠️ Ne VALIDE jamais un paiement : aide à la lecture seulement — le vendeur
    garde le clic « Livrer » (une capture peut toujours être falsifiée). */
 async function aiProofSummary(env, b64, ct) {
@@ -1114,13 +1032,12 @@ async function aiProofSummary(env, b64, ct) {
     return t.includes('PAS_UN_PAIEMENT') ? '⚠️ Cette image ne semble pas être une capture de paiement' : t;
   };
   try {
-    /* Kimi Code (abonnement) — format Anthropic : bloc image base64 natif. */
-    if (provider === 'kimi' && env.KIMI_API_KEY) {
-      const r = await fetch(env.KIMI_RELAY_URL || KIMI_CODING_URL, {
+    if (provider === 'claude' && env.ANTHROPIC_API_KEY) {
+      const r = await fetch(ANTHROPIC_URL, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': env.KIMI_API_KEY },
+        headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': env.ANTHROPIC_API_KEY },
         body: JSON.stringify({
-          model: env.AI_HELPER_MODEL || 'kimi-for-coding', max_tokens: 150,
+          model: env.AI_HELPER_MODEL || 'claude-opus-4-8', max_tokens: 150,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: ct || 'image/png', data: b64 } },
             { type: 'text', text: prompt }] }],
@@ -1128,6 +1045,20 @@ async function aiProofSummary(env, b64, ct) {
       });
       const d = await r.json();
       return clean(d && d.content && d.content[0] && d.content[0].text);
+    }
+    if (provider === 'kimi' && env.KIMI_API_KEY) {
+      const r = await fetch((env.KIMI_API_BASE || KIMI_DEFAULT_BASE).replace(/\/+$/, '') + '/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.KIMI_API_KEY },
+        body: JSON.stringify({
+          model: env.AI_HELPER_MODEL || 'kimi-k3', max_tokens: 150, reasoning_effort: 'low',
+          messages: [{ role: 'user', content: [
+            { type: 'image_url', image_url: { url: 'data:' + (ct || 'image/png') + ';base64,' + b64 } },
+            { type: 'text', text: prompt }] }],
+        }),
+      });
+      const d = await r.json();
+      return clean(d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
     }
     /* défaut : Ollama Cloud — MiniMax M3 (vision), modifiable via AI_HELPER_MODEL */
     if (env.OLLAMA_API_KEY) {

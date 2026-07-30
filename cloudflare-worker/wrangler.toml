@@ -12,9 +12,6 @@ id = "fb104235615740b9a9d117355f864751"
 [vars]
 # Origine(s) autorisée(s) à appeler le proxy (CORS)
 ALLOWED_ORIGIN = "https://mbombomamu1993.github.io,https://snis-vaccination-dhis2.vercel.app"
-# Relais muet vers api.kimi.com/coding (rewrite Vercel) : le WAF Cloudflare de
-# Kimi bloque les sous-requêtes émises par un Worker. Retirer pour appel direct.
-KIMI_RELAY_URL = "https://snis-vaccination-dhis2.vercel.app/api/kimi-relay"
 
 [triggers]
 # - toutes les 5 min : relance des alertes WhatsApp en échec (file notifq:*)
