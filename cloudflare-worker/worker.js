@@ -495,7 +495,7 @@ async function adminPage(request, env) {
       await sendMail(env, o.email, o.nom, "🎫 Votre code d'accès — Assistant IA Dashboard PEV",
         `<p>Bonjour ${esc(o.nom)},</p><p>Paiement confirmé — merci ! Voici votre code d'accès (<b>${finalReq} requêtes IA</b>) :</p>
          <p style="font-size:24px;font-weight:800;letter-spacing:2px;background:#f0f2fa;border-radius:12px;padding:16px;text-align:center">${code}</p>
-         <p>Collez-le dans l'onglet « Génération des analyses » → ⚙ Accès → Code d'accès.<br>Conservez-le précieusement.</p>`);
+         <p>Collez-le dans l'onglet « Assistant IA DHIS2 RDC » → ⚙ Accès → Code d'accès.<br>Conservez-le précieusement.</p>`);
     }
   }
   return adminDashboard(env, tok, flash);
@@ -739,7 +739,7 @@ function whatsappBuyPage(env) {
        2. Le numéro mobile money à créditer vous est confirmé dans la conversation.<br>
        3. Payez, puis envoyez la capture du paiement.<br>
        4. Vous recevez immédiatement votre code — à coller dans l'onglet
-       « Génération des analyses » → ⚙ Accès → Code d'accès.</div>
+       « Assistant IA DHIS2 RDC » → ⚙ Accès → Code d'accès.</div>
      <small>Assistant IA du Dashboard PEV de routine — RDC.</small>`);
 }
 
@@ -914,7 +914,7 @@ function trackPage(env, url) {
            try{localStorage.removeItem('pev_cmd');}catch(e){}
            zone.innerHTML='<p><b>✅ Paiement confirmé — merci !</b></p><p>Voici votre code d\\'accès :</p><div class="code">'+j.code+'</div>'
              +'<button onclick="navigator.clipboard.writeText(\\''+j.code+'\\');this.textContent=\\'✓ Copié !\\'">📋 Copier le code</button>'
-             +'<p style="margin-top:12px">Collez-le dans l\\'onglet « Génération des analyses » → ⚙ Accès → Code d\\'accès.'
+             +'<p style="margin-top:12px">Collez-le dans l\\'onglet « Assistant IA DHIS2 RDC » → ⚙ Accès → Code d\\'accès.'
               +(j.mail?' <b>Le même code vous a aussi été envoyé par e-mail</b> : vérifiez votre boîte de réception <b>et le dossier Spam / Courrier indésirable</b> — il reste de toute façon affiché ici sur votre écran.':'')+' Conservez-le précieusement : il ne sera plus affiché ailleurs.</p>';
          }
        }
@@ -1214,7 +1214,7 @@ async function returnPage(env, url) {
   if (code) {
     return htmlPage('Votre code d\'accès',
       `<h1>✅ Paiement confirmé</h1><p>Voici votre code d'accès — copiez-le dans l'onglet
-       « Génération des analyses » → ⚙ Accès → Code d'accès :</p>
+       « Assistant IA DHIS2 RDC » → ⚙ Accès → Code d'accès :</p>
        <div class="code">${code}</div>
        <p><b>Conservez-le précieusement</b> : il ne sera plus affiché. Vous pouvez vérifier votre solde
        à tout moment dans l'application.</p>`);

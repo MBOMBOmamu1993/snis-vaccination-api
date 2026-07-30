@@ -1,7 +1,7 @@
 # Proxy IA — Dashboard PEV de routine
 
 Ce dossier contient le **proxy Cloudflare Worker** qui alimente l'onglet
-**« Génération des analyses »** du dashboard (`docs/index.html`).
+**« Assistant IA DHIS2 RDC »** du dashboard (`docs/index.html`).
 
 Il remplit 3 fonctions :
 
