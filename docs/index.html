@@ -9511,30 +9511,31 @@
                 keyLabel: 'Clé API Ollama Cloud (commune à tous les modèles Ollama)', keyPlaceholder: 'votre clé ollama.com',
                 keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
             };
-            /* Kimi (Moonshot AI) — API OpenAI-compatible, relais via /kimi/v1/chat/completions
+            /* Kimi Code (abonnement) — API compatible Anthropic, relais via /v1/messages
                du proxy (même logique : code d'accès OU clé personnelle x-kimi-key).
+               Endpoint abonnement api.kimi.com/coding : les clés viennent de la Kimi
+               Code Console (kimi.com), pas de la plateforme au compteur.
                Les valeurs d'option sont préfixées « kimi: » pour éviter toute collision
-               avec les modèles Ollama de même nom (ex. kimi-k2.7-code). */
+               avec d'anciens réglages de même nom. */
             var IA_KIMI_KEYMETA = {
-                keyLabel: 'Clé API Moonshot AI — Kimi (commune à tous les modèles Kimi)', keyPlaceholder: 'sk-...',
-                keyHint: 'Créez une clé sur <b>platform.kimi.ai</b> (API Keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Moonshot sans la stocker : l\'API Kimi n\'autorise pas les appels directs depuis un navigateur.'
+                keyLabel: 'Clé API Kimi Code — abonnement (commune à tous les modèles Kimi)', keyPlaceholder: 'sk-...',
+                keyHint: 'Créez une clé dans la <b>Kimi Code Console</b> (kimi.com → Create API Key) avec un abonnement Kimi actif. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Kimi sans la stocker : l\'API Kimi n\'autorise pas les appels directs depuis un navigateur.'
             };
             var IA_KIMI_MODELS = [
-                { id: 'kimi-k3', label: 'Kimi K3 (vedette — raisonnement high)' },
-                { id: 'kimi-k2.7-code', label: 'Kimi K2.7 Code' },
-                { id: 'kimi-k2.6', label: 'Kimi K2.6' }
+                { id: 'k3', label: 'Kimi K3 (vedette — raisonnement high)' },
+                { id: 'kimi-for-coding', label: 'Kimi K2.7 Code' },
+                { id: 'kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed' }
             ];
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
-            var IA_DEFAULT_PROVIDER = 'kimi:kimi-k2.7-code';
-            /* Liste FIXE proposée aux clients : Kimi (Moonshot) uniquement —
-               l'admin voit la même liste Kimi dans les réglages. K3 reste PAYANT
-               (réservé aux abonnés) ; les autres modèles Kimi sont inclus dans
-               l'essai gratuit de 7 jours. */
+            var IA_DEFAULT_PROVIDER = 'kimi:kimi-for-coding';
+            /* Liste FIXE proposée aux clients : Kimi (abonnement Kimi Code) uniquement.
+               K3 reste PAYANT (réservé aux abonnés) ; K2.7 Code et K2.7 Code
+               Highspeed sont inclus dans l'essai gratuit de 7 jours. */
             var IA_CLIENT_MODELS = [
-                { v: 'kimi:kimi-k2.6', label: 'Kimi K2.6' },
-                { v: 'kimi:kimi-k2.7-code', label: 'Kimi K2.7 Code' },
-                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true }
+                { v: 'kimi:kimi-for-coding', label: 'Kimi K2.7 Code' },
+                { v: 'kimi:kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed' },
+                { v: 'kimi:k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true }
             ];
             function iaProvIsPaid(pk) { for (var i = 0; i < IA_CLIENT_MODELS.length; i++) if (IA_CLIENT_MODELS[i].v === pk) return !!IA_CLIENT_MODELS[i].paid; return false; }
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
@@ -9560,7 +9561,7 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
-                if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
+                if (p.indexOf('kimi:') === 0) return p; /* Kimi Code : 'kimi:k3', 'kimi:kimi-for-coding'… */
                 return IA_DEFAULT_PROVIDER; /* migration : seuls les modèles Kimi (Moonshot) sont proposés */
             }
             function iaProv(pk) {
@@ -9568,12 +9569,12 @@
                 if (pk === 'claude') return IA_CLAUDE;
                 if (pk === 'claude-fable') return IA_CLAUDE_FABLE;
                 if (pk.indexOf('kimi:') === 0) {
-                    var km = pk.slice(5) || 'kimi-k3';
+                    var km = pk.slice(5) || 'kimi-for-coding';
                     var kmMeta = null;
                     for (var x = 0; x < IA_KIMI_MODELS.length; x++) if (IA_KIMI_MODELS[x].id === km) kmMeta = IA_KIMI_MODELS[x];
                     return {
-                        label: kmMeta ? kmMeta.label : ('Kimi (' + km + ')'), model: km, kind: 'openai',
-                        path: '/kimi/v1/chat/completions', keyHeader: 'x-kimi-key', reasoning_effort: 'high',
+                        label: kmMeta ? kmMeta.label : ('Kimi (' + km + ')'), model: km, kind: 'anthropic',
+                        path: '/v1/messages', keyHeader: 'x-kimi-key',
                         keyLabel: IA_KIMI_KEYMETA.keyLabel, keyPlaceholder: IA_KIMI_KEYMETA.keyPlaceholder, keyHint: IA_KIMI_KEYMETA.keyHint
                     };
                 }

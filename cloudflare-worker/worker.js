@@ -4,11 +4,13 @@
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
  *   1. DEUX fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
- *        /api/chat        → Ollama Cloud (MiniMax M3)   — clé OLLAMA_API_KEY
- *        /v1/messages     → Anthropic (Claude)          — clé ANTHROPIC_API_KEY
+ *        /api/chat        → Ollama Cloud (MiniMax M3)      — clé OLLAMA_API_KEY
+ *        /v1/messages     → Kimi Code (abonnement,         — clé KIMI_API_KEY
+ *                            api.kimi.com/coding, API
+ *                            compatible Anthropic)
  *      Dans les deux cas : soit un code d'accès valide (quota décompté, clé du
  *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
- *      x-anthropic-key (relais pur, aucun quota consommé).
+ *      x-kimi-key (relais pur, aucun quota consommé).
  *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
  *      CORS, un appel direct depuis le navigateur est donc impossible.
  *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
@@ -32,10 +34,11 @@
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
- *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
- *   KIMI_API_KEY        — clé API platform.kimi.ai (Moonshot) : assistant de
- *                         lecture des captures + fournisseur Kimi K3 du dashboard
- *                         (les trois sont facultatives : un fournisseur sans clé
+ *   KIMI_API_KEY        — clé d'abonnement Kimi Code (kimi.com → Kimi Code
+ *                         Console → Create API Key) : fournisseur Kimi (K3 /
+ *                         K2.7 Code) du dashboard + assistant de lecture des
+ *                         captures (endpoint api.kimi.com/coding)
+ *                         (les deux sont facultatives : un fournisseur sans clé
  *                          reste utilisable par les clients ayant leur propre clé)
  *   DHIS2_BASE_URL      — ex. https://snisrdc.com (sans /api)
  *   DHIS2_USERNAME      — compte DHIS2 (lecture seule recommandé)
@@ -81,11 +84,14 @@ const OFFERS = [
    forme + un défaut. Le tag « :cloud » (ou suffixe -cloud) est obligatoire —
    sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
 const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
-const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
+/* Kimi Code (abonnement) — API compatible Anthropic sur api.kimi.com/coding.
+   Modèles du palier Allegretto : k3 (vedette), kimi-for-coding (K2.7 Code),
+   kimi-for-coding-highspeed. Le 1er de la liste sert de défaut. */
+const ALLOWED_KIMI_MODELS = ['kimi-for-coding', 'kimi-for-coding-highspeed', 'k3'];
 /* Modèles PUISSANTS réservés aux abonnés PAYANTS : un code d'ESSAI gratuit ne
    peut PAS les utiliser (réponse 402 → le dashboard redirige vers l'achat).
-   Les clés personnelles (x-anthropic-key / x-kimi-key) ne sont jamais bloquées. */
-const PAID_ONLY_MODELS = new Set(['claude-opus-4-8', 'claude-fable-5', 'kimi-k3']);
+   Les clés personnelles (x-kimi-key) ne sont jamais bloquées. */
+const PAID_ONLY_MODELS = new Set(['k3']);
 function blockIfTrialPaidModel(resolved, model, cors) {
   if (resolved && resolved.auth && resolved.auth.rec && resolved.auth.rec.trial && PAID_ONLY_MODELS.has(String(model))) {
     return json({ error: { type: 'paid_required', message: "Le modèle « " + model + " » est réservé aux abonnés. L'essai gratuit ne donne accès qu'aux modèles standard. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour l'utiliser." } }, 402, cors);
@@ -94,7 +100,10 @@ function blockIfTrialPaidModel(resolved, model, cors) {
 }
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
 const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+/* Kimi Code (abonnement) — endpoint compatible Anthropic. Les clés se créent
+   dans la Kimi Code Console (kimi.com) ; elles ne sont PAS acceptées par
+   api.moonshot.ai (plateforme au compteur) ni api.anthropic.com. */
+const KIMI_CODING_URL = 'https://api.kimi.com/coding/v1/messages';
 /* Moonshot : plateforme internationale api.moonshot.ai (platform.kimi.ai).
    Si la clé vient de la plateforme chinoise : poser KIMI_API_BASE =
    https://api.moonshot.cn dans les vars. */
@@ -365,20 +374,22 @@ async function proxyKimi(request, env, cors) {
   return await finishIaResponse(env, upstream, resolved, cors, 'text/event-stream');
 }
 
+/* Proxy Kimi Code (abonnement) — API compatible Anthropic (SSE). Même logique
+   que les autres fournisseurs : code d'accès (quota) OU clé personnelle x-kimi-key. */
 async function proxyAnthropic(request, env, cors) {
   let resolved;
-  try { resolved = await resolveIaAuth(request, env, 'x-anthropic-key', 'ANTHROPIC_API_KEY'); }
+  try { resolved = await resolveIaAuth(request, env, 'x-kimi-key', 'KIMI_API_KEY'); }
   catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
 
   let body;
   try { body = await request.json(); }
   catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
 
-  if (!ALLOWED_ANTHROPIC_MODELS.includes(body.model)) body.model = ALLOWED_ANTHROPIC_MODELS[0];
+  if (!ALLOWED_KIMI_MODELS.includes(body.model)) body.model = ALLOWED_KIMI_MODELS[0];
   { const blk = blockIfTrialPaidModel(resolved, body.model, cors); if (blk) return blk; }
   if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
 
-  const upstream = await fetch(ANTHROPIC_URL, {
+  const upstream = await fetch(KIMI_CODING_URL, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -1016,9 +1027,9 @@ async function sendMail(env, toEmail, toName, subject, html) {
 
 /* ═══ Assistant IA de gestion des paiements ═══
    Lit la capture mobile money et résume : montant, opérateur, référence, date.
-   Prestataire : AI_HELPER_PROVIDER = kimi (défaut, KIMI_API_KEY) | claude | ollama.
-   Modèle      : AI_HELPER_MODEL (défauts : kimi-k3 · claude-opus-4-8
-                 · minimax-m3:cloud).
+   Prestataire : AI_HELPER_PROVIDER = kimi (défaut, KIMI_API_KEY — endpoint
+   abonnement api.kimi.com/coding) | ollama.
+   Modèle      : AI_HELPER_MODEL (défauts : kimi-for-coding · minimax-m3:cloud).
    ⚠️ Ne VALIDE jamais un paiement : aide à la lecture seulement — le vendeur
    garde le clic « Livrer » (une capture peut toujours être falsifiée). */
 async function aiProofSummary(env, b64, ct) {
@@ -1032,12 +1043,13 @@ async function aiProofSummary(env, b64, ct) {
     return t.includes('PAS_UN_PAIEMENT') ? '⚠️ Cette image ne semble pas être une capture de paiement' : t;
   };
   try {
-    if (provider === 'claude' && env.ANTHROPIC_API_KEY) {
-      const r = await fetch(ANTHROPIC_URL, {
+    /* Kimi Code (abonnement) — format Anthropic : bloc image base64 natif. */
+    if (provider === 'kimi' && env.KIMI_API_KEY) {
+      const r = await fetch(KIMI_CODING_URL, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': env.ANTHROPIC_API_KEY },
+        headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': env.KIMI_API_KEY },
         body: JSON.stringify({
-          model: env.AI_HELPER_MODEL || 'claude-opus-4-8', max_tokens: 150,
+          model: env.AI_HELPER_MODEL || 'kimi-for-coding', max_tokens: 150,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: ct || 'image/png', data: b64 } },
             { type: 'text', text: prompt }] }],
@@ -1045,20 +1057,6 @@ async function aiProofSummary(env, b64, ct) {
       });
       const d = await r.json();
       return clean(d && d.content && d.content[0] && d.content[0].text);
-    }
-    if (provider === 'kimi' && env.KIMI_API_KEY) {
-      const r = await fetch((env.KIMI_API_BASE || KIMI_DEFAULT_BASE).replace(/\/+$/, '') + '/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.KIMI_API_KEY },
-        body: JSON.stringify({
-          model: env.AI_HELPER_MODEL || 'kimi-k3', max_tokens: 150, reasoning_effort: 'low',
-          messages: [{ role: 'user', content: [
-            { type: 'image_url', image_url: { url: 'data:' + (ct || 'image/png') + ';base64,' + b64 } },
-            { type: 'text', text: prompt }] }],
-        }),
-      });
-      const d = await r.json();
-      return clean(d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
     }
     /* défaut : Ollama Cloud — MiniMax M3 (vision), modifiable via AI_HELPER_MODEL */
     if (env.OLLAMA_API_KEY) {
