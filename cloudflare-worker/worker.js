@@ -389,12 +389,19 @@ async function proxyAnthropic(request, env, cors) {
   { const blk = blockIfTrialPaidModel(resolved, body.model, cors); if (blk) return blk; }
   if (!body.max_tokens || body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
 
-  const upstream = await fetch(KIMI_CODING_URL, {
+  /* api.kimi.com est protégé par le WAF Cloudflare : les sous-requêtes de
+     Workers (IP datacenter) sont bloquées (« Attention Required! »). On passe
+     donc par le relais muet de la rewrite Vercel (KIMI_RELAY_URL, IP AWS) —
+     simple proxy inverse qui transmet tel quels corps, en-têtes et flux SSE. */
+  const upstream = await fetch(env.KIMI_RELAY_URL || KIMI_CODING_URL, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       'anthropic-version': request.headers.get('anthropic-version') || '2023-06-01',
       'x-api-key': resolved.key,
+      'user-agent': 'claude-cli/2.0.0 (external, cli)',
+      accept: 'application/json',
+      'accept-language': 'en-US,en;q=0.9',
     },
     body: JSON.stringify(body),
   });
@@ -1045,7 +1052,7 @@ async function aiProofSummary(env, b64, ct) {
   try {
     /* Kimi Code (abonnement) — format Anthropic : bloc image base64 natif. */
     if (provider === 'kimi' && env.KIMI_API_KEY) {
-      const r = await fetch(KIMI_CODING_URL, {
+      const r = await fetch(env.KIMI_RELAY_URL || KIMI_CODING_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': env.KIMI_API_KEY },
         body: JSON.stringify({
