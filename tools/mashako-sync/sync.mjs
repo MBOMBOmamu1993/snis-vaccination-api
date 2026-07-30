@@ -227,6 +227,15 @@ async function main() {
 
   writeFileSync(LOCK, new Date().toISOString() + " pid=" + process.pid);
 
+  /* Heartbeat du verrou : ce run dure souvent ~10 h, or les concurrents
+     (backfill, autre synchro) considèrent le verrou périmé après 2 h → ils
+     lançaient Chrome sur le profil occupé et plantaient (crashs 27-29/07).
+     On retouche le verrou toutes les 15 min pour signaler que ce run vit. */
+  const heartbeat = setInterval(() => {
+    try { writeFileSync(LOCK, new Date().toISOString() + " pid=" + process.pid); } catch (e) { }
+  }, 15 * 60000);
+  heartbeat.unref?.();
+
   rmSync(path.join(OUT, "views"), { recursive: true, force: true });
   mkdirSync(path.join(OUT, "views"), { recursive: true });
   log(`— Début synchro Mashako 3.0 v3 (feuilles + antennes)${HEADLESS ? " [arrière-plan]" : ""} —`);
@@ -1227,6 +1236,28 @@ async function main() {
       });
       if (kept.length) log(`⚠ Conservé de la publication précédente : ${kept.join(", ")}.`);
     }
+
+    /* ── Détail ZS Dispo/Expiration, intégré à la synchro quotidienne (29/07) ──
+       Avant : les *_ZS.json n'étaient régénérés qu'à la main et survivaient
+       datés via la fusion. Désormais : régénérés à CHAQUE run ANT (chaîne
+       crosstab sur les feuilles masquées _TABLE_…, session courante réutilisée)
+       et publiés dans le même commit. Un échec n'annule JAMAIS la publication :
+       les anciens fichiers restent référencés (fusion ci-dessus). */
+    if (!IS_ZS) {
+      try {
+        const { exportAntZsDetail } = await import("./export-ant-zs-detail.mjs");
+        const det = await exportAntZsDetail(page, { month: CUR_MONTH, year: CUR_YEAR, log });
+        const posZs = {}; metaViews.forEach((v, i) => { posZs[v.urlName] = i; });
+        for (const [urlName, d] of Object.entries(det)) {
+          const entree = { name: d.label, urlName, rows: d.rows, file: d.file, image: null, antImages: null };
+          if (posZs[urlName] == null) metaViews.push(entree);
+          else metaViews[posZs[urlName]] = entree; // remplace l'entrée fusionnée (stale) par la version fraîche
+        }
+        log(`✓ Détail ZS quotidien : ${Object.entries(det).map(([k, v]) => `${k} (${v.rows} ZS, ${v.avec} avec données)`).join(", ")}`);
+      } catch (e) {
+        log(`⚠ Détail ZS quotidien en échec (${String(e.message || e).slice(0, 120)}) — la publication continue (anciens fichiers conservés via la fusion).`);
+      }
+    }
     const meta = {
       generated_at: new Date().toISOString(),
       server: SERVER.replace("https://", ""), site: SITE,
@@ -1399,6 +1430,7 @@ async function main() {
     notify(`La synchro Mashako a echoue : ${e.message}`);
     process.exitCode = 1;
   } finally {
+    clearInterval(heartbeat);
     await ctx.close().catch(() => { });
     rmSync(LOCK, { force: true });
   }

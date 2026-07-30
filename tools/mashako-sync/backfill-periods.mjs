@@ -136,11 +136,31 @@ async function main() {
   }
   const labels = Object.keys(urlCache);
 
-  const ctx = await chromium.launchPersistentContext(PROFILE, {
-    channel: "chrome", headless: true, ignoreDefaultArgs: ["--enable-automation"],
-    viewport: { width: 1600, height: 950 },
-    args: ["--no-first-run", "--no-default-browser-check"],
-  });
+  /* Le profil Chrome peut être occupé par une synchro en cours (sync.mjs
+     tourne parfois ~10 h ; son verrou est désormais rafraîchi par heartbeat,
+     mais la fenêtre de 2 h laissait passer les runs longs → crash au
+     lancement les 27-29/07). 3 essais espacés de 30 s (profil en cours de
+     fermeture), puis abandon PROPRE — le verrou est libéré et le backfill
+     retentera au prochain créneau — au lieu du crash non intercepté. */
+  let ctx = null, launchErr = null;
+  for (let essai = 1; essai <= 3 && !ctx; essai++) {
+    try {
+      ctx = await chromium.launchPersistentContext(PROFILE, {
+        channel: "chrome", headless: true, ignoreDefaultArgs: ["--enable-automation"],
+        viewport: { width: 1600, height: 950 },
+        args: ["--no-first-run", "--no-default-browser-check"],
+      });
+    } catch (e) {
+      launchErr = e;
+      log(`  ⟳ Lancement de Chrome impossible (essai ${essai}/3 : ${String(e.message || e).slice(0, 80)})${essai < 3 ? " — nouvel essai dans 30 s…" : ""}`);
+      if (essai < 3) await sleep(30000);
+    }
+  }
+  if (!ctx) {
+    log(`⏭ Profil Chrome indisponible (synchro en cours ?) — abandon propre, retente au prochain créneau.`);
+    rmSync(LOCK, { force: true });
+    return 3;
+  }
   const page = ctx.pages()[0] || await ctx.newPage();
   let exitCode = 0;
   try {
