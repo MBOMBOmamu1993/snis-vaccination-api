@@ -102,6 +102,12 @@ const MAX_TOKENS_CAP = 16000;
    (minuit Kinshasa), PAR APPAREIL. Empreinte = hash(IP + User-Agent) ;
    un nouvel appui sur « Essai gratuit » rend le même code. ── */
 const TRIAL_DAYS = 7;
+/* Fenêtre d'enchaînement : une « analyse » = toute la chaîne d'appels de la
+   boucle d'outils (DHIS2, graphiques, rapport…) — jusqu'à ~30 requêtes. Le
+   jour est marqué à la 1re requête réussie ; les requêtes SUIVANTES restent
+   autorisées pendant TRIAL_CHAIN_MIN minutes pour finir l'analyse en cours,
+   puis toute nouvelle analyse est renvoyée vers l'achat jusqu'au lendemain. */
+const TRIAL_CHAIN_MIN = 30;
 /* Jour calendaire à Kinshasa (UTC+1, pas d'heure d'été) — sert à la limite
    d'1 analyse par jour des codes d'essai. */
 function kinshasaToday() { return new Date(Date.now() + 3600e3).toISOString().slice(0, 10); }
@@ -271,10 +277,14 @@ async function resolveIaAuth(request, env, ownKeyHeader, serviceKeyName) {
   const auth = await requireCode(request, env); /* lève une erreur si invalide */
   /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
   if (auth.rec.dhis2_only) throw Object.assign(new Error('Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.'), { status: 403 });
-  /* Code d'ESSAI : 1 analyse IA par jour (minuit Kinshasa). Au-delà → achat.
-     Le jour consommé est marqué après une réponse réussie (finishIaResponse). */
+  /* Code d'ESSAI : 1 analyse IA par jour (minuit Kinshasa). Le jour est marqué
+     à la 1re requête réussie ; les requêtes enchaînées de la MÊME analyse
+     (boucle d'outils) passent pendant TRIAL_CHAIN_MIN min. Au-delà → achat. */
   if (auth.rec.trial && auth.rec.lastDay === kinshasaToday()) {
-    throw Object.assign(new Error("🎁 Essai gratuit : 1 analyse par jour — vous avez déjà utilisé celle d'aujourd'hui. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour un usage illimité, ou réessayez demain."), { status: 402 });
+    const t0 = Date.parse(auth.rec.lastTs || '');
+    if (!(t0 && Date.now() - t0 < TRIAL_CHAIN_MIN * 60e3)) {
+      throw Object.assign(new Error("🎁 Essai gratuit : 1 analyse par jour — vous avez déjà utilisé celle d'aujourd'hui. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour un usage illimité, ou réessayez demain."), { status: 402 });
+    }
   }
   if (!env[serviceKeyName]) throw Object.assign(new Error('Ce fournisseur n\'est pas configuré sur le proxy (' + serviceKeyName + ' absent). Choisissez l\'autre fournisseur dans ⚙ Accès, ou utilisez votre propre clé.'), { status: 503 });
   return { key: env[serviceKeyName], auth: auth };
@@ -286,10 +296,16 @@ async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
   const headers = { 'content-type': upstream.headers.get('content-type') || defaultCt, ...cors };
   if (resolved.auth) {
     if (upstream.ok) {
-      /* Code d'essai : pas de quota décompté — on marque le JOUR (limite
-         d'1 analyse/jour). Code payant : 1 requête réussie = 1 unité. */
-      if (resolved.auth.rec.trial) resolved.auth.rec.lastDay = kinshasaToday();
-      else resolved.auth.rec.remaining -= 1;
+      /* Code d'essai : pas de quota décompté — on marque le JOUR à la 1re
+         requête réussie seulement (les suivantes de la chaîne ne prolongent
+         pas la fenêtre TRIAL_CHAIN_MIN). Code payant : 1 requête = 1 unité. */
+      if (resolved.auth.rec.trial) {
+        const today = kinshasaToday();
+        if (resolved.auth.rec.lastDay !== today) {
+          resolved.auth.rec.lastDay = today;
+          resolved.auth.rec.lastTs = new Date().toISOString();
+        }
+      } else resolved.auth.rec.remaining -= 1;
       await putCode(env, resolved.auth.code, resolved.auth.rec);
     }
     headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
