@@ -79,7 +79,9 @@ jobs:
           node-version: "22"
 
       # État à conserver d'une exécution à l'autre : registre de couverture ZS,
-      # noms d'URL résolus, garde « déjà synchronisé aujourd'hui ».
+      # noms d'URL résolus, garde « déjà synchronisé aujourd'hui », et — pour le
+      # détail par aire de santé (reprendre où le relais précédent s'est arrêté)
+      # — le journal zs_as_ledger + les tranches déjà exportées.
       - name: Restaurer l'état de la dernière exécution
         uses: actions/cache@v4
         with:
@@ -89,6 +91,11 @@ jobs:
             tools/mashako-sync/urlnames-zs.json
             tools/mashako-sync/best_count.json
             tools/mashako-sync/best_count_zs.json
+            tools/mashako-sync/zs_as_ledger.json
+            tools/mashako-sync/zs_as_ledger_s1.json
+            tools/mashako-sync/zs_as_ledger_s2.json
+            tools/mashako-sync/zs_as_ledger_s3.json
+            tools/mashako-sync/out-zs/views
           key: mashako-etat-${{ github.run_id }}
           restore-keys: mashako-etat-
 

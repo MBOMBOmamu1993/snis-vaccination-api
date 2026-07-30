@@ -36,6 +36,7 @@ import { readFileSync, writeFileSync, mkdirSync, statSync, rmSync, existsSync } 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readXlsx } from "./xlsx-lite.mjs";
+import { surveiller, bailAutre } from "./cloud/lease.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PROFILE = process.env.MASHAKO_PROFILE || path.join(HERE, "browser-profile");
@@ -181,6 +182,14 @@ if (partage) {
   writeFileSync(LOCK, `${new Date().toISOString()} pid=${process.pid} export-zs-as`);
 }
 const lockTimer = partage ? setInterval(() => { try { writeFileSync(LOCK, `${new Date().toISOString()} pid=${process.pid} export-zs-as`); } catch (e) { } }, 20 * 60000) : null;
+
+/* Bail « as » (cloud/lease.mjs) : coordonne PC ↔ relais cloud (VM/Actions) —
+   un seul export AS à la fois, sinon Tableau bride le compte et les deux runs
+   échouent. Fail-open : GitHub muet → on travaille quand même. */
+const autre = bailAutre("as");
+if (autre) { log(`⏭ ${autre.titulaire} collecte déjà le détail AS (battement il y a ${autre.age_min} min) — abandon.`); await ctx.close(); process.exit(0); }
+const bail = surveiller("as", { note: `export AS${SHARD ? " " + SHARD[1] + "/" + SHARD[2] : ""}`, tache: "sync" });
+if (!bail) log("⚠ Bail « as » non posé (GitHub muet) — on continue (fail-open).");
 
 /* Un tableau croisé Tableau éclate la feuille en plusieurs sous-tables, une
    par bloc de mesures : la même aire de santé revient donc sur 4 à 8 lignes

@@ -38,8 +38,10 @@ const TZ = process.env.MASHAKO_TZ || "Africa/Kinshasa";
 const LOG = path.join(RACINE, "arbitre.log");
 
 /* Horaires des tâches planifiées du PC (heure de Kinshasa). La VM attend
-   GRACE minutes de plus : le PC garde toujours la priorité. */
-const HORAIRES = { ant: 7 * 60, zs: 10 * 60 + 30 };
+   GRACE minutes de plus : le PC garde toujours la priorité.
+   « as » = détail par aire de santé : il dépend du classeur ZS ; on laisse
+   au PC jusqu'à 14h45 (sa passe ZS finit vers 13h, ses workers AS suivent). */
+const HORAIRES = { ant: 7 * 60, zs: 10 * 60 + 30, as: 14 * 60 };
 const HORAIRES_BACKFILL = { ant: 20 * 60, zs: 23 * 60 + 30 };
 const GRACE_MIN = Number(process.env.MASHAKO_GRACE_MIN || 45);
 
@@ -53,7 +55,7 @@ const DECIDER = args.includes("--decider");
 const DRY = args.includes("--dry") || DECIDER;
 const FORCE = args.includes("--force");
 const TACHE = opt("--tache", "sync");
-const CANAUX = opt("--canal") ? [opt("--canal")] : ["ant", "zs"];
+const CANAUX = opt("--canal") ? [opt("--canal")] : ["ant", "zs", "as"];
 
 function log(msg) {
   const ligne = `[${new Date().toISOString()}] ${msg}`;
@@ -80,13 +82,15 @@ function partsKinshasa(d = new Date()) {
  * non par raw.githubusercontent, dont le CDN sert jusqu'à 5 min de retard.
  */
 function jourDernierePublication(canal) {
-  const chemin = canal === "zs" ? "zs/meta.json" : "meta.json";
+  /* AS : pas de meta.json — la preuve est le generated_at du détail fusionné
+     (zs/views/Supervision_HZ_P1_AS.json, toujours produit par la publication). */
+  const chemin = canal === "zs" ? "zs/meta.json" : canal === "as" ? "zs/views/Supervision_HZ_P1_AS.json" : "meta.json";
   try {
     const brut = gh([`${REPO}/contents/${chemin}?ref=mashako-data`, "--jq", ".content"]);
     const meta = JSON.parse(Buffer.from(brut.trim(), "base64").toString("utf8"));
     if (!meta.generated_at) return null;
     const p = partsKinshasa(new Date(meta.generated_at));
-    return { jour: p.jour, minutes: p.minutes, quand: meta.generated_at, feuilles: (meta.views || []).length };
+    return { jour: p.jour, minutes: p.minutes, quand: meta.generated_at, feuilles: (meta.views || []).length, zones: (meta.zones || []).length };
   } catch (e) {
     log(`⚠ meta.json (${canal}) illisible : ${String(e.stderr || e.message).slice(0, 200)}`);
     return null; /* dans le doute on considère « pas publié » → la VM tentera */
@@ -94,6 +98,24 @@ function jourDernierePublication(canal) {
 }
 
 function lancer(canal, tache) {
+  /* AS : export reprenable (journal zs_as_ledger*.json, porté par le cache
+     Actions) plafonné à 4 h 30, puis fusion + publication — même enchaîné que
+     la tâche locale de 06h15. */
+  if (canal === "as") {
+    log(`▶ Prise de relais AS : export-zs-as.mjs puis publish-zs-as.mjs — titulaire ${TITULAIRE}`);
+    const bail = surveiller(canal, { note: "arbitre détail AS", tache: "sync" });
+    if (!bail) log("⚠ Bail non posé (GitHub muet) — on lance quand même (fail-open).");
+    let r = spawnSync(process.execPath, [path.join(RACINE, "export-zs-as.mjs")], {
+      cwd: RACINE, env: { ...process.env, MASHAKO_ROLE: process.env.MASHAKO_ROLE || "vm", MASHAKO_HEADLESS: "1", MASHAKO_MINUTES: "270" }, stdio: "inherit", timeout: 300 * 60 * 1000,
+    });
+    /* On publie même un export partiel : le journal de reprise le complètera
+       au prochain relais ; chaque zone publiée est gagnée pour le dashboard. */
+    const p = spawnSync(process.execPath, [path.join(RACINE, "publish-zs-as.mjs"), "--fusion"], { cwd: RACINE, env: process.env, stdio: "inherit", timeout: 30 * 60 * 1000 });
+    const code = r.status === 0 ? p.status : r.status;
+    liberer(canal, code === 0 ? "succès" : `code ${code}`);
+    log(`■ Fin détail AS — export ${r.status}, publication ${p.status}`);
+    return code;
+  }
   const script = tache === "backfill" ? "backfill-periods.mjs" : "sync.mjs";
   const env = {
     ...process.env,
@@ -118,6 +140,7 @@ function examiner(canal) {
   const { jour, minutes } = partsKinshasa();
   const heure = (TACHE === "backfill" ? HORAIRES_BACKFILL : HORAIRES)[canal];
   const prefixe = `${canal.toUpperCase()} ${TACHE}`;
+  if (heure == null) { log(`${prefixe} — pas de créneau ${TACHE} pour ce canal — ignoré.`); return "ignore"; }
 
   /* 1. Déjà fait aujourd'hui ? (le backfill n'a pas de marqueur : il s'auto-
         suspend tout seul avec « rien à faire ».) */
@@ -126,9 +149,11 @@ function examiner(canal) {
     /* ⚠ Une passe ZS dure jusqu'à 17 h : lancée à 10h30, elle publie vers 4 h
        du matin LE LENDEMAIN. Une publication datée d'aujourd'hui mais ANTÉRIEURE
        à l'heure prévue est donc le fruit du run de la veille — elle ne dispense
-       pas de la synchro du jour. */
-    if (pub && pub.jour === jour && pub.minutes >= heure) {
-      log(`${prefixe} — déjà publié aujourd'hui (${pub.feuilles} feuilles, ${pub.quand}). Rien à faire.`);
+       pas de la synchro du jour. ⚠ AS : l'inverse — la publication quotidienne
+       a lieu tôt (06h15, avant l'heure de grâce) et compte pour AUJOURD'HUI. */
+    const deja = canal === "as" ? (pub && pub.jour === jour) : (pub && pub.jour === jour && pub.minutes >= heure);
+    if (deja) {
+      log(`${prefixe} — déjà publié aujourd'hui (${pub.feuilles || pub.zones || "?"} ${canal === "as" ? "zones" : "feuilles"}, ${pub.quand}). Rien à faire.`);
       return "deja";
     }
     if (pub && pub.jour === jour) {
