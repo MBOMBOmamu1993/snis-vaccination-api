@@ -3,6 +3,12 @@
   "buildCommand": "node scripts/build-static.mjs",
   "outputDirectory": "dist",
   "installCommand": "echo skip",
+  "rewrites": [
+    {
+      "source": "/api/kimi-relay",
+      "destination": "https://api.kimi.com/coding/v1/messages"
+    }
+  ],
   "headers": [
     {
       "source": "/index.html",
