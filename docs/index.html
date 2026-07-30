@@ -13525,16 +13525,16 @@
                     sub: "% du stock expirant prochainement, par zone de santé et par antigène",
                     sortBy: 'Zone de santé', row: 'Zone de santé',
                     cols: [
-                        { c: '_perc_HA_expiry_alert_BCG', l: 'BCG', t: 'colornum', k: '_perc_HA_expiry_alert_BCG_COLOR' },
-                        { c: '_perc_HA_expiry_alert_Penta', l: 'Penta', t: 'colornum', k: '_perc_HA_expiry_alert_Penta_COLOR' },
-                        { c: '_perc_HA_expiry_alert_PCV', l: 'PCV', t: 'colornum', k: '_perc_HA_expiry_alert_PCV_COLOR' },
-                        { c: '_perc_HA_expiry_alert_vpo', l: 'VPO', t: 'colornum', k: '_perc_HA_expiry_alert_vpo_COLOR' },
-                        { c: '_perc_HA_expiry_alert_rota', l: 'Rota', t: 'colornum', k: '_perc_HA_expiry_alert_rota_COLOR' },
-                        { c: '_perc_HA_expiry_alert_vpi', l: 'VPI', t: 'colornum', k: '_perc_HA_expiry_alert_vpi_COLOR' },
-                        { c: '_perc_HA_expiry_alert_var', l: 'VAR-RR', t: 'colornum', k: '_perc_HA_expiry_alert_var_COLOR' },
-                        { c: '_perc_HA_expiry_alert_td', l: 'TD', t: 'colornum', k: '_perc_HA_expiry_alert_td_COLOR' }
+                        { c: '_perc_HA_expiry_alert_BCG', l: 'BCG', t: 'colornum', k: '_perc_HA_expiry_alert_BCG_COLOR', d: '_date_expiry_BCG' },
+                        { c: '_perc_HA_expiry_alert_Penta', l: 'Penta', t: 'colornum', k: '_perc_HA_expiry_alert_Penta_COLOR', d: '_date_expiry_Penta' },
+                        { c: '_perc_HA_expiry_alert_PCV', l: 'PCV', t: 'colornum', k: '_perc_HA_expiry_alert_PCV_COLOR', d: '_date_expiry_PCV' },
+                        { c: '_perc_HA_expiry_alert_vpo', l: 'VPO', t: 'colornum', k: '_perc_HA_expiry_alert_vpo_COLOR', d: '_date_expiry_vpo' },
+                        { c: '_perc_HA_expiry_alert_rota', l: 'Rota', t: 'colornum', k: '_perc_HA_expiry_alert_rota_COLOR', d: '_date_expiry_rota' },
+                        { c: '_perc_HA_expiry_alert_vpi', l: 'VPI', t: 'colornum', k: '_perc_HA_expiry_alert_vpi_COLOR', d: '_date_expiry_vpi' },
+                        { c: '_perc_HA_expiry_alert_var', l: 'VAR-RR', t: 'colornum', k: '_perc_HA_expiry_alert_var_COLOR', d: '_date_expiry_var' },
+                        { c: '_perc_HA_expiry_alert_td', l: 'TD', t: 'colornum', k: '_perc_HA_expiry_alert_td_COLOR', d: '_date_expiry_td' }
                     ],
-                    foot: "% du stock expirant prochainement par zone de santé — couleurs de la source Tableau (<b>rouge</b> : alerte expiration). Source : export du visuel original (feuille _TABLE_vaccine_expiry)."
+                    foot: "% du stock expirant prochainement par zone de santé, avec la date d'expiration la plus proche sous le pourcentage — couleurs de la source Tableau (<b>rouge</b> : alerte expiration). Source : export du visuel original (feuille _TABLE_vaccine_expiry)."
                 },
                 'Livraison_ANT_P1': {
                     title: 'Satisfaction des besoins',
@@ -14283,12 +14283,15 @@
                     }
                     /* colornum : TEXTE coloré par la colonne couleur littérale Tableau
                        (green/red/orange) — rendu conforme à l'original (expiration :
-                       % et dates en texte rouge/vert, pas de pastilles). */
+                       % et dates en texte rouge/vert, pas de pastilles). sp.d =
+                       colonne compagnon date (« Expiration la plus proche ») affichée
+                       en sous-ligne quand l'export la fournit (29/07). */
                     if (sp.t === 'colornum') {
                         var sc = String(v == null ? '' : v).trim();
                         if (sc === '') return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>';
                         var cc = sp.k ? mkColorOf(r[sp.k]) : null;
-                        return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + (cc || '#334155') + ';font-weight:800">' + esc(sc) + '</td>';
+                        var sd = sp.d ? String(r[sp.d] == null ? '' : r[sp.d]).trim() : '';
+                        return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + (cc || '#334155') + ';font-weight:800">' + esc(sc) + (sd ? '<div style="font-weight:700;font-size:10px;opacity:.85;margin-top:1px">' + esc(sd) + '</div>' : '') + '</td>';
                     }
                     /* semaiz / semaint : semaines de stock colorées au SEUIL de la
                        légende originale « Disponibilité des vaccins » :
