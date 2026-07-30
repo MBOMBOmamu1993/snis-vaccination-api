@@ -13,8 +13,12 @@
 3. Vérifier à la synchro ANT du 30/07 que le détail ZS quotidien tourne
    (sync.log → « ✓ Détail ZS quotidien : Dispo_vaccins_ZS… ») et que les
    *_ZS.json sont frais dans le commit publié.
-4. Quand le RCCM sera obtenu : créer le compte CinetPay, poser CINETPAY_APIKEY
+4. Vérifier le relais cloud AS à la 1re ronde de rattrapage où le PC n'a rien
+   publié (arbitre.log côté Actions : « AS sync — prise de relais ») ; confirmer
+   que le bail « as » tenu par les workers PC bloque bien le cloud (dry-run
+   `node cloud/arbitre.mjs --dry --canal as` un jour de run PC).
+5. Quand le RCCM sera obtenu : créer le compte CinetPay, poser CINETPAY_APIKEY
    + CINETPAY_SITE_ID → bascule automatique en paiement 100 % automatique.
-5. Copie Documents\snis-vaccination-api : retard 705+ commits, fichiers non
+6. Copie Documents\snis-vaccination-api : retard 705+ commits, fichiers non
    commités — laissée telle quelle (décision Felly 29/07 : pas d'écrasement).
    Le repo principal est synchronisé et git y est redevenu sain.

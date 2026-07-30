@@ -93,6 +93,48 @@ Contexte permanent :
   LAST_12_WEEKS) ; programIndicators = canevas DV ABANDONNÉS sans données →
   ne pas utiliser.
 
+État 30/07/2026 — DÉTAIL AS : REPUBLICATION + FRONTEND CORRIGÉ + RELAIS CLOUD :
+
+A) Vérification du rapport du 29/07 (session Claude) :
+- Confirmé : 11 fichiers _AS.json seulement en ligne (la fusion de 26 zones
+  n'avait jamais été republiée après la coupure réseau du 29/07 07:06) ;
+  workers AS relancés depuis (75 zones couvertes au 30/07 02:00) ; verrou
+  orphelin résorbé ; synchro ZS partie via rattrapage.
+- Republication faite en plein run (prévue pour) : 39b51f20c — 18 feuilles,
+  75 zones (vs 11), 6 473 lignes.
+
+B) Erreurs frontend mkAsAppend (demande du 29/07, « on corrigera demain ») —
+   TOUTES corrigées dans docs/index.html (e3c7daf77) :
+1. Libellés Supervision décalés : MK_AS_LABELS réécrit dans l'ordre RÉEL des
+   blocs (b2=taux, b3=localisation, b4=cohérence, b5=durée, b6=qualité).
+2. Pivots booléens affichés « 1 » : une colonne dont toutes les valeurs ∈
+   {'1',''} est un pivot → on affiche SON NOM (Oui/Non, Faux/Vrai, Qualité…).
+3. Fuite SUPERVISION (« · 0 » partout) → filtrée dans mkAsJunk.
+4. Livraison : en-têtes antigènes dans l'ordre réel (b2..b14) + globales
+   (Approv/conditions) dédupliquées (1re occurrence seulement) + _perc_…
+   conservés AVANT le junk → % par antigène affichés (ratio >1 → 102%, 1567%…).
+5. Couleurs Livraison : suffixe _COLOR_new (et pas seulement _COLOR) capturé.
+6. Colonne « Centre de Santé » affichée seulement si ≥1 ligne a une valeur.
+- Validations : 5/5 blocs vm.Script + harnais test-mkas-harness.mjs (dans
+  tools/mashako-sync/) qui évalue les VRAIES fonctions du fichier sur les
+  vrais JSON (Supervision/Livraison/Infirmier × Aba/Aketi) — tous contrôles OK.
+
+C) Relais cloud du détail AS (5e chaîne, la seule sans filet) — f55486517 :
+- Faisabilité confirmée : Actions activées, secret TABLEAU_COOKIES frais
+  (reconnecter.mjs republie), workflow mashako_cloud.yml déjà éprouvé
+  (arbitre + lease + seed-profile + alertes).
+- Canal « as » dans cloud/arbitre.mjs : preuve de publication via
+  zs/views/Supervision_HZ_P1_AS.json (generated_at du jour, toute heure) ;
+  grace 14h00+45 min (le PC a la priorité après sa passe ZS) ; lancer =
+  export-zs-as.mjs (MASHAKO_MINUTES=270, reprenable) + publish-zs-as.mjs
+  --fusion (même partiel — chaque zone publiée est gagnée).
+- Bail « as » dans export-zs-as.mjs (surveiller + bailAutre, fail-open) :
+  PC et cloud ne tournent JAMAIS en même temps.
+- Cache Actions : zs_as_ledger*.json + out-zs/views (journal de reprise porté
+  entre exécutions — proposition du 29/07).
+- Dry-run validé sur les 3 canaux : ANT attente 07h00, ZS attente 10h30,
+  AS « déjà publié aujourd'hui (75 zones) ».
+
 État 29/07/2026 — GIT LOCAL RÉPARÉ + FIX BACKFILL + DÉTAIL ZS INDUSTRIALISÉ :
 
 A) Synchro git (repo principal C:\Users\felly\snis-vaccination-api) :

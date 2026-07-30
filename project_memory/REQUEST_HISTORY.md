@@ -9,6 +9,39 @@ Résultat :
 
 ---
 
+Date : 30/07/2026
+Demande : « Tu vérifies tout ceci aussi » — rapport du 29/07 (session Claude) :
+  détail AS (26 zones collectées non publiées, 11 fichiers en ligne), 2 actions
+  prévues (corriger les erreurs frontend mkAsAppend + relais cloud du détail
+  AS), état synchro ZS (pannes, verrou orphelin, rattrapage).
+Fichiers concernés : docs/index.html, tools/mashako-sync/cloud/arbitre.mjs,
+  export-zs-as.mjs, .github/workflows/mashako_cloud.yml,
+  tools/mashako-sync/test-mkas-harness.mjs (nouveau), project_memory/*
+Action faite : (1) Vérifications : 11 fichiers _AS.json en ligne confirmé ;
+  workers AS relancés depuis (75 zones) ; verrou orphelin résorbé ; synchro ZS
+  en cours via rattrapage. (2) Republication du détail AS en plein run
+  (39b51f20c — 18 feuilles, 75 zones, 6 473 lignes). (3) Audit mkAsAppend sur
+  les vrais JSON : 6 erreurs trouvées — libellés Supervision décalés (ordre
+  réel b2..b6), pivots booléens rendus « 1 » au lieu du nom du critère, fuite
+  technique SUPERVISION (« · 0 »), Livraison sans en-têtes antigènes et sans
+  les _perc par antigène (junkés trop tôt, couleur _COLOR_new non capturée),
+  colonne Centre de Santé vide, globales Approv/conditions répétées sur chaque
+  bloc. (4) Corrections docs/index.html + harnais test-mkas-harness.mjs qui
+  évalue les vraies fonctions sur les vrais JSON (contrôles : ordre libellés,
+  pivots par nom, % par antigène 102%/1567%, pas de « · 0 », Centre seulement
+  si rempli) — tout passe ; 5/5 blocs vm.Script ; push e3c7daf77. (5) Relais
+  cloud AS : faisabilité confirmée (Actions activées, TABLEAU_COOKIES frais,
+  workflow de secours éprouvé) ; canal « as » dans l'arbitre (preuve via
+  Supervision_HZ_P1_AS.json du jour, grace 14h45, export reprenable 270 min +
+  publication fusion même partielle) ; bail « as » dans export-zs-as.mjs
+  (fail-open) ; cache Actions porte zs_as_ledger*.json + out-zs/views ;
+  dry-run 3 canaux OK ; push f55486517.
+Résultat : détail AS en ligne (75 zones) et rendu conforme à l'original ;
+  la 5e chaîne a son filet cloud (PC prioritaire, reprise sur journal) ;
+  mémoire à jour.
+
+---
+
 Date : 29/07/2026
 Demande : Lire la mémoire, vérifier les actions du jour + l'état de
   synchronisation et backfill, procéder aux deux modifications prévues en
