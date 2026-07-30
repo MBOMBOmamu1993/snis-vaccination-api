@@ -9535,7 +9535,7 @@
                thinking signé). Sans lui, K3 répond SANS raisonner — c'est ce qui
                avait dégradé l'assistant lors du passage à l'abonnement. */
             var IA_KIMI_MODELS = [
-                { id: 'k3', label: 'Kimi K3 (vedette — raisonnement MAX)', reasoning: 'max' },
+                { id: 'k3', label: 'Kimi K3 (vedette — raisonnement adaptatif jusqu\'à MAX)', reasoning: 'max' },
                 { id: 'kimi-for-coding', label: 'Kimi K2.7 Code', reasoning: 'high' },
                 { id: 'kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed', reasoning: 'high' }
             ];
@@ -9552,7 +9552,7 @@
                abonnés) : Claude Fable 5, Opus 5, Opus 4.8 et Kimi K3. K2.7 Code et
                K2.7 Code Highspeed sont inclus dans l'essai gratuit de 7 jours. */
             var IA_CLIENT_MODELS = [
-                { v: 'kimi:k3', label: 'Kimi K3 — ⭐ Recommandé · 💳 Payant (raisonnement MAX, tâches complexes)', paid: true },
+                { v: 'kimi:k3', label: 'Kimi K3 — ⭐ Recommandé · 💳 Payant (raisonnement adaptatif jusqu\'à MAX)', paid: true },
                 { v: 'claude-fable', label: 'Claude Fable 5 — 💳 Payant (analyses et rapports de niveau expert)', paid: true },
                 { v: 'claude-opus5', label: 'Claude Opus 5 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
                 { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
@@ -10470,12 +10470,59 @@
                la clé du service doit rester côté serveur.
                  mode 'code' → x-access-code (quota décompté par le proxy)
                  mode 'key'  → clé personnelle du fournisseur, simplement relayée. */
+            /* ── Effort de raisonnement adaptatif (Kimi K3) ──
+               MAX quadruple le temps de réponse : mesuré le 30/07/2026 sur
+               api.kimi.com/coding, 39 s contre 10 s en HIGH pour un simple
+               « salut ». On ne le paie donc que quand la demande le justifie :
+               MAX pour les livrables lourds (rapport, carte, document joint,
+               comparaison pluriannuelle), HIGH pour les questions ordinaires
+               (le niveau qui donnait déjà de bons résultats), LOW pour la
+               conversation. Les modèles réglés en HIGH ne sont pas modifiés. */
+            var IA_TRIVIAL_RE = /^\s*(salut|bonjour|bonsoir|coucou|hello|hi|hey|yo|merci|ok|okay|d'accord|oui|non|super|parfait|bravo|nickel|[çc]a va|au revoir|bye|[àa] bient[ôo]t)[\s\S]{0,40}$/i;
+            /* ⚠ « rapport » seul est INTERDIT ici : « rapportage », « ont rapporté »,
+               « rapports reçus » sont partout dans le vocabulaire PEV et feraient
+               basculer en MAX de simples questions de complétude. Un livrable est
+               reconnu soit par un format explicite (IA_HEAVY_RE), soit par un verbe
+               de production suivi du mot rapport/document (IA_DOC_RE). */
+            var IA_HEAVY_RE = /\bcartes?\b|choropl|pptx|powerpoint|\bword\b|docx|\bpdf\b|excel|diapo|\bslides?\b|canevas|mod[èe]le|\bcompar|pluriannuel|20\d\d\s*[-–—à]\s*20\d\d|\b519\b|classement|approfondi/i;
+            var IA_DOC_RE = /(g[ée]n[èe]r|produi|fabriqu|cr[ée]e|r[ée]dig|pr[ée]par|fais|monte|sors|export)[\s\S]{0,40}\b(rapports?|documents?|notes?|synth[èe]ses?)\b|\b(rapports?|documents?)\b[\s\S]{0,30}\b(word|pdf|pptx|excel|docx)\b/i;
+            function iaAdaptEffort(base, messages) {
+                if (base !== 'max') return base;
+                if (IA.docs && Object.keys(IA.docs).length) return 'max'; /* document joint à traiter */
+                var last = '';
+                for (var i = messages.length - 1; i >= 0; i--) {
+                    if (messages[i].role === 'user') {
+                        if ((messages[i].images || []).length) return 'max'; /* capture à analyser */
+                        last = String(messages[i].content || '');
+                        break;
+                    }
+                }
+                if (IA_HEAVY_RE.test(last) || IA_DOC_RE.test(last)) return 'max';
+                if (last.length <= 60 && IA_TRIVIAL_RE.test(last)) return 'low';
+                return 'high';
+            }
+            /* ── Repli automatique quand un modèle est saturé chez le fournisseur ──
+               Mesuré le 30/07/2026 (même clé, même chemin, même instant) : k3 a
+               renvoyé 0 réponse sur 3 (429 « engine overloaded », 21-27 s d'attente)
+               pendant que kimi-for-coding répondait 3 fois sur 3 en 2-3 s. C'est la
+               capacité du modèle K3, pas le quota de l'abonnement — et c'est aussi
+               pourquoi Kimi Code (qui utilise kimi-for-coding) fonctionne bien.
+               On bascule pour ne pas bloquer, on le DIT dans la réponse, et le modèle
+               d'origine est réessayé automatiquement 10 minutes plus tard. */
+            var IA_FALLBACK = { 'kimi:k3': 'kimi:kimi-for-coding' };
+            var iaSaturated = {};
+            function iaFallbackFor(pk) {
+                var s = iaSaturated[pk];
+                if (!s) return pk;
+                if (Date.now() > s.until) { delete iaSaturated[pk]; return pk; }
+                return s.to;
+            }
             async function iaCallAPI(messages, onText, onThink, provKey, _rs) {
                 var mode = cfg('mode') || 'key';
                 /* provKey : fournisseur figé par la boucle agentique — un changement
                    dans ⚙ Accès ne s'applique qu'à la prochaine demande, jamais au
                    milieu d'un enchaînement d'outils en cours. */
-                var pk = provKey || iaProvKey();
+                var pk = iaFallbackFor(provKey || iaProvKey());
                 var prov = iaProv(pk);
                 if (!IA_PROXY_URL) throw new Error("L'assistant IA nécessite le proxy sécurisé, qui n'est pas configuré.");
                 var url = IA_PROXY_URL.replace(/\/+$/, '') + prov.path;
@@ -10500,7 +10547,7 @@
                     /* Kimi Code (même format Anthropic) : le raisonnement étendu se
                        règle par reasoning_effort ('high'|'max'), PAS par thinking —
                        sans ce champ K3 répond sans réfléchir. */
-                    if (prov.reasoning_effort) body.reasoning_effort = prov.reasoning_effort;
+                    if (prov.reasoning_effort) body.reasoning_effort = iaAdaptEffort(prov.reasoning_effort, messages);
                 } else if (prov.kind === 'openai') {
                     /* Kimi (Moonshot) — format OpenAI : system en tête, outils au
                        format function-calling, SSE en réponse. reasoning_effort est
@@ -10510,7 +10557,7 @@
                         messages: [{ role: 'system', content: iaSystem() }].concat(iaMsgsToOpenAI(messages)),
                         tools: IA_TOOLS
                     };
-                    if (prov.reasoning_effort) body.reasoning_effort = prov.reasoning_effort;
+                    if (prov.reasoning_effort) body.reasoning_effort = iaAdaptEffort(prov.reasoning_effort, messages);
                 } else {
                     /* Format natif Ollama : le prompt système est un message ordinaire
                        en tête de liste (pas de champ `system` séparé).
@@ -10534,10 +10581,15 @@
                         await new Promise(function (r) { setTimeout(r, 4000 * netTries); });
                         continue;
                     }
-                    if ((resp.status !== 429 && resp.status !== 503 && resp.status !== 529) || attempt >= 4) break;
-                    /* 429 (limite de débit) / 503-529 (surcharge) : attendre puis réessayer */
+                    if ((resp.status !== 429 && resp.status !== 503 && resp.status !== 529) || attempt >= 6) break;
+                    /* 429 (débit) / 503-529 (surcharge) : attendre puis réessayer.
+                       Kimi renvoie un 429 « engine is currently overloaded » quand SES
+                       serveurs saturent — c'est transitoire et sans rapport avec le
+                       quota de l'abonnement : on insiste, avec une attente croissante
+                       (vérifié le 30/07/2026 : 1 essai sur 3 passait). */
+                    var IA_BACKOFF = [8, 15, 25, 40, 60, 60];
                     var ra = parseInt(resp.headers.get('retry-after') || '', 10);
-                    if (!(ra > 0)) ra = 15; if (ra > 60) ra = 60;
+                    if (!(ra > 0)) ra = IA_BACKOFF[attempt] || 60; if (ra > 60) ra = 60;
                     attempt++;
                     if (onThink) onThink();
                     await new Promise(function (r) { setTimeout(r, ra * 1000); });
@@ -10566,12 +10618,26 @@
                         if (onThink) onThink();
                         return await iaCallAPI(iaSanitizeHistory(messages), onText, onThink, pk, { sanitized: true });
                     }
+                    /* Modèle saturé chez le fournisseur : basculer sur le modèle de
+                       repli plutôt que d'échouer, et le signaler à l'écran. */
+                    if (resp.status === 429 && /overload|capacity|busy/i.test(msg) && IA_FALLBACK[pk] && !(_rs && _rs.failover)) {
+                        iaSaturated[pk] = { to: IA_FALLBACK[pk], until: Date.now() + 600000 };
+                        if (onText) onText('⚠️ *' + prov.label + ' est saturé côté Kimi en ce moment (ce n\'est pas votre quota). Je continue avec ' + iaProv(IA_FALLBACK[pk]).label + ' pour ne pas vous bloquer — le modèle d\'origine sera réessayé automatiquement dans 10 minutes.*\n\n');
+                        return await iaCallAPI(messages, onText, onThink, IA_FALLBACK[pk], { failover: true, sanitized: !!(_rs && _rs.sanitized) });
+                    }
                     var bascule = ' Vous pouvez basculer sur un autre modèle dans ⚙ Accès.';
                     if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre ' + prov.keyLabel + ' (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
                     if (resp.status === 402) msg = 'Crédits épuisés sur ce compte (' + prov.label + ').' + bascule + ' ' + msg;
                     if (resp.status === 503) msg = prov.label + ' n\'est pas disponible actuellement.' + bascule + ' ' + msg;
                     if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + prov.model + ' » introuvable chez ' + prov.label + '.' + (prov.kind === 'ollama' ? ' Vérifiez que le tag « :cloud » est présent et que le modèle est accessible sur votre compte.' : '') + ' ' + msg;
-                    if (resp.status === 429) msg = 'Limite de débit atteinte (429) chez ' + prov.label + ' malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message.' + bascule + ' ' + msg;
+                    if (resp.status === 429) {
+                        /* Distinguer la SATURATION du fournisseur (rien à voir avec le
+                           quota) d'un vrai dépassement de débit — le message d'origine
+                           laissait croire à un abonnement épuisé. */
+                        msg = /overload|capacity|busy|surcharg/i.test(msg)
+                            ? 'Les serveurs de ' + prov.label + ' sont saturés en ce moment (« engine is currently overloaded ») — nous avons réessayé 6 fois sans succès. ⚠ Ce n\'est PAS votre quota : votre abonnement et vos jetons restent intacts. Réessayez dans une ou deux minutes, ou basculez sur Kimi K2.7 Code (souvent moins chargé) dans ⚙ Accès.'
+                            : 'Limite de débit atteinte (429) chez ' + prov.label + ' malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message.' + bascule + ' ' + msg;
+                    }
                     throw new Error(msg);
                 }
                 return prov.kind === 'anthropic'
@@ -12010,7 +12076,7 @@
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Mais la <b>maîtrise réelle</b> de ces compétences dépend du modèle : <b>Kimi K3</b> (recommandé, raisonnement MAX) et les modèles <b>Claude</b> (Fable 5, Opus 5, Opus 4.8 — nécessitent des crédits API Anthropic) sont les plus fiables pour les analyses fines, les cartes et les rapports ; K2.7 Code convient aux demandes simples. Basculez librement — y compris en cours de conversation.</div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Mais la <b>maîtrise réelle</b> de ces compétences dépend du modèle : <b>Kimi K3</b> (recommandé — raisonnement <b>adaptatif</b> : MAX pour les rapports, cartes et documents joints, plus léger pour les échanges courants, afin de ne pas attendre 3 minutes sur un simple bonjour) et les modèles <b>Claude</b> (Fable 5, Opus 5, Opus 4.8 — nécessitent des crédits API Anthropic) sont les plus fiables pour les analyses fines, les cartes et les rapports ; K2.7 Code convient aux demandes simples. Basculez librement — y compris en cours de conversation.</div>' +
                     '<div id="iaPaidBadge" style="display:none;margin:-6px 0 14px;padding:10px 12px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;font-size:13px;font-weight:600"></div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
