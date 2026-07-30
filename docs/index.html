@@ -9507,6 +9507,14 @@
                 keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
                 keyHint: IA_CLAUDE_KEYHINT
             };
+            /* Claude Opus 5 — dernier modèle Opus (thinking adaptatif ACTIF par
+               défaut, effort low→max, 1M de contexte). Même route/clé Anthropic. */
+            var IA_CLAUDE_OPUS5 = {
+                label: 'Claude Opus 5', model: 'claude-opus-5', kind: 'anthropic',
+                path: '/anthropic/v1/messages', keyHeader: 'x-anthropic-key', think: true, effort: 'high',
+                keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
+                keyHint: IA_CLAUDE_KEYHINT
+            };
             var IA_OLLAMA_KEYMETA = {
                 keyLabel: 'Clé API Ollama Cloud (commune à tous les modèles Ollama)', keyPlaceholder: 'votre clé ollama.com',
                 keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
@@ -9521,29 +9529,35 @@
                 keyLabel: 'Clé API Kimi Code — abonnement (commune à tous les modèles Kimi)', keyPlaceholder: 'sk-...',
                 keyHint: 'Créez une clé dans la <b>Kimi Code Console</b> (kimi.com → Create API Key) avec un abonnement Kimi actif. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Kimi sans la stocker : l\'API Kimi n\'autorise pas les appels directs depuis un navigateur.'
             };
+            /* reasoning_effort : niveau de raisonnement étendu propre à Kimi
+               ('low'|'high'|'max'). Vérifié le 30/07/2026 sur api.kimi.com/coding :
+               le paramètre est bien pris en compte (la réponse contient un bloc
+               thinking signé). Sans lui, K3 répond SANS raisonner — c'est ce qui
+               avait dégradé l'assistant lors du passage à l'abonnement. */
             var IA_KIMI_MODELS = [
-                { id: 'k3', label: 'Kimi K3 (vedette — raisonnement high)' },
-                { id: 'kimi-for-coding', label: 'Kimi K2.7 Code' },
-                { id: 'kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed' }
+                { id: 'k3', label: 'Kimi K3 (vedette — raisonnement MAX)', reasoning: 'max' },
+                { id: 'kimi-for-coding', label: 'Kimi K2.7 Code', reasoning: 'high' },
+                { id: 'kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed', reasoning: 'high' }
             ];
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'kimi:kimi-for-coding';
-            /* Modèle de RÉFÉRENCE de l'assistant : Claude Fable 5. C'est lui qui
-               exploite réellement les compétences du prompt système (conventions
-               PEV, UID DHIS2, cartes, rapports Word/PPTX) — les modèles Kimi
-               restent proposés pour les demandes simples et l'essai gratuit,
-               mais ils ne les maîtrisent pas au même niveau. Défaut de l'admin. */
-            var IA_ADMIN_PROVIDER = 'claude-fable';
+            /* Modèle par défaut de l'admin : Kimi K3 en raisonnement MAX — il
+               fonctionne avec l'abonnement Allegretto en cours. Claude Fable 5 et
+               Opus 5 restent les plus compétents sur le prompt système (conventions
+               PEV, UID DHIS2, cartes, rapports Word/PPTX) mais exigent un solde de
+               crédits API Anthropic (console.anthropic.com → Plans & Billing). */
+            var IA_ADMIN_PROVIDER = 'kimi:k3';
             /* Liste FIXE proposée aux clients. Modèles PAYANTS (réservés aux
-               abonnés) : Claude Fable 5, Claude Opus 4.8 et Kimi K3. K2.7 Code et
+               abonnés) : Claude Fable 5, Opus 5, Opus 4.8 et Kimi K3. K2.7 Code et
                K2.7 Code Highspeed sont inclus dans l'essai gratuit de 7 jours. */
             var IA_CLIENT_MODELS = [
-                { v: 'claude-fable', label: 'Claude Fable 5 — ⭐ Recommandé · 💳 Payant (analyses et rapports de niveau expert)', paid: true },
+                { v: 'kimi:k3', label: 'Kimi K3 — ⭐ Recommandé · 💳 Payant (raisonnement MAX, tâches complexes)', paid: true },
+                { v: 'claude-fable', label: 'Claude Fable 5 — 💳 Payant (analyses et rapports de niveau expert)', paid: true },
+                { v: 'claude-opus5', label: 'Claude Opus 5 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
                 { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true },
                 { v: 'kimi:kimi-for-coding', label: 'Kimi K2.7 Code' },
-                { v: 'kimi:kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed' },
-                { v: 'kimi:k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)', paid: true }
+                { v: 'kimi:kimi-for-coding-highspeed', label: 'Kimi K2.7 Code Highspeed' }
             ];
             function iaProvIsPaid(pk) { for (var i = 0; i < IA_CLIENT_MODELS.length; i++) if (IA_CLIENT_MODELS[i].v === pk) return !!IA_CLIENT_MODELS[i].paid; return false; }
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
@@ -9569,16 +9583,17 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
-                /* Restauration du 30/07/2026 : le passage « Kimi uniquement » avait
-                   écrasé le réglage enregistré dans le navigateur — l'admin, qui
-                   travaillait avec Claude Fable 5, s'est retrouvée basculée sur Kimi
-                   sans rien avoir demandé. On lui rend Fable UNE fois, puis son choix
-                   est toujours respecté (les clients, eux, gardent leur réglage). */
-                if (!cfg('provmig_fable')) {
-                    cfg('provmig_fable', '1');
-                    if (iaIsAdmin() && p.indexOf('kimi:') === 0) { cfg('provider', IA_ADMIN_PROVIDER); return IA_ADMIN_PROVIDER; }
+                /* Restauration du 30/07/2026 : le passage à l'abonnement Kimi Code
+                   avait écrasé le réglage enregistré dans le navigateur et posé K2.7
+                   Code (modèle de codage, sans raisonnement étendu) par défaut. On
+                   remet l'admin sur K3 MAX UNE fois, puis son choix est toujours
+                   respecté (les clients, eux, gardent leur réglage — K3 est payant
+                   et reste hors essai gratuit). */
+                if (!cfg('provmig_k3max')) {
+                    cfg('provmig_k3max', '1');
+                    if (iaIsAdmin() && p === 'kimi:kimi-for-coding') { cfg('provider', IA_ADMIN_PROVIDER); return IA_ADMIN_PROVIDER; }
                 }
-                if (p === 'claude' || p === 'claude-fable') return p; /* Anthropic */
+                if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
                 if (p.indexOf('kimi:') === 0) return p; /* Kimi Code : 'kimi:k3', 'kimi:kimi-for-coding'… */
                 return iaIsAdmin() ? IA_ADMIN_PROVIDER : IA_DEFAULT_PROVIDER; /* migration des anciens réglages Ollama */
             }
@@ -9586,6 +9601,7 @@
                 pk = pk || iaProvKey();
                 if (pk === 'claude') return IA_CLAUDE;
                 if (pk === 'claude-fable') return IA_CLAUDE_FABLE;
+                if (pk === 'claude-opus5') return IA_CLAUDE_OPUS5;
                 if (pk.indexOf('kimi:') === 0) {
                     var km = pk.slice(5) || 'kimi-for-coding';
                     var kmMeta = null;
@@ -9593,6 +9609,9 @@
                     return {
                         label: kmMeta ? kmMeta.label : ('Kimi (' + km + ')'), model: km, kind: 'anthropic',
                         path: '/v1/messages', keyHeader: 'x-kimi-key',
+                        /* raisonnement étendu : MAX sur K3, HIGH sur les K2.7 Code.
+                           Désactivé pour la session si le modèle l'a refusé (iaThinkOff). */
+                        reasoning_effort: iaThinkOff[km] ? null : ((kmMeta && kmMeta.reasoning) || 'high'),
                         keyLabel: IA_KIMI_KEYMETA.keyLabel, keyPlaceholder: IA_KIMI_KEYMETA.keyPlaceholder, keyHint: IA_KIMI_KEYMETA.keyHint
                     };
                 }
@@ -9606,7 +9625,7 @@
             /* Clés personnelles : une pour Anthropic, une pour Kimi, UNE seule pour tous
                les modèles Ollama (même compte). Reprend les anciens réglages : migration douce. */
             function iaUserKey(pk) {
-                if (pk === 'claude' || pk === 'claude-fable') return cfg('key_claude') || cfg('key');
+                if (String(pk).indexOf('claude') === 0) return cfg('key_claude') || cfg('key');
                 if (String(pk).indexOf('kimi:') === 0) return cfg('key_kimi');
                 return cfg('key_ollama') || cfg('key_minimax');
             }
@@ -10478,6 +10497,10 @@
                        signés sont capturés puis rejoués (cf. iaMsgsToAnthropic). */
                     if (prov.think) body.thinking = { type: 'adaptive' };
                     if (prov.effort) body.output_config = { effort: prov.effort };
+                    /* Kimi Code (même format Anthropic) : le raisonnement étendu se
+                       règle par reasoning_effort ('high'|'max'), PAS par thinking —
+                       sans ce champ K3 répond sans réfléchir. */
+                    if (prov.reasoning_effort) body.reasoning_effort = prov.reasoning_effort;
                 } else if (prov.kind === 'openai') {
                     /* Kimi (Moonshot) — format OpenAI : system en tête, outils au
                        format function-calling, SSE en réponse. reasoning_effort est
@@ -10531,9 +10554,9 @@
                         throw new Error('Crédits API Anthropic épuisés : ' + prov.label + ' ne peut pas répondre tant que le solde n\'est pas rechargé sur console.anthropic.com (Plans & Billing). ⚠ L\'abonnement Claude Pro/Max ne couvre PAS l\'API. En attendant, basculez sur un modèle Kimi dans ⚙ Accès (qualité moindre sur les analyses fines et les rapports).');
                     }
                     /* Le modèle refuse le mode raisonnement : mémoriser et réessayer sans. */
-                    if (resp.status === 400 && prov.think && /think/i.test(msg)) {
+                    if (resp.status === 400 && (prov.think || prov.reasoning_effort) && !(_rs && _rs.thinkOff) && /think|reasoning|effort/i.test(msg)) {
                         iaThinkOff[prov.model] = true;
-                        return await iaCallAPI(messages, onText, onThink, pk);
+                        return await iaCallAPI(messages, onText, onThink, pk, { thinkOff: true, sanitized: !!(_rs && _rs.sanitized) });
                     }
                     /* Erreur 400 liée à l'appariement des tool_calls (historique
                        corrompu : réponse tool manquante/orpheline, id non reconnu,
@@ -11987,7 +12010,7 @@
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Mais la <b>maîtrise réelle</b> de ces compétences dépend du modèle : <b>Claude Fable 5</b> (recommandé) et Opus 4.8 sont les plus fiables pour les analyses fines, les cartes et les rapports ; les modèles Kimi conviennent aux demandes simples. Basculez librement — y compris en cours de conversation.</div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Mais la <b>maîtrise réelle</b> de ces compétences dépend du modèle : <b>Kimi K3</b> (recommandé, raisonnement MAX) et les modèles <b>Claude</b> (Fable 5, Opus 5, Opus 4.8 — nécessitent des crédits API Anthropic) sont les plus fiables pour les analyses fines, les cartes et les rapports ; K2.7 Code convient aux demandes simples. Basculez librement — y compris en cours de conversation.</div>' +
                     '<div id="iaPaidBadge" style="display:none;margin:-6px 0 14px;padding:10px 12px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;font-size:13px;font-weight:600"></div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
@@ -12017,11 +12040,12 @@
                         if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
                         return;
                     }
-                    var html = '<optgroup label="Anthropic — Claude (modèles de référence)">' +
+                    var html = '<optgroup label="Anthropic — Claude (nécessite des crédits API)">' +
                         '<option value="claude-fable">' + esc(IA_CLAUDE_FABLE.label) + '</option>' +
+                        '<option value="claude-opus5">' + esc(IA_CLAUDE_OPUS5.label) + '</option>' +
                         '<option value="claude">' + esc(IA_CLAUDE.label) + '</option>' +
                         '</optgroup>' +
-                        '<optgroup label="Moonshot AI — Kimi">' +
+                        '<optgroup label="Moonshot AI — Kimi (abonnement Allegretto)">' +
                         IA_KIMI_MODELS.map(function (x) { return '<option value="kimi:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
                         '</optgroup>';
                     selEl.innerHTML = html;
@@ -12031,7 +12055,7 @@
 
                 /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
                 var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: iaUserKey(IA_DEFAULT_PROVIDER) };
-                function keySlot(p) { return (p === 'claude' || p === 'claude-fable') ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
+                function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
                     pk = np;

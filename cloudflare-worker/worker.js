@@ -9,8 +9,8 @@
  *                                    api.kimi.com/coding, API
  *                                    compatible Anthropic)
  *        /anthropic/v1/messages   → Anthropic (Claude Fable 5, — clé ANTHROPIC_API_KEY
- *                                    Opus 4.8) — les modèles
- *                                    de référence de l'onglet
+ *                                    Opus 5, Opus 4.8) — les
+ *                                    modèles de référence
  *      Dans les trois cas : soit un code d'accès valide (quota décompté, clé du
  *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
  *      x-kimi-key / x-anthropic-key (relais pur, aucun quota consommé).
@@ -98,11 +98,11 @@ const ALLOWED_KIMI_MODELS = ['kimi-for-coding', 'kimi-for-coding-highspeed', 'k3
    de l'assistant : ce sont eux qui exploitent réellement les compétences du
    prompt système (conventions PEV, UID DHIS2, cartes, rapports Word/PPTX).
    Ne JAMAIS les retirer du dashboard sans demande explicite de la cliente. */
-const ALLOWED_ANTHROPIC_MODELS = ['claude-fable-5', 'claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
+const ALLOWED_ANTHROPIC_MODELS = ['claude-fable-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5'];
 /* Modèles PUISSANTS réservés aux abonnés PAYANTS : un code d'ESSAI gratuit ne
    peut PAS les utiliser (réponse 402 → le dashboard redirige vers l'achat).
    Les clés personnelles (x-kimi-key / x-anthropic-key) ne sont jamais bloquées. */
-const PAID_ONLY_MODELS = new Set(['k3', 'claude-fable-5', 'claude-opus-4-8']);
+const PAID_ONLY_MODELS = new Set(['k3', 'claude-fable-5', 'claude-opus-5', 'claude-opus-4-8']);
 function blockIfTrialPaidModel(resolved, model, cors) {
   if (resolved && resolved.auth && resolved.auth.rec && resolved.auth.rec.trial && PAID_ONLY_MODELS.has(String(model))) {
     return json({ error: { type: 'paid_required', message: "Le modèle « " + model + " » est réservé aux abonnés. L'essai gratuit ne donne accès qu'aux modèles standard. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour l'utiliser." } }, 402, cors);
