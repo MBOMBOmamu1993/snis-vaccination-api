@@ -404,3 +404,20 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
 - Tests : 4/4 blocs script valides (vm.Script) + 26 scénarios de conversion
   OpenAI/Anthropic, flux SSE fragmenté multi-appels, sanitize (copie intacte,
   tid mismatch, historique sain inchangé) et détection 400 — tous OK.
+État actuel (31/07/2026) :
+- Assistant IA : 3 NOUVEAUX outils livrables ajoutés (docs/index.html + worker) —
+  1) generer_excel : classeur .xlsx natif multi-feuilles via ExcelJS 4.4.0 (CDN,
+  chargé à la demande par iaEnsureExcelJS) — cellules colorées {t,bg} réelles,
+  en-têtes stylés bleu PEV figés, largeurs auto, vrais nombres Excel ;
+  2) generer_image : visuel vectoriel (logo, affiche, infographie, schéma) écrit
+  en SVG par le modèle — rendu via <img> (jamais de DOM injecté), téléchargeable
+  SVG + PNG 3× (rasterisation canvas, iaSvgToPng) — PAS de photo-réalisme ;
+  3) envoyer_email : nouvelle route worker POST /envoyer (clientMail) — code
+  d'accès requis (requireCode), 1 unité décomptée à l'envoi réussi, corps HTML
+  ≤ 40 000 car. enveloppé dans un bandeau « Assistant IA — Dashboard PEV »
+  (anti-usurpation), aucune pièce jointe (limites EmailJS/Brevo) — l'essentiel
+  va dans le corps ; réponse {ok, quota}. Réutilise sendMail (EmailJS→Brevo).
+  Prompt système : point « 6. EXCEL, VISUELS & E-MAIL » ajouté ; textes d'aide,
+  hero et chips mis à jour. Vérifs : node --check worker OK, 5 blocs inline OK.
+  ⚠ DÉPLOIEMENT requis des DEUX côtés : push docs/ (Pages/Vercel) + wrangler
+  deploy du worker (sinon envoyer_email renvoie 404 « Introuvable »).

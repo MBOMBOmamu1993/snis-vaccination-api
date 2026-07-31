@@ -31,6 +31,11 @@
  *                            analyse/jour, 1 par appareil (empreinte IP+UA),
  *                            puis paiement (2e analyse du jour ou 7 jours
  *                            expirés → redirection vers l'achat)
+ *   7. /envoyer            → e-mail à la demande du client (outil envoyer_email
+ *                            du dashboard) : code d'accès requis, 1 unité
+ *                            décomptée à l'envoi réussi, corps HTML plafonné,
+ *                            bandeau identifiant le service, pas de pièce jointe
+ *                            (via EMAILJS, BREVO en secours — cf. sendMail)
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
@@ -125,6 +130,7 @@ export default {
       if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/kimi/v1/chat/completions' && request.method === 'POST') return await proxyKimi(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
+      if (url.pathname === '/envoyer' && request.method === 'POST') return await clientMail(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
       if (url.pathname === '/essai') return await trialGrant(request, env, cors);
@@ -1034,6 +1040,41 @@ async function sendMail(env, toEmail, toName, subject, html) {
     await env.CODES.put('notif:last-mail', JSON.stringify({ at: new Date().toISOString(), ch: 'brevo', status: 0, ok: false, to: toEmail, body: String(e && e.message || e) }), { expirationTtl: 86400 });
     return false;
   }
+}
+
+/* ═══ Envoi d'e-mail à la demande du client (outil envoyer_email du dashboard) ═══
+   Code d'accès valide requis ; 1 unité décomptée UNIQUEMENT si l'envoi réussit.
+   Anti-abus : adresse validée, sujet ≤ 180 car., corps HTML ≤ 40 000 car., et le
+   message est enveloppé dans un bandeau qui identifie le service — un client ne
+   peut pas se faire passer pour autrui : l'expéditeur reste le compte du service.
+   Pas de pièce jointe (limites EmailJS/Brevo) : le modèle met l'essentiel dans
+   le corps et les fichiers restent téléchargeables dans la conversation. */
+async function clientMail(request, env, cors) {
+  let auth;
+  try { auth = await requireCode(request, env); }
+  catch (e) { return json({ error: e.message }, e.status || 401, cors); }
+  if (auth.rec.dhis2_only) return json({ error: "Ce code ne donne accès qu'au DHIS2." }, 403, cors);
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return json({ error: 'Corps JSON invalide' }, 400, cors); }
+
+  const to = String(body.to || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to) || to.length > 120) return json({ error: 'Adresse e-mail invalide' }, 400, cors);
+  const nom = String(body.nom || '').slice(0, 80);
+  const sujet = String(body.sujet || 'Analyse — Dashboard PEV').slice(0, 180);
+  let html = String(body.html || '');
+  if (html.length > 40000) html = html.slice(0, 40000);
+  const page = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1f2937;max-width:640px;margin:auto">'
+    + '<div style="background:#1a237e;color:#fff;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:bold">Assistant IA — Dashboard PEV (SNIS RDC)</div>'
+    + '<div style="border:1px solid #dfe2ee;border-top:0;padding:16px;border-radius:0 0 8px 8px">' + html + '</div>'
+    + '<p style="font-size:11px;color:#6b7280">E-mail envoyé depuis l\'Assistant IA du Dashboard PEV de routine (SNIS RDC), à la demande d\'un utilisateur abonné. Les fichiers produits (PDF, Word, Excel…) restent téléchargeables dans sa conversation.</p></div>';
+
+  const ok = await sendMail(env, to, nom, sujet, page);
+  if (!ok) return json({ error: 'Service e-mail indisponible — réessayez plus tard.' }, 502, cors);
+
+  if (typeof auth.rec.remaining === 'number') { auth.rec.remaining -= 1; await putCode(env, auth.code, auth.rec); }
+  return json({ ok: true, quota: auth.rec.remaining }, 200, cors);
 }
 
 /* ═══ Assistant IA de gestion des paiements ═══

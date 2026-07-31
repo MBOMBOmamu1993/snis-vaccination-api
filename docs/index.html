@@ -9491,7 +9491,8 @@
                proxy (/api/tags) à l'ouverture des réglages — tout modèle ajouté ou mis à
                jour chez Ollama apparaît automatiquement, sans redéployer le dashboard.
                Tous les modèles partagent les mêmes compétences (prompt système DHIS2 +
-               outils d'analyse, graphiques et rapports PDF/Word/PPTX) et la même clé
+               outils d'analyse, graphiques, rapports PDF/Word/PPTX, classeurs Excel,
+               visuels logo/affiche et envoi d'e-mail) et la même clé
                Ollama. L'historique est stocké au format Ollama et converti à la volée
                pour Anthropic : on peut changer de modèle en cours de conversation. */
             var IA_CLAUDE_KEYHINT = 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.';
@@ -9534,7 +9535,7 @@
             ];
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
-            var IA_DEFAULT_PROVIDER = 'claude-opus5';
+            var IA_DEFAULT_PROVIDER = 'kimi:kimi-k3';
             /* Liste FIXE proposée aux clients : UNIQUEMENT des modèles puissants,
                tous payants — plus de modèles Ollama côté client. L'essai gratuit
                (7 jours, à raison d'1 analyse par jour) donne accès à CES MÊMES
@@ -9542,10 +9543,9 @@
                vers l'achat. (L'admin, lui, voit la liste complète dynamique
                Ollama + Kimi + Claude.) */
             var IA_CLIENT_MODELS = [
+                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (par défaut, adapté aux tâches très complexes et compliquées)' },
                 { v: 'claude-opus5', label: 'Claude Opus 5 — 💳 Payant (le plus compétent, adapté aux tâches très complexes et compliquées)' },
-                { v: 'claude-fable', label: 'Claude Fable 5 — 💳 Payant (analyses et rapports de niveau expert)' },
-                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)' },
-                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (adapté aux tâches très complexes et compliquées)' }
+                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)' }
             ];
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
             function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
@@ -9562,6 +9562,10 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
+                /* Fable 5 retiré de l'offre CLIENT (coût trop élevé) : un client
+                   qui l'avait mémorisé bascule sur le modèle par défaut ;
+                   l'admin garde Fable 5 dans sa liste complète. */
+                if (p === 'claude-fable' && !iaIsAdmin()) { cfg('provider', IA_DEFAULT_PROVIDER); return IA_DEFAULT_PROVIDER; }
                 if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
                 if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
                 /* Ollama retiré de la liste client : tout ancien réglage Ollama
@@ -9731,6 +9735,7 @@
                     "3. Formules : préfère TOUJOURS l'indicateur officiel DHIS2 (formule déjà appliquée côté serveur) ; sinon : taux/proportion = numérateur/dénominateur×100 (dénominateur de couverture = population × coefficient officiel, cumulé sur la période) ; CV% = doses cumulées/cible cumulée×100 (cible mensuelle = annuelle/12) ; abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100 ; complétude = reçus/attendus×100 ; taux d'attaque = cas/population×100 000 ; létalité = décès/cas×100.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",
                     "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX/CARTE) : calcule d'abord TOUT. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif ; format 'carte' = page HTML INTERACTIVE autonome — cartes choroplèthes et graphiques Plotly navigables, zoom/survol, GeoJSON et données embarqués : idéal pour une carte à partager) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations. Pour le format 'carte', construis les figures choroplèthes via ctx.geo (recette carte ci-dessus) : les figures y restent interactives, jamais figées en image.",
+                    "6. EXCEL, VISUELS & E-MAIL : fichier Excel/tableur demandé → generer_excel (multi-feuilles, cellules colorées {t,bg}, en-têtes stylés, vrais nombres) ; logo, affiche, infographie ou schéma demandé → generer_image (SVG complet et soigné, affiché dans le chat et téléchargeable en SVG + PNG HD — design vectoriel par code, JAMAIS de photo : si une photo est demandée, explique la limite et propose un visuel vectoriel) ; envoi par e-mail demandé → envoyer_email (DEMANDE d'abord l'adresse du destinataire si elle est absente ; les fichiers ne sont PAS joignables → mets l'essentiel dans le corps HTML et signale que les fichiers restent téléchargeables dans la conversation).",
                     "",
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
@@ -9893,6 +9898,66 @@
                                     }
                                 }
                             }, required: ['fichier', 'operations']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'generer_excel',
+                        description: "Génère et télécharge chez l'utilisateur un CLASSEUR EXCEL (.xlsx natif, éditable dans Excel/LibreOffice). À utiliser dès que l'utilisateur demande un fichier Excel, un tableur ou des données à reprendre dans Excel. Plusieurs feuilles possibles. Mêmes règles de coloration que les tableaux : une cellule peut être un objet {t, bg} (bg = 'vert'|'jaune'|'orange'|'rouge'|'bleu'|'gris' ou hex '#RRGGBB') — la couleur est réellement appliquée dans le fichier. La 1re ligne (en-têtes) est stylée automatiquement (bleu PEV, figée) et les largeurs de colonnes ajustées. Les valeurs numériques sont écrites comme de vrais nombres Excel. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2).",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                titre: { type: 'string' },
+                                nom_fichier: { type: 'string', description: 'Nom du fichier SANS extension (défaut : dérivé du titre)' },
+                                feuilles: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            nom: { type: 'string', description: "Nom de l'onglet (≤31 caractères)" },
+                                            colonnes: { type: 'array', items: { type: 'string' } },
+                                            lignes: { type: 'array', items: { type: 'array' }, description: 'Chaque ligne = tableau de cellules ; cellule = valeur simple ou {t, bg} pour la colorer' }
+                                        },
+                                        required: ['nom', 'colonnes', 'lignes']
+                                    }
+                                }
+                            },
+                            required: ['titre', 'feuilles']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'generer_image',
+                        description: "Crée un VISUEL GRAPHIQUE (logo, affiche, infographie, schéma, diagramme, frise, pictogramme) en écrivant un SVG complet — le visuel est affiché dans la conversation ET téléchargeable en SVG et en PNG haute résolution. À utiliser dès que l'utilisateur demande un logo, une affiche, une illustration, un schéma ou toute image. IMPORTANT : c'est du design graphique vectoriel dessiné par code (formes, textes, dégradés, pictogrammes) — PAS une photo ni une image photo-réaliste ; si l'utilisateur demande une photo, explique cette limite et propose un visuel vectoriel à la place. Soigne le design : composition équilibrée, palette harmonieuse (défaut : bleu PEV #0b5e8e / marine #1a237e, ou les couleurs demandées par le client), typographie lisible (sans-serif), marges généreuses. Le SVG doit être COMPLET et autonome : <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 L H'>…</svg>, dimensions généreuses (ex. 1200×630 pour une affiche, 800×800 pour un logo).",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                titre: { type: 'string' },
+                                svg: { type: 'string', description: 'Code SVG complet et valide, de <svg …> à </svg>' },
+                                note: { type: 'string', description: 'Légende/description facultative affichée sous le visuel' }
+                            },
+                            required: ['titre', 'svg']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'envoyer_email',
+                        description: "Envoie un E-MAIL à un destinataire via le service du dashboard (1 requête décomptée du code d'accès). À utiliser quand l'utilisateur demande d'envoyer une analyse, un tableau ou un rapport par e-mail. Si l'adresse du destinataire n'est pas connue, DEMANDE-LA avant d'appeler l'outil. Le contenu part en HTML soigné (titres, paragraphes, tableaux avec bordures, gras) — les FICHIERS (PDF, Word, Excel…) ne peuvent PAS être joints : mets l'essentiel (constats, chiffres clés, tableaux) dans le corps de l'e-mail et précise que les fichiers restent téléchargeables dans la conversation. Un bandeau identifiant le service est ajouté automatiquement.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                destinataire: { type: 'string', description: 'Adresse e-mail du destinataire (la demander si absente)' },
+                                nom_destinataire: { type: 'string' },
+                                sujet: { type: 'string' },
+                                contenu_html: { type: 'string', description: "Corps de l'e-mail en HTML simple (h3, p, ul, table avec border)" }
+                            },
+                            required: ['destinataire', 'sujet', 'contenu_html']
                         }
                     }
                 }
@@ -10063,6 +10128,12 @@
                     return 'OK : rapport ' + fmtDone.toUpperCase() + ' (' + ((input.sections || []).length) + ' sections) généré et téléchargé chez l\'utilisateur.';
                 }
                 if (name === 'modifier_document') return await iaDocxModify(input, msgsEl);
+                if (name === 'generer_excel') {
+                    await iaGenExcel(input, msgsEl);
+                    return 'OK : classeur Excel (' + ((input.feuilles || []).length) + ' feuille(s)) généré et téléchargé chez l\'utilisateur.';
+                }
+                if (name === 'generer_image') { iaGenImage(input, msgsEl); return 'OK : visuel affiché dans la conversation, téléchargeable en SVG et PNG haute résolution.'; }
+                if (name === 'envoyer_email') return await iaSendMailTool(input, msgsEl);
                 throw new Error('Outil inconnu : ' + name);
             }
 
@@ -11920,6 +11991,159 @@
                 return fmt;
             }
 
+            /* ── ExcelJS — génération de classeurs .xlsx stylés (couleurs de
+               cellules réelles, contrairement au lecteur SheetJS). Chargé à la
+               demande comme les autres librairies lourdes. ── */
+            function iaEnsureExcelJS() {
+                if (window.ExcelJS) return Promise.resolve();
+                return new Promise(function (res, rej) {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+                    s.onload = res; s.onerror = function () { rej(new Error('Impossible de charger le générateur Excel (ExcelJS)')); };
+                    document.head.appendChild(s);
+                });
+            }
+            /* Convertit en nombre Excel si le texte est numérique ("85,3", "12 345",
+               "97 %") — sinon renvoie null (texte conservé tel quel). */
+            function iaNumMaybe(t) {
+                var c = String(t == null ? '' : t).replace(/[\s %]/g, '').replace(',', '.');
+                if (!/^-?\d+(\.\d+)?$/.test(c)) return null;
+                var n = parseFloat(c); return isFinite(n) ? n : null;
+            }
+            /* generer_excel : classeur .xlsx natif multi-feuilles, cellules
+               colorées via {t, bg} (même convention que les tableaux). */
+            async function iaGenExcel(inp, msgsEl) {
+                await iaEnsureExcelJS();
+                var titre = String(inp.titre || 'Données');
+                var safe = String(inp.nom_fichier || titre).replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_') || 'classeur';
+                var feuilles = iaParseMaybe(inp.feuilles) || [];
+                if (!Array.isArray(feuilles)) feuilles = [feuilles];
+                if (!feuilles.length) throw new Error('Aucune feuille fournie pour le classeur.');
+                var wb = new ExcelJS.Workbook();
+                wb.creator = 'Assistant IA — Dashboard PEV (SNIS RDC)';
+                for (var i = 0; i < feuilles.length; i++) {
+                    var f = iaParseMaybe(feuilles[i]) || {};
+                    var nom = String(f.nom || ('Feuille' + (i + 1))).replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31) || ('Feuille' + (i + 1));
+                    var ws = wb.addWorksheet(nom);
+                    var cols = (iaParseMaybe(f.colonnes) || []).map(function (c) { return iaCellText(c); });
+                    var lignes = iaParseMaybe(f.lignes) || [];
+                    if (cols.length) {
+                        var hr = ws.addRow(cols);
+                        hr.eachCell(function (cell) {
+                            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0B5E8E' } };
+                            cell.alignment = { vertical: 'middle', wrapText: true };
+                        });
+                        hr.height = 22;
+                    }
+                    for (var r = 0; r < lignes.length; r++) {
+                        var l = iaParseMaybe(lignes[r]); if (!Array.isArray(l)) l = (l && typeof l === 'object') ? Object.values(l) : [l];
+                        var cells = []; for (var c = 0; c < Math.max(cols.length, l.length); c++) cells.push(iaCellNorm(l[c]));
+                        var row = ws.addRow(cells.map(function (x) { var n = iaNumMaybe(x.text); return n !== null ? n : x.text; }));
+                        cells.forEach(function (x, ci) {
+                            if (!x.fill) return;
+                            var cell = row.getCell(ci + 1);
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + x.fill } };
+                            cell.font = { color: { argb: 'FF' + (x.fg || '1F1F1F') } };
+                        });
+                    }
+                    /* Largeurs automatiques bornées : texte le plus long de chaque colonne. */
+                    var ncol = Math.max(cols.length, lignes.length ? Math.max.apply(null, lignes.map(function (x) { return Array.isArray(x) ? x.length : 1; })) : 1);
+                    for (var c2 = 1; c2 <= ncol; c2++) {
+                        var w = 10, col = ws.getColumn(c2);
+                        col.eachCell({ includeEmpty: false }, function (cell) { var t = String(cell.value == null ? '' : cell.value); if (t.length + 2 > w) w = Math.min(t.length + 2, 45); });
+                        col.width = w;
+                    }
+                    if (cols.length) ws.views = [{ state: 'frozen', ySplit: 1 }];
+                }
+                var buf = await wb.xlsx.writeBuffer();
+                iaDlBlob(safe + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buf);
+                if (msgsEl) {
+                    var card = E('div', 'ia-card');
+                    card.appendChild(E('h4', '', '📊 Classeur Excel généré — ' + esc(titre)));
+                    card.appendChild(E('div', 'ia-note', feuilles.length + ' feuille(s) · le téléchargement a démarré automatiquement.'));
+                    var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
+                    b.onclick = function () { iaGenExcel(inp, null); };
+                    dl.appendChild(b); card.appendChild(dl);
+                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                }
+            }
+
+            /* generer_image : visuel vectoriel (logo, affiche, infographie…)
+               écrit en SVG par le modèle. Rendu via <img> — jamais injecté dans
+               le DOM, aucun script embarqué ne peut s'exécuter. PNG produit par
+               rasterisation canvas à 3× (fond blanc). */
+            function iaSvgToPng(svg, scale, cb, errb) {
+                var img = new Image();
+                img.onload = function () {
+                    try {
+                        var w = img.naturalWidth || 1200, h = img.naturalHeight || 800;
+                        var cv = document.createElement('canvas');
+                        cv.width = w * scale; cv.height = h * scale;
+                        var cx = cv.getContext('2d');
+                        cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cv.width, cv.height);
+                        cx.drawImage(img, 0, 0, cv.width, cv.height);
+                        cv.toBlob(function (b) { b ? cb(b) : errb(new Error('export PNG impossible')); }, 'image/png');
+                    } catch (e) { errb(e); }
+                };
+                img.onerror = function () { errb(new Error('SVG invalide — vérifie le code (balises, attributs).')); };
+                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+            }
+            function iaGenImage(inp, msgsEl) {
+                var svg = String(inp.svg || '').trim();
+                var m = svg.match(/<svg[\s\S]*<\/svg>/i);
+                if (!m) throw new Error('Aucun SVG valide fourni (balise <svg>…</svg> introuvable).');
+                svg = m[0];
+                if (!/xmlns=/.test(svg)) svg = svg.replace(/<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+                var titre = String(inp.titre || 'Visuel');
+                var safe = titre.replace(/[^\w\dàâéèêëïîôöùûüç -]/gi, '').slice(0, 60).trim().replace(/\s+/g, '_') || 'visuel';
+                if (!msgsEl) { iaDlBlob(safe + '.svg', 'image/svg+xml;charset=utf-8', svg); return; }
+                var card = E('div', 'ia-card');
+                card.appendChild(E('h4', '', '🎨 ' + esc(titre)));
+                var im = new Image();
+                im.alt = titre; im.style.cssText = 'max-width:100%;border:1px solid #dfe2ee;border-radius:10px;background:#fff';
+                im.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+                card.appendChild(im);
+                if (inp.note) card.appendChild(E('div', 'ia-note', esc(inp.note)));
+                var dl = E('div', 'ia-dl');
+                var b1 = E('button', 'ia-btn', '⬇ SVG');
+                b1.onclick = function () { iaDlBlob(safe + '.svg', 'image/svg+xml;charset=utf-8', svg); };
+                var b2 = E('button', 'ia-btn', '⬇ PNG (HD)');
+                b2.onclick = function () {
+                    b2.disabled = true; b2.textContent = 'Export PNG…';
+                    iaSvgToPng(svg, 3, function (blob) {
+                        iaDlBlob(safe + '.png', 'image/png', blob);
+                        b2.disabled = false; b2.textContent = '⬇ PNG (HD)';
+                    }, function (e) { b2.disabled = false; b2.textContent = '⬇ PNG (HD)'; });
+                };
+                dl.appendChild(b1); dl.appendChild(b2); card.appendChild(dl);
+                msgsEl.appendChild(card); iaScroll(msgsEl);
+            }
+
+            /* envoyer_email : route /envoyer du proxy (code d'accès requis, 1 unité
+               décomptée). Les fichiers ne sont pas joignables : le modèle met
+               l'essentiel dans le corps HTML. */
+            async function iaSendMailTool(inp, msgsEl) {
+                var to = String(inp.destinataire || '').trim();
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) return 'Adresse e-mail invalide ou absente (« ' + to + ' »). DEMANDE l\'adresse du destinataire à l\'utilisateur, puis réessaie.';
+                var codeV = cfg('code') || IA_DHIS2_CODE;
+                if (!codeV) return "Aucun code d'accès configuré — l'envoi d'e-mail nécessite un code valide (⚙ Accès).";
+                var r = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/envoyer', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json', 'x-access-code': codeV },
+                    body: JSON.stringify({ to: to, nom: String(inp.nom_destinataire || '').slice(0, 80), sujet: String(inp.sujet || 'Analyse — Dashboard PEV').slice(0, 180), html: String(inp.contenu_html || '') })
+                });
+                var d = null; try { d = await r.json(); } catch (e) { }
+                if (!r.ok || !d || !d.ok) return 'ÉCHEC envoi : ' + ((d && d.error) || ('HTTP ' + r.status)) + " — si le code est épuisé/invalide, propose « Obtenir un code » ; sinon signale l'échec à l'utilisateur sans réessayer en boucle.";
+                if (msgsEl) {
+                    var card = E('div', 'ia-card');
+                    card.appendChild(E('h4', '', '✉ E-mail envoyé — ' + esc(inp.sujet || '')));
+                    card.appendChild(E('div', 'ia-note', 'Destinataire : ' + esc(to) + (d.quota != null ? ' · quota restant : ' + esc(String(d.quota)) : '')));
+                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                }
+                return 'OK : e-mail envoyé à ' + to + '. Les fichiers produits restent téléchargeables dans la conversation (non joints à l\'e-mail).';
+            }
+
             /* ── Envoi d'un message utilisateur ── */
             async function iaSend(msgsEl, ta, sendBtn) {
                 if (IA.busy) return;
@@ -11971,7 +12195,7 @@
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives et rapports PDF/Word/PPTX, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
+                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
@@ -12015,7 +12239,7 @@
                 }
 
                 /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
-                var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: iaUserKey(IA_DEFAULT_PROVIDER) };
+                var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: cfg('key_ollama') || cfg('key_minimax') };
                 function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
@@ -12112,7 +12336,7 @@
                     hv.innerHTML = '<h2><span class="ia-star">' + IA_LOGO + '</span>' + (isRep ? 'Quel rapport préparons-nous ?' : (greet === 'Bonjour' ? 'Que souhaitez-vous analyser ?' : 'Que souhaitez-vous analyser ce soir ?')) + '</h2>' +
                         '<p>' + (isRep
                             ? 'Décrivez le rapport souhaité — programme (vaccination, paludisme, tuberculose, VIH, nutrition, santé maternelle…), période, zone, format <b>PDF</b>, <b>Word</b> ou <b>PPTX</b>, et style éventuel : l\'assistant analyse les données DHIS2 puis génère un document professionnel téléchargeable.'
-                            : 'Demandez n\'importe quelle analyse des données DHIS2/SNIS — vaccination et <b>tous les programmes de santé</b> (paludisme, tuberculose, VIH, nutrition, santé maternelle, planification familiale, surveillance épidémiologique…), pour toute année et toute entité : l\'assistant calcule sur les données réelles et répond en <b>tableau</b>, <b>graphique</b> ou <b>carte</b>, téléchargeables. Vous pouvez aussi joindre un fichier ou une image.') + '</p>' +
+                            : 'Demandez n\'importe quelle analyse des données DHIS2/SNIS — vaccination et <b>tous les programmes de santé</b> (paludisme, tuberculose, VIH, nutrition, santé maternelle, planification familiale, surveillance épidémiologique…), pour toute année et toute entité : l\'assistant calcule sur les données réelles et répond en <b>tableau</b>, <b>graphique</b> ou <b>carte</b>, téléchargeables. Il produit aussi des <b>classeurs Excel</b>, des <b>visuels</b> (logo, affiche, infographie) et peut <b>envoyer le résultat par e-mail</b>. Vous pouvez aussi joindre un fichier ou une image.') + '</p>' +
                         '<div class="ia-chips" id="iaChips"></div>';
                     msgsEl.appendChild(hv);
                     var chips = isRep ? [
@@ -12123,7 +12347,7 @@
                     ] : [
                         'Couverture vaccinale DTC3 par zone de santé sur les 12 derniers mois, en tableau',
                         'Incidence du paludisme pour 1000 habitants par province en 2025, en carte',
-                        'Graphique : tendance mensuelle des cas de tuberculose dépistés depuis 2022',
+                        'Export Excel : doses administrées par antigène et par zone de santé, le mois dernier',
                         'Quelles ZS ont une complétude < 80 % le mois dernier ?'
                     ];
                     var cc = hv.querySelector('#iaChips');
