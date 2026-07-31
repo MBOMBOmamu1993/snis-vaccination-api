@@ -93,6 +93,46 @@ Contexte permanent :
   LAST_12_WEEKS) ; programIndicators = canevas DV ABANDONNÉS sans données →
   ne pas utiliser.
 
+État 31/07/2026 — RAPPORT ZS REFAIT À L'IDENTIQUE DE L'ORIGINAL (29b7c518e, EN PRODUCTION) :
+- Demande Felly : les feuilles du Rapport ZS (Plan Mashako 3.0) ne ressemblaient
+  pas au classeur Tableau original (double tableau « synthèse ZS » + carte
+  séparée « Détail par aire de santé », jamais demandé). Spec = 11 captures
+  du classeur original (ZS Aketi, juin 2026).
+- docs/index.html : nouveau moteur mkZsRender — UNE carte par feuille =
+  bandeau bleu (titre/sous-titre/chips de l'original) + ligne/bloc de synthèse
+  ZS EN TÊTE + tableau des aires de santé. Ligne ZS épinglée dans la même
+  table quand les colonnes coïncident (Livraison, Expiration, CDF_NF,
+  Infirmier), mini-bloc avec son propre en-tête juste au-dessus sinon
+  (Supervision, CDF_P1, Dispo) — comme Tableau. MK_ZS_CFG (17 feuilles :
+  Supervision P1/P2/P3, Séances P1/P2, Taux d'abandon P1/P2, Livraison P1/P2,
+  CDF P1/P2/NF, Vaccine expiration P1/P2, Vaccine dispo P1/P2, Infirmier
+  P1/P2, Carte de Supervision) + MK_ZS_BUILD par kind. Feuilles « ZS seule »
+  (Supervision_P2, CDF_P2, Vaccine_dispo_P2) = bloc synthèse uniquement.
+- Détails fidélité : booléens → ✓ vert / ✗ rouge (fini « Faux »/« Oui »/« 0 ») ;
+  pastilles % avec fraction (n/d) ; alertes expiration multi-lignes (« Alerte
+  expiration dans N jours (M doses) ») ; dispo en semaines 0-1 rouge / 2+ vert ;
+  titres exacts (« Suivi de la réalisation de la supervision des aires de
+  santé », etc.) ; P2 sans « — suite ».
+- Données : ligne ZS depuis _ROLE:'HZ' du crosstab _AS, sinon agrégée côté
+  client (% d'aires conformes — Livraison/CDF/Infirmier n'ont pas de HZ) ;
+  Vaccine_dispo_HZ_P1 rendu 100 % crosstab (sa vue principale = 404) ;
+  fix 404 Séances/Taux d'abandon via MK_AS_FILE (Seances_→Sances_,
+  Taux_d_abandon_→Tauxdabandon_) dans mkAsLoad.
+- Préservé : page ANT, filtres en cascade, périodes/archives (note discrète
+  si pas de _AS archivé), onglets pilotés par meta, exports Excel/PPTX (sur le
+  visuel fusionné via box._mkXls), lightbox. mkAsAppend ne tourne plus que
+  pour les feuilles ZS non reprises.
+- Validation : 5/5 blocs script vm.Script OK ; harnais test-mkas-harness.mjs
+  RÉÉCRIT (évalue MK_ZS_BUILD/mkZsRender sur les vrais JSON, zone Aba —
+  30+ contrôles dont moteur avec DOM simulé : plus de carte « Détail par aire
+  de santé », compteur AS, export fusionné) — tout vert. Fixtures
+  tools/mashako-sync/out-zs/ NON versionnées (.gitignore ; regénérables depuis
+  la branche mashako-data, commande dans l'en-tête du harnais).
+- Déploiement : push main → Pages success + Vercel rebuild, nouveau code
+  vérifié en ligne sur les deux (grep mkZsRender).
+- ⚠️ À SURVEILLER (préexistant, sans rapport) : le workflow planifié
+  « Mashako 3.0 — synchro de secours (cloud) » échoue (runs 12h16/13h26).
+
 État 30/07/2026 — DÉTAIL AS : REPUBLICATION + FRONTEND CORRIGÉ + RELAIS CLOUD :
 
 A) Vérification du rapport du 29/07 (session Claude) :

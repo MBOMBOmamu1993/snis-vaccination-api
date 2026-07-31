@@ -286,4 +286,7 @@ Action faite : (1) Exploration en essaim : code (IIFE Mashako, mkDrawView +
   dont moteur complet avec DOM simulé (plus de carte « Détail par aire de
   santé », compteur AS, _mkXls fusionné).
 Résultat : tous les contrôles passent ; syntaxe des 5 blocs script OK.
-  Déploiement : push main → GitHub Pages / Vercel (automatique).
+  Commit 29b7c518e poussé sur main (31/07) → GitHub Pages success ET Vercel
+  rebuild, nouveau code vérifié en ligne sur les deux. Fixtures out-zs
+  exclues du versioning (.gitignore, regénérables depuis mashako-data).
+  Note : workflow « synchro de secours (cloud) » en échec préexistant.
