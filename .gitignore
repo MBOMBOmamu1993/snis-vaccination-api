@@ -24,3 +24,6 @@ ds-bundle/
 .design-sync/node_modules
 cloudflare-worker/secrets.json
 cloudflare-worker/.wrangler/
+
+# Fixtures de test du harnais Mashako (telechargees depuis la branche mashako-data)
+tools/mashako-sync/out-zs/

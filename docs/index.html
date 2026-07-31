@@ -12694,7 +12694,12 @@
             function mkLoadView(v, box) {
                 if (!box) return;
                 mkCurView = v; mkCurBox = box;
-                function show(d) { mkDrawView(d, box, v); mkAsAppend(v, box); }
+                function show(d) {
+                    /* Page ZS, feuilles reprises à l'identique de l'original :
+                       visuel unique (synthèse ZS en tête + aires de santé). */
+                    if (mkPfx && typeof MK_ZS_CFG !== 'undefined' && MK_ZS_CFG[d.name || (v && v.name) || '']) { mkZsRender(v, box, d); return; }
+                    mkDrawView(d, box, v); mkAsAppend(v, box);
+                }
                 function wait() { box.innerHTML = '<div style="padding:26px;text-align:center;color:#64748b">⏳ Chargement de « ' + esc(v.name) + ' »…</div>'; }
                 if (!v.file) { show({ name: v.name, urlName: v.urlName, columns: [], rows: [] }); return; }
                 if (mkViewCache[v.file]) { show(mkViewCache[v.file]); return; }
@@ -12718,9 +12723,15 @@
                donc préfixées « b<n>· » par bloc, et c'est le rang du bloc qui
                identifie le critère — d'où les libellés de MK_AS_LABELS. */
             var mkAsCache = {};
+            /* Le nom de fichier du crosstab _AS est le nom Tableau brut, pas
+               toujours le nom de vue du meta (ex. Seances_HZ_P1 → Sances_HZ_P1). */
+            var MK_AS_FILE = {
+                'Séances_HZ_P1': 'Sances_HZ_P1', 'Séances_HZ_P2': 'Sances_HZ_P2',
+                "Taux d'abandon_HZ_P1": 'Tauxdabandon_HZ_P1', "Taux d'abandon_HZ_P2": 'Tauxdabandon_HZ_P2'
+            };
             function mkAsLoad(urlName, cb) {
                 if (Object.prototype.hasOwnProperty.call(mkAsCache, urlName)) { cb(mkAsCache[urlName]); return; }
-                fetch(mkUrl('views/' + urlName + '_AS.json') + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
+                fetch(mkUrl('views/' + (MK_AS_FILE[urlName] || urlName) + '_AS.json') + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (d) { mkAsCache[urlName] = d; cb(d); })
                     .catch(function () { mkAsCache[urlName] = null; cb(null); });
@@ -13834,6 +13845,749 @@
                     (spark ? '<div style="margin-top:6px">' + spark + '</div>' : '') +
                     (delta || '') +
                     '</div>';
+            }
+            /* ═══ RAPPORT ZONE DE SANTÉ — visuel unique à l'identique du classeur
+               original (demande Felly 31/07) : UNE carte par feuille = bandeau bleu,
+               synthèse de la ZS en tête (une ligne dans la table quand les colonnes
+               sont les mêmes, sinon un mini-bloc avec son propre en-tête juste
+               au-dessus, comme dans Tableau), puis la situation des aires de santé.
+               Fini le double tableau « synthèse ZS + Détail par aire de santé ».
+               Libellés et mises en forme repris des captures du classeur original. ═══ */
+            var MK_ZS_FOOT_SUP = "*Une supervision est considérée de qualité lorsqu'elle répond simultanément aux trois critères suivants :<br>- <b>Localisation :</b> La position doit être conforme à celle du Centre de Santé de Référence<br>- <b>Durée :</b> La supervision doit durer au moins 1 heure<br>- <b>Cohérence :</b> Les informations saisies dans chaque module du canevas de supervision doivent être cohérentes entre elles";
+            var MK_ZS_FOOT_CDF = "<b>Alerte de Température :</b> <span style='color:#e03531'>■</span> alerte de température minimal &gt;0 / alerte de température maximal &gt;=3 &nbsp;&nbsp; <span style='color:#2e9e48'>■</span> alerte de température minimal = 0 / alerte de température maximal &lt;3<br><br>*Un équipement de chaîne du froid est considéré comme fonctionnel lorsqu'il satisfait simultanément aux deux critères suivants:<br>- <b>Dispositif de suivi:</b> Un système de monitorage continu (fridge tag) de la température est disponible et opérationnel<br>- <b>Performance:</b> Aucune alarme négative et moins de trois alarmes positives ont été enregistrées au cours des 30 derniers jours";
+            /* kind : sup | seances | abandon | livraison | cdf | cdnf | exp | dispo |
+               inf | p3 | carte ; zsOnly = la feuille n'affiche QUE la synthèse ZS
+               (Supervision_HZ_P2, CDF_HZ_P2, Vaccine_dispo_HZ_P2 dans l'original). */
+            var MK_ZS_CFG = {
+                'Supervision_HZ_P1': { kind: 'sup', title: 'Suivi de la réalisation de la supervision des aires de santé', sub: "% de supervisions d'aires de santé répondant aux critères de qualité*", sortBy: 'AS supervisées', legend: 'pct', foot: MK_ZS_FOOT_SUP },
+                'Supervision_HZ_P2': { kind: 'sup', zsOnly: true, title: 'Suivi de la réalisation de la supervision des aires de santé', sub: "% de supervisions d'aires de santé répondant aux critères de qualité*", sortBy: 'AS supervisées', legend: 'pct', foot: MK_ZS_FOOT_SUP },
+                'Supervision_HZ_P3': { kind: 'p3', title: 'Synthèse des constats et des recommandations du superviseur' },
+                'Carte de Supervision_HZ': { kind: 'carte', title: 'Carte des Suivi de la réalisation de la supervision des aires de santé', sub: "% de supervisions d'aires de santé répondant aux critères de qualité*", foot: MK_ZS_FOOT_SUP },
+                'Séances_HZ_P1': { kind: 'seances', title: 'Réalisation des séances de vaccination', sub: '% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée)', sortBy: 'Aire de Santé', legend: 'pct' },
+                'Séances_HZ_P2': { kind: 'seances', title: 'Réalisation des séances de vaccination', sub: '% des aires de santé ayant réalisé au moins 80% des séances planifiées pour chaque type de stratégie (fixe et avancée)', sortBy: 'Aire de Santé', legend: 'pct' },
+                "Taux d'abandon_HZ_P1": { kind: 'abandon', title: 'Récupération des enfants', sub: "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1", sortBy: 'Aire de Santé', legend: 'pct' },
+                "Taux d'abandon_HZ_P2": { kind: 'abandon', title: 'Récupération des enfants', sub: "% des aires de santé avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3, BCG - VAR 1, Penta 1-VAR 1", sortBy: 'Aire de Santé', legend: 'pct' },
+                'Livraison_HZ_P1': { kind: 'livraison', title: 'Satisfaction des besoins des aires de santé', sub: '% des aires de santé qui ont reçu une livraison satisfaisante en provenance des zones de santé', sortBy: 'Aire de Santé', legend: 'pct' },
+                'Livraison_HZ_P2': { kind: 'livraison', title: 'Satisfaction des besoins des aires de santé', sub: '% des aires de santé qui ont reçu une livraison satisfaisante en provenance des zones de santé', sortBy: 'Aire de Santé', legend: 'pct' },
+                'CDF_HZ_P1': { kind: 'cdf', title: 'Fonctionnalité de la chaîne du froid des aires de santé', sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*', sortBy: 'Réfrigérateur fonctionnel', foot: MK_ZS_FOOT_CDF },
+                'CDF_HZ_P2': { kind: 'cdf', zsOnly: true, title: 'Fonctionnalité de la chaîne du froid des aires de santé', sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*', sortBy: 'Réfrigérateur fonctionnel', foot: MK_ZS_FOOT_CDF },
+                'CDF_HZ_NF': { kind: 'cdnf', title: 'Chaîne du froid non fonctionnelle dans les aires de santé', sub: '% des aires de santé avec au moins une chaîne de froid fonctionnelle*', sortBy: 'Réfrigérateur fonctionnel', legend: 'cdf' },
+                'Vaccine_expiration_HZ_P1': { kind: 'exp', title: 'Risque lié à la péremption des vaccins', sub: 'Aires de santé ne présentant aucun risque de péremption des vaccins', sortBy: 'Aire de Santé' },
+                'Vaccine_expiration_HZ_P2': { kind: 'exp', title: 'Risque lié à la péremption des vaccins', sub: 'Aires de santé ne présentant aucun risque de péremption des vaccins', sortBy: 'Aire de Santé' },
+                'Vaccine_dispo_HZ_P1': { kind: 'dispo', title: 'Disponibilité des vaccins', sub: 'Aires de santé ayant atteint leurs cibles ou disposant de quantités suffisantes pour les atteindre', sortBy: 'Aire de Santé', legend: 'sema' },
+                'Vaccine_dispo_HZ_P2': { kind: 'dispo', zsOnly: true, title: 'Disponibilité des vaccins', sub: 'Aires de santé ayant atteint leurs cibles ou disposant de quantités suffisantes pour les atteindre', sortBy: 'Aire de Santé', legend: 'sema' },
+                'Infirmier_HZ_P1': { kind: 'inf', title: 'Infirmiers Titulaires formés au PEV', sub: 'Objectif: au moins 1 agent formé au PEV Pratique', sortBy: 'Aire de Santé' },
+                'Infirmier_HZ_P2': { kind: 'inf', title: 'Infirmiers Titulaires formés au PEV', sub: 'Objectif: au moins 1 agent formé au PEV Pratique', sortBy: 'Aire de Santé' }
+            };
+            /* ── briques cellules du visuel ZS ── */
+            function mkZsTh(l, first) {
+                return '<th style="padding:' + (first ? '10px 12px' : '10px 10px') + ';text-align:' + (first ? 'left' : 'center') + ';color:' + (first ? '#334155' : '#475467') + ';font-weight:' + (first ? '800' : '600') + ';font-size:' + (first ? '12px' : '11.5px') + ';border-bottom:2px solid #e2e8f0;' + (first ? 'white-space:nowrap' : 'max-width:170px;line-height:1.35') + '">' + esc(l) + '</th>';
+            }
+            function mkZsNameTd(t) { return '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#1a237e;white-space:nowrap">' + esc(t) + '</td>'; }
+            function mkZsEmptyTd() { return '<td style="padding:8px;border-bottom:1px solid #f1f5f9"></td>'; }
+            function mkZsBoolTd(st) {
+                if (st === true) return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_GREEN + ';font-weight:900;font-size:15px">✓</td>';
+                if (st === false) return '<td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:900;font-size:15px">✗</td>';
+                return mkZsEmptyTd();
+            }
+            /* booléen depuis un libellé (« Oui », « Vrai », « Satisfaisante »…) */
+            function mkZsState(v) {
+                if (mkTruthy(v)) return true;
+                if (mkFalsy(v)) return false;
+                var s = String(v == null ? '' : v).trim().toLowerCase();
+                if (s === 'satisfaisante' || s === 'qualité satisfaisante' || s === 'normal') return true;
+                if (s === 'insatisfaisante' || s === 'qualité insatisfaisante') return false;
+                return null;
+            }
+            function mkZsInt(v) { var n = Number(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? Math.round(n).toLocaleString('fr-FR') : ''; }
+            /* pastille pleine colorée (style synthèse ZS de l'original) */
+            function mkZsPillTd(pct, colorHex, frac) {
+                if (!pct) return mkZsEmptyTd();
+                var bg = colorHex || mkThresholdColor(pct) || '#e5e7eb';
+                var fg = bg === MK_YELLOW ? '#1f2937' : '#fff';
+                return '<td style="padding:3px 8px;border-bottom:1px solid #f1f5f9"><div style="background:' + bg + ';color:' + fg + ';text-align:center;font-weight:800;font-size:12px;padding:5px 8px;border-radius:2px;white-space:nowrap">' + esc(pct) + (frac ? ' <span style="font-weight:600;opacity:.9;font-size:11px">(' + esc(frac) + ')</span>' : '') + '</div></td>';
+            }
+            /* % texte coloré + fraction en dessous (style Livraison de l'original) */
+            function mkZsPctTd(pct, colorHex, frac) {
+                if (!pct) return mkZsEmptyTd();
+                var c = colorHex || '#334155';
+                return '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:center;white-space:nowrap"><div style="color:' + c + ';font-weight:800">' + esc(pct) + '</div>' + (frac ? '<div style="color:' + c + ';font-size:9.5px;opacity:.85">(' + esc(frac) + ')</div>' : '') + '</td>';
+            }
+            function mkZsTxtTd(t, colorHex, bold, left) {
+                if (t == null || t === '') return mkZsEmptyTd();
+                return '<td style="padding:8px ' + (left ? '12px' : '10px') + ';border-bottom:1px solid #f1f5f9;' + (left ? '' : 'text-align:center;') + 'color:' + (colorHex || '#334155') + (bold ? ';font-weight:800' : '') + '">' + esc(t) + '</td>';
+            }
+            /* ── finders de colonnes : JSON principal (noms francs) ou crosstab _AS
+               (préfixe « b<n>· ») — on matche toujours sur le suffixe. ── */
+            function mkZsTail(c) { var i = c.indexOf('·'); return i < 0 ? c : c.slice(i + 1); }
+            function mkZsColOf(cols, rx, notRx) {
+                for (var i = 0; i < cols.length; i++) {
+                    var t = mkZsTail(cols[i]);
+                    if (rx.test(t) && !(notRx && notRx.test(t))) return cols[i];
+                }
+                return null;
+            }
+            function mkZsBlocOf(col) { var m = /^b(\d+)·/.exec(col || ''); return m ? m[1] : null; }
+            function mkZsColsInBloc(cols, n) { return cols.filter(function (c) { return c.indexOf('b' + n + '·') === 0; }); }
+            /* état pivot d'un bloc du crosstab : la colonne-valeur portant « 1 » */
+            var MK_ZS_PIV_POS = /^(oui|vrai|true|yes|1|satisfaisante|qualité satisfaisante|normal)$/i;
+            var MK_ZS_PIV_NEG = /^(non|faux|false|no|0|insatisfaisante|qualité insatisfaisante)$/i;
+            function mkZsPivot(row, cols, n) {
+                var cs = mkZsColsInBloc(cols, n), pos = false, neg = false;
+                cs.forEach(function (c) {
+                    if (mkAsVal(row, c) !== '1') return;
+                    var t = mkZsTail(c);
+                    if (MK_ZS_PIV_POS.test(t)) pos = true; else if (MK_ZS_PIV_NEG.test(t)) neg = true;
+                });
+                return pos ? true : (neg ? false : null);
+            }
+            /* fusion des lignes éclatées par mesure (JSON principal), triées par la clé */
+            function mkZsMerge(rows, cols, keyCol) {
+                var m = {}, ord = [];
+                rows.forEach(function (r) {
+                    var k = String(r[keyCol] || '').trim();
+                    if (!k) return;
+                    if (!m[k]) { var o = {}; cols.forEach(function (c) { o[c] = r[c]; }); m[k] = o; ord.push(k); }
+                    else cols.forEach(function (c) { if (String(m[k][c] == null ? '' : m[k][c]).trim() === '') m[k][c] = r[c]; });
+                });
+                var out = ord.map(function (k) { return m[k]; });
+                out.sort(function (a, b) { return String(a[keyCol]).trim().localeCompare(String(b[keyCol]).trim(), 'fr'); });
+                return out;
+            }
+            /* pastille de synthèse depuis une ligne du JSON principal (forme 1 ligne/ZS) */
+            function mkZsMainPill(main, row, percRx, numRx, denRx) {
+                if (!row) return { pct: '', col: null, frac: '' };
+                var pc = mkZsColOf(main.columns, percRx);
+                if (!pc) return { pct: '', col: null, frac: '' };
+                var kc = mkColorColFor(pc, main.columns);
+                var nc = numRx ? mkZsColOf(main.columns, numRx) : null;
+                var dc = denRx ? mkZsColOf(main.columns, denRx) : null;
+                var frac = (nc && dc && mkZsInt(row[nc]) !== '' && mkZsInt(row[dc]) !== '') ? mkZsInt(row[nc]) + '/' + mkZsInt(row[dc]) : '';
+                return { pct: mkFmtPct(row[pc]), col: kc ? mkColorOf(row[kc]) : null, frac: frac };
+            }
+            /* pastille de synthèse depuis la ligne _ROLE HZ du crosstab */
+            function mkZsHzPill(asCols, hzRow, bloc, percRx, numRx, denRx) {
+                var cs = mkZsColsInBloc(asCols, bloc);
+                var pc = mkZsColOf(cs, percRx, /_COLOR$/i);
+                var kc = mkZsColOf(cs, /_COLOR$/i);
+                var nc = numRx ? mkZsColOf(cs, numRx) : null;
+                var dc = denRx ? mkZsColOf(cs, denRx) : null;
+                var frac = (nc && dc && mkZsInt(hzRow[nc]) !== '' && mkZsInt(hzRow[dc]) !== '') ? mkZsInt(hzRow[nc]) + '/' + mkZsInt(hzRow[dc]) : '';
+                return { pct: pc ? mkFmtPct(hzRow[pc]) : '', col: kc ? mkColorOf(hzRow[kc]) : null, frac: frac };
+            }
+            var MK_ZS_BUILD = {};
+            /* ── Supervision P1/P2 : synthèse ZS (pastilles) + table AS (coches) ── */
+            MK_ZS_BUILD.sup = function (ctx) {
+                var out = {
+                    zsHead: ['Zone de santé', '% AS supervisées', '% AS supervisées de qualité', 'AS supervisée avec bonne durée', 'AS supervisée avec cohérence des données', 'AS supervisées avec bonne localisation'], zsRow: null,
+                    head: ['Aire de santé', 'Centre de Santé', 'AS supervisées', 'AS supervisées de qualité', 'AS supervisée avec bonne durée', 'AS supervisée avec cohérence des données', 'AS supervisées avec bonne localisation'], rows: []
+                };
+                var defs = [
+                    { b: 2, p: /détail taux de supervision/i, n: /supervisions réalisées/i, d: /supervisions requises/i, mp: /_perc_supervised_healthareas_CYCM$/i, mn: /_num_supervised_healthareas_CYCM$/i, md: /^_num_healthareas_CYCM$/i },
+                    { b: 6, p: /détail qualité de la supervision/i, n: /_num_HA_supervision_quality/i, d: /_num_healthareas_CYCM/i, mp: /_perc_HA_supervision_quality_CYCM$/i, mn: /_num_HA_supervision_quality_CYCM/i, md: /^_num_healthareas_CYCM$/i },
+                    { b: 5, p: /perc_HA_duration/i, n: /BOOL_HA_duration/i, d: /_num_healthareas_CYCM/i, mp: /perc_HA_duration_CYCM$/i, mn: /BOOL_HA_duration_CYCM_matched/i, md: /^_num_healthareas_CYCM$/i },
+                    { b: 4, p: /perc_HA_coh/i, n: /_num_HA_coh/i, d: /_num_healthareas_CYCM/i, mp: /perc_HA_Coh/i, mn: /_num_HA_coh/i, md: /^_num_healthareas_CYCM$/i },
+                    { b: 3, p: /perc_HA_localisation/i, n: /_num_HA_localisation/i, d: /_num_healthareas_CYCM/i, mp: /perc_HA_localisation_CYCM$/i, mn: /_num_HA_localisation_CYCM$/i, md: /^_num_healthareas_CYCM$/i }
+                ];
+                var zsName = ctx.zone;
+                if (ctx.hzRow && ctx.as) {
+                    var nc = mkZsColOf(ctx.as.columns, /^zone de sant/i);
+                    if (nc && mkAsVal(ctx.hzRow, nc)) zsName = mkAsVal(ctx.hzRow, nc);
+                    out.zsRow = [mkZsNameTd(zsName)].concat(defs.map(function (def) {
+                        var o = mkZsHzPill(ctx.as.columns, ctx.hzRow, def.b, def.p, def.n, def.d);
+                        return mkZsPillTd(o.pct, o.col, o.frac);
+                    }));
+                } else if (ctx.mainRows.length) {
+                    var mRow = ctx.mainRows[0], zsC = mkZsColOf(ctx.main.columns, /^zone de sant/i);
+                    if (zsC && mRow[zsC]) zsName = String(mRow[zsC]).trim();
+                    out.zsRow = [mkZsNameTd(zsName)].concat(defs.map(function (def) {
+                        var o = mkZsMainPill(ctx.main, mRow, def.mp, def.mn, def.md);
+                        return mkZsPillTd(o.pct, o.col, o.frac);
+                    }));
+                }
+                if (ctx.as) {
+                    var centreC = ctx.as.columns.filter(function (c) { return /centre de sant/i.test(mkZsTail(c)); })
+                        .filter(function (c) { return ctx.asRows.some(function (r) { return mkAsVal(r, c) !== ''; }); })[0] || null;
+                    ctx.asRows.forEach(function (r) {
+                        var tds = [mkZsNameTd(r._AS), centreC ? mkZsTxtTd(mkAsVal(r, centreC), null, false, true) : mkZsEmptyTd()];
+                        [2, 6, 5, 4, 3].forEach(function (b) { tds.push(mkZsBoolTd(mkZsPivot(r, ctx.as.columns, b))); });
+                        out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r._AS).toLowerCase() });
+                    });
+                }
+                return out;
+            };
+            /* ── Séances P1/P2 : synthèse ZS (JSON principal) + table AS (crosstab) ── */
+            MK_ZS_BUILD.seances = function (ctx) {
+                var out = {
+                    zsHead: ['Zone de santé', "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe, avancée)", "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (fixe)", "% d'AS ayant réalisé au moins 80% des séances de vaccination planifiées (avancée)"], zsRow: null,
+                    head: ['Aire de santé', '% Séances fixes réalisées', '% Séances avancées réalisées', 'Réalisation des séances'], rows: []
+                };
+                if (ctx.mainRows.length) {
+                    var mRow = ctx.mainRows[0], zsC = mkZsColOf(ctx.main.columns, /^zone de sant/i);
+                    var defs = [
+                        { p: /_perc_fixed_outreach_achieved_CYCM$/i, n: /_num_healthareas_fixed_outreach_achieved_CYCM$/i, d: /^_num_healthareas_CYCM$/i },
+                        { p: /^_perc_fixed_achieved_CYCM$/i, n: /^_num_healthareas_fixed_achieved_CYCM$/i, d: /^_num_healthareas_CYCM$/i },
+                        { p: /^_perc_outreach_achieved_CYCM$/i, n: /_num_healthareas_outreach_achieved_CYCM\]\)/i, d: /^zn\(\[_num_healthareas_CYCM\]\)$/i }
+                    ];
+                    out.zsRow = [mkZsNameTd(zsC && mRow[zsC] ? String(mRow[zsC]).trim() : ctx.zone)].concat(defs.map(function (def) {
+                        var o = mkZsMainPill(ctx.main, mRow, def.p, def.n, def.d);
+                        return mkZsPillTd(o.pct, o.col, o.frac);
+                    }));
+                }
+                if (ctx.as) {
+                    var fixV = null, fixK = null, outV = null, outK = null;
+                    ctx.as.columns.forEach(function (c) {
+                        var t = mkZsTail(c);
+                        if (/séances fixes réalisées/i.test(t)) { if (/_color$/i.test(t)) fixK = c; else fixV = c; }
+                        if (/séances avancées réalis/i.test(t)) { if (/_color$/i.test(t)) outK = c; else outV = c; }
+                    });
+                    var realC = mkZsColOf(ctx.as.columns, /^réalisation des séances$/i);
+                    ctx.asRows.forEach(function (r) {
+                        var fN = fixV ? mkPctNum(r[fixV]) : NaN, oN = outV ? mkPctNum(r[outV]) : NaN;
+                        var tds = [mkZsNameTd(r._AS),
+                            isFinite(fN) ? mkZsPctTd(Math.round(fN) + '%', fixK ? mkColorOf(r[fixK]) : null, '') : mkZsEmptyTd(),
+                            isFinite(oN) ? mkZsPctTd(Math.round(oN) + '%', outK ? mkColorOf(r[outK]) : null, '') : mkZsEmptyTd(),
+                            mkZsBoolTd(realC ? mkZsState(r[realC]) : null)];
+                        out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r._AS).toLowerCase() });
+                    });
+                }
+                return out;
+            };
+            /* ── Taux d'abandon P1/P2 ── */
+            MK_ZS_BUILD.abandon = function (ctx) {
+                var out = {
+                    zsHead: ['Zone de santé', "% AS avec un taux d'abandon inférieur à 10%", "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-Penta 3", "% AS avec un taux d'abandon inférieur à 10% pour Penta 1-VAR", "% AS avec un taux d'abandon inférieur à 10% pour BCG-VAR"], zsRow: null,
+                    head: ['Aire de santé', "Taux d'abandon Penta 1-Penta 3", "Taux d'abandon Penta 1-VAR", "Taux d'abandon BCG-VAR", "Objectif atteint (taux < 10%)"], rows: []
+                };
+                if (ctx.mainRows.length) {
+                    var mRow = ctx.mainRows[0], zsC = mkZsColOf(ctx.main.columns, /^zone de sant/i);
+                    var defs = [
+                        { p: /^_perc_dropout_CYCM$/i, n: /^_num_healthareas_dropout_CYCM$/i, d: /^_num_healthareas_REF_CYCM$/i },
+                        { p: /_perc_healthareas_DTC1-DTC3_dropout_CYCM$/i, n: /_num_healthareas_DTC1-DTC3_dropout_CYCM$/i, d: /^_num_healthareas_CYCM$/i },
+                        { p: /_perc_healthareas_DTC1-VAR2_dropout_CYCM$/i, n: /_num_healthareas_DTC1-VAR2_dropout_CYCM$/i, d: /^_num_healthareas_CYCM$/i },
+                        { p: /_perc_healthareas_BCG-VAR_dropout_CYCM$/i, n: /_num_healthareas_BCG-VAR_dropout_CYCM$/i, d: /^_num_healthareas_CYCM$/i }
+                    ];
+                    out.zsRow = [mkZsNameTd(zsC && mRow[zsC] ? String(mRow[zsC]).trim() : ctx.zone)].concat(defs.map(function (def) {
+                        var o = mkZsMainPill(ctx.main, mRow, def.p, def.n, def.d);
+                        return mkZsPillTd(o.pct, o.col, o.frac);
+                    }));
+                }
+                if (ctx.as) {
+                    function rate(rxV, rxK) { return { v: mkZsColOf(ctx.as.columns, rxV), k: mkZsColOf(ctx.as.columns, rxK) }; }
+                    var r13 = rate(/_dropout_DTC1-3_perc%$/i, /_dropout_DTC1-3_perc%_COLOR$/i);
+                    var r1v = rate(/DTC1-VAR2 taux d'abandon$/i, /_dropout_DTC1-VAR2_perc%_COLOR$/i);
+                    var rbv = rate(/BCG-VAR2 taux d'abandon$/i, /_dropout_BCG-VAR_perc%_COLOR$/i);
+                    var objC = mkZsColOf(ctx.as.columns, /_dropout_objective_completed$/i);
+                    ctx.asRows.forEach(function (r) {
+                        function rateTd(o) {
+                            if (!o.v) return mkZsEmptyTd();
+                            var n = mkPctNum(r[o.v]);
+                            if (!isFinite(n)) return mkZsEmptyTd();
+                            var kv = o.k ? String(r[o.k] || '').trim() : '';
+                            var c = kv ? (mkTruthy(kv) ? MK_GREEN : MK_RED) : (n < 10 ? MK_GREEN : MK_RED);
+                            return mkZsPctTd(Math.round(n) + '%', c, '');
+                        }
+                        var tds = [mkZsNameTd(r._AS), rateTd(r13), rateTd(r1v), rateTd(rbv), mkZsBoolTd(objC ? mkZsState(r[objC]) : null)];
+                        out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r._AS).toLowerCase() });
+                    });
+                }
+                return out;
+            };
+            /* ── Livraison P1/P2 : une table, ligne ZS épinglée en tête ── */
+            var MK_ZS_LIV_AG = [
+                { l: 'BCG', k: 'BCG', nk: /\[BCG\]/i }, { l: 'DTC', k: 'dtc', nk: /DTC HepB/i },
+                { l: 'PCV', k: 'pcv', nk: /Pcv/i }, { l: 'VPO', k: 'vpo', nk: /\[VPO\]/i },
+                { l: 'Rota', k: 'rota', nk: /\[Rota\]/i }, { l: 'VPI', k: 'vpi', nk: /\[VPI\]/i },
+                { l: 'VAR-RR', k: 'var', nk: /\[VAR\]/i }, { l: 'VAA', k: 'vaa', nk: /\[VAA\]/i },
+                { l: 'Td', k: 'td', nk: /\[Td\]/i }, { l: 'SAB 0,05ml', k: '005', nk: /SAB 0 05ml/i },
+                { l: 'SAB 0,5ml', k: '05', nk: /SAB 0 5ml/i }, { l: 'Sdil 2ml', k: '2ml', nk: /Sdilution 2ml/i },
+                { l: 'Sdil 5ml', k: '5ml', nk: /Sdilution 5ml/i }
+            ];
+            MK_ZS_BUILD.livraison = function (ctx) {
+                var cols = ctx.main.columns;
+                var out = { head: ['Aire de santé', 'Approv. en vaccins et intrants', 'Toutes les conditions de livraisons respectées'].concat(MK_ZS_LIV_AG.map(function (a) { return a.l; })), rows: [], zsInline: true, zsRow: null };
+                var asCol = mkZsColOf(cols, /^aire de sant/i);
+                var appCol = mkZsColOf(cols, /^approv\. en vaccins et intrants$/i);
+                var condCol = mkZsColOf(cols, /^toutes les conditions de livraisons respectées$/i);
+                var defs = MK_ZS_LIV_AG.map(function (a) {
+                    return {
+                        l: a.l,
+                        p: mkZsColOf(cols, new RegExp('_perc_' + a.k + '_delivery_new\\s*$', 'i')),
+                        k: mkZsColOf(cols, new RegExp('_perc_' + a.k + '_delivery_COLOR_new$', 'i')),
+                        t: mkZsColOf(cols, new RegExp('_delivery_' + a.k + '_total_ANT$', 'i')),
+                        n: mkZsColOf(cols, a.nk)
+                    };
+                });
+                if (!asCol) return out;
+                var rowsM = mkZsMerge(ctx.mainRows, cols, asCol);
+                rowsM.forEach(function (r) {
+                    var tds = [mkZsNameTd(String(r[asCol] || '').trim()),
+                        mkZsBoolTd(appCol ? mkZsState(r[appCol]) : null),
+                        mkZsBoolTd(condCol ? mkZsState(r[condCol]) : null)];
+                    defs.forEach(function (df) {
+                        if (!df.p) { tds.push(mkZsEmptyTd()); return; }
+                        var n = mkPctNum(r[df.p]);
+                        if (!isFinite(n)) { tds.push(mkZsEmptyTd()); return; }
+                        var c = df.k ? mkColorOf(r[df.k]) : null;
+                        var ti = df.t ? mkZsInt(r[df.t]) : '', ni = df.n ? mkZsInt(r[df.n]) : '';
+                        tds.push(mkZsPctTd(Math.round(n) + '%', c, (ti !== '' && ni !== '') ? ti + ' / ' + ni : ''));
+                    });
+                    out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r[asCol] || '').toLowerCase() });
+                });
+                /* ligne de synthèse ZS : % d'aires conformes par colonne (n/N) */
+                if (rowsM.length) {
+                    var N = rowsM.length;
+                    function aggPct(test) {
+                        var n = rowsM.filter(test).length;
+                        var p = Math.round(n / N * 100);
+                        return mkZsPctTd(p + '%', p >= 80 ? MK_GREEN : (p >= 50 ? MK_YELLOW : MK_RED), n + ' / ' + N);
+                    }
+                    var tds = [mkZsNameTd(ctx.zone),
+                        aggPct(function (r) { return mkZsState(r[appCol]) === true; }),
+                        aggPct(function (r) { return mkZsState(r[condCol]) === true; })];
+                    defs.forEach(function (df) {
+                        if (!df.k) { tds.push(mkZsEmptyTd()); return; }
+                        tds.push(aggPct(function (r) { return mkColorOf(r[df.k]) === MK_GREEN; }));
+                    });
+                    out.zsRow = tds;
+                }
+                return out;
+            };
+            /* ── Chaîne du froid P1 (bloc ZS + table AS) et P2 (bloc ZS seul) ── */
+            MK_ZS_BUILD.cdf = function (ctx) {
+                var cols = ctx.main.columns;
+                var labels = ['Problème', 'Réfrigérateur disponible', 'Réfrigérateur fonctionnel', 'Tag réfrigérateur disponible', 'Alerte de Température minimale', 'Alerte de Température maximale'];
+                var out = { zsHead: ['Zone de Santé', 'Problème ZS'].concat(labels.slice(1)), zsRow: null, head: ['Aire de Santé', 'Problème AS'].concat(labels.slice(1)), rows: [] };
+                var asCol = mkZsColOf(cols, /^aire de sant/i);
+                var probC = mkZsColOf(cols, /^probl[èe]me /i);
+                var dispC = mkZsColOf(cols, /^réfrig[ée]rateur disponible$/i);
+                var foncC = mkZsColOf(cols, /_BOOL_CDF_fully_functional_HA$/i);
+                var tagC = mkZsColOf(cols, /^tag réfrig[ée]rateur disponible$/i);
+                /* les noms des colonnes d'alerte varient selon les feuilles/périodes */
+                function alertCol(rxList) {
+                    for (var i = 0; i < rxList.length; i++) {
+                        var c = mkZsColOf(cols, rxList[i]);
+                        if (c && ctx.mainRows.some(function (r) { return String(r[c] == null ? '' : r[c]).trim() !== ''; })) return c;
+                    }
+                    return mkZsColOf(cols, rxList[0]);
+                }
+                var minC = alertCol([/min_temperature_INDICATOR/i, /min_temperature_filter/i, /^_?cold_?chain_min_temperature$/i]);
+                var maxC = alertCol([/max_temperature_INDICATOR/i, /max_temperature_filter/i, /^_?cold_?chain_max_temperature$/i]);
+                function alertNum(r, c) {
+                    var s = String(r[c] == null ? '' : r[c]).trim();
+                    if (s === '') return null;
+                    var n = Number(s.replace(',', '.'));
+                    if (!isFinite(n)) n = mkTruthy(s) ? 1 : (mkFalsy(s) ? 0 : null);
+                    return n == null ? null : { s: String(n), n: n };
+                }
+                function alertTd(r, c, seuil) {
+                    if (!c) return mkZsEmptyTd();
+                    var o = alertNum(r, c);
+                    if (!o) return mkZsEmptyTd();
+                    return mkZsTxtTd(o.s, o.n >= seuil ? MK_RED : MK_GREEN, true);
+                }
+                var rowsM = asCol ? mkZsMerge(ctx.mainRows, cols, asCol) : [];
+                rowsM.forEach(function (r) {
+                    var tds = [mkZsNameTd(String(r[asCol] || '').trim()),
+                        mkZsTxtTd(probC ? String(r[probC] || '').trim() : '', '#55705a', false, true),
+                        mkZsBoolTd(dispC ? mkZsState(r[dispC]) : null),
+                        mkZsBoolTd(foncC ? mkZsState(r[foncC]) : null),
+                        mkZsBoolTd(tagC ? mkZsState(r[tagC]) : null),
+                        alertTd(r, minC, 1), alertTd(r, maxC, 3)];
+                    out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r[asCol] || '').toLowerCase() });
+                });
+                if (rowsM.length) {
+                    function aggCheck(c) {
+                        if (!c) return null;
+                        var anyT = false, anyF = false;
+                        rowsM.forEach(function (r) { var st = mkZsState(r[c]); if (st === true) anyT = true; else if (st === false) anyF = true; });
+                        return anyF ? false : (anyT ? true : null);
+                    }
+                    function aggAlert(c, seuil) {
+                        if (!c) return null;
+                        var s = 0, seen = false;
+                        rowsM.forEach(function (r) { var o = alertNum(r, c); if (o) { s += o.n; seen = true; } });
+                        return seen ? { s: String(s), bad: s >= seuil } : null;
+                    }
+                    var nbProb = probC ? rowsM.filter(function (r) { var p = String(r[probC] || '').trim(); return p && !/^pas de probl/i.test(p); }).length : 0;
+                    var mn = aggAlert(minC, 1), mx = aggAlert(maxC, 3);
+                    out.zsRow = [mkZsNameTd(ctx.zone),
+                        mkZsTxtTd(nbProb ? nbProb + ' aire(s) avec problème rapporté' : 'Pas de problème rapporté', nbProb ? MK_RED : '#55705a', false, true),
+                        mkZsBoolTd(aggCheck(dispC)), mkZsBoolTd(aggCheck(foncC)), mkZsBoolTd(aggCheck(tagC)),
+                        mn ? mkZsTxtTd(mn.s, mn.bad ? MK_RED : MK_GREEN, true) : mkZsEmptyTd(),
+                        mx ? mkZsTxtTd(mx.s, mx.bad ? MK_RED : MK_GREEN, true) : mkZsEmptyTd()];
+                }
+                return out;
+            };
+            /* ── Chaîne du froid non fonctionnelle : compteurs 0 vert / >0 rouge ── */
+            MK_ZS_BUILD.cdnf = function (ctx) {
+                var cols = ctx.main.columns;
+                var defs = [
+                    { l: 'Compresseurs dysfonctionnels', rx: /compresseur/i },
+                    { l: 'Évaporateurs non fonctionnels', rx: /[eé]vaporateur/i },
+                    { l: 'Installations électriques défectueuses', rx: /installation/i },
+                    { l: "Panneaux solaires à l'ombre", rx: /panneau/i },
+                    { l: 'Frigo avec présence de givre', rx: /givre/i }
+                ];
+                defs.forEach(function (df) { df.c = mkZsColOf(cols, df.rx); });
+                var asCol = mkZsColOf(cols, /^aire de sant/i);
+                var out = { head: ['Aire de Santé'].concat(defs.map(function (d) { return d.l; })), rows: [], zsInline: true, zsRow: null };
+                function zeroTd(v) {
+                    var s = String(v == null ? '' : v).trim();
+                    if (s === '') return mkZsEmptyTd();
+                    var n = Number(s.replace(',', '.'));
+                    return mkZsTxtTd(s, (isFinite(n) && n > 0) ? MK_RED : MK_GREEN, true);
+                }
+                if (!asCol) return out;
+                var rowsM = mkZsMerge(ctx.mainRows, cols, asCol);
+                rowsM.forEach(function (r) {
+                    var tds = [mkZsNameTd(String(r[asCol] || '').trim())];
+                    defs.forEach(function (df) { tds.push(df.c ? zeroTd(r[df.c]) : mkZsEmptyTd()); });
+                    out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r[asCol] || '').toLowerCase() });
+                });
+                if (rowsM.length) {
+                    var tds = [mkZsNameTd(ctx.zone)];
+                    defs.forEach(function (df) {
+                        if (!df.c) { tds.push(mkZsEmptyTd()); return; }
+                        var s = 0, seen = false;
+                        rowsM.forEach(function (r) { var n = Number(String(r[df.c] == null ? '' : r[df.c]).trim().replace(',', '.')); if (isFinite(n)) { s += n; seen = true; } });
+                        tds.push(seen ? mkZsTxtTd(String(s), s > 0 ? MK_RED : MK_GREEN, true) : mkZsEmptyTd());
+                    });
+                    out.zsRow = tds;
+                }
+                return out;
+            };
+            /* ── Expiration des vaccins : statuts Normal / alertes multi-lignes ── */
+            var MK_ZS_EXP_AG = [
+                { l: 'BCG', k: 'BCG' }, { l: 'Penta', k: 'Penta' }, { l: 'PCV', k: 'PCV' },
+                { l: 'VPO', k: 'VPO' }, { l: 'Rota', k: 'Rota' }, { l: 'VPI', k: 'VPI' },
+                { l: 'VAR-RR', k: 'VAR' }, { l: 'VAA', k: 'VAA' }, { l: 'Td', k: 'TD' }
+            ];
+            MK_ZS_BUILD.exp = function (ctx) {
+                var out = { head: ['Aire de Santé'].concat(MK_ZS_EXP_AG.map(function (a) { return a.l; })), rows: [], zsInline: true, zsRow: null };
+                var agDefs = [];
+                if (ctx.as) {
+                    var cols = ctx.as.columns;
+                    agDefs = MK_ZS_EXP_AG.map(function (a) {
+                        var stC = mkZsColOf(cols, new RegExp('risk_status_HA_' + a.k + ']', 'i'));
+                        return { l: a.l, b: mkZsBlocOf(stC) };
+                    });
+                    ctx.asRows.forEach(function (r) {
+                        var tds = [mkZsNameTd(r._AS)];
+                        agDefs.forEach(function (ad) {
+                            if (!ad.b) { tds.push(mkZsEmptyTd()); return; }
+                            var cs = mkZsColsInBloc(cols, ad.b), normalC = null, alerts = [];
+                            cs.forEach(function (c) {
+                                var t = mkZsTail(c);
+                                if (/^normal$/i.test(t)) normalC = c;
+                                else if (/^alerte expiration dans/i.test(t) && mkAsVal(r, c) === '1') alerts.push(t.replace(/\s+/g, ' '));
+                            });
+                            if (alerts.length) { tds.push('<td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;text-align:center;color:' + MK_RED + ';font-weight:700;font-size:11.5px;line-height:1.45">' + alerts.map(function (a) { return esc(a); }).join('<br>') + '</td>'); return; }
+                            if (normalC && mkAsVal(r, normalC) === '1') { tds.push(mkZsTxtTd('Normal', MK_GREEN, true)); return; }
+                            tds.push(mkZsEmptyTd());
+                        });
+                        out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r._AS).toLowerCase() });
+                    });
+                } else {
+                    /* repli (archives sans crosstab) : statuts du JSON principal */
+                    var colsM = ctx.main.columns, asCol = mkZsColOf(colsM, /^aire de sant/i);
+                    agDefs = MK_ZS_EXP_AG.map(function (a) { return { l: a.l, c: mkZsColOf(colsM, new RegExp('_vaccine_expiry_risk_status_HA_' + a.k + '$', 'i')) }; });
+                    if (asCol) {
+                        mkZsMerge(ctx.mainRows, colsM, asCol).forEach(function (r) {
+                            var tds = [mkZsNameTd(String(r[asCol] || '').trim())];
+                            agDefs.forEach(function (ad) {
+                                var s = ad.c ? String(r[ad.c] == null ? '' : r[ad.c]).trim() : '';
+                                if (!s) { tds.push(mkZsEmptyTd()); return; }
+                                tds.push(mkZsTxtTd(s, /^normal$/i.test(s) ? MK_GREEN : MK_RED, true));
+                            });
+                            out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r[asCol] || '').toLowerCase() });
+                        });
+                    }
+                }
+                /* ligne ZS : compteurs par antigène de la ligne HZ (« TBD » dans
+                   l'original quand la mesure n'est pas calculée) ; repli : nombre
+                   d'aires en alerte par antigène. */
+                if (ctx.hzRow && ctx.as) {
+                    var cs1 = mkZsColsInBloc(ctx.as.columns, '1');
+                    var tds = [mkZsNameTd(ctx.zone)];
+                    MK_ZS_EXP_AG.forEach(function (a) {
+                        var hc = null;
+                        for (var i = 0; i < cs1.length; i++) { if (mkZsTail(cs1[i]).toLowerCase() === a.l.toLowerCase()) { hc = cs1[i]; break; } }
+                        tds.push(hc && mkAsVal(ctx.hzRow, hc) !== '' ? mkZsTxtTd(mkAsVal(ctx.hzRow, hc), null, true) : mkZsEmptyTd());
+                    });
+                    out.zsRow = tds;
+                } else if (ctx.as && out.rows.length) {
+                    var tds2 = [mkZsNameTd(ctx.zone)];
+                    agDefs.forEach(function (ad, ai) {
+                        if (!ad.b) { tds2.push(mkZsEmptyTd()); return; }
+                        var n = 0;
+                        ctx.asRows.forEach(function (r) {
+                            var cs = mkZsColsInBloc(ctx.as.columns, ad.b);
+                            for (var i = 0; i < cs.length; i++) {
+                                if (/^alerte expiration dans/i.test(mkZsTail(cs[i])) && mkAsVal(r, cs[i]) === '1') { n++; return; }
+                            }
+                        });
+                        tds2.push(mkZsTxtTd(n + ' AS', n > 0 ? MK_RED : MK_GREEN, true));
+                    });
+                    out.zsRow = tds2;
+                }
+                return out;
+            };
+            /* ── Disponibilité des vaccins (100 % crosstab : la vue principale
+               P1 n'est pas exportée par Tableau) — seuils ZS 0-1 rouge / 2+ vert ── */
+            var MK_ZS_DISPO_AG = [
+                { l: 'BCG', k: 'BCG' }, { l: 'Penta', k: 'Penta' }, { l: 'PCV', k: 'PCV' },
+                { l: 'VPO', k: 'VPO' }, { l: 'Rota', k: 'Rota' }, { l: 'VPI', k: 'VPI' },
+                { l: 'VAR-RR', k: 'VAR' }, { l: 'VAA', k: 'VAA' }, { l: 'Td', k: 'Td' },
+                { l: 'SAB 0,05ml', k: 'SAB_005ml' }, { l: 'SAB 0,5ml', k: 'SAB_05ml' },
+                { l: 'Sdil 2ml', k: 'Sdil2ml' }, { l: 'Sdil 5ml', k: 'Sdil5ml' }, { l: 'Box de sécurité', k: 'BS' }
+            ];
+            MK_ZS_BUILD.dispo = function (ctx) {
+                var labels = MK_ZS_DISPO_AG.map(function (a) { return a.l; });
+                var out = { zsHead: [''].concat(labels), zsRow: null, head: ['Aire de Santé', 'Conditions de disponibilité des vaccins', 'Vaccins disponibles'].concat(labels), rows: [] };
+                if (!ctx.as) return out;
+                var cols = ctx.as.columns, maxB = 0;
+                cols.forEach(function (c) { var b = Number(mkZsBlocOf(c) || 0); if (b > maxB) maxB = b; });
+                var agDefs = MK_ZS_DISPO_AG.map(function (a) {
+                    var vC = mkZsColOf(cols, new RegExp('^' + a.k + '$', 'i')) || mkZsColOf(cols, new RegExp('_' + a.k + '_avail_HA$', 'i'));
+                    var cC = mkZsColOf(cols, new RegExp('_COLOR_' + a.k + '_avail_HA$', 'i'));
+                    return { l: a.l, v: vC, k: cC, b: mkZsBlocOf(vC || cC || '') };
+                });
+                var condC = mkZsColOf(cols, /^conditions de disponibilité des vaccins$/i);
+                var flags = [];
+                ctx.asRows.forEach(function (r) {
+                    var fl = [];
+                    var tds = [mkZsNameTd(r._AS), condC ? mkZsTxtTd(mkAsVal(r, condC), null, true) : mkZsEmptyTd(), mkZsBoolTd(maxB ? mkZsPivot(r, cols, maxB) : null)];
+                    agDefs.forEach(function (ad, ai) {
+                        var s = ad.v ? mkAsVal(r, ad.v) : '';
+                        if (s === '' && ad.b) {
+                            var st = mkZsPivot(r, cols, ad.b);
+                            fl[ai] = st === true;
+                            tds.push(st == null ? mkZsEmptyTd() : mkZsBoolTd(st));
+                            return;
+                        }
+                        if (s === '') { fl[ai] = false; tds.push(mkZsEmptyTd()); return; }
+                        var c = null;
+                        if (ad.k) { var kv = mkAsVal(r, ad.k); if (kv) c = mkTruthy(kv) ? MK_GREEN : MK_RED; }
+                        var n = Number(s.replace(',', '.'));
+                        if (!c) c = (isFinite(n) && n >= 2) ? MK_GREEN : MK_RED;
+                        fl[ai] = c === MK_GREEN;
+                        tds.push(mkZsTxtTd(s, c, true));
+                    });
+                    flags.push(fl);
+                    out.rows.push({ h: '<tr>' + tds.join('') + '</tr>', q: String(r._AS).toLowerCase() });
+                });
+                if (ctx.hzRow) {
+                    var cs1 = mkZsColsInBloc(cols, '1'), tds = [mkZsNameTd(ctx.zone)];
+                    MK_ZS_DISPO_AG.forEach(function (a) {
+                        var hc = null;
+                        for (var i = 0; i < cs1.length; i++) { if (mkZsTail(cs1[i]).toLowerCase() === a.l.toLowerCase()) { hc = cs1[i]; break; } }
+                        var s = hc ? mkAsVal(ctx.hzRow, hc) : '';
+                        if (s === '') { tds.push(mkZsEmptyTd()); return; }
+                        var n = Number(s.replace(',', '.'));
+                        tds.push(mkZsTxtTd(s, (isFinite(n) && n >= 2) ? MK_GREEN : MK_RED, true));
+                    });
+                    out.zsRow = tds;
+                } else if (out.rows.length) {
+                    /* repli : % d'aires disposant du produit */
+                    var N = out.rows.length, tds2 = [mkZsNameTd(ctx.zone)];
+                    agDefs.forEach(function (ad, ai) {
+                        var n = flags.filter(function (f) { return f[ai]; }).length;
+                        var p = Math.round(n / N * 100);
+                        tds2.push(mkZsPillTd(p + '%', null, n + '/' + N));
+                    });
+                    out.zsRow = tds2;
+                }
+                return out;
+            };
+            /* ── Infirmiers formés : table AS (JSON principal) + ligne ZS (totaux) ── */
+            MK_ZS_BUILD.inf = function (ctx) {
+                var cols = ctx.main.columns;
+                var asCol = mkZsColOf(cols, /^aire de sant/i);
+                var trC = mkZsColOf(cols, /identification_agenttrained/i);
+                var nbC = mkZsColOf(cols, /identification_numberofagent/i);
+                var out = { head: ['Aire de Santé', 'Agents formés au PEV', "Nombre d'agents"], rows: [], zsInline: true, zsRow: null };
+                if (!asCol) return out;
+                var rowsM = mkZsMerge(ctx.mainRows, cols, asCol);
+                var sT = 0, sN = 0, seenT = false, seenN = false;
+                rowsM.forEach(function (r) {
+                    var tI = trC ? mkZsInt(r[trC]) : '', nI = nbC ? mkZsInt(r[nbC]) : '';
+                    var tN = Number(String(r[trC] == null ? '' : r[trC]).replace(',', '.')), nN = Number(String(r[nbC] == null ? '' : r[nbC]).replace(',', '.'));
+                    if (trC && isFinite(tN) && String(r[trC]).trim() !== '') { sT += tN; seenT = true; }
+                    if (nbC && isFinite(nN) && String(r[nbC]).trim() !== '') { sN += nN; seenN = true; }
+                    out.rows.push({ h: '<tr>' + [mkZsNameTd(String(r[asCol] || '').trim()), mkZsTxtTd(tI, null, true), mkZsTxtTd(nI, null, true)].join('') + '</tr>', q: String(r[asCol] || '').toLowerCase() });
+                });
+                if (rowsM.length) out.zsRow = [mkZsNameTd(ctx.zone), mkZsTxtTd(seenT ? sT.toLocaleString('fr-FR') : '', null, true), mkZsTxtTd(seenN ? sN.toLocaleString('fr-FR') : '', null, true)];
+                return out;
+            };
+            /* ── Supervision P3 : constats et recommandations (texte brut) ── */
+            MK_ZS_BUILD.p3 = function (ctx) {
+                var cols = ctx.main.columns;
+                var dtC = mkZsColOf(cols, /^date de la dernière supervision/i);
+                var asC = mkZsColOf(cols, /aire de santé supervisée/i);
+                var txC = mkZsColOf(cols, /recommandation_finalnote/i);
+                var out = { head: ["Date de la dernière supervision de l'aire de santé", 'Aire de santé supervisée', 'Constats et recommandations'], rows: [] };
+                if (!asC) return out;
+                mkZsMerge(ctx.mainRows, cols, asC).forEach(function (r) {
+                    var note = txC ? String(r[txC] == null ? '' : r[txC]).trim() : '';
+                    var aire = String(r[asC] || '').trim();
+                    var dt = dtC ? String(r[dtC] == null ? '' : r[dtC]).trim() : '';
+                    out.rows.push({
+                        h: '<tr>' + [mkZsTxtTd(dt, null, true), mkZsNameTd(aire),
+                            note ? '<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#334155;line-height:1.45">' + esc(note) + '</td>' : mkZsEmptyTd()].join('') + '</tr>',
+                        q: (aire + ' ' + note).toLowerCase()
+                    });
+                });
+                return out;
+            };
+            /* ── Carte de Supervision : 2 cartes KPI façon original (pas de fond de
+               carte dans les données synchronisées) + rappel des critères ── */
+            function mkZsRenderCarte(v, box, d, cfg, zone) {
+                box.innerHTML = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center;justify-content:flex-end">' + mkExpBtns() + '</div>' +
+                    '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                    mkBannerHtml(cfg, d, v, zone || mkAllLbl()) +
+                    '<div class="mk-carte-body" style="padding:16px"><div style="color:#64748b">⏳ Calcul des indicateurs…</div></div>' +
+                    (cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
+                    '</div>';
+                mkFillPeriod(box);
+                box._mkData = d;
+                mkWireExpBtns(box, box, d.name || (v && v.name) || '');
+                mkFetchView('Supervision_HZ_P1', function (sd) {
+                    var body = box.querySelector('.mk-carte-body');
+                    if (!body || !body.isConnected) return;
+                    if (!sd) { body.innerHTML = '<div style="color:#c0392b">Indicateurs de supervision indisponibles.</div>'; return; }
+                    var cols = sd.columns || [], rows = sd.rows || [];
+                    var antCol = cols.filter(function (c) { return /^antenne$/i.test(c); })[0];
+                    var row = (antCol && zone) ? rows.filter(function (r) { return String(r[antCol] || '').trim() === zone; })[0] : rows[0];
+                    if (!row) { body.innerHTML = '<div style="color:#64748b">Aucune donnée de supervision pour cette zone.</div>'; return; }
+                    var main = { columns: cols, rows: rows };
+                    var sup = mkZsMainPill(main, row, /_perc_supervised_healthareas_CYCM$/i, /_num_supervised_healthareas_CYCM$/i, /^_num_healthareas_CYCM$/i);
+                    var qua = mkZsMainPill(main, row, /_perc_HA_supervision_quality_CYCM$/i, /_num_HA_supervision_quality_CYCM/i, /^_num_healthareas_CYCM$/i);
+                    var render = function (d1, d2) {
+                        body.innerHTML = '<div style="display:flex;gap:14px;flex-wrap:wrap;max-width:560px">' +
+                            mkKpiCard(sup.pct || '—', sup.frac ? sup.frac.replace('/', ' / ') : null, 'Aires de santé supervisées', '<div style="text-align:right;margin-top:2px">' + (d1 || '') + '</div>', false, null) +
+                            mkKpiCard(qua.pct || '—', qua.frac ? qua.frac.replace('/', ' / ') : null, 'Supervisions formatives de qualité (AS)', '<div style="text-align:right;margin-top:2px">' + (d2 || '') + '</div>', false, null) +
+                            '</div>';
+                    };
+                    box._mkData = { columns: ['Indicateur', 'Valeur', 'Fraction'], rows: [
+                        { 'Indicateur': 'Aires de santé supervisées', 'Valeur': sup.pct, 'Fraction': sup.frac },
+                        { 'Indicateur': 'Supervisions formatives de qualité (AS)', 'Valeur': qua.pct, 'Fraction': qua.frac }
+                    ] };
+                    /* deltas vs mois précédent : lus dans la Heatmap (toutes périodes) */
+                    mkFetchView('Performance Heatmap_HZ', function (hd) {
+                        if (!hd) { render('', ''); return; }
+                        var hCols = hd.columns || [], hRows = hd.rows || [];
+                        var hAnt = hCols.filter(function (c) { return /^antenne$/i.test(c); })[0];
+                        var mm = mkHeatMonths(hd);
+                        var scope = (hAnt && zone) ? hRows.filter(function (r) { return String(r[hAnt] || '').trim() === zone; }) : hRows;
+                        function deltaOf(frag) {
+                            var vCol = mkColByNorm(hCols, frag);
+                            if (!vCol) return null;
+                            var byK = {};
+                            scope.forEach(function (r) {
+                                var rk = mkMoisRank(r[mm.mCol]); if (rk > 11) return;
+                                var k = String(r[mm.yCol] || '') + '-' + String(rk + 1).padStart(2, '0');
+                                var x = mkPctNum(r[vCol]); if (isFinite(x)) byK[k] = x;
+                            });
+                            var ks = Object.keys(byK).sort();
+                            if (ks.length < 2) return null;
+                            var wantK = mkPeriodKeyOf(mkSelMois, mkSelAn);
+                            var ci = (wantK && ks.indexOf(wantK) >= 0) ? ks.indexOf(wantK) : ks.length - 1;
+                            if (ci < 1) return null;
+                            return byK[ks[ci]] - byK[ks[ci - 1]];
+                        }
+                        render(mkDeltaHtml(deltaOf('percsupervisedhealthareas')), mkDeltaHtml(deltaOf('percHAsupervisionquality')));
+                    });
+                });
+            }
+            /* ── moteur : une carte, synthèse ZS en tête, table AS, exports ── */
+            function mkZsRender(v, box, d) {
+                var name = d.name || (v && v.name) || '';
+                var cfg = MK_ZS_CFG[name];
+                if (!cfg) { mkDrawView(d, box, v); return; }
+                var zone = mkAnt;
+                if (cfg.kind === 'carte') { mkZsRenderCarte(v, box, d, cfg, zone); return; }
+                var main = { columns: d.columns || [], rows: d.rows || [] };
+                var antCol = main.columns.filter(function (c) { return /^antenne$/i.test(c); })[0] || null;
+                var mainRows = (antCol && zone) ? main.rows.filter(function (r) { return String(r[antCol] || '').trim() === zone; }) : main.rows;
+                box._mkData = d;
+                mkAsLoad(v.urlName, function (as) {
+                    if (!box.isConnected) return;
+                    var asRows = (as && as.rows) ? as.rows.filter(function (r) { return r._ZS === zone && r._ROLE === 'AS' && r._AS; }) : [];
+                    asRows.sort(function (a, b) { return String(a._AS).localeCompare(String(b._AS), 'fr'); });
+                    var hzRow = (as && as.rows) ? (as.rows.filter(function (r) { return r._ZS === zone && r._ROLE === 'HZ'; })[0] || null) : null;
+                    var ctx = { cfg: cfg, name: name, zone: zone, main: main, mainRows: mainRows, as: as, asRows: asRows, hzRow: hzRow };
+                    var built = (MK_ZS_BUILD[cfg.kind] || function () { return { head: [], rows: [] }; })(ctx);
+                    var zsOnly = !!cfg.zsOnly;
+                    var h = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center">' +
+                        (zsOnly ? '<span style="flex:1"></span>' : '<input type="search" placeholder="🔍 Rechercher une aire de santé…" class="mk-q" style="flex:1;min-width:140px;padding:8px 14px;border:1.5px solid #e7edf5;border-radius:9px;font-size:12.5px">') +
+                        mkExpBtns() +
+                        (zsOnly ? '' : '<span class="mk-count" style="font-size:12px;color:#64748b"></span>') + '</div>' +
+                        '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
+                        mkBannerHtml(cfg, d, v, zone || mkAllLbl()) +
+                        '<div class="mk-zs-body"></div>' +
+                        mkLegendHtml(cfg.legend) +
+                        (cfg.foot ? '<div style="padding:0 20px 16px;font-size:11px;color:#64748b;line-height:1.6">' + cfg.foot + '</div>' : '') +
+                        '</div>' +
+                        '<div class="pev-pgnav mk-nav" style="display:none;gap:10px;align-items:center;justify-content:center;margin-top:12px">' +
+                        '<button type="button" class="mk-pv" style="padding:6px 14px;border-radius:8px;border:1.5px solid #e7edf5;background:#fff;cursor:pointer">◀</button>' +
+                        '<span class="mk-pi" style="font-size:12.5px;color:#475467"></span>' +
+                        '<button type="button" class="mk-nx" style="padding:6px 14px;border-radius:8px;border:1.5px solid #e7edf5;background:#fff;cursor:pointer">▶</button></div>';
+                    box.innerHTML = h;
+                    mkFillPeriod(box);
+                    var q = '', pg = 0, PGS = 40;
+                    var rows = built.rows || [];
+                    function draw() {
+                        var body = box.querySelector('.mk-zs-body');
+                        if (!body) return;
+                        var fr = rows;
+                        if (q) { var qq = q.toLowerCase(); fr = rows.filter(function (r) { return r.q.indexOf(qq) >= 0; }); }
+                        var nP = Math.max(1, Math.ceil(fr.length / PGS));
+                        if (pg >= nP) pg = nP - 1;
+                        var t = '';
+                        if (built.zsHead && built.zsRow) {
+                            t += '<div style="overflow-x:auto;padding:14px 10px 0"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' +
+                                built.zsHead.map(function (l, i) { return mkZsTh(l, i === 0); }).join('') +
+                                '</tr></thead><tbody><tr style="background:#f4f7fd">' + built.zsRow.join('') + '</tr></tbody></table></div>' +
+                                (zsOnly ? '' : '<div style="border-top:2px solid #e2e8f0;margin:10px 20px 0"></div>');
+                        }
+                        if (!zsOnly) {
+                            var part = fr.slice(pg * PGS, pg * PGS + PGS);
+                            var rowsH = part.map(function (r) { return r.h; }).join('');
+                            if (built.zsInline && built.zsRow) rowsH = '<tr style="background:#f4f7fd">' + built.zsRow.join('') + '</tr>' + rowsH;
+                            if (!rowsH) rowsH = '<tr><td colspan="' + Math.max(2, (built.head || []).length) + '" style="padding:22px;text-align:center;color:#888">' + (zone ? 'Aucune donnée pour « ' + esc(zone) + ' » sur cette période dans cette feuille.' : 'Aucun résultat.') + '</td></tr>';
+                            t += '<div style="overflow-x:auto;padding:6px 10px 0"><table class="mk-tbl" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead class="mk-head"><tr>' +
+                                (built.head || []).map(function (l, i) { return mkZsTh(l, i === 0); }).join('') +
+                                '</tr></thead><tbody class="mk-body">' + rowsH + '</tbody></table></div>';
+                            if (!rows.length) t += '<div style="padding:10px 20px 14px;font-size:12px;color:#8a6d00">' + (as ? 'Aucune ligne d\'aire de santé pour « ' + esc(zone) + ' » dans cette feuille.' : 'Détail par aire de santé non synchronisé pour cette période — la synthèse de la zone reste affichée.') + '</div>';
+                        }
+                        body.innerHTML = t;
+                        var cnt = box.querySelector('.mk-count');
+                        if (cnt) cnt.textContent = fr.length + ' ligne(s)';
+                        box.querySelector('.mk-pi').textContent = 'Page ' + (pg + 1) + ' / ' + nP;
+                        box.querySelector('.mk-pv').disabled = pg === 0;
+                        box.querySelector('.mk-nx').disabled = pg >= nP - 1;
+                        box.querySelector('.mk-nav').style.display = (!zsOnly && nP > 1) ? 'flex' : 'none';
+                    }
+                    var qEl = box.querySelector('.mk-q');
+                    if (qEl) qEl.oninput = function () { q = this.value; pg = 0; draw(); };
+                    box.querySelector('.mk-pv').onclick = function () { if (pg > 0) { pg--; draw(); } };
+                    box.querySelector('.mk-nx').onclick = function () { pg++; draw(); };
+                    /* Export Excel : le visuel complet (bloc synthèse + toutes les
+                       lignes AS, pas seulement la page affichée). */
+                    box._mkXls = function () {
+                        var savedPg = pg, savedPgs = PGS;
+                        PGS = 1e9; pg = 0; draw();
+                        var html = '';
+                        box.querySelectorAll('.mk-zs-body table').forEach(function (tb) {
+                            html += '<table border="1" style="border-collapse:collapse;font-family:Segoe UI,Arial">' + tb.innerHTML + '</table><br>';
+                        });
+                        PGS = savedPgs; pg = savedPg; draw();
+                        return html || null;
+                    };
+                    mkWireExpBtns(box, box, name);
+                    draw();
+                });
             }
             function mkDrawView(d, box, vm) {
                 var cols = d.columns || [], rows = d.rows || [];

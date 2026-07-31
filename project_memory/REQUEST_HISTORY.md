@@ -259,3 +259,31 @@ Action faite : ids natifs (Kimi call_*, Anthropic toolu_*) propagés du flux SSE
   (blob → tree → commit → ref) car git local cassé (clone partiel).
 Résultat : function-calling fiabilisé pour Kimi K3/Claude/Ollama, cartes
   interactives DHIS2 disponibles (chat + fichier autonome), production à jour.
+---
+
+Date : 31/07/2026
+Demande : « Rapport ZS » (Plan MASHAKO 3.0) : les visuels ne correspondent pas
+  au Mashako original — « je n'ai jamais demandé deux tableaux (ZS + détails
+  aire de santé) », une seule ligne de synthèse ZS au-dessus, la situation des
+  aires de santé comme dans l'original (11 captures Tableau fournies vs 15
+  captures du dashboard).
+Fichiers concernés : docs/index.html, tools/mashako-sync/test-mkas-harness.mjs,
+  tools/mashako-sync/out-zs/views/ (fixtures), project_memory/*
+Action faite : (1) Exploration en essaim : code (IIFE Mashako, mkDrawView +
+  mkAsAppend = le double tableau dénoncé), données (branche mashako-data : les
+  17 _AS.json existent ; HZ absent pour Livraison/CDF/Infirmier → agrégation
+  client ; Vaccine_dispo_HZ_P1.json principal = 404 → rendu 100 % crosstab),
+  captures originales (spec par feuille). (2) Refonte docs/index.html : mapping
+  MK_AS_FILE (Seances_→Sances_, Taux_d_abandon_→Tauxdabandon_, bug 404),
+  moteur mkZsRender (une carte : bandeau + synthèse ZS en tête + table AS,
+  recherche/compteur/pagination sur les lignes AS, exports Excel/PPTX sur le
+  visuel fusionné, fallback archives sans _AS), MK_ZS_CFG + builders par
+  feuille (libellés exacts de l'original ; booléens → ✓/✗ ; pastilles %
+  (n/d) ; alertes expiration multi-lignes ; dispo semaines 0-1 rouge/2+ vert ;
+  Carte de Supervision = 2 KPI + note critères). mkAsAppend conservé uniquement
+  pour les feuilles ZS non reprises. Page ANT intacte. (3) Harnais réécrit :
+  évalue les vraies fonctions sur les vrais JSON (zone Aba) — 30+ contrôles,
+  dont moteur complet avec DOM simulé (plus de carte « Détail par aire de
+  santé », compteur AS, _mkXls fusionné).
+Résultat : tous les contrôles passent ; syntaxe des 5 blocs script OK.
+  Déploiement : push main → GitHub Pages / Vercel (automatique).
