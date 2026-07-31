@@ -180,8 +180,27 @@ console.log("— Supervision_HZ_P3 (Aba) —");
   ok(b.rows.length > 0 && /22\/07\/2026|27\/07\/2026/.test(rowsH(b)), "dates + constats réels");
 }
 
-/* ── Test moteur : mkZsRender complet avec DOM simulé ── */
-console.log("— moteur mkZsRender (Séances_HZ_P1, Aba) —");
+/* ── Carte de supervision : points + couleurs ── */
+console.log("— mkZsCartePoints (Aba, geo extrait) —");
+{
+  const as = fixture("Supervision_HZ_P1_AS");
+  const geo = { Aba: [["Aba", 22.0, 3.0], ["Atadra", 22.1, 3.1], ["Ataki", 22.2, 3.2], ["Baki", 22.3, 3.3], ["ZoneInconnue", 22.4, 3.4]] };
+  Object.assign(ctx, { __as: as, __geo: geo });
+  const pts = vm.runInContext(`mkZsCartePoints(__as, 'Aba', __geo)`, ctx);
+  ok(pts.length >= 5, `points produits (${pts.length})`);
+  const aba = pts.find((p) => p.name === "Aba");
+  ok(aba && aba.color === "#2e9e48", "Aba (b6·1, qualité vraie) → vert");
+  const at = pts.find((p) => p.name === "Atadra");
+  ok(at && at.color === "#e03531", "Atadra (b6·0, 0 critère) → rouge");
+  ok(aba && /Centre de Santé/.test(aba.label), "étiquette Centre de Santé");
+  ok(pts.some((p) => p.etat === "Non supervisée"), "AS géolocalisée sans ligne de supervision → grise");
+}
+/* ── Onglet Vaccine_dispo_HZ_P1 couvert (réaffiché dans la barre de feuilles) ── */
+{
+  ok(!!vm.runInContext(`MK_ZS_CFG['Vaccine_dispo_HZ_P1']`, ctx), "MK_ZS_CFG couvre Vaccine_dispo_HZ_P1");
+}
+
+/* ── Test moteur : mkZsRender complet avec DOM simulé ── */console.log("— moteur mkZsRender (Séances_HZ_P1, Aba) —");
 {
   const mainD = fixture("Seances_HZ_P1"), asD = fixture("Sances_HZ_P1_AS");
   ctx.mkAsLoad = (u, cb) => cb(asD);

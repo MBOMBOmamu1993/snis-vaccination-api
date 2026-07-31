@@ -290,3 +290,28 @@ Résultat : tous les contrôles passent ; syntaxe des 5 blocs script OK.
   rebuild, nouveau code vérifié en ligne sur les deux. Fixtures out-zs
   exclues du versioning (.gitignore, regénérables depuis mashako-data).
   Note : workflow « synchro de secours (cloud) » en échec préexistant.
+
+---
+
+Date : 31/07/2026 (2)
+Demande : « La carte de supervision n'est pas visible » — utiliser le geojson
+  des aires de santé de la RDC (partagé dans Downloads, > 50 Mo) pour extraire
+  les polygones par ZS et présenter la carte comme l'original ; et « afficher
+  la feuille Vaccine_dispo_HZ_P1 » absente du dashboard alors qu'elle existe
+  dans le classeur original.
+Fichiers concernés : docs/index.html, docs/data/mashako/geo_as_points.json,
+  tools/mashako-sync/extract-as-geo.mjs, tools/mashako-sync/test-mkas-harness.mjs,
+  project_memory/*
+Action faite : (1) Onglet Vaccine_dispo_HZ_P1 : mkRender filtrait les vues sans
+  file ni image (vue trop grosse pour Tableau → file:null) ; filtre assoupli
+  pour les feuilles de MK_ZS_CFG → onglet visible, rendu 100 % crosstab.
+  (2) Carte : geojson RDC_aires_de_sante.geojson (9 573 MultiPolygones,
+  id = UID DHIS2) joint à docs/data_as/ou_map_as.json par UID (Org3 = ZS) —
+  les 31 préfixes 2 lettres n'étant pas uniques — puis centroïdes par ZS au
+  format noms courts Mashako dans docs/data/mashako/geo_as_points.json
+  (276 Ko, 517 ZS, Aketi = 19 AS comme l'original). Rendu Vega-Lite
+  (mkEmbedMap) : contour ZS (topojson MK_TOPO_URL) + croix « + » colorées
+  (vert qualité b6 ; 2 critères jaune ; 1 orange ; 0 rouge ; non supervisée
+  gris) + étiquettes « … Centre de Santé » + légende, KPI à gauche.
+Résultat : harnais vert (contrôles carte + dispo ajoutés), syntaxe 5/5 blocs
+  OK. Déployé sur main (Pages + Vercel automatiques).

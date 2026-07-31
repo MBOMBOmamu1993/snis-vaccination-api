@@ -93,6 +93,27 @@ Contexte permanent :
   LAST_12_WEEKS) ; programIndicators = canevas DV ABANDONNÉS sans données →
   ne pas utiliser.
 
+État 31/07/2026 (2) — CARTE DE SUPERVISION VISIBLE + ONGLET DISPO P1 RÉAFFICHÉ :
+- Onglet Vaccine_dispo_HZ_P1 : absent de la barre de feuilles car filtré par
+  mkRender (file:null + image:null dans zs/meta.json — vue trop grosse pour
+  Tableau). Filtre assoupli : toute feuille de MK_ZS_CFG est conservée ; le
+  rendu se fait 100 % crosstab _AS (déjà validé).
+- Carte (feuille Carte de Supervision_HZ) : contour ZS + croix « + » par
+  Centre de Santé avec étiquette, comme l'original. Source geo = le geojson
+  partagé par Felly (C:\Users\felly\Downloads\RDC_aires_de_sante.geojson,
+  59,8 Mo, 9 573 MultiPolygones, id=UID DHIS2). Jointure par UID via
+  docs/data_as/ou_map_as.json (Org3 = ZS) — le préfixe 2 lettres n'est PAS
+  unique (31 préfixes). Script tools/mashako-sync/extract-as-geo.mjs
+  (centroïde du plus grand anneau, noms courts Mashako, 4 décimales) →
+  docs/data/mashako/geo_as_points.json (276 Ko, 517 ZS, 9 573 points ;
+  Aketi = 19 AS comme l'original).
+- Rendu : mkZsCartePoints (vert = qualité b6 ; sinon critères b3/b4/b5 :
+  2 jaune, 1 orange, 0 rouge ; AS sans ligne → gris) + mkZsCarteDraw
+  (Vega-Lite via mkEmbedMap : geoshape contour ZS du topojson MK_TOPO_URL +
+  point shape cross coloré + text étiquettes « … Centre de Santé » + légende
+  discrète) ; layout KPI à gauche / carte à droite ; repli note si pas de
+  coordonnées. Harnais : contrôles mkZsCartePoints + couverture dispo OK.
+
 État 31/07/2026 — RAPPORT ZS REFAIT À L'IDENTIQUE DE L'ORIGINAL (29b7c518e, EN PRODUCTION) :
 - Demande Felly : les feuilles du Rapport ZS (Plan Mashako 3.0) ne ressemblaient
   pas au classeur Tableau original (double tableau « synthèse ZS » + carte

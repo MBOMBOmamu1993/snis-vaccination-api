@@ -1,24 +1,21 @@
 # Dernière requête
 
-Date : 31/07/2026
-Dernière demande : Page « Plan Mashako 3.0 — Rapport Zone de Santé » : les
-  feuilles ne ressemblaient pas aux visuels du classeur Tableau original —
-  double tableau (synthèse ZS + carte séparée « Détail par aire de santé »),
-  Séances/Taux d'abandon sans lignes AS (404), en-têtes bruts, booléens
-  « Faux »/« 0 », pagination fantôme. Refonte à l'identique des captures
-  originales : UN visuel par feuille = ligne/bloc de synthèse ZS en tête +
-  situation des aires de santé.
-Fichiers concernés : docs/index.html (nouveau moteur mkZsRender + MK_ZS_CFG +
-  MK_ZS_BUILD, mapping MK_AS_FILE dans mkAsLoad, hook dans mkLoadView),
-  tools/mashako-sync/test-mkas-harness.mjs (réécrit pour les builders),
-  tools/mashako-sync/out-zs/views/*.json (fixtures réels téléchargés),
+Date : 31/07/2026 (2)
+Dernière demande : Rendre la carte de supervision visible (elle ne l'était
+  pas) en s'aidant du geojson des aires de santé de la RDC partagé
+  (Downloads\RDC_aires_de_sante.geojson, > 50 Mo) pour extraire les polygones/
+  points par ZS et présenter la carte comme l'original ; et réafficher la
+  feuille Vaccine_dispo_HZ_P1, absente du dashboard alors qu'elle existe dans
+  le classeur original.
+Fichiers concernés : docs/index.html (filtre mkRender, mkZsGeoLoad,
+  mkZsCartePoints, mkZsCarteDraw, layout mkZsRenderCarte),
+  docs/data/mashako/geo_as_points.json (nouveau, 276 Ko),
+  tools/mashako-sync/extract-as-geo.mjs (nouveau),
+  tools/mashako-sync/test-mkas-harness.mjs (contrôles carte + dispo),
   project_memory/*
-Statut : TERMINÉ ET DÉPLOYÉ (29b7c518e sur main, 31/07) — 17 feuilles reprises
-  (Supervision P1/P2/P3, Séances P1/P2, Taux d'abandon P1/P2, Livraison P1/P2,
-  CDF P1/P2/NF, Vaccine expiration P1/P2, Vaccine dispo P1/P2, Infirmier P1/P2,
-  Carte de Supervision en KPI) ; syntaxe JS OK ; harnais vert (builders +
-  moteur, données réelles zone Aba) : ligne ZS en tête partout, plus de carte
-  « Détail par aire de santé » séparée, ✓/✗ au lieu de Faux/Oui, compteur et
-  exports sur la table fusionnée. Push main → GitHub Pages success + Vercel
-  rebuild, nouveau code vérifié en ligne. Fixtures out-zs exclues (.gitignore).
-  Voir REQUEST_HISTORY du 31/07/2026.
+Statut : TERMINÉ — onglet Vaccine_dispo_HZ_P1 réaffiché (rendu 100 %
+  crosstab) ; carte de supervision = contour ZS + croix colorées par Centre de
+  Santé (vert qualité / jaune 2 critères / orange 1 / rouge 0 / gris non
+  supervisée) avec étiquettes et légende ; 517 ZS × 9 573 points extraits
+  (Aketi = 19 AS comme l'original) ; harnais vert, syntaxe 5/5 blocs OK.
+  Voir REQUEST_HISTORY du 31/07/2026 (2).

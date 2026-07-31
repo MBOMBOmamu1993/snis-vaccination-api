@@ -12639,7 +12639,7 @@
                     if (!_pm) { try { var _d = new Date(m.generated_at); _pm = MK_MOIS12[_d.getMonth()]; _py = String(_d.getFullYear()); } catch (e) { } }
                     if (_pm) { mkSelMois = _pm; mkSelAn = _py; }
                 }
-                var views = (m.views || []).filter(function (v) { return (v.file || v.image) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
+                var views = (m.views || []).filter(function (v) { return (v.file || v.image || (mkPfx && typeof MK_ZS_CFG !== 'undefined' && MK_ZS_CFG[v.name])) && !/^FILTER_VALUES/i.test(v.urlName || ''); });
                 /* Branchement des feuilles « vivantes » par zone de santé (demandes Felly
                    27/07) : les vraies données de Dispo_vaccins_ANT et
                    Vaccine_expiration_ANT_P1 vivent dans les exports crosstab _TABLE
@@ -14440,8 +14440,107 @@
                 });
                 return out;
             };
-            /* ── Carte de Supervision : 2 cartes KPI façon original (pas de fond de
-               carte dans les données synchronisées) + rappel des critères ── */
+            /* ── Carte de supervision : points AS par ZS (docs/data/mashako/
+               geo_as_points.json, extrait du geojson RDC partagé par Felly) ── */
+            var mkZsGeo = null, mkZsGeoPromise = null;
+            function mkZsGeoLoad(cb) {
+                if (mkZsGeo) { cb(mkZsGeo); return; }
+                if (!mkZsGeoPromise) {
+                    mkZsGeoPromise = fetch(mkOrigin() + '/data/mashako/geo_as_points.json?v=' + encodeURIComponent((mkMeta && mkMeta.generated_at) || ''))
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (g) { mkZsGeo = g; return g; })
+                        .catch(function () { return null; });
+                }
+                mkZsGeoPromise.then(cb);
+            }
+            function mkZsNormName(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+            /* Points colorés de la carte : vert = supervision de qualité (b6) ;
+               sinon nb de critères (b3 localisation, b4 cohérence, b5 durée) :
+               2 → jaune, 1 → orange, 0 → rouge ; AS géolocalisée sans ligne → gris. */
+            function mkZsCartePoints(asData, zone, geo) {
+                var rows = (asData && asData.rows || []).filter(function (r) { return r._ZS === zone && r._ROLE === 'AS' && r._AS; });
+                if (!geo || !geo[zone] || !geo[zone].length) return [];
+                var cols = (asData && asData.columns) || [];
+                var centreC = cols.filter(function (c) { return /centre de sant/i.test(mkZsTail(c)); })
+                    .filter(function (c) { return rows.some(function (r) { return mkAsVal(r, c) !== ''; }); })[0] || null;
+                var geoByName = {};
+                geo[zone].forEach(function (p) { geoByName[mkZsNormName(p[0])] = p; });
+                var out = [], seen = {};
+                rows.forEach(function (r) {
+                    var g = geoByName[mkZsNormName(r._AS)];
+                    if (!g) return;
+                    var color, etat;
+                    if (mkZsPivot(r, cols, 6) === true) { color = MK_GREEN; etat = 'Supervision de qualité'; }
+                    else {
+                        var n = 0;
+                        [3, 4, 5].forEach(function (b) { if (mkZsPivot(r, cols, b) === true) n++; });
+                        if (n === 2) { color = MK_YELLOW; etat = '2 critères sur 3'; }
+                        else if (n === 1) { color = '#f08c00'; etat = '1 critère sur 3'; }
+                        else { color = MK_RED; etat = '0 critère sur 3'; }
+                    }
+                    seen[mkZsNormName(r._AS)] = 1;
+                    out.push({ name: r._AS, label: (centreC && mkAsVal(r, centreC)) ? mkAsVal(r, centreC) : r._AS + ' Centre de Santé', lon: g[1], lat: g[2], color: color, etat: etat });
+                });
+                geo[zone].forEach(function (p) {
+                    if (seen[mkZsNormName(p[0])]) return;
+                    out.push({ name: p[0], label: p[0] + ' Centre de Santé', lon: p[1], lat: p[2], color: '#cbd5e1', etat: 'Non supervisée' });
+                });
+                return out;
+            }
+            function mkZsCarteDraw(box, zone) {
+                var el = box.querySelector('.mk-carte-map');
+                if (!el) return;
+                mkAsLoad('Supervision_HZ_P1', function (as) {
+                    mkZsGeoLoad(function (geo) {
+                        mkTopoLoad(function (topo) {
+                            if (!el.isConnected) return;
+                            var pts = mkZsCartePoints(as, zone, geo);
+                            var full = topo && topo[String(zone || '').toLowerCase()];
+                            if (!pts.length || !full) { el.innerHTML = '<div style="padding:14px;color:#64748b">Carte indisponible pour cette zone (coordonnées manquantes).</div>'; return; }
+                            function cross(c, l) { return '<span style="color:' + c + ';font-weight:900">+</span> ' + l; }
+                            el.innerHTML = '<div class="mk-carte-map-el"></div>' +
+                                '<div style="display:flex;gap:16px;justify-content:flex-end;padding:8px 10px 2px;font-size:11px;color:#475467;flex-wrap:wrap"><b style="color:#334155">Supervision :</b>' +
+                                '<span>' + cross(MK_GREEN, 'de qualité') + '</span><span>' + cross(MK_YELLOW, '2 critères') + '</span>' +
+                                '<span>' + cross('#f08c00', '1 critère') + '</span><span>' + cross(MK_RED, '0 critère') + '</span>' +
+                                '<span>' + cross('#cbd5e1', 'non supervisée') + '</span></div>';
+                            var spec = {
+                                $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+                                width: 620, height: 460,
+                                layer: [
+                                    {
+                                        data: { url: MK_TOPO_URL, format: { type: 'topojson', feature: MK_TOPO_FEATURE } },
+                                        transform: [{ filter: { field: 'properties.name', equal: full } }],
+                                        mark: { type: 'geoshape', fill: '#f3f5f9', stroke: '#94a3b8', strokeWidth: 1 }
+                                    },
+                                    {
+                                        data: { values: pts },
+                                        mark: { type: 'point', shape: 'cross', filled: true, size: 110, strokeWidth: 2.2 },
+                                        encoding: {
+                                            longitude: { field: 'lon', type: 'quantitative' },
+                                            latitude: { field: 'lat', type: 'quantitative' },
+                                            color: { field: 'color', type: 'nominal', scale: null },
+                                            tooltip: [{ field: 'label', title: 'Centre de Santé' }, { field: 'etat', title: 'Supervision' }]
+                                        }
+                                    },
+                                    {
+                                        data: { values: pts },
+                                        mark: { type: 'text', dy: -10, fontSize: 8.5, color: '#1f2937' },
+                                        encoding: {
+                                            longitude: { field: 'lon', type: 'quantitative' },
+                                            latitude: { field: 'lat', type: 'quantitative' },
+                                            text: { field: 'label' }
+                                        }
+                                    }
+                                ],
+                                config: { view: { stroke: null } }
+                            };
+                            mkEmbedMap(el.querySelector('.mk-carte-map-el'), spec);
+                        });
+                    });
+                });
+            }
+            /* ── Carte de Supervision : 2 cartes KPI façon original + carte des
+               aires de santé (contour ZS + croix colorées) + rappel des critères ── */
             function mkZsRenderCarte(v, box, d, cfg, zone) {
                 box.innerHTML = '<div class="pev-tbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center;justify-content:flex-end">' + mkExpBtns() + '</div>' +
                     '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px">' +
@@ -14464,10 +14563,14 @@
                     var sup = mkZsMainPill(main, row, /_perc_supervised_healthareas_CYCM$/i, /_num_supervised_healthareas_CYCM$/i, /^_num_healthareas_CYCM$/i);
                     var qua = mkZsMainPill(main, row, /_perc_HA_supervision_quality_CYCM$/i, /_num_HA_supervision_quality_CYCM/i, /^_num_healthareas_CYCM$/i);
                     var render = function (d1, d2) {
-                        body.innerHTML = '<div style="display:flex;gap:14px;flex-wrap:wrap;max-width:560px">' +
+                        body.innerHTML = '<div style="display:flex;gap:18px;flex-wrap:wrap">' +
+                            '<div style="display:flex;flex-direction:column;gap:12px;min-width:190px;max-width:230px;flex:0 1 210px">' +
                             mkKpiCard(sup.pct || '—', sup.frac ? sup.frac.replace('/', ' / ') : null, 'Aires de santé supervisées', '<div style="text-align:right;margin-top:2px">' + (d1 || '') + '</div>', false, null) +
                             mkKpiCard(qua.pct || '—', qua.frac ? qua.frac.replace('/', ' / ') : null, 'Supervisions formatives de qualité (AS)', '<div style="text-align:right;margin-top:2px">' + (d2 || '') + '</div>', false, null) +
+                            '</div>' +
+                            '<div class="mk-carte-map" style="flex:1;min-width:320px"><div style="padding:14px;color:#64748b">⏳ Préparation de la carte…</div></div>' +
                             '</div>';
+                        mkZsCarteDraw(box, zone);
                     };
                     box._mkData = { columns: ['Indicateur', 'Valeur', 'Fraction'], rows: [
                         { 'Indicateur': 'Aires de santé supervisées', 'Valeur': sup.pct, 'Fraction': sup.frac },
