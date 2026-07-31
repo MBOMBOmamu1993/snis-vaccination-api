@@ -2881,11 +2881,12 @@
         var _CX_AGHEAD = { PCV13_1: 'PCV13-1', PCV13_2: 'PCV13-2', PCV13_3: 'PCV13-3', TD: 'Td2+' };
         function _cxAgLbl(a) { return _CX_AGHEAD[a] || a; }
         function _cxSum(recs, f) { var s = 0; for (var i = 0; i < recs.length; i++) s += Number(recs[i][f]) || 0; return s; }
-        function _cxTargets(recs) { var seen = {}, pop = 0; recs.forEach(function (r) { var k = r._AS || ''; if (!seen[k]) { seen[k] = 1; pop += Number(r.Pop_par_AS) || 0; } }); var nPer = recs._nPer || 1; return { pop: pop, nv: pop * _CX_NV * nPer / 12, ns: pop * _CX_NS * nPer / 12 }; }
-        /* ZD/SV — formule PÉRIODE par AS (identique à _cvZD/_cvESV : population
-           ANNUELLE × n_mois/12, clamping par entité, pas par mois). */
-        function _cxZD(recs) { var byAS = {}; recs.forEach(function (r) { var k = r._AS || ''; if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} }; byAS[k].d += Number(r.DTC1_0_11) || 0; byAS[k].mo[r._YM || ''] = 1; }); var t = 0; Object.keys(byAS).forEach(function (k) { var a = byAS[k], nM = Object.keys(a.mo).length || 1; t += Math.max(0, a.pop * _CX_NS * nM / 12 - a.d); }); return t; }
-        function _cxESV(recs) { var byAS = {}; recs.forEach(function (r) { var k = r._AS || ''; if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} }; byAS[k].d += Number(r.DTC3_0_11) || 0; byAS[k].mo[r._YM || ''] = 1; }); var t = 0; Object.keys(byAS).forEach(function (k) { var a = byAS[k], nM = Object.keys(a.mo).length || 1; t += Math.max(0, a.pop * _CX_NS * nM / 12 - a.d); }); return t; }
+        function _cxTargets(recs) { var seen = {}, pop = 0; recs.forEach(function (r) { var k = [r._Province || '', r._Antenne || '', r._ZS || '', r._AS || ''].join('|'); if (!seen[k]) { seen[k] = 1; pop += Number(r.Pop_par_AS) || 0; } }); var nPer = recs._nPer || 1; return { pop: pop, nv: pop * _CX_NV * nPer / 12, ns: pop * _CX_NS * nPer / 12 }; }
+        /* ZD/SV — formule PÉRIODE au niveau du groupe affiché (identique à
+           _cvZD/_cvESV : max(0, NS_période − doses_période), population ANNUELLE
+           dédupliquée par clé composite Prov|Antenne|ZS|AS). */
+        function _cxZD(recs) { var tg = _cxTargets(recs); return Math.max(0, tg.ns - _cxSum(recs, 'DTC1_0_11')); }
+        function _cxESV(recs) { var tg = _cxTargets(recs); return Math.max(0, tg.ns - _cxSum(recs, 'DTC3_0_11')); }
         function _cxCat(cv1, ab) { if (cv1 == null || !isFinite(cv1)) return 'NA'; if (ab == null || !isFinite(ab)) return 'NA'; if (ab < 0) return 'NA'; var h = cv1 >= 90, l = ab <= 10; return h && l ? 'Cat. 1' : h && !l ? 'Cat. 2' : !h && l ? 'Cat. 3' : 'Cat. 4'; }
         function _cxLoss(recs, p) { var admin = _cxSum(recs, p + '_administr_es'), util = _cxSum(recs, p + '_utilis_es'), perdu = _cxSum(recs, p + '_pertes'); if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin; var d = admin + perdu; return d > 0 ? perdu / d * 100 : null; }
         function _cxDispo(recs, p) { var rupT = 0, nonT = 0; recs.forEach(function (r) { var rcv = Number(r[p + '_re_ues']) || 0, sf = Number(r[p + '_stock_fin']) || 0, cmm = Number(r[p + '_cmm']) || 0, rup = Math.max(0, Number(r[p + '_jours_rupture']) || 0); if (!(rcv > 0 || sf > 0 || cmm > 0 || rup > 0)) return; rupT += rup; nonT += Math.max(0, 30 - rup); }); return (rupT + nonT) > 0 ? nonT / (rupT + nonT) * 100 : null; }
@@ -6517,7 +6518,12 @@
             var key = dedupKey || '_ZS';
             var seen = {}, pop = 0;
             recs.forEach(function (r) {
-                var k = r[key] || '';
+                /* Clé '_AS' → composite Province|Antenne|ZS|AS : des AS homonymes
+                   dans des ZS différentes sont des entités DISTINCTES (Kinshasa :
+                   390 noms mais 424 AS réelles) — la population doit sommer chacune. */
+                var k = (key === '_AS')
+                    ? [r._Province || '', r._Antenne || '', r._ZS || '', r._AS || ''].join('|')
+                    : (r[key] || '');
                 if (!seen[k]) {
                     seen[k] = 1;
                     pop += Number(r.Pop_par_AS) || 0;
@@ -6533,41 +6539,20 @@
             return recs.reduce(function (s, r) { return s + (Number(r[field]) || 0); }, 0);
         }
 
-        /* Zéro-dose et enfants sous-vaccinés — formule PÉRIODE, par AS :
-           ZD = max(0, NS_période − Penta1_période), sommé sur les AS.
-           Pop_par_AS est une population ANNUELLE (répétée sur chaque ligne
-           mensuelle) → NS_période = Pop × 3,49 % × n_mois/12. Le clamping par
-           MOIS (ancienne version) gonflait le total : un mois excédentaire
-           (rattrapage) doit compenser les autres mois de la période. */
-        function _cvZD(recs) {
-            var byAS = {};
-            recs.forEach(function (r) {
-                var k = r._AS || '';
-                if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} };
-                byAS[k].d += Number(r.DTC1_0_11) || 0;
-                byAS[k].mo[r._YM || ''] = 1;
-            });
-            var t = 0;
-            Object.keys(byAS).forEach(function (k) {
-                var a = byAS[k], nM = Object.keys(a.mo).length || 1;
-                t += Math.max(0, a.pop * _PEV_NS_RATE * nM / 12 - a.d);
-            });
-            return t;
-        }
-        function _cvESV(recs) {
-            var byAS = {};
-            recs.forEach(function (r) {
-                var k = r._AS || '';
-                if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} };
-                byAS[k].d += Number(r.DTC3_0_11) || 0;
-                byAS[k].mo[r._YM || ''] = 1;
-            });
-            var t = 0;
-            Object.keys(byAS).forEach(function (k) {
-                var a = byAS[k], nM = Object.keys(a.mo).length || 1;
-                t += Math.max(0, a.pop * _PEV_NS_RATE * nM / 12 - a.d);
-            });
-            return t;
+        /* Zéro-dose et enfants sous-vaccinés — formule PÉRIODE au niveau du TOTAL
+           fourni : ZD = max(0, NS_période − Penta1_période).
+           NS_période = population ANNUELLE dédupliquée (_cvTargets, clé composite
+           Province|Antenne|ZS|AS car des AS homonymes entre ZS sont distinctes)
+           × 3,49 % × n_mois/12, n_mois = mois distincts présents dans recs.
+           Appelé sur un sous-ensemble (ex. une ZS du graphique), le clamp se fait
+           au niveau de ce sous-ensemble — jamais par mois ni par sous-entité. */
+        function _cvZD(recs) { return _cvZDSV(recs, 'DTC1_0_11'); }
+        function _cvESV(recs) { return _cvZDSV(recs, 'DTC3_0_11'); }
+        function _cvZDSV(recs, doseField) {
+            var mo = {}, nM = 0;
+            recs.forEach(function (r) { var y = r._YM || ''; if (!mo[y]) { mo[y] = 1; nM++; } });
+            var tg = _cvTargets(recs, nM || 1, '_AS');
+            return Math.max(0, tg.ns - _cvSum(recs, doseField));
         }
 
         /* Calcule la complétude de rapportage d'un groupe d'enregistrements bruts (CV)
@@ -8031,30 +8016,21 @@
         }
 
         /* Zéro-dose / sous-vaccinés à partir de cibles ajustées — formule PÉRIODE
-           par ZS (comme _cvZD, population/cible ANNUELLE) : SV_ajust × n_mois/12,
-           clamping par ZS sur la période entière, pas par mois. */
+           au niveau du TOTAL fourni (comme _cvZDSV) : max(0, Σ SV_ajust des ZS
+           couvertes × n_mois/12 − doses de la période). */
         function _cvZDAjust(recs, cibleData, doseField) {
             if (!cibleData || !cibleData.records) return null;
             var idx = {};
             cibleData.records.forEach(function (r) {
                 idx[(r._Province || '') + '||' + (r._ZS || '')] = r;
             });
-            /* Agrège par ZS : doses de la période + mois distincts. */
-            var zsAgg = {};
+            var seen = {}, mo = {}, nM = 0, cib = 0;
             recs.forEach(function (r) {
                 var k = (r._Province || '') + '||' + (r._ZS || '');
-                if (!zsAgg[k]) zsAgg[k] = { d: 0, mo: {} };
-                zsAgg[k].d += Number(r[doseField]) || 0;
-                zsAgg[k].mo[r._YM || ''] = 1;
+                if (!seen[k]) { seen[k] = 1; var c = idx[k]; if (c) cib += Number(c.SV_ajust) || 0; }
+                var y = r._YM || ''; if (!mo[y]) { mo[y] = 1; nM++; }
             });
-            var total = 0;
-            Object.keys(zsAgg).forEach(function (k) {
-                var c = idx[k];
-                if (!c) return;
-                var nM = Object.keys(zsAgg[k].mo).length || 1;
-                total += Math.max(0, (Number(c.SV_ajust) || 0) * nM / 12 - zsAgg[k].d);
-            });
-            return total;
+            return Math.max(0, cib * (nM || 1) / 12 - _cvSum(recs, doseField));
         }
 
         function rAnalysesCVAjust(c) {
@@ -9758,9 +9734,9 @@
                     "- Cible naissances vivantes (BCG, Td) : Pop × 4,00 % par an (÷12 par mois). Cible nourrissons survivants (Penta, VPO, PCV, ROTA, VAR…) : Pop × 3,49 % par an.",
                     "- CV% annuelle = doses de l'année ÷ (Pop × taux) × 100. Formule officielle SNIS (indicateur '2a-Taux de couverture en VAR 1') : numérateur pak21wvkWJC (fixe+avancé+mobile), dénominateur WLSKVyA8LoY × 0,0349.",
                     "- UID doses (fixe1/fixe2 = deux formulaires, additionner ; ventilés par catégorie stratégie) : BCG=W25tOXS0rxS · Penta1=uNdFg1eymsa · Penta3=WWxqaHSeiwd · VPO3=SPGaDDw2JzG · VAR1=pak21wvkWJC+cTLKwfG8pSv · VAR2 (12-23 mois)=i5zmivDIHN8 · VAA=bzD4QxaNkJm. En analytics, dx:UID sans .COC = total toutes catégories (suffisant pour les doses totales).",
-                    "- ENFANTS ZÉRO-DOSE (ZD) — recette EXACTE du dashboard (fonction _cvZD) : « ZD » TOUT COURT = ZD ADMIN (cible = population, JAMAIS les cibles ajustées sauf si le client dit explicitement « ajustée »). Formule PÉRIODE, par entité (AS/ZS/province), population ANNUELLE : ZD_entité = max(0, Pop_annuelle × 0,0349 × n_mois/12 − doses Penta1 de la période), puis somme des entités (n_mois = mois distincts sélectionnés). Pop = Pop_par_AS (local './data_as/dashboard/by_as/<province>.json.gz', aussi Pop_0_11m_survivants) ou DHIS2 WLSKVyA8LoY (population ANNUELLE de l'entité : UNE valeur par entité et par an, JAMAIS la somme des 12 mois). INTERDITS : le clamping MENSUEL — Σ max(0, cible_mois − doses_mois) gonfle le total dès que plusieurs mois sont sélectionnés, car un mois excédentaire (rattrapage) doit compenser les autres mois — et la définition « n'a reçu aucun antigène ». Doses DTC1 : champ DTC1_0_11 en local, UID uNdFg1eymsa dans DHIS2. ZD AJUSTÉE uniquement si le client la nomme : même formule avec SV_ajust ('./data/cibles_ajustees/<année>.json') par ZS, niveau ZS max (fonction _cvZDAjust). Si le DHIS2 a un indicateur officiel « zéro dose » (indicators.json?filter=name:ilike:zéro dose), il PRIME (règle FIDÉLITÉ 4).",
-                    "- ENFANTS SOUS-VACCINÉS (SV) — même formule PÉRIODE avec DTC3 : SV_entité = max(0, Pop_annuelle × 0,0349 × n_mois/12 − doses Penta3 de la période), sommée sur les entités (les ZD sont inclus dans les SV). Doses DTC3 : champ DTC3_0_11 en local, UID WWxqaHSeiwd dans DHIS2.",
-                    "- EXEMPLE GUIDÉ « cartographie des enfants ZD par province, 2025 » (version ADMIN = le défaut) : dans UN executer_js via ctx.dhis2 — 1) doses : analytics.json?dimension=dx:uNdFg1eymsa&dimension=pe:2025&dimension=ou:LEVEL-4&displayProperty=NAME ; 2) population : analytics.json?dimension=dx:WLSKVyA8LoY&dimension=pe:202501&dimension=ou:LEVEL-4&displayProperty=NAME (ANNUELLE : UNE valeur par AS, ne JAMAIS additionner les 12 mois) ; 3) par AS : ZD = max(0, Pop_AS × 0,0349 − Penta1_2025) ; 4) somme par province (préfixe du nom, ex. 'bu …' → Bas-Uélé, ou la hiérarchie organisationUnits) ; 5) carte choroplèthe provinces (recette carte) + tableau des ZS. Accélérateur LOCAL pour UNE province : './data_as/dashboard/by_as/<province>.json.gz' (Pop_par_AS + DTC1_0_11 mensuel). « ZD ajustée » (seulement si le client la nomme) : './data/cibles_ajustees/2025.json' (SV_ajust par ZS) à la place de Pop × 0,0349.",
+                    "- ENFANTS ZÉRO-DOSE (ZD) — recette EXACTE du dashboard (fonctions _cvZDSV/_cvZD) : « ZD » TOUT COURT = ZD ADMIN (cible = population, JAMAIS les cibles ajustées sauf si le client dit explicitement « ajustée »). Formule PÉRIODE avec clamp AU NIVEAU DEMANDÉ : ZD = max(0, NS_période − doses Penta1 de la période), où NS_période = population ANNUELLE dédupliquée × 0,0349 × n_mois/12 (n_mois = mois distincts sélectionnés). Le max(0,…) se fait UNE SEULE FOIS au niveau du total demandé (toute la sélection pour un KPI, par province pour une cartographie par province, par ZS pour un tableau par ZS) — JAMAIS par mois et JAMAIS par sous-entité qu'on sommerait ensuite (cela gonfle le total : un rattrapage dans une AS/mois doit compenser les autres). Population = Pop_par_AS (local './data_as/dashboard/by_as/<province>.json.gz') ou DHIS2 WLSKVyA8LoY — population ANNUELLE : UNE valeur par AS et par an, dédupliquée par AS (clé Province|Antenne|ZS|AS : des AS homonymes dans des ZS différentes sont des AS DISTINCTES, ex. Kinshasa 424 AS pour 390 noms), JAMAIS la somme des 12 mois. Ex. vérifié : Kinshasa 2025 → NS = 16 749 268 × 0,0349 = 584 549, Penta1 = 573 674 → ZD = 10 875. INTERDITS : le clamping mensuel, la somme de clamps par sous-entité, la définition « n'a reçu aucun antigène ». Doses DTC1 : champ DTC1_0_11 en local, UID uNdFg1eymsa dans DHIS2. ZD AJUSTÉE uniquement si le client la nomme : même formule avec SV_ajust ('./data/cibles_ajustees/<année>.json') par ZS (fonction _cvZDAjust). Si le DHIS2 a un indicateur officiel « zéro dose » (indicators.json?filter=name:ilike:zéro dose), il PRIME (règle FIDÉLITÉ 4).",
+                    "- ENFANTS SOUS-VACCINÉS (SV) — même formule avec DTC3, clamp au niveau du total demandé : SV = max(0, NS_période − doses Penta3 de la période) (les ZD sont inclus dans les SV ; ex. Kinshasa 2025 : SV = 584 549 − 535 026 = 49 523). Doses DTC3 : champ DTC3_0_11 en local, UID WWxqaHSeiwd dans DHIS2.",
+                    "- EXEMPLE GUIDÉ « cartographie des enfants ZD par province, 2025 » (version ADMIN = le défaut) : dans UN executer_js via ctx.dhis2 — 1) doses : analytics.json?dimension=dx:uNdFg1eymsa&dimension=pe:2025&dimension=ou:LEVEL-2&displayProperty=NAME (par province) ; 2) population : analytics.json?dimension=dx:WLSKVyA8LoY&dimension=pe:202501&dimension=ou:LEVEL-2&displayProperty=NAME (ANNUELLE : UNE valeur par province — DHIS2 agrège les AS — ne JAMAIS additionner les 12 mois) ; 3) par PROVINCE : ZD = max(0, Pop_province × 0,0349 − Penta1_2025) — ex. Kinshasa : max(0, 584 549 − 573 674) = 10 875 ; 4) carte choroplèthe provinces (recette carte) + tableau. Pour un tableau par ZS : même requêtes à LEVEL-3, clamp par ZS. Accélérateur LOCAL pour UNE province : './data_as/dashboard/by_as/<province>.json.gz' (Pop_par_AS + DTC1_0_11 mensuel — déduplique la pop par AS composite et clamp au niveau province). « ZD ajustée » (seulement si le client la nomme) : './data/cibles_ajustees/2025.json' (SV_ajust par ZS) à la place de Pop × 0,0349.",
                     "",
                     "## Antennes PEV (⚠ n'existent PAS dans DHIS2)",
                     "L'antenne est un regroupement de ZS propre à ce dashboard. Pour toute analyse par antenne : 1) charge ctx.load('./data/dashboard/by_zs.json.gz') et relève les _ZS de l'antenne demandée (champ _Antenne, ex. 'Luiza') ; 2) retrouve les UID de ces ZS dans DHIS2 (organisationUnits.json?filter=name:ilike:<zs>&filter=level:eq:3&fields=id,name) ; 3) agrège leurs valeurs. Pour 2025–2026, les données locales by_zs suffisent souvent directement.",

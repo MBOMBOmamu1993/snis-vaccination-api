@@ -457,3 +457,19 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   WLSKVyA8LoY LEVEL-4 + uNdFg1eymsa ; FIDÉLITÉ 1 : « agrégation par entité sur
   la période », plus de « clamping mensuel » — l'entrée précédente est caduque
   sur ce point).
+
+État actuel (31/07/2026, minuit — CORRECTIF FINAL ZD/SV, cas Kinshasa) :
+- ZD/SV = 0 sur la page Analyses CV : DEUX causes racines trouvées et corrigées.
+  1) POPULATION SOUS-COMPTÉE : _cvTargets dédupliquait par nom d'_AS simple —
+     or des AS homonymes existent entre ZS différentes (Kinshasa : 390 noms pour
+     424 AS réelles) → 15,47 M au lieu de 16,75 M. Désormais dédup par clé
+     COMPOSITE Province|Antenne|ZS|AS (_cvTargets + _cxTargets) : restaure
+     Pop = 16 749 268, NS = 584 549, CV DTC1 = 98,1 % (chiffres de référence).
+  2) NIVEAU DE CLAMP : la formule métier est ZD = max(0, NS_période − Penta1_
+     période) avec le clamp AU NIVEAU DU TOTAL AFFICHÉ (ni par mois, ni par
+     sous-entité sommée). Réécrit : _cvZDSV (KPI), _cxZD/_cxESV (canevas, clamp
+     par groupe affiché), _cvZDAjust (total ajusté, Σ SV_ajust × n_mois/12).
+  Validation sur données réelles Kinshasa 2025 : ZD = 10 875 (= 584 549 −
+  573 674, exactement la soustraction attendue), SV = 49 523 ; Q1 : 13 367 ;
+  janvier : 4 822. Prompt assistant réaligné (clamp au niveau demandé, dédup
+  composite, exemple chiffré Kinshasa, requêtes LEVEL-2 pour la carte).
