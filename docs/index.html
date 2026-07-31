@@ -2882,8 +2882,10 @@
         function _cxAgLbl(a) { return _CX_AGHEAD[a] || a; }
         function _cxSum(recs, f) { var s = 0; for (var i = 0; i < recs.length; i++) s += Number(recs[i][f]) || 0; return s; }
         function _cxTargets(recs) { var seen = {}, pop = 0; recs.forEach(function (r) { var k = r._AS || ''; if (!seen[k]) { seen[k] = 1; pop += Number(r.Pop_par_AS) || 0; } }); var nPer = recs._nPer || 1; return { pop: pop, nv: pop * _CX_NV * nPer / 12, ns: pop * _CX_NS * nPer / 12 }; }
-        function _cxZD(recs) { return recs.reduce(function (s, r) { var ns = (Number(r.Pop_par_AS) || 0) * _CX_NS / 12; return s + Math.max(0, ns - (Number(r.DTC1_0_11) || 0)); }, 0); }
-        function _cxESV(recs) { return recs.reduce(function (s, r) { var ns = (Number(r.Pop_par_AS) || 0) * _CX_NS / 12; return s + Math.max(0, ns - (Number(r.DTC3_0_11) || 0)); }, 0); }
+        /* ZD/SV — formule PÉRIODE par AS (identique à _cvZD/_cvESV : population
+           ANNUELLE × n_mois/12, clamping par entité, pas par mois). */
+        function _cxZD(recs) { var byAS = {}; recs.forEach(function (r) { var k = r._AS || ''; if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} }; byAS[k].d += Number(r.DTC1_0_11) || 0; byAS[k].mo[r._YM || ''] = 1; }); var t = 0; Object.keys(byAS).forEach(function (k) { var a = byAS[k], nM = Object.keys(a.mo).length || 1; t += Math.max(0, a.pop * _CX_NS * nM / 12 - a.d); }); return t; }
+        function _cxESV(recs) { var byAS = {}; recs.forEach(function (r) { var k = r._AS || ''; if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} }; byAS[k].d += Number(r.DTC3_0_11) || 0; byAS[k].mo[r._YM || ''] = 1; }); var t = 0; Object.keys(byAS).forEach(function (k) { var a = byAS[k], nM = Object.keys(a.mo).length || 1; t += Math.max(0, a.pop * _CX_NS * nM / 12 - a.d); }); return t; }
         function _cxCat(cv1, ab) { if (cv1 == null || !isFinite(cv1)) return 'NA'; if (ab == null || !isFinite(ab)) return 'NA'; if (ab < 0) return 'NA'; var h = cv1 >= 90, l = ab <= 10; return h && l ? 'Cat. 1' : h && !l ? 'Cat. 2' : !h && l ? 'Cat. 3' : 'Cat. 4'; }
         function _cxLoss(recs, p) { var admin = _cxSum(recs, p + '_administr_es'), util = _cxSum(recs, p + '_utilis_es'), perdu = _cxSum(recs, p + '_pertes'); if (perdu <= 0 && util > 0 && admin > 0 && util > admin) perdu = util - admin; var d = admin + perdu; return d > 0 ? perdu / d * 100 : null; }
         function _cxDispo(recs, p) { var rupT = 0, nonT = 0; recs.forEach(function (r) { var rcv = Number(r[p + '_re_ues']) || 0, sf = Number(r[p + '_stock_fin']) || 0, cmm = Number(r[p + '_cmm']) || 0, rup = Math.max(0, Number(r[p + '_jours_rupture']) || 0); if (!(rcv > 0 || sf > 0 || cmm > 0 || rup > 0)) return; rupT += rup; nonT += Math.max(0, 30 - rup); }); return (rupT + nonT) > 0 ? nonT / (rupT + nonT) * 100 : null; }
@@ -6531,19 +6533,41 @@
             return recs.reduce(function (s, r) { return s + (Number(r[field]) || 0); }, 0);
         }
 
-        /* Zéro-dose et enfants sous-vaccinés (calcul mensuel, somme sur la période).
-           NS mensuelle par AS = Pop_par_AS × 3,49 % / 12. */
+        /* Zéro-dose et enfants sous-vaccinés — formule PÉRIODE, par AS :
+           ZD = max(0, NS_période − Penta1_période), sommé sur les AS.
+           Pop_par_AS est une population ANNUELLE (répétée sur chaque ligne
+           mensuelle) → NS_période = Pop × 3,49 % × n_mois/12. Le clamping par
+           MOIS (ancienne version) gonflait le total : un mois excédentaire
+           (rattrapage) doit compenser les autres mois de la période. */
         function _cvZD(recs) {
-            return recs.reduce(function (s, r) {
-                var ns_m = (Number(r.Pop_par_AS) || 0) * _PEV_NS_RATE / 12;
-                return s + Math.max(0, ns_m - (Number(r.DTC1_0_11) || 0));
-            }, 0);
+            var byAS = {};
+            recs.forEach(function (r) {
+                var k = r._AS || '';
+                if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} };
+                byAS[k].d += Number(r.DTC1_0_11) || 0;
+                byAS[k].mo[r._YM || ''] = 1;
+            });
+            var t = 0;
+            Object.keys(byAS).forEach(function (k) {
+                var a = byAS[k], nM = Object.keys(a.mo).length || 1;
+                t += Math.max(0, a.pop * _PEV_NS_RATE * nM / 12 - a.d);
+            });
+            return t;
         }
         function _cvESV(recs) {
-            return recs.reduce(function (s, r) {
-                var ns_m = (Number(r.Pop_par_AS) || 0) * _PEV_NS_RATE / 12;
-                return s + Math.max(0, ns_m - (Number(r.DTC3_0_11) || 0));
-            }, 0);
+            var byAS = {};
+            recs.forEach(function (r) {
+                var k = r._AS || '';
+                if (!byAS[k]) byAS[k] = { pop: Number(r.Pop_par_AS) || 0, d: 0, mo: {} };
+                byAS[k].d += Number(r.DTC3_0_11) || 0;
+                byAS[k].mo[r._YM || ''] = 1;
+            });
+            var t = 0;
+            Object.keys(byAS).forEach(function (k) {
+                var a = byAS[k], nM = Object.keys(a.mo).length || 1;
+                t += Math.max(0, a.pop * _PEV_NS_RATE * nM / 12 - a.d);
+            });
+            return t;
         }
 
         /* Calcule la complétude de rapportage d'un groupe d'enregistrements bruts (CV)
@@ -8006,27 +8030,29 @@
             };
         }
 
-        /* Zéro-dose / sous-vaccinés à partir de cibles ajustées (mensualisé par ZS). */
+        /* Zéro-dose / sous-vaccinés à partir de cibles ajustées — formule PÉRIODE
+           par ZS (comme _cvZD, population/cible ANNUELLE) : SV_ajust × n_mois/12,
+           clamping par ZS sur la période entière, pas par mois. */
         function _cvZDAjust(recs, cibleData, doseField) {
             if (!cibleData || !cibleData.records) return null;
             var idx = {};
             cibleData.records.forEach(function (r) {
                 idx[(r._Province || '') + '||' + (r._ZS || '')] = r;
             });
-            /* Agrège doses + SV ajusté par ZS×YM (SV ajusté mensuel = SV_ajust / 12). */
-            var zsDoses = {};
+            /* Agrège par ZS : doses de la période + mois distincts. */
+            var zsAgg = {};
             recs.forEach(function (r) {
-                var k = (r._Province || '') + '||' + (r._ZS || '') + '||' + (r._YM || '');
-                if (!zsDoses[k]) zsDoses[k] = { p: r._Province, z: r._ZS, d: 0 };
-                zsDoses[k].d += Number(r[doseField]) || 0;
+                var k = (r._Province || '') + '||' + (r._ZS || '');
+                if (!zsAgg[k]) zsAgg[k] = { d: 0, mo: {} };
+                zsAgg[k].d += Number(r[doseField]) || 0;
+                zsAgg[k].mo[r._YM || ''] = 1;
             });
             var total = 0;
-            Object.keys(zsDoses).forEach(function (k) {
-                var v = zsDoses[k];
-                var c = idx[(v.p || '') + '||' + (v.z || '')];
+            Object.keys(zsAgg).forEach(function (k) {
+                var c = idx[k];
                 if (!c) return;
-                var ns_m = (Number(c.SV_ajust) || 0) / 12;
-                total += Math.max(0, ns_m - v.d);
+                var nM = Object.keys(zsAgg[k].mo).length || 1;
+                total += Math.max(0, (Number(c.SV_ajust) || 0) * nM / 12 - zsAgg[k].d);
             });
             return total;
         }
@@ -9703,6 +9729,13 @@
                     "- ctx.load(chemin) : './data/dashboard/by_province.json.gz' (agrégats mensuels par province : _Province,_YM,n,rap,comp,prompt,doses ex. BCG_0_11 + variantes _fixe) ; './data/dashboard/by_zs.json.gz' (idem par ZS : _ZS,_Province,_YM) ; './data/cibles_ajustees/2025.json' et 2026.json (cibles — inspecte la structure) ; './data/ou_map.json.gz' (référentiel ~25 000 FOSA). ctx.loadUrl(url) : ressource https publique (ex. GeoJSON RDC).",
                     "- ctx.geo(niveau, parent) : FeatureCollection GeoJSON des unités d'organisation DHIS2 (ASYNCHRONE — await) : niveau 2 = 26 provinces (parent 'LEVEL-1', défaut), 3 = ZS (parent = UID de la province), 4 = AS (parent = UID de la ZS), 5 = FOSA. Chaque feature a properties.id (UID DHIS2) et properties.na (nom) : le joint aux valeurs analytics se fait sur l'UID. Les POLYGONES DES AIRES DE SANTÉ (niveau 4) SONT disponibles : ctx.geo interroge automatiquement plusieurs sources DHIS2 (organisationUnits?fields=geometry, puis geoFeatures — l'API de l'app Maps qui porte ces polygones, puis .geojson) et renvoie ce qui existe. Fais donc les cartes AS comme les cartes ZS : `const gj = await ctx.geo(4, uidZS)`. Vérifie quand même `gj.features.length` ; dans le cas rare où une entité n'a réellement aucune géométrie, redescends d'un niveau ou bascule en barres et signale-le. Ne fabrique JAMAIS de fausses frontières.",
                     "",
+                    "## FIDÉLITÉ DES CALCULS — RÈGLE ABSOLUE (anti-hallucination)",
+                    "Un indicateur n'est JAMAIS calculé selon ta connaissance générale (définitions OMS/EPI apprises « de tête »). Chaque calcul doit être rattaché à UNE source vérifiable, dans cet ordre :",
+                    "1) DEMANDE PEV → le dashboard a DÉJÀ une méthode validée : REPRODUIS-la À L'IDENTIQUE (section « Conventions PEV RDC » ci-dessous : CV%, abandon, enfants Zéro-Dose, Sous-Vaccinés, complétude, pertes, disponibilité — mêmes champs, mêmes taux, même agrégation PAR ENTITÉ SUR LA PÉRIODE). Le client compare avec SON dashboard : toute dérive de définition détruit sa confiance.",
+                    "2) TOUT PROGRAMME → la CONFIGURATION du DHIS2 national : cherche l'indicateur officiel (indicators.json?filter=name:ilike:<mot-clé>&fields=id,name,numerator,denominator) et utilise-le tel quel (formule appliquée côté serveur) ; à défaut, prends les dataElements du canevas concerné (sections du dataset) et applique la formule officielle lue dans numerator/denominator. Les canevas et indicateurs configurés dans le DHIS2 définissent comment calculer CHAQUE indicateur : réfère-toi à EUX, jamais à tes habitudes générales.",
+                    "3) Ni recette dashboard ni configuration DHIS2 ne couvrent la demande → dis-le franchement et propose l'indicateur officiel le plus proche. N'INVENTE JAMAIS une définition.",
+                    "4) DIVERGENCE dashboard/repo vs DHIS2 en ligne → le DHIS2 EN LIGNE EST LA RÉFÉRENCE : donne la valeur DHIS2 au client et signale brièvement l'écart constaté.",
+                    "",
                     "## DHIS2 national : accès COMPLET en lecture (source principale)",
                     "Toutes les données du SNIS te sont accessibles — TOUS les programmes (vaccination PEV, paludisme PNLP, tuberculose PNLT, VIH/IST PNLS, nutrition, santé de la mère et du nouveau-né, planification familiale, surveillance épidémiologique, logistique, hôpitaux, banque de sang…) : tous éléments (~9 500), indicateurs (~1 570), datasets (42), niveaux, périodes. Ne réponds JAMAIS qu'une donnée est indisponible sans avoir cherché dans le DHIS2. Les fichiers locaux ne couvrent que le PEV 2025–2026 : pour tout autre programme, toute autre année ou comparaison pluriannuelle, va au DHIS2 (pe:2019, pe:201901;…, LAST_5_YEARS/LAST_10_YEARS).",
                     "Deux voies : requete_dhis2 (métadonnées, réponses modérées) ; ctx.dhis2(endpoint,params) dans executer_js pour les GROS volumes — agrège en code, retourne un résultat compact.",
@@ -9725,12 +9758,15 @@
                     "- Cible naissances vivantes (BCG, Td) : Pop × 4,00 % par an (÷12 par mois). Cible nourrissons survivants (Penta, VPO, PCV, ROTA, VAR…) : Pop × 3,49 % par an.",
                     "- CV% annuelle = doses de l'année ÷ (Pop × taux) × 100. Formule officielle SNIS (indicateur '2a-Taux de couverture en VAR 1') : numérateur pak21wvkWJC (fixe+avancé+mobile), dénominateur WLSKVyA8LoY × 0,0349.",
                     "- UID doses (fixe1/fixe2 = deux formulaires, additionner ; ventilés par catégorie stratégie) : BCG=W25tOXS0rxS · Penta1=uNdFg1eymsa · Penta3=WWxqaHSeiwd · VPO3=SPGaDDw2JzG · VAR1=pak21wvkWJC+cTLKwfG8pSv · VAR2 (12-23 mois)=i5zmivDIHN8 · VAA=bzD4QxaNkJm. En analytics, dx:UID sans .COC = total toutes catégories (suffisant pour les doses totales).",
+                    "- ENFANTS ZÉRO-DOSE (ZD) — recette EXACTE du dashboard (fonction _cvZD) : « ZD » TOUT COURT = ZD ADMIN (cible = population, JAMAIS les cibles ajustées sauf si le client dit explicitement « ajustée »). Formule PÉRIODE, par entité (AS/ZS/province), population ANNUELLE : ZD_entité = max(0, Pop_annuelle × 0,0349 × n_mois/12 − doses Penta1 de la période), puis somme des entités (n_mois = mois distincts sélectionnés). Pop = Pop_par_AS (local './data_as/dashboard/by_as/<province>.json.gz', aussi Pop_0_11m_survivants) ou DHIS2 WLSKVyA8LoY (population ANNUELLE de l'entité : UNE valeur par entité et par an, JAMAIS la somme des 12 mois). INTERDITS : le clamping MENSUEL — Σ max(0, cible_mois − doses_mois) gonfle le total dès que plusieurs mois sont sélectionnés, car un mois excédentaire (rattrapage) doit compenser les autres mois — et la définition « n'a reçu aucun antigène ». Doses DTC1 : champ DTC1_0_11 en local, UID uNdFg1eymsa dans DHIS2. ZD AJUSTÉE uniquement si le client la nomme : même formule avec SV_ajust ('./data/cibles_ajustees/<année>.json') par ZS, niveau ZS max (fonction _cvZDAjust). Si le DHIS2 a un indicateur officiel « zéro dose » (indicators.json?filter=name:ilike:zéro dose), il PRIME (règle FIDÉLITÉ 4).",
+                    "- ENFANTS SOUS-VACCINÉS (SV) — même formule PÉRIODE avec DTC3 : SV_entité = max(0, Pop_annuelle × 0,0349 × n_mois/12 − doses Penta3 de la période), sommée sur les entités (les ZD sont inclus dans les SV). Doses DTC3 : champ DTC3_0_11 en local, UID WWxqaHSeiwd dans DHIS2.",
+                    "- EXEMPLE GUIDÉ « cartographie des enfants ZD par province, 2025 » (version ADMIN = le défaut) : dans UN executer_js via ctx.dhis2 — 1) doses : analytics.json?dimension=dx:uNdFg1eymsa&dimension=pe:2025&dimension=ou:LEVEL-4&displayProperty=NAME ; 2) population : analytics.json?dimension=dx:WLSKVyA8LoY&dimension=pe:202501&dimension=ou:LEVEL-4&displayProperty=NAME (ANNUELLE : UNE valeur par AS, ne JAMAIS additionner les 12 mois) ; 3) par AS : ZD = max(0, Pop_AS × 0,0349 − Penta1_2025) ; 4) somme par province (préfixe du nom, ex. 'bu …' → Bas-Uélé, ou la hiérarchie organisationUnits) ; 5) carte choroplèthe provinces (recette carte) + tableau des ZS. Accélérateur LOCAL pour UNE province : './data_as/dashboard/by_as/<province>.json.gz' (Pop_par_AS + DTC1_0_11 mensuel). « ZD ajustée » (seulement si le client la nomme) : './data/cibles_ajustees/2025.json' (SV_ajust par ZS) à la place de Pop × 0,0349.",
                     "",
                     "## Antennes PEV (⚠ n'existent PAS dans DHIS2)",
                     "L'antenne est un regroupement de ZS propre à ce dashboard. Pour toute analyse par antenne : 1) charge ctx.load('./data/dashboard/by_zs.json.gz') et relève les _ZS de l'antenne demandée (champ _Antenne, ex. 'Luiza') ; 2) retrouve les UID de ces ZS dans DHIS2 (organisationUnits.json?filter=name:ilike:<zs>&filter=level:eq:3&fields=id,name) ; 3) agrège leurs valeurs. Pour 2025–2026, les données locales by_zs suffisent souvent directement.",
                     "",
                     "## Méthode (OBLIGATOIRE)",
-                    "1. TOUS les calculs via executer_js — n'invente JAMAIS un chiffre ; explore la structure en cas de doute ; si une donnée manque, dis-le.",
+                    "1. TOUS les calculs via executer_js — n'invente JAMAIS un chiffre NI une définition d'indicateur (cf. FIDÉLITÉ DES CALCULS : recette dashboard pour le PEV, configuration DHIS2 pour tout le reste, DHIS2 en ligne = référence finale) ; explore la structure en cas de doute ; si une donnée manque, dis-le.",
                     "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. RECETTE CARTE choroplèthe : const gj = await ctx.geo(2) (provinces) ou await ctx.geo(3, uidProvince) (ZS) ; récupère les valeurs analytics avec dimension=ou:LEVEL-2/LEVEL-3 (les lignes portent l'UID) ; puis afficher_resultat type 'carte' avec figure={data:[{type:'choropleth', geojson:gj, locations:[UID…], z:[valeurs…], featureidkey:'properties.id', zauto:true, colorscale:'Blues', marker:{line:{color:'#fff',width:0.5}}}], layout:{margin:{t:30,r:0,b:0,l:0}}} — N'affiche JAMAIS le GeoJSON dans ta réponse, passe-le directement dans la figure. Échelle raisonnable : provinces pour une vue nationale, ZS d'UNE province à la fois. Sans GeoJSON disponible → barres classées par zone.",
                     "3. Formules : préfère TOUJOURS l'indicateur officiel DHIS2 (formule déjà appliquée côté serveur) ; sinon : taux/proportion = numérateur/dénominateur×100 (dénominateur de couverture = population × coefficient officiel, cumulé sur la période) ; CV% = doses cumulées/cible cumulée×100 (cible mensuelle = annuelle/12) ; abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100 ; complétude = reçus/attendus×100 ; taux d'attaque = cas/population×100 000 ; létalité = décès/cas×100.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",

@@ -421,3 +421,39 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   hero et chips mis à jour. Vérifs : node --check worker OK, 5 blocs inline OK.
   ⚠ DÉPLOIEMENT requis des DEUX côtés : push docs/ (Pages/Vercel) + wrangler
   deploy du worker (sinon envoyer_email renvoie 404 « Introuvable »).
+
+État actuel (31/07/2026, soir) :
+- FIDÉLITÉ DES CALCULS (correctif anti-hallucination, suite à un cas réel :
+  cartographie enfants ZD par province 2025 inventée au lieu d'appliquer la
+  recette du dashboard). Prompt système renforcé à 3 endroits :
+  1) nouvelle section « FIDÉLITÉ DES CALCULS — RÈGLE ABSOLUE » : ordre strict =
+     recette du dashboard pour le PEV (reproduction à l'identique) →
+     configuration DHIS2 (indicateurs officiels numerator/denominator, canevas)
+     pour tout programme → sinon le dire franchement ; JAMAIS de définition
+     issue des connaissances générales ; DIVERGENCE repo vs DHIS2 en ligne →
+     DHIS2 EN LIGNE = RÉFÉRENCE FINALE (donner la valeur DHIS2 + signaler l'écart) ;
+  2) recettes EXACTES ZD/SV ajoutées aux Conventions PEV : ZD_mois =
+     max(0, NS_mensuelle − DTC1_mois), SV_mois = max(0, NS_mensuelle − DTC3_mois),
+     NS_mensuelle = Pop_par_AS × 0,0349/12 — CIBLES AJUSTÉES PRIORITAIRES
+     (cibles_ajustees/<année>.json : SV_ajust/12 par ZS, niveau ZS max, cf.
+     _cvZDAjust) ; Pop_par_AS disponible en local (data_as/dashboard/by_as/*) ;
+     interdits : calcul annuel d'un bloc + définition « aucun antigène » ;
+     exemple guidé complet « cartographie ZD par province 2025 » (cibles
+     ajustées + by_zs + somme par province + choroplèthe) ;
+  3) Méthode point 1 : « n'invente JAMAIS un chiffre NI une définition ».
+  Vérifs : 5 blocs inline OK + build-static OK. Dashboard-only (worker inchangé).
+
+État actuel (31/07/2026, nuit — CORRECTIF ZD/SV) :
+- BUG CUMUL MULTI-PÉRIODES corrigé : Pop_par_AS est une population ANNUELLE ;
+  l'ancien clamping MENSUEL (Σ max(0, Pop×3,49%/12 − doses_mois)) gonflait ZD/SV
+  dès plusieurs mois sélectionnés (un mois de rattrapage ne compensait pas).
+  Nouvelle formule PÉRIODE par entité (_cvZD/_cvESV, _cxZD/_cxESV, _cvZDAjust) :
+  max(0, Pop_annuelle × 3,49 % × n_mois/12 − doses_période), sommée par AS (ou ZS
+  pour l'ajustée). Test numérique : rattrapage 6×0 + 6×70 → ancien 209,4 gonflé,
+  nouveau 0 (juste) ; cas régulier et trimestre inchangés.
+- RÈGLE MÉTIER actée : « ZD » TOUT COURT = ZD ADMIN (cible = population DHIS2) ;
+  ZD AJUSTÉE (cibles_ajustees) uniquement si le client la nomme. Prompt iaSystem
+  réécrit en conséquence (recette ZD/SV + exemple guidé admin via analytics
+  WLSKVyA8LoY LEVEL-4 + uNdFg1eymsa ; FIDÉLITÉ 1 : « agrégation par entité sur
+  la période », plus de « clamping mensuel » — l'entrée précédente est caduque
+  sur ce point).
