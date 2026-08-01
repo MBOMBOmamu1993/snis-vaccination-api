@@ -19,6 +19,15 @@ if (!fs.existsSync(EDGE)) throw new Error('Microsoft Edge introuvable : ' + EDGE
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const sourceHtml = fs.readFileSync(HTML_PATH, 'utf8');
+if (/IA_AGENT_(?:MAX|STANDARD|DOCUMENT)_MS/.test(sourceHtml) || /Analyse interrompue après \d+ minutes/.test(sourceHtml)) {
+  throw new Error('Un délai global interdit est encore actif dans la boucle Assistant IA');
+}
+if (!/var IA_MAX_TOOL_TURNS = 30;/.test(sourceHtml) || /IA_MAX_KIMI_TOOL_TURNS/.test(sourceHtml)) {
+  throw new Error('La boucle Kimi doit utiliser la limite commune de 30 étapes, sans limite temporelle');
+}
+if (/CANEVAS \/ MODÈLE \.pptx joint[^\n]+calculer toutes les valeurs DHIS2 avant écriture/.test(sourceHtml)) {
+  throw new Error('Le prompt reporte encore toute l’écriture du PPTX après toutes les extractions');
+}
 function between(start, end) {
   const a = sourceHtml.indexOf(start);
   const b = sourceHtml.indexOf(end, a + start.length);
@@ -118,6 +127,6 @@ if(!/<a:tbl>/.test(scoreXml)||/Mettre un tableau comparatif/i.test(scoreXml))thr
 const ptfBefore=await original.file('ppt/slides/slide6.xml').async('nodebuffer'),ptfAfter=await produced.file('ppt/slides/slide6.xml').async('nodebuffer');
 if(!ptfBefore.equals(ptfAfter))throw new Error('La diapositive PTF a été modifiée');
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex').slice(0,12);
-console.log('PASS — verrou nouvelle diapositive, score DPS, insertion tableau et contrôles finaux');
+console.log('PASS — aucun délai global, verrou nouvelle diapositive, score DPS, insertion tableau et contrôles finaux');
 console.log('slides=49 -> 49; seule slide35.xml modifiée; PTF identique; sha256='+hash(result.bytes));
 console.log('output='+OUT);
