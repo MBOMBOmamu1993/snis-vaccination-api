@@ -9696,21 +9696,20 @@
                 { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra — meilleur équilibre intelligence/coût', effort: 'medium' },
                 { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol — puissance maximale', effort: 'high' }
             ];
-            var IA_CLIENT_GPT_PROVIDER = 'gpt:gpt-5.6-terra';
             /* Liste de secours si /api/tags est momentanément injoignable */
-            var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
+            var IA_OLLAMA_MODELS = ['kimi-k3', 'deepseek-v4-pro', 'deepseek-v4-flash', 'minimax-m3', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'kimi:kimi-k3';
-            /* Liste FIXE proposée aux clients : UNIQUEMENT des modèles puissants,
-               tous payants — plus de modèles Ollama côté client. L'essai gratuit
+            var IA_CLIENT_DEFAULT_PROVIDER = 'kimi-k3';
+            /* Liste FIXE proposée aux clients : uniquement trois modèles Ollama
+               Cloud. L'essai gratuit
                (7 jours, à raison d'1 analyse par jour) donne accès à CES MÊMES
                modèles ; au-delà du rythme ou après les 7 jours, le proxy renvoie
                vers l'achat. (L'admin, lui, voit la liste complète dynamique
                Ollama + OpenAI + Kimi + Claude.) */
             var IA_CLIENT_MODELS = [
-                { v: IA_CLIENT_GPT_PROVIDER, label: 'GPT-5.6 Terra — 💳 Payant (économique et très intelligent)' },
-                { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (par défaut, adapté aux tâches très complexes et compliquées)' },
-                { v: 'claude-opus5', label: 'Claude Opus 5 — 💳 Payant (le plus compétent, adapté aux tâches très complexes et compliquées)' },
-                { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)' }
+                { v: 'kimi-k3', label: 'Kimi K3 — Ollama Cloud — 💳 Payant (par défaut, puissance maximale)' },
+                { v: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro — Ollama Cloud — 💳 Payant (raisonnement avancé)' },
+                { v: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash — Ollama Cloud — 💳 Payant (rapide et économique)' }
             ];
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
             function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
@@ -9727,22 +9726,16 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
-                /* Fable 5 retiré de l'offre CLIENT (coût trop élevé) : un client
-                   qui l'avait mémorisé bascule sur le modèle par défaut ;
-                   l'admin garde Fable 5 dans sa liste complète. */
-                if (p === 'claude-fable' && !iaIsAdmin()) { cfg('provider', IA_DEFAULT_PROVIDER); return IA_DEFAULT_PROVIDER; }
+                /* Liste blanche client stricte : un ancien choix Claude, OpenAI,
+                   Kimi API ou autre modèle Ollama bascule vers Kimi K3 Cloud. */
+                if (!iaIsAdmin()) {
+                    for (var ci = 0; ci < IA_CLIENT_MODELS.length; ci++) if (IA_CLIENT_MODELS[ci].v === p) return p;
+                    cfg('provider', IA_CLIENT_DEFAULT_PROVIDER);
+                    return IA_CLIENT_DEFAULT_PROVIDER;
+                }
                 if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
                 if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
-                if (p.indexOf('gpt:') === 0) {
-                    /* Le client ne voit/utilise que Terra ; Sol est réservé à la
-                       liste administrateur pour maîtriser le coût des codes vendus. */
-                    if (!iaIsAdmin() && p !== IA_CLIENT_GPT_PROVIDER) { cfg('provider', IA_CLIENT_GPT_PROVIDER); return IA_CLIENT_GPT_PROVIDER; }
-                    return p;
-                }
-                /* Ollama retiré de la liste client : tout ancien réglage Ollama
-                   (ex. MiniMax M3) d'un CLIENT bascule définitivement sur le
-                   modèle par défaut ; l'admin garde le libre choix. */
-                if (!iaIsAdmin()) { cfg('provider', IA_DEFAULT_PROVIDER); return IA_DEFAULT_PROVIDER; }
+                if (p.indexOf('gpt:') === 0) return p;
                 if (p === 'minimax' || !p) return IA_DEFAULT_PROVIDER; /* migration ancien réglage */
                 return p.replace(/:cloud$/, '');
             }
@@ -10966,7 +10959,7 @@
                     if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre ' + prov.keyLabel + ' (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
                     if (resp.status === 402) msg = 'Crédits épuisés sur ce compte (' + prov.label + ').' + bascule + ' ' + msg;
                     if (resp.status === 503) msg = prov.label + ' n\'est pas disponible actuellement.' + bascule + ' ' + msg;
-                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + prov.model + ' » introuvable chez ' + prov.label + '.' + (prov.kind === 'ollama' ? ' Vérifiez que le tag « :cloud » est présent et que le modèle est accessible sur votre compte.' : '') + ' ' + msg;
+                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + prov.model + ' » introuvable chez ' + prov.label + '.' + (prov.kind === 'ollama' ? ' Actualisez la liste et vérifiez que le modèle est accessible sur votre compte Ollama Cloud.' : '') + ' ' + msg;
                     if (resp.status === 429) msg = 'Limite de débit atteinte (429) chez ' + prov.label + ' malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message.' + bascule + ' ' + msg;
                     throw new Error(msg);
                 }
@@ -13701,13 +13694,14 @@
 
                 function renderModelOptions() {
                     if (!isAdm) {
-                        /* Client : liste fixe et volontairement courte */
+                        /* Client : liste blanche fixe, aucun modèle masqué ne peut
+                           être réinjecté depuis un ancien réglage localStorage. */
                         var listed = false;
                         for (var ci = 0; ci < IA_CLIENT_MODELS.length; ci++) if (IA_CLIENT_MODELS[ci].v === pk) listed = true;
-                        var opts = listed ? IA_CLIENT_MODELS : [{ v: pk, label: iaProv(pk).label }].concat(IA_CLIENT_MODELS);
-                        selEl.innerHTML = opts.map(function (x) { return '<option value="' + esc(x.v) + '">' + esc(x.label) + '</option>'; }).join('');
+                        if (!listed) pk = IA_CLIENT_DEFAULT_PROVIDER;
+                        selEl.innerHTML = IA_CLIENT_MODELS.map(function (x) { return '<option value="' + esc(x.v) + '">' + esc(x.label) + '</option>'; }).join('');
                         selEl.value = pk;
-                        if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
+                        if (!selEl.value) { selEl.value = IA_CLIENT_DEFAULT_PROVIDER; pk = IA_CLIENT_DEFAULT_PROVIDER; }
                         return;
                     }
                     var models = IA_OLLAMA_MODELS.slice();

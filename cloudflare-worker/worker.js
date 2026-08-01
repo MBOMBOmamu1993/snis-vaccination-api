@@ -92,13 +92,13 @@ const OFFERS = [
 
 /* Modèles Ollama Cloud : la liste vit chez Ollama (route /api/tags relayée au
    dashboard) — on ne fige donc PAS d'allowlist ici, seulement une validation de
-   forme + un défaut. Le tag « :cloud » (ou suffixe -cloud) est obligatoire —
-   sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
+   forme + un défaut. L'API distante peut renvoyer des identifiants sans suffixe
+   :cloud ; le proxy transmet donc exactement l'identifiant sélectionné. */
 const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
 const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-5', 'claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const ALLOWED_OPENAI_MODELS = ['gpt-5.6-terra', 'gpt-5.6-sol'];
-/* Tous les modèles clients (Claude Opus 5 / Opus 4.8 / Fable 5, Kimi K3) sont
-   PUISSANTS et PAYANTS — les codes d'ESSAI y ont accès à raison d'1 analyse
+/* Les modèles clients (Kimi K3, DeepSeek V4 Pro et V4 Flash via Ollama Cloud)
+   sont PAYANTS — les codes d'ESSAI y ont accès à raison d'1 analyse
    par jour pendant 7 jours (cf. resolveIaAuth) ; au-delà → achat. */
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
 const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
@@ -249,8 +249,8 @@ async function fpHash(request) {
    Kinshasa), par appareil ═══
    Idempotent : un nouvel appel depuis le même appareil rend le même code
    (pratique si l'utilisateur l'a perdu), sans jamais créer de second essai.
-   Le code d'essai donne accès à TOUS les modèles clients (Claude Opus 5 /
-   Opus 4.8 / Fable 5, Kimi K3) et au proxy DHIS2 ; au-delà d'1 analyse par
+   Le code d'essai donne accès à TOUS les modèles clients (Kimi K3,
+   DeepSeek V4 Pro et V4 Flash via Ollama Cloud) et au proxy DHIS2 ; au-delà d'1 analyse par
    jour, ou une fois les 7 jours expirés → redirection vers l'achat. */
 async function trialGrant(request, env, cors) {
   if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
