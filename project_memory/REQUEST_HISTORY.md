@@ -315,3 +315,9 @@ Action faite : (1) Onglet Vaccine_dispo_HZ_P1 : mkRender filtrait les vues sans
   gris) + étiquettes « … Centre de Santé » + légende, KPI à gauche.
 Résultat : harnais vert (contrôles carte + dispo ajoutés), syntaxe 5/5 blocs
   OK. Déployé sur main (Pages + Vercel automatiques).
+---
+
+Date : 01/08/2026 (Assistant IA — canevas PPTX)
+Demande : corriger les skills de l’Assistant IA DHIS2 après une génération non conforme (mise en forme altérée, score qualité absent, graphiques/diapositives ajoutés), en conservant strictement les diapositives hors DHIS2 comme PTF, puis prétester Kimi avant validation.
+Action faite : audit XML des PPTX original et `_MAJ` (49 vs 54 diapositives ; D35 sans tableau ; PTF paginé ; slides/graphiques ajoutés), ajout d’un mode strict transactionnel à `modifier_presentation`, création d’un tableau DrawingML éditable sur la forme ciblée, verrouillage des modifications hors périmètre, contrôles finaux, barème DPS `ctx.scoreQualiteDps`, consignes système non ambiguës et garde-fou de durée.
+Résultat : prétest moteur PASS (49 diapositives, seule D35 diffère, D6 identique, tableau score visible et sans débordement) ; prétest réel Kimi K3 PASS (`requete_dhis2` → `requete_dhis2` → `modifier_presentation`), sans opération interdite. Changements locaux, non déployés.

@@ -529,3 +529,10 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   (12-23 mois) est RETIRÉ du prompt (ligne LECTURE DES FORMULES) et NE doit plus
   servir à aucune cible PEV. Doses VAR2 : valeur ventilée 12-23 mois (VAR2_12_23),
   pas le total toutes catégories (qui inclut les 0-11 mois, ~25 000 à Kinshasa).
+État actuel (01/08/2026 — Assistant IA, canevas PPTX strict) :
+- `modifier_presentation` fonctionne désormais en mode strict par défaut : même nombre et même ordre de diapositives ; ajout, duplication, suppression, pagination et insertion visuelle bloqués sauf autorisation explicite. Les échecs d’opérations sont transactionnels : aucun fichier partiel n’est téléchargé.
+- Nouvelle opération `remplacer_forme_par_tableau` : remplace une consigne textuelle par un vrai tableau PowerPoint éditable sur la même diapositive. Le tableau « Score qualité S1 2025–S1 2026 par AS » est imposé sur D35, avec contrôles finaux bloquants.
+- Les diapositives hors DHIS2, dont PTF vide, restent inchangées. L’audit et le recalage de mise en page ne touchent plus globalement les tableaux du canevas, seulement les objets modifiés.
+- Score qualité DPS déterministe exposé à l’IA par `ctx.scoreQualiteDps` (5 critères ×20, total non calculable si le statut RVV corrigées n’est pas démontré).
+- Anti-attente : Kimi limité à 12 tours d’outils et la boucle complète à 45 minutes ; jamais d’annonce de succès sans téléchargement et contrôles réussis.
+- Prétests : moteur réel sur le canevas original = 49→49, seule D35 modifiée, D6 PTF identique, rendu PowerPoint contrôlé visuellement ; Kimi K3 réel = PASS, deux lectures DHIS2 puis modification conforme, aucun graphique/slide ajouté.

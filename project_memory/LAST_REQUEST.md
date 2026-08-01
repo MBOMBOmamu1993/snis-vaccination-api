@@ -1,21 +1,9 @@
 # Dernière requête
 
-Date : 31/07/2026 (2)
-Dernière demande : Rendre la carte de supervision visible (elle ne l'était
-  pas) en s'aidant du geojson des aires de santé de la RDC partagé
-  (Downloads\RDC_aires_de_sante.geojson, > 50 Mo) pour extraire les polygones/
-  points par ZS et présenter la carte comme l'original ; et réafficher la
-  feuille Vaccine_dispo_HZ_P1, absente du dashboard alors qu'elle existe dans
-  le classeur original.
-Fichiers concernés : docs/index.html (filtre mkRender, mkZsGeoLoad,
-  mkZsCartePoints, mkZsCarteDraw, layout mkZsRenderCarte),
-  docs/data/mashako/geo_as_points.json (nouveau, 276 Ko),
-  tools/mashako-sync/extract-as-geo.mjs (nouveau),
-  tools/mashako-sync/test-mkas-harness.mjs (contrôles carte + dispo),
-  project_memory/*
-Statut : TERMINÉ — onglet Vaccine_dispo_HZ_P1 réaffiché (rendu 100 %
-  crosstab) ; carte de supervision = contour ZS + croix colorées par Centre de
-  Santé (vert qualité / jaune 2 critères / orange 1 / rouge 0 / gris non
-  supervisée) avec étiquettes et légende ; 517 ZS × 9 573 points extraits
-  (Aketi = 19 AS comme l'original) ; harnais vert, syntaxe 5/5 blocs OK.
-  Voir REQUEST_HISTORY du 31/07/2026 (2).
+Date : 01/08/2026
+
+Demande : corriger les skills de l’onglet « Assistant IA DHIS2 RDC » afin qu’un canevas PPTX joint soit actualisé avec les données DHIS2 sans modifier sa structure, sans toucher aux diapositives hors DHIS2 (notamment PTF, volontairement vide), sans ajouter de graphiques ou diapositives non demandés, et avec un vrai tableau comparatif du score qualité. Prétester l’Assistant IA/Kimi et inspecter sa production avant de conclure.
+
+Fichiers concernés : `docs/index.html`, `scripts/test-ia-pptx-canevas.mjs`, `scripts/test-ia-kimi-pptx-policy.mjs`, `scripts/test_ia_ollama.mjs`, `project_memory/*`.
+
+Statut : TERMINÉ localement — mode structure stricte et transactionnel, nouvelle opération `remplacer_forme_par_tableau`, barème DPS déterministe via `ctx.scoreQualiteDps`, contrôles finaux bloquants, protection des diapositives hors DHIS2, limite Kimi de 12 étapes/45 minutes. Prétest moteur : 49 → 49 diapositives, seule D35 modifiée, D6 PTF identique, tableau score qualité visible. Prétest réel Kimi K3 : PASS (`requete_dhis2` ×2 puis `modifier_presentation`), aucun ajout interdit. Non déployé dans cette session.

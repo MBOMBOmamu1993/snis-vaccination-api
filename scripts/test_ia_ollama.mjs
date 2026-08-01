@@ -51,7 +51,8 @@ loadFn(/( *function iaFigureFromTable\(colonnes, lignes\) \{[\s\S]*?\n {12}\})/)
 loadFn(/( *function iaNormalizeResult\(inp\) \{[\s\S]*?\n {12}\})/);
 loadFn(/( *function iaUnwrapArrays\(v\) \{[\s\S]*?\n {12}\})/);
 loadFn(/( *function iaMissingAwait\(code\) \{[\s\S]*?\n {12}\})/);
-const { iaSystem, IA_TOOLS, iaParseMaybe, iaFixFigure, iaFigureFromTable, iaNormalizeResult, iaUnwrapArrays, iaMissingAwait } = sandbox;
+loadFn(/( *function iaScoreQualiteDps\(o\) \{[\s\S]*?\n {12}\})/);
+const { iaSystem, IA_TOOLS, iaParseMaybe, iaFixFigure, iaFigureFromTable, iaNormalizeResult, iaUnwrapArrays, iaMissingAwait, iaScoreQualiteDps } = sandbox;
 // résout les dépendances croisées des fonctions extraites
 globalThis.iaParseMaybe = iaParseMaybe; globalThis.iaFixFigure = iaFixFigure;
 globalThis.iaFigureFromTable = iaFigureFromTable; globalThis.iaUnwrapArrays = iaUnwrapArrays;
@@ -85,7 +86,7 @@ async function runTool(name, input) {
     return t.length > 8000 ? t.slice(0, 8000) + '\n…[TRONQUÉ]' : t;
   }
   if (name === 'executer_js') {
-    const ctx = { data: [], flt: [], AG: [], dhis2, load: loadLocal, loadUrl: async () => { throw new Error('indisponible'); }, mL: x => x };
+    const ctx = { data: [], flt: [], AG: [], dhis2, load: loadLocal, loadUrl: async () => { throw new Error('indisponible'); }, mL: x => x, scoreQualiteDps: iaScoreQualiteDps };
     const fn = new Function('ctx', '"use strict";return (async function(){' + input.code + '\n})();');
     const out = await fn(ctx);
     let s = out === undefined ? 'undefined (le code doit se terminer par return)' : JSON.stringify(out);
