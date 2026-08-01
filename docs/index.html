@@ -10090,6 +10090,7 @@
                                 fichier: { type: 'string', description: 'Nom EXACT du fichier .pptx joint dans la conversation' },
                                 nom_sortie: { type: 'string', description: "Nom du fichier téléchargé, sans extension (défaut : nom d'origine + _MAJ)" },
                                 telecharger: { type: 'boolean', description: 'false = appliquer et conserver sans télécharger (lots intermédiaires). Défaut true.' },
+                                mise_en_page_auto: { type: 'boolean', description: "Défaut true : au téléchargement final, tout tableau qui déborde du bas de la diapositive est AUTOMATIQUEMENT découpé sur plusieurs diapositives (en-tête répété). Mettre false seulement si l'utilisateur veut conserver les tableaux coupés tels quels." },
                                 operations: {
                                     type: 'array', items: {
                                         type: 'object', properties: {
@@ -11754,6 +11755,90 @@
                 iaPptxRows(tbl).forEach(function (r) { h += (+r.tr.getAttribute('h') || 0); });
                 return h;
             }
+            /* Recale la hauteur DÉCLARÉE du cadre sur la somme réelle des lignes.
+               Les canevas contiennent très souvent un cadre bien plus grand que
+               le tableau qu'il contient (PowerPoint recalcule à l'ouverture, mais
+               la valeur stockée fausse tout diagnostic de débordement et laisse
+               un grand vide sous le tableau). */
+            function iaPptxFitFrame(frame, tbl) {
+                var h = iaPptxTblH(tbl); if (!(h > 0)) return 0;
+                var exts = frame.getElementsByTagNameNS(IA_A_NS, 'ext');
+                for (var i = 0; i < exts.length; i++) {
+                    var pn = exts[i].parentNode;
+                    if (pn && pn.nodeType === 1 && pn.localName === 'xfrm') {
+                        var old = +exts[i].getAttribute('cy') || 0;
+                        exts[i].setAttribute('cy', String(h));
+                        return old !== h ? h : 0;
+                    }
+                }
+                return 0;
+            }
+            /* Petit débordement + place disponible au-dessus → on REMONTE le
+               tableau plutôt que de le découper : découper 9 lignes pour gagner
+               1 mm produirait une diapositive quasi vide. */
+            function iaPptxNudge(frame, tbl, sldH) {
+                var box = iaPptxXfrm(frame); if (!box) return 0;
+                var h = iaPptxTblH(tbl) || box.cy, trop = (box.y + h) - sldH;
+                if (trop <= 0 || trop > box.y) return 0;
+                var offs = frame.getElementsByTagNameNS(IA_A_NS, 'off');
+                for (var i = 0; i < offs.length; i++) {
+                    var pn = offs[i].parentNode;
+                    if (pn && pn.nodeType === 1 && pn.localName === 'xfrm') { offs[i].setAttribute('y', String(Math.max(0, box.y - trop))); return trop; }
+                }
+                return 0;
+            }
+            /* Largeur : un tableau plus large que la diapositive est coupé à droite.
+               On le recadre — d'abord en le ramenant dans la page, puis en
+               réduisant proportionnellement la largeur de ses colonnes. */
+            function iaPptxFitWidth(frame, tbl, sldW) {
+                var box = iaPptxXfrm(frame); if (!box) return 0;
+                var cols = [], ch;
+                for (ch = tbl.firstChild; ch; ch = ch.nextSibling) {
+                    if (ch.nodeType === 1 && ch.localName === 'tblGrid') {
+                        for (var g = ch.firstChild; g; g = g.nextSibling) if (g.nodeType === 1 && g.localName === 'gridCol') cols.push(g);
+                    }
+                }
+                var somme = 0; cols.forEach(function (c) { somme += (+c.getAttribute('w') || 0); });
+                var larg = somme > 0 ? somme : box.cx, x = box.x, chg = 0;
+                if (x < 0) { x = 0; chg = 1; }                       /* ramené dans la page */
+                if (x + larg > sldW) {
+                    var dispo = sldW - x - 50000;
+                    if (dispo < sldW * 0.5) { x = Math.round(sldW * 0.02); dispo = sldW - 2 * x; }
+                    var k = dispo / larg;
+                    if (k < 1) { cols.forEach(function (c) { c.setAttribute('w', String(Math.max(120000, Math.round((+c.getAttribute('w') || 0) * k)))); }); larg = Math.round(larg * k); }
+                    chg = 1;
+                }
+                if (!chg) return 0;
+                var xf = null, offs = frame.getElementsByTagNameNS(IA_A_NS, 'off'), i;
+                for (i = 0; i < offs.length; i++) { var pn = offs[i].parentNode; if (pn && pn.nodeType === 1 && pn.localName === 'xfrm') { offs[i].setAttribute('x', String(x)); xf = pn; break; } }
+                if (xf) { var ex = xf.getElementsByTagNameNS(IA_A_NS, 'ext'); if (ex.length) ex[0].setAttribute('cx', String(larg)); }
+                return 1;
+            }
+            /* Ramène dans la diapositive une forme TEXTE qui en sort (titres
+               décalés hors cadre, pied de page trop bas) : à l'écran son texte
+               apparaît tronqué ou chevauche le contenu. */
+            function iaPptxFitShape(sp, sldW, sldH) {
+                var box = iaPptxXfrm(sp); if (!box) return 0;
+                var x = box.x, y = box.y, cx = box.cx, cy = box.cy, chg = 0;
+                if (cx > sldW) { cx = sldW; chg = 1; }
+                if (cy > sldH) { cy = sldH; chg = 1; }
+                if (x < 0) { x = 0; chg = 1; }
+                if (y < 0) { y = 0; chg = 1; }
+                if (x + cx > sldW) { x = Math.max(0, sldW - cx); chg = 1; }
+                if (y + cy > sldH) { y = Math.max(0, sldH - cy); chg = 1; }
+                if (!chg) return 0;
+                var offs = sp.getElementsByTagNameNS(IA_A_NS, 'off');
+                for (var i = 0; i < offs.length; i++) {
+                    var pn = offs[i].parentNode;
+                    if (pn && pn.nodeType === 1 && pn.localName === 'xfrm') {
+                        offs[i].setAttribute('x', String(x)); offs[i].setAttribute('y', String(y));
+                        var ex = pn.getElementsByTagNameNS(IA_A_NS, 'ext');
+                        if (ex.length) { ex[0].setAttribute('cx', String(cx)); ex[0].setAttribute('cy', String(cy)); }
+                        return 1;
+                    }
+                }
+                return 0;
+            }
             function iaPptxRowH(rows, nEnt) {
                 var h = 0, n = 0;
                 rows.slice(nEnt).forEach(function (r) { var v = +r.tr.getAttribute('h') || 0; if (v > 0) { h += v; n++; } });
@@ -12113,6 +12198,91 @@
                     return path;
                 }
 
+                /* Découpe un tableau trop long sur plusieurs diapositives.
+                   Répartition GREEDY sur la hauteur RÉELLE de chaque ligne : les
+                   lignes d'un canevas ont des hauteurs très inégales, une moyenne
+                   ferait déborder les pages contenant les lignes les plus hautes.
+                   Rien n'est codé en dur — s'adapte à n'importe quel canevas. */
+                async function pagineTbl(D0, tNo, perFix, nEntArg) {
+                    var Sp = await sDoc(D0), tbsp = iaPptxTables(Sp.doc), tbp = tbsp[tNo - 1];
+                    if (!tbp) throw new Error('[D' + D0 + ':T' + tNo + '] inexistant (' + tbsp.length + ' tableau(x))');
+                    var nEnt = Math.max(1, nEntArg || 1), rowsP = iaPptxRows(tbp.tbl);
+                    if (rowsP.length <= nEnt) throw new Error('tableau sans ligne de données');
+                    var boxP = iaPptxXfrm(tbp.frame);
+                    var dispo = (boxP ? sldH - boxP.y : sldH * 0.75) - 300000;
+                    var hEnt = 0; rowsP.slice(0, nEnt).forEach(function (r) { hEnt += (+r.tr.getAttribute('h') || 0); });
+                    var hL = iaPptxRowH(rowsP, nEnt);
+                    var dataP = rowsP.slice(nEnt), chunks = [], cur = [], hAcc = hEnt;
+                    dataP.forEach(function (r, ix) {
+                        var hr = +r.tr.getAttribute('h') || hL;
+                        if (cur.length && ((hAcc + hr > dispo) || (perFix && cur.length >= perFix))) { chunks.push(cur); cur = []; hAcc = hEnt; }
+                        cur.push(ix); hAcc += hr;
+                    });
+                    if (cur.length) chunks.push(cur);
+                    if (chunks.length <= 1) return '✔ [D' + D0 + ':T' + tNo + '] tient déjà sur une diapositive (' + dataP.length + ' ligne(s))';
+                    var nPages = chunks.length, idxs = [D0], q;
+                    for (q = 1; q < nPages; q++) idxs.push((await dupSlide(D0, D0 + q - 1)).index);
+                    for (q = 0; q < nPages; q++) {
+                        var Sq = await sDoc(idxs[q]), tq = iaPptxTables(Sq.doc)[tNo - 1];
+                        if (!tq) continue;
+                        var rq = iaPptxRows(tq.tbl), keep = {};
+                        chunks[q].forEach(function (ix) { keep[nEnt + ix] = 1; });
+                        for (var z = rq.length - 1; z >= nEnt; z--) if (!keep[z]) rq[z].tr.parentNode.removeChild(rq[z].tr);
+                        iaPptxFitFrame(tq.frame, tq.tbl);   /* cadre à la taille de la page */
+                        if (q > 0) {   /* « (suite) » sur le titre des pages suivantes */
+                            var shq = iaPptxShapes(Sq.doc), tq2 = iaPptxTitle(shq);
+                            if (tq2) { var t0 = iaPptxBodyText(tq2.body); if (t0 && t0.indexOf('(suite)') < 0) iaPptxSetText(Sq.doc, tq2.body, t0 + ' (suite ' + (q + 1) + '/' + nPages + ')'); }
+                        }
+                        dirty[Sq.path] = true;
+                    }
+                    return '✔ [D' + D0 + ':T' + tNo + '] découpé sur ' + nPages + ' diapositives (' + chunks.map(function (c) { return c.length; }).join('+') + ' lignes, en-tête répété) — les diapositives suivantes sont décalées de ' + (nPages - 1);
+                }
+                /* Recense les tableaux coupés par le bas de la diapositive. */
+                async function auditer() {
+                    var pb = [];
+                    for (var ai = 1; ai <= order.length; ai++) {
+                        var ap = order[ai - 1], ad = docs[ap];
+                        if (!ad) {
+                            try { ad = new DOMParser().parseFromString(await zip.file(ap).async('string'), 'application/xml'); }
+                            catch (e) { continue; }
+                            if (ad.getElementsByTagName('parsererror').length) continue;
+                            docs[ap] = ad;
+                        }
+                        var tbl = iaPptxTables(ad);
+                        for (var ti = 0; ti < tbl.length; ti++) {
+                            var box = iaPptxXfrm(tbl[ti].frame); if (!box) continue;
+                            /* somme réelle des lignes = ce que PowerPoint affichera */
+                            var trop = (box.y + iaPptxTblH(tbl[ti].tbl)) - sldH;
+                            if (trop > 36000) pb.push({ d: ai, t: ti + 1, trop: trop });   /* > 0,1 cm */
+                        }
+                    }
+                    return pb;
+                }
+                /* Recale tous les cadres de tableaux sur leur contenu réel. */
+                async function normaliserCadres() {
+                    var n = 0;
+                    for (var ni = 1; ni <= order.length; ni++) {
+                        var np = order[ni - 1], nd = docs[np];
+                        if (!nd) {
+                            try { nd = new DOMParser().parseFromString(await zip.file(np).async('string'), 'application/xml'); }
+                            catch (e) { continue; }
+                            if (nd.getElementsByTagName('parsererror').length) continue;
+                            docs[np] = nd;
+                        }
+                        iaPptxTables(nd).forEach(function (tb) {
+                            var chg = iaPptxFitFrame(tb.frame, tb.tbl);
+                            if (iaPptxFitWidth(tb.frame, tb.tbl, sldW)) chg = 1;
+                            if (iaPptxNudge(tb.frame, tb.tbl, sldH)) chg = 1;
+                            if (chg) { n++; dirty[np] = true; }
+                        });
+                        /* titres et pieds de page sortis du cadre : on les y remet */
+                        iaPptxShapes(nd).forEach(function (s) {
+                            if (!iaPptxBodyText(s.body)) return;      /* forme vide = invisible, on n'y touche pas */
+                            if (iaPptxFitShape(s.sp, sldW, sldH)) { n++; dirty[np] = true; }
+                        });
+                    }
+                    return n;
+                }
                 var ops = inp.operations || [], log = [], nOK = 0, i;
                 for (i = 0; i < ops.length; i++) {
                     var o = ops[i] || {};
@@ -12188,45 +12358,7 @@
                             log.push('✔ [D' + o.d + ':T' + o.t + '] ' + added + ' ligne(s) ajoutée(s)' +
                                 (trop3 > 100000 ? ' ⚠ LE TABLEAU DÉBORDE de ' + (trop3 / IA_EMU_CM).toFixed(1) + ' cm sous la diapositive : appelle paginer_tableau {d:' + o.d + ', t:' + o.t + '} pour le découper proprement sur plusieurs diapositives.' : '')); nOK++;
                         } else if (o.op === 'paginer_tableau') {
-                            var D0 = o.d | 0;
-                            var Sp = await sDoc(D0), tbsp = iaPptxTables(Sp.doc), tbp = tbsp[(o.t | 0) - 1];
-                            if (!tbp) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbsp.length + ' tableau(x))');
-                            var nEnt = Math.max(1, (o.entetes | 0) || 1);
-                            var rowsP = iaPptxRows(tbp.tbl);
-                            if (rowsP.length <= nEnt) throw new Error('tableau sans ligne de données');
-                            var boxP = iaPptxXfrm(tbp.frame);
-                            var dispo = (boxP ? sldH - boxP.y : sldH * 0.75) - 300000;
-                            var hEnt = 0; rowsP.slice(0, nEnt).forEach(function (r) { hEnt += (+r.tr.getAttribute('h') || 0); });
-                            var hL = iaPptxRowH(rowsP, nEnt);
-                            /* Répartition GREEDY sur la hauteur RÉELLE de chaque ligne : les
-                               lignes d'un canevas ont des hauteurs très inégales, une moyenne
-                               ferait déborder les pages contenant les lignes les plus hautes. */
-                            var dataP = rowsP.slice(nEnt), perFix = (o.lignes_par_page | 0) > 0 ? (o.lignes_par_page | 0) : 0;
-                            var chunks = [], cur = [], hAcc = hEnt;
-                            dataP.forEach(function (r, ix) {
-                                var hr = +r.tr.getAttribute('h') || hL;
-                                if (cur.length && ((hAcc + hr > dispo) || (perFix && cur.length >= perFix))) { chunks.push(cur); cur = []; hAcc = hEnt; }
-                                cur.push(ix); hAcc += hr;
-                            });
-                            if (cur.length) chunks.push(cur);
-                            if (chunks.length <= 1) { log.push('✔ [D' + o.d + ':T' + o.t + '] tient déjà sur une diapositive (' + dataP.length + ' ligne(s))'); nOK++; }
-                            else {
-                                var nPages = chunks.length, idxs = [D0], q;
-                                for (q = 1; q < nPages; q++) idxs.push((await dupSlide(D0, D0 + q - 1)).index);
-                                for (q = 0; q < nPages; q++) {
-                                    var Sq = await sDoc(idxs[q]), tq = iaPptxTables(Sq.doc)[(o.t | 0) - 1];
-                                    if (!tq) continue;
-                                    var rq = iaPptxRows(tq.tbl), keep = {};
-                                    chunks[q].forEach(function (ix) { keep[nEnt + ix] = 1; });
-                                    for (var z = rq.length - 1; z >= nEnt; z--) if (!keep[z]) rq[z].tr.parentNode.removeChild(rq[z].tr);
-                                    if (q > 0) {   /* « (suite) » sur le titre des pages suivantes */
-                                        var shq = iaPptxShapes(Sq.doc), tq2 = iaPptxTitle(shq);
-                                        if (tq2) { var t0 = iaPptxBodyText(tq2.body); if (t0 && t0.indexOf('(suite)') < 0) iaPptxSetText(Sq.doc, tq2.body, t0 + ' (suite ' + (q + 1) + '/' + nPages + ')'); }
-                                    }
-                                    dirty[Sq.path] = true;
-                                }
-                                log.push('✔ [D' + o.d + ':T' + o.t + '] découpé sur ' + nPages + ' diapositives (' + chunks.map(function (c) { return c.length; }).join('+') + ' lignes, en-tête répété) — les diapositives suivantes sont décalées de ' + (nPages - 1)); nOK++;
-                            }
+                            log.push(await pagineTbl(o.d | 0, o.t | 0, o.lignes_par_page | 0, o.entetes | 0)); nOK++;
                         } else if (o.op === 'supprimer_ligne') {
                             var S4 = await sDoc(o.d), tbs4 = iaPptxTables(S4.doc), tb4 = tbs4[(o.t | 0) - 1];
                             if (!tb4) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbs4.length + ' tableau(x))');
@@ -12303,42 +12435,55 @@
                         } else throw new Error('opération inconnue : ' + o.op);
                     } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
                 }
-                /* ── Audit de mise en page ──
-                   Un tableau qui dépasse le bas de la diapositive est coupé à
-                   l'affichage : le client le voit tout de suite. On le signale
-                   systématiquement (y compris les défauts DÉJÀ PRÉSENTS dans le
-                   canevas d'origine) pour que le modèle appelle paginer_tableau. */
-                var audit = [];
-                for (var ai = 1; ai <= order.length; ai++) {
-                    var ap = order[ai - 1], ad = docs[ap];
-                    if (!ad) {
-                        try { ad = new DOMParser().parseFromString(await zip.file(ap).async('string'), 'application/xml'); docs[ap] = ad; }
-                        catch (e) { continue; }
-                        if (ad.getElementsByTagName('parsererror').length) continue;
-                    }
-                    (function (n) {
-                        iaPptxTables(ad).forEach(function (tb, ti) {
-                            var box = iaPptxXfrm(tb.frame); if (!box) return;
-                            var trop = (box.y + Math.max(iaPptxTblH(tb.tbl), box.cy)) - sldH;
-                            if (trop > 200000) audit.push('[D' + n + ':T' + (ti + 1) + '] dépasse de ' + (trop / IA_EMU_CM).toFixed(1) + ' cm sous la diapositive → paginer_tableau {d:' + n + ', t:' + (ti + 1) + '}');
-                        });
-                    })(ai);
-                }
-                var alerte = audit.length ? '\n⚠ MISE EN PAGE — ' + audit.length + ' tableau(x) coupé(s) par le bas de la diapositive, À CORRIGER avant de livrer :\n' + audit.slice(0, 12).join('\n') + (audit.length > 12 ? '\n… et ' + (audit.length - 12) + ' autre(s).' : '') : '\n✔ Mise en page vérifiée : aucun tableau ne déborde.';
                 if (!nOK) return 'AUCUNE opération appliquée — présentation NON modifiée et NON téléchargée. Corrige les adresses ci-dessous et rappelle l\'outil.\n' + log.join('\n');
-                Object.keys(dirty).forEach(function (p) { if (docs[p]) zip.file(p, new XMLSerializer().serializeToString(docs[p])); });
-                Object.keys(relsDirty).forEach(function (p) { if (relsC[p]) zip.file(p, new XMLSerializer().serializeToString(relsC[p])); });
-                if (presDirty && presDoc) zip.file('ppt/presentation.xml', new XMLSerializer().serializeToString(presDoc));
-                if (prDirty && prDoc) zip.file('ppt/_rels/presentation.xml.rels', new XMLSerializer().serializeToString(prDoc));
-                if (ctDirty && ctStr != null) zip.file('[Content_Types].xml', ctStr);
-                /* Le fichier de travail est mis à jour : les appels suivants repartent
-                   de l'état modifié (édition d'un gros canevas en plusieurs lots). */
+                function flush() {
+                    Object.keys(dirty).forEach(function (p) { if (docs[p]) zip.file(p, new XMLSerializer().serializeToString(docs[p])); });
+                    Object.keys(relsDirty).forEach(function (p) { if (relsC[p]) zip.file(p, new XMLSerializer().serializeToString(relsC[p])); });
+                    if (presDirty && presDoc) zip.file('ppt/presentation.xml', new XMLSerializer().serializeToString(presDoc));
+                    if (prDirty && prDoc) zip.file('ppt/_rels/presentation.xml.rels', new XMLSerializer().serializeToString(prDoc));
+                    if (ctDirty && ctStr != null) zip.file('[Content_Types].xml', ctStr);
+                }
+                flush();
+                /* ── Fichier de TRAVAIL : sauvegardé AVANT toute réparation ──
+                   Les appels suivants repartent de cet état, dont la numérotation
+                   [D#] reste STABLE : une pagination qui insère des diapositives
+                   au milieu d'un traitement par lots casserait les adresses des
+                   lots à venir. La réparation ne s'applique qu'à la copie livrée. */
                 var ab = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
                 IA.docs[name] = ab;
-                var restant = ops.length - nOK;
+                var restant = ops.length - nOK, audit = await auditer();
                 if (inp.telecharger === false) {
-                    return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s) et ENREGISTRÉE(S) dans le fichier de travail (pas encore téléchargé, comme demandé). Le prochain appel repart de cet état. Termine par un appel avec telecharger:true.' + alerte + '\n' + log.join('\n');
+                    return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s) et ENREGISTRÉE(S) dans le fichier de travail (pas encore téléchargé, comme demandé). Le prochain appel repart de cet état, avec la MÊME numérotation [D#]. Termine par un appel avec telecharger:true — la mise en page sera alors vérifiée et corrigée automatiquement.' +
+                        (audit.length ? '\nℹ ' + audit.length + ' tableau(x) débordent pour l\'instant : ils seront découpés automatiquement au téléchargement final, ne t\'en occupe pas.' : '') + '\n' + log.join('\n');
                 }
+                /* ── Mise en page de la copie LIVRÉE : réparation automatique ──
+                   Un tableau qui dépasse la diapositive est coupé à l'affichage —
+                   le client le voit immédiatement. Beaucoup de ces défauts sont
+                   DÉJÀ dans le canevas d'origine : on ne se contente pas de les
+                   signaler, on les corrige avant de livrer. */
+                var recales = 0, repares = [];
+                if (inp.mise_en_page_auto !== false) {
+                    recales = await normaliserCadres();
+                    audit = await auditer();
+                    if (audit.length) {
+                        /* de la DERNIÈRE diapositive vers la première : insérer des
+                           diapositives ne décale alors jamais celles restant à traiter */
+                        var aTrier = audit.slice().sort(function (a, b) { return b.d - a.d || b.t - a.t; });
+                        for (var ri = 0; ri < aTrier.length; ri++) {
+                            try { repares.push(await pagineTbl(aTrier[ri].d, aTrier[ri].t, 0, 1)); }
+                            catch (e) { repares.push('✘ [D' + aTrier[ri].d + ':T' + aTrier[ri].t + '] pagination impossible : ' + (e && e.message || e)); }
+                        }
+                        audit = await auditer();
+                    }
+                    if (recales || repares.length) { flush(); ab = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' }); }
+                }
+                var alerte = '';
+                if (recales) alerte += '\n🛠 ' + recales + ' forme(s)/cadre(s) recadré(s) : cadres de tableaux ajustés à leur contenu réel, titres et pieds de page ramenés dans la diapositive.';
+                if (repares.length) alerte += '\n🛠 ' + repares.length + ' tableau(x) qui débordaient ont été DÉCOUPÉS sur plusieurs diapositives (en-tête répété) :\n' + repares.slice(0, 10).join('\n') + (repares.length > 10 ? '\n… et ' + (repares.length - 10) + ' autre(s).' : '');
+                alerte += audit.length
+                    ? '\n⚠ MISE EN PAGE — ' + audit.length + ' tableau(x) débordent encore :\n' + audit.slice(0, 12).map(function (a) { return '[D' + a.d + ':T' + a.t + '] dépasse de ' + (a.trop / IA_EMU_CM).toFixed(1) + ' cm → paginer_tableau {d:' + a.d + ', t:' + a.t + '}'; }).join('\n') + (audit.length > 12 ? '\n… et ' + (audit.length - 12) + ' autre(s).' : '')
+                    : '\n✔ Mise en page du fichier livré vérifiée : rien ne déborde des diapositives.';
+                if (recales || repares.length) alerte += '\nℹ Ces corrections ne concernent QUE le fichier livré : ton fichier de travail garde la numérotation [D#] d\'origine, tu peux enchaîner tes lots sans rien relire.';
                 var outName = (inp.nom_sortie ? String(inp.nom_sortie).replace(/\.pptx$/i, '') : name.replace(/\.pptx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.pptx';
                 var mime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
                 var blob = new Blob([ab], { type: mime });
