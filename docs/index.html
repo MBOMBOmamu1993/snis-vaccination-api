@@ -3295,29 +3295,91 @@
 
         /* ═══ P1: COMPLÉTUDE & PROMPTITUDE ═══ */
 
+        /* ── Référentiel DHIS2 des entités (ou_map, basé UID — chargé une fois) ──
+           Sert aux comptages AS/FOSA/ZS ATTENDUS : les agrégats mensuels ne
+           contiennent que les entités ayant des données, ce qui sous-compte
+           (plainte client : nb d'AS/FOSA ≠ DHIS2). Vérifié : ou_map = DHIS2 en
+           direct (ex. Kinshasa : 427 AS, 2 248 FOSA). */
+        var _ouMapP = null;
+        function _loadOuMap() {
+            if (_ouMapP) return _ouMapP;
+            _ouMapP = fetchGzip('./data/ou_map.json.gz').then(function (d) { return d || {}; }).catch(function () { return {}; });
+            return _ouMapP;
+        }
+        /* Comptages attendus (référentiel) pour la sélection courante :
+           ZS = noms Org3 distincts ; AS = couples (Org3,Org4) distincts — des AS
+           homonymes entre ZS sont distinctes ; FOSA = entrées UID distinctes. */
+        function _ouExpected(om) {
+            var f = S.filters || {};
+            var azs = null;
+            if (f.antenne && f.antenne.length) {
+                /* L'antenne n'existe pas dans DHIS2 : on la traduit en liste de ZS
+                   via les données courantes (org3 des lignes de l'antenne). */
+                azs = {};
+                (S.data || []).forEach(function (r) { if (f.antenne.indexOf(r.antenne) >= 0 && r.org3) azs[r.org3] = 1; });
+            }
+            var zsS = {}, asS = {}, fo = 0;
+            for (var uid in om) {
+                var v = om[uid]; if (!v) continue;
+                if (f.province && v.Org2 !== f.province) continue;
+                if (azs && !azs[v.Org3]) continue;
+                if (f.zs && f.zs.length && f.zs.indexOf(v.Org3) < 0) continue;
+                if (f.as && f.as.length && f.as.indexOf(v.Org4) < 0) continue;
+                if (f.fosa && f.fosa.length && f.fosa.indexOf(v.Org5) < 0) continue;
+                fo++;
+                if (v.Org3) zsS[v.Org3] = 1;
+                if (v.Org3 || v.Org4) asS[(v.Org3 || '') + '|' + (v.Org4 || '')] = 1;
+            }
+            return { zs: Object.keys(zsS).length, as: Object.keys(asS).length, fosa: fo };
+        }
+
         function rP1(c) {
 
             var D = S.flt, AD = S.data, mos = uv(D, function (r) { return r.period; }).sort(), rep = D.filter(isRep), nT = D.length, nNR = nT - rep.length;
 
             var pR = pct(rep.length, nT);
             var aE = rep.length ? rep.reduce(function (s, r) { return s + exh(r); }, 0) / rep.length : 0;
-            var nF = uv(D, function (r) { return r.org5; }).length;
+            /* FOSA rapportantes = FOSA DISTINCTES ayant soumis (les lignes sont des
+               FOSA×mois : rep.length sur-compte dès que plusieurs mois sont
+               sélectionnés). Non-rapportantes et % rapportage se calculent sur le
+               RÉFÉRENTIEL DHIS2 (ou_map), mis à jour dès son chargement. */
+            var fosaRap = uv(rep, function (r) { return r.org5; }).length;
             c.appendChild(E('div', 'kr',
-                '<div class="kc gn"><div class="kv">' + rep.length + '</div><div class="kl">FOSA rapportantes</div></div>' +
-                '<div class="kc rd"><div class="kv">' + nNR + '</div><div class="kl">FOSA non-rapportantes</div></div>' +
-                '<div class="kc bl"><div class="kv">' + pR.toFixed(1) + '%</div><div class="kl">% rapportage</div></div>' +
-                '<div class="kc or" title="Complétude des ' + AG.length + ' antigènes obligatoires rapportés : proportion moyenne de variables renseignées par les FOSA rapportantes."><div class="kv">' + aE.toFixed(1) + '%</div><div class="kl">Complétude des antigènes obligatoires rapportés</div></div>'));
+                '<div class="kc gn"><div class="kv">' + fosaRap + '</div><div class="kl">FOSA rapportantes</div></div>' +
+                '<div class="kc rd"><div class="kv" id="kcFosaNR">…</div><div class="kl">FOSA non-rapportantes</div></div>' +
+                '<div class="kc bl"><div class="kv" id="kcPctRap">…</div><div class="kl">% rapportage</div></div>' +
+                '<div class="kc or" title="Complétude des ' + AG.length + ' antigènes obligatoires rapportés : proportion moyenne de variables renseignées par les FOSA rapportantes."><div class="kv">' + aE.toFixed(1) + '%</div><div class="kl">Complétude des antigènes obligatoires rapportés</div></div>' +
+                '<div class="kc" style="--kc1:#0d47a1;--kc2:#0d47a1" title="Nombre d\'aires de santé de la sélection selon le référentiel DHIS2 (organisationUnits, basé UID — inclut celles sans données rapportées)."><div class="kv" id="kcAsExp">…</div><div class="kl">Aires de Santé (référentiel DHIS2)</div></div>' +
+                '<div class="kc" style="--kc1:#0d47a1;--kc2:#0d47a1" title="Nombre de FOSA de la sélection selon le référentiel DHIS2 (organisationUnits, basé UID — inclut celles sans données rapportées)."><div class="kv" id="kcFosaExp">…</div><div class="kl">FOSA (référentiel DHIS2)</div></div>'));
 
-            [{ l: 'Antenne PEV', k: function (r) { return r.antenne; } }, { l: 'Zone de Santé', k: function (r) { return r.org3; } }, { l: 'Aire de Santé', k: function (r) { return r.org4; } }, { l: 'FOSA', k: function (r) { return r.org5; } }].forEach(function (lv, idx) {
+            var lvDefs = [{ l: 'Antenne PEV', k: function (r) { return r.antenne; }, xp: null }, { l: 'Zone de Santé', k: function (r) { return r.org3; }, xp: 'zs' }, { l: 'Aire de Santé', k: function (r) { return r.org4; }, xp: 'as' }, { l: 'FOSA', k: function (r) { return r.org5; }, xp: 'fosa' }];
+            lvDefs.forEach(function (lv, idx) {
                 var g = grp(D, lv.k), labs = Object.keys(g).filter(Boolean).sort(); if (!labs.length) return;
                 /* Pas de coupe : pevPaginate pagine la totalité (10 org units/page) */
                 var cd = labs.map(function (k) { return af(g[k], 'completude'); }), pd = labs.map(function (k) { return af(g[k], 'promptitude'); });
-                var box = E('div', 'cb'); box.innerHTML = '<h4>📊 Complétude/Promptitude par ' + lv.l + '</h4><canvas id="cp' + idx + '" height="' + (labs.length > 15 ? Math.min(labs.length * 5, 200) : 70) + '"></canvas>'; c.appendChild(box);
+                var box = E('div', 'cb'); box.innerHTML = '<h4>📊 Complétude/Promptitude par ' + lv.l + '<span id="cpExp' + idx + '" style="font-weight:400;font-size:11px;color:#64748b"></span></h4><canvas id="cp' + idx + '" height="' + (labs.length > 15 ? Math.min(labs.length * 5, 200) : 70) + '"></canvas>'; c.appendChild(box);
                 setTimeout(function () {
                     var x = document.getElementById('cp' + idx); if (!x) return;
                     /* Complétude = VERT · Promptitude = BLEU (demande design) — rendu net et lisse */
                     S.charts['cp' + idx] = new Chart(x, { type: 'bar', data: { labels: labs.map(function (l) { return tr(l, 34); }), datasets: [{ label: 'Complétude (%)', data: cd, backgroundColor: '#2ca02c', hoverBackgroundColor: '#178a4b', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }, { label: 'Promptitude (%)', data: pd, backgroundColor: '#0d47a1', hoverBackgroundColor: '#0080ba', borderRadius: 5, borderSkipped: false, maxBarThickness: 34, categoryPercentage: .72, barPercentage: .88 }] }, options: { indexAxis: labs.length > 12 ? 'y' : 'x', responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 10 }, usePointStyle: true } } }, scales: { x: { beginAtZero: true, max: 100 }, y: { ticks: { font: { size: 13 } } } } } });
                 }, 60 + idx * 30);
+            });
+            /* Comptages référentiel DHIS2 : cartes + annotation « affichées / attendues »
+               sur les titres des graphiques par niveau. */
+            _loadOuMap().then(function (om) {
+                var exp = _ouExpected(om);
+                var eNR = document.getElementById('kcFosaNR'), ePR = document.getElementById('kcPctRap');
+                var eAS = document.getElementById('kcAsExp'), eFO = document.getElementById('kcFosaExp');
+                if (eNR) eNR.textContent = exp.fosa ? Math.max(0, exp.fosa - fosaRap) : nNR;
+                if (ePR) ePR.textContent = (exp.fosa ? (fosaRap / exp.fosa * 100) : pR).toFixed(1) + '%';
+                if (eAS) eAS.textContent = exp.as || '—';
+                if (eFO) eFO.textContent = exp.fosa || '—';
+                lvDefs.forEach(function (lv, idx) {
+                    if (!lv.xp) return;
+                    var g = grp(D, lv.k), n = Object.keys(g).filter(Boolean).length;
+                    var sp = document.getElementById('cpExp' + idx);
+                    if (sp && n) sp.textContent = ' — ' + n + ' avec données / ' + (exp[lv.xp] || '—') + ' attendues (DHIS2)';
+                });
             });
 
             var _allMosRap = uv(AD, function (r) { return r.period; }).sort();
@@ -9730,7 +9792,9 @@
                     "- PROGRAM INDICATORS (programIndicators.json) : ils n'existent que pour les canevas d'enquête infrastructure « DV » (programmes à événements ABANDONNÉS, sans données) — ne les utilise pas sauf demande historique explicite. Toute l'analyse de routine repose sur dataElements + indicators + datasets.",
                     "",
                     "## Conventions PEV RDC — dénominateurs et UID clés (à utiliser directement, ne les recherche pas)",
-                    "- Population : élément WLSKVyA8LoY ('Pop. par AS'), valeur MENSUELLE RÉPÉTÉE (identique chaque mois) → prendre UNE valeur par unité et par an (ex. pe:<AAAA>01), JAMAIS la somme des 12 mois.",
+                    "- Population : élément WLSKVyA8LoY ('Pop. par AS'), valeur MENSUELLE RÉPÉTÉE (identique chaque mois) → prendre UNE valeur par unité et par an (ex. pe:<AAAA>01), JAMAIS la somme des 12 mois. C'est la SEULE population de base — vérifiée conforme au DHIS2 en ligne aux niveaux province, ZS et AS.",
+                    "- TYPES DE POPULATION (naissances vivantes, nourrissons survivants, 12-23 mois, 24-59 mois, 6-23 mois, 12-59 mois, femmes enceintes) : calcule-les TOUJOURS par la FORMULE OFFICIELLE Pop × coefficient (comme les indicateurs DHIS2 : 0,04 · 0,0349 · 0,036 · 0,113 · 0,057 · 0,149), JAMAIS en citant les champs bruts Pop_0_11m_nv / Pop_0_11m_survivants / Pop_0_59m / Pop_12_59m / Pop_totale des fichiers locaux NI les dataElements correspondants du DHIS2 (IRuHNExvC4m, pVOrmIskonM, nGZz4qgNal7, YvO03GnK1oQ, h7bxqdKWYCa) : ces éléments contiennent des valeurs ARTEFACTÉES (~12× trop élevées — artefact d'import ; ex. Kinshasa 2025 : élément « Pop 0-11m (nv) » = 7 888 365 alors que la formule officielle donne 16 749 268 × 0,04 = 669 971). Si le client compare avec le DHIS2, c'est la valeur FORMULE qui correspond à ses indicateurs.",
+                    "- COMPTAGES D'ENTITÉS (nombre de ZS/AS/FOSA d'une province, antenne ou ZS) : source = le RÉFÉRENTIEL './data/ou_map.json.gz' (basé UID, aligné sur le DHIS2 — ex. Kinshasa : 427 AS, 2 248 FOSA) — AS = couples (Org3,Org4) distincts (homonymes entre ZS = AS distinctes), FOSA = entrées distinctes. Ne compte JAMAIS les noms distincts dans les agrégats mensuels (ils ne contiennent que les entités ayant rapporté).",
                     "- Cible naissances vivantes (BCG, Td) : Pop × 4,00 % par an (÷12 par mois). Cible nourrissons survivants (Penta, VPO, PCV, ROTA, VAR…) : Pop × 3,49 % par an.",
                     "- CV% annuelle = doses de l'année ÷ (Pop × taux) × 100. Formule officielle SNIS (indicateur '2a-Taux de couverture en VAR 1') : numérateur pak21wvkWJC (fixe+avancé+mobile), dénominateur WLSKVyA8LoY × 0,0349.",
                     "- UID doses (fixe1/fixe2 = deux formulaires, additionner ; ventilés par catégorie stratégie) : BCG=W25tOXS0rxS · Penta1=uNdFg1eymsa · Penta3=WWxqaHSeiwd · VPO3=SPGaDDw2JzG · VAR1=pak21wvkWJC+cTLKwfG8pSv · VAR2 (12-23 mois)=i5zmivDIHN8 · VAA=bzD4QxaNkJm. En analytics, dx:UID sans .COC = total toutes catégories (suffisant pour les doses totales).",

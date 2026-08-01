@@ -473,3 +473,27 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   573 674, exactement la soustraction attendue), SV = 49 523 ; Q1 : 13 367 ;
   janvier : 4 822. Prompt assistant réaligné (clamp au niveau demandé, dédup
   composite, exemple chiffré Kinshasa, requêtes LEVEL-2 pour la carte).
+
+État actuel (01/08/2026 — alignement DHIS2 : comptages + populations) :
+- CONFRONTATION DHIS2 EN LIGNE (via proxy, lecture seule) :
+  • Pop_par_AS (WLSKVyA8LoY) CONFORME partout : 26/26 provinces, 35/35 ZS de
+    Kinshasa, échantillon AS 7/7 (Kasa Vubu) — après dédup composite.
+  • Éléments DHIS2 « Pop 0-11m (nv/survivants) », « Pop 0-59m », « Pop 12-59m »,
+    « Pop. totale » = valeurs ARTEFACTÉES ~12× (ex. Kinshasa 2025 : nv élément
+    = 7 888 365 vs formule officielle Pop×0,04 = 669 971). Règle prompt :
+    types de population TOUJOURS = Pop × coefficients officiels (0,04 · 0,0349
+    · 0,036 · 0,113 · 0,057 · 0,149), JAMAIS les champs bruts ni ces dataElements
+    (IRuHNExvC4m, pVOrmIskonM, nGZz4qgNal7, YvO03GnK1oQ, h7bxqdKWYCa).
+  • Indicateur officiel SV « 2a-Nombre d'enfants sous vaccinés » (RMHgIqfBG7N)
+    CASSÉ : ses COCs (NOHlOxLczjc, KPDzIsWq7JK, Dr4rWTqepnP) ne portent que
+    1 326 doses en 2025 → valeur brute absurde 583 223 à Kinshasa. Recalculer
+    avec le TOTAL toutes catégories (dx:UID sans .COC). Aucun indicateur ZD
+    officiel n'existe dans le DHIS2.
+  • Comptages entités : ou_map (basé UID) = DHIS2 EXACT (Kinshasa : 35 ZS,
+    427 AS, 2 248 FOSA — AS homonymes entre ZS = AS distinctes).
+- PAGE COMPLÉTUDE & PROMPTITUDE (rP1) : comptages AS/FOSA/ZS désormais issus du
+  référentiel ou_map (_loadOuMap/_ouExpected) — nouvelles cartes « Aires de
+  Santé (référentiel DHIS2) » et « FOSA (référentiel DHIS2) », FOSA rapportantes
+  = distinctes (plus de sur-compte FOSA×mois), non-rapportantes et % rapportage
+  calculés sur l'attendu DHIS2, titres des graphiques annotés « n avec données /
+  N attendues (DHIS2) ». Antenne traduite en liste de ZS (absente du DHIS2).
