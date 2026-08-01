@@ -9897,15 +9897,17 @@
                     "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. RECETTE CARTE choroplèthe : const gj = await ctx.geo(2) (provinces) ou await ctx.geo(3, uidProvince) (ZS) ; récupère les valeurs analytics avec dimension=ou:LEVEL-2/LEVEL-3 (les lignes portent l'UID) ; puis afficher_resultat type 'carte' avec figure={data:[{type:'choropleth', geojson:gj, locations:[UID…], z:[valeurs…], featureidkey:'properties.id', zauto:true, colorscale:'Blues', marker:{line:{color:'#fff',width:0.5}}}], layout:{margin:{t:30,r:0,b:0,l:0}}} — N'affiche JAMAIS le GeoJSON dans ta réponse, passe-le directement dans la figure. Échelle raisonnable : provinces pour une vue nationale, ZS d'UNE province à la fois. Sans GeoJSON disponible → barres classées par zone.",
                     "3. Formules : préfère TOUJOURS l'indicateur officiel DHIS2 (formule déjà appliquée côté serveur) ; sinon : taux/proportion = numérateur/dénominateur×100 (dénominateur de couverture = population × coefficient officiel, cumulé sur la période) ; CV% = doses cumulées/cible cumulée×100 (cible mensuelle = annuelle/12) ; abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100 ; complétude = reçus/attendus×100 ; taux d'attaque = cas/population×100 000 ; létalité = décès/cas×100.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",
-                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX/CARTE) : calcule d'abord TOUT. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif ; format 'carte' = page HTML INTERACTIVE autonome — cartes choroplèthes et graphiques Plotly navigables, zoom/survol, GeoJSON et données embarqués : idéal pour une carte à partager) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations. Pour le format 'carte', construis les figures choroplèthes via ctx.geo (recette carte ci-dessus) : les figures y restent interactives, jamais figées en image.",
+                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX/CARTE) : calcule d'abord TOUT. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). PRÉSENTATION .pptx jointe à actualiser → modifier_presentation (modification sur place, design préservé). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif ; format 'carte' = page HTML INTERACTIVE autonome — cartes choroplèthes et graphiques Plotly navigables, zoom/survol, GeoJSON et données embarqués : idéal pour une carte à partager) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations. Pour le format 'carte', construis les figures choroplèthes via ctx.geo (recette carte ci-dessus) : les figures y restent interactives, jamais figées en image.",
                     "6. EXCEL, VISUELS & E-MAIL : fichier Excel/tableur demandé → generer_excel (multi-feuilles, cellules colorées {t,bg}, en-têtes stylés, vrais nombres) ; logo, affiche, infographie ou schéma demandé → generer_image (SVG complet et soigné, affiché dans le chat et téléchargeable en SVG + PNG HD — design vectoriel par code, JAMAIS de photo : si une photo est demandée, explique la limite et propose un visuel vectoriel) ; envoi par e-mail demandé → envoyer_email (DEMANDE d'abord l'adresse du destinataire si elle est absente ; les fichiers ne sont PAS joignables → mets l'essentiel dans le corps HTML et signale que les fichiers restent téléchargeables dans la conversation).",
                     "",
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
                     "- GRAPHIQUES d'un .docx joint — DEUX cas, tous deux traités SUR PLACE (jamais de régénération, jamais d'annexe) : (a) GRAPHIQUE NATIF Word [GRAPH#] (objet graphique éditable — le cas le PLUS fréquent dans les rapports PEV/DHIS2) → op remplacer_graphique {graphique:n, figure:{data,layout}} ; (b) IMAGE incorporée [IMG#] → op remplacer_image {image:n, figure}. Les deux sont listés dans l'extraction. Méthode : calcule d'abord les valeurs par ZS (executer_js), construis chaque figure Plotly (ou vega), puis UN remplacer_graphique (ou remplacer_image) par figure — dans le MÊME appel modifier_document que les textes/tableaux, pour livrer UN seul fichier final. Pour « 1 graphique agrandi par page », ajoute pleine_page:true. Si l'utilisateur veut PLUS de figures qu'il n'y a de cadres, utilise inserer_image {p, figure, saut_de_page:true}.",
                     "- COULEURS de tableaux (tableaux de suivi/logistique/score colorés selon une légende) : op colorer_cellule {t, ligne, colonne, couleur} applique un fond de cellule SUR PLACE (jeton vert/jaune/orange/rouge/bleu/gris ou hex) sans reconstruire le document ni changer le design. C'est POSSIBLE et attendu. Ex. légende logistique dashboard : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge (colonnes TX SATISFACTION/DISPONIBILITÉ). Émets un colorer_cellule par cellule à colorer.",
-                    "- INTERDICTIONS ABSOLUES quand un .docx est joint : ne JAMAIS répondre qu'une action est « impossible sur place » (remplacer un graphique natif, colorer des cellules, insérer des images pleine page sont TOUS possibles via modifier_document) ; ne JAMAIS régénérer le rapport avec generer_rapport (cela change le design) ; ne JAMAIS livrer une « annexe » à copier-coller. Toujours modifier le fichier joint et le rendre tel quel avec seulement les changements demandés.",
-                    "- Modèle .doc/.ppt/.pdf joint (non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle.",
+                    "- INTERDICTIONS ABSOLUES quand un .docx ou un .pptx est joint : ne JAMAIS répondre qu'une action est « impossible sur place » (remplacer un graphique natif, colorer des cellules, ajouter des lignes à un tableau, insérer des figures, ajouter une diapositive sont TOUS possibles via modifier_document / modifier_presentation) ; ne JAMAIS régénérer le document avec generer_rapport (cela change le design) ; ne JAMAIS livrer une « annexe » à copier-coller ni un fichier partiel « à compléter ». Toujours modifier le fichier joint et le rendre tel quel avec seulement les changements demandés.",
+                    "- ⛔ NE DIS JAMAIS QUE C'EST TERMINÉ SANS AVOIR LIVRÉ LE FICHIER. Un livrable n'existe que si l'outil correspondant a répondu « OK : … téléchargé chez l'utilisateur ». Tant que ce n'est pas le cas, le travail n'est PAS fini : continue. Interdits formels : annoncer un document généré alors qu'aucun appel d'outil n'a abouti ; livrer un fichier tronqué en le présentant comme complet ; livrer PLUSIEURS fichiers partiels « complémentaires » (le client en attend UN SEUL, complet) ; conclure par un résumé de ce que « contient » le document au lieu de le produire. Si un appel échoue, lis le message d'erreur, corrige les adresses et relance — n'abandonne pas en silence et ne recommence pas depuis le début.",
+                    "- ⭐ CANEVAS / MODÈLE .pptx joint (revue semestrielle, revue annuelle, présentation de ZS…) → modifier_presentation UNIQUEMENT, JAMAIS generer_rapport. C'est la règle la plus importante de cette section : régénérer une présentation jointe détruit sa structure, son plan, ses couleurs et ses tableaux, et produit un fichier que le client REFUSE. Méthode obligatoire, dans cet ordre : (1) LIS l'extraction adressée du fichier joint et repère chaque cellule ∅ ou chaque valeur à actualiser ; (2) calcule TOUTES les valeurs nécessaires (executer_js / requete_dhis2) AVANT toute écriture ; (3) applique les modifications par LOTS successifs de modifier_presentation (une diapositive ou un groupe de diapositives par appel, telecharger:false sur les lots intermédiaires) — les appels sont CUMULATIFS, ne recommence JAMAIS un lot déjà appliqué ; (4) termine par un appel avec telecharger:true. Ne touche QU'aux données demandées : les rubriques, titres, textes, tableaux et sections sans rapport avec la mise à jour restent EXACTEMENT tels quels — y compris les sections vides et celles hors DHIS2 (budgets PTF, activités, signatures), qu'il ne faut ni remplir ni supprimer sauf demande explicite. Pour les graphiques demandés : inserer_image sur la diapositive concernée, ou nouvelle_diapositive {apres, titre, figure} pour en ajouter une au style du deck.",
+                    "- Modèle .doc/.ppt/.pdf joint (ancien format binaire ou PDF, non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle. ⚠ Si le fichier est un .ppt ou .doc ANCIEN format, demande d'abord à l'utilisateur de le réenregistrer en .pptx/.docx : la modification sur place, bien plus fidèle, redevient alors possible.",
                     "- RESPECTE le format demandé : l'utilisateur demande Word → format:'word' ; PDF → format:'pdf'. Ne remplace JAMAIS le format demandé par 'carte' (HTML) — le Word et le PDF savent désormais colorer les cellules et se mettre en paysage.",
                     "- TABLEAUX COLORÉS (code couleur Excel vert/jaune/rouge) : pour reproduire une grille de scores/qualité colorée cellule par cellule (comme un tableau Excel), chaque cellule concernée doit être un OBJET {t:'valeur', bg:'couleur'} dans lignes[] — bg = 'vert'|'jaune'|'orange'|'rouge'|'bleu'|'gris' ou hex '#RRGGBB'. La couleur est rendue dans word, pdf, pptx ET carte. Colore selon les seuils du modèle (ex. ≥95 % vert, 80–94 jaune, <80 rouge). NE te contente PAS d'expliquer le code couleur en commentaire : applique-le réellement aux cellules.",
                     "- ORIENTATION : pour une matrice large (ex. ZS en lignes × canevas en colonnes, ou tableau de score à nombreuses colonnes), passe orientation:'paysage' — valable pour word et pdf. Garde la 1re colonne = entité (ZS/DPS) et la 1re ligne = en-têtes (canevas/critères).",
@@ -9981,12 +9983,13 @@
                     type: 'function',
                     function: {
                         name: 'generer_rapport',
-                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word (vrai fichier .docx natif, éditable dans Word), PPTX ou CARTE (format='carte' : page HTML interactive autonome — figures Plotly navigables, zoom et survol actifs, données et GeoJSON embarqués dans le fichier ; idéal pour les cartes choroplèthes à partager). À utiliser quand l'utilisateur demande un rapport, un bulletin, une présentation ou une carte interactive — ou pour REPRODUIRE fidèlement un modèle joint non modifiable sur place (.doc/.ppt/PDF) : dans ce cas, reprendre TOUTES les sections du modèle dans l'ordre, recopier les textes inchangés, et n'actualiser que les données. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Sans modèle, structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau(x) et/ou figure Plotly + commentaire) → conclusions et recommandations. Exigence : document impeccable — titres de sections qui énoncent le constat, chaque tableau suivi d'un commentaire analytique, page de garde générée automatiquement (en-tête officiel multi-lignes possible via style.entete_lignes), bloc signature via signature. Style par défaut : design du rapport officiel type PEV — bleu #0b5e8e, corps Times New Roman, titres Arial gras ; adapter style.couleur_principale/police si le client le demande ou joint un modèle.",
+                        description: "Génère et télécharge chez l'utilisateur un RAPPORT COMPLET professionnel au format PDF, Word (vrai fichier .docx natif, éditable dans Word), PPTX ou CARTE (format='carte' : page HTML interactive autonome — figures Plotly navigables, zoom et survol actifs, données et GeoJSON embarqués dans le fichier ; idéal pour les cartes choroplèthes à partager). À utiliser quand l'utilisateur demande un rapport, un bulletin, une présentation ou une carte interactive — ou pour REPRODUIRE fidèlement un modèle joint non modifiable sur place (ancien .doc/.ppt binaire, ou PDF) : dans ce cas, reprendre TOUTES les sections du modèle dans l'ordre, recopier les textes inchangés, et n'actualiser que les données. ⛔ NE PAS UTILISER quand un .docx ou un .pptx est joint : ces formats se modifient SUR PLACE (modifier_document / modifier_presentation), ce qui préserve le design d'origine ; les régénérer produit un document non conforme que le client refuse. Toutes les valeurs doivent provenir de calculs réels (executer_js / requete_dhis2). Sans modèle, structure recommandée : introduction/contexte → méthodologie brève → sections d'analyse (contenu concis + tableau(x) et/ou figure Plotly + commentaire) → conclusions et recommandations. Exigence : document impeccable — titres de sections qui énoncent le constat, chaque tableau suivi d'un commentaire analytique, page de garde générée automatiquement (en-tête officiel multi-lignes possible via style.entete_lignes), bloc signature via signature. Style par défaut : design du rapport officiel type PEV — bleu #0b5e8e, corps Times New Roman, titres Arial gras ; adapter style.couleur_principale/police si le client le demande ou joint un modèle.",
                         parameters: {
                             type: 'object',
                             properties: {
                                 titre: { type: 'string' },
                                 format: { type: 'string', enum: ['pdf', 'word', 'pptx', 'carte'], description: "pdf (défaut) | word (.docx natif) | pptx | carte (page HTML interactive autonome : figures Plotly navigables, GeoJSON embarqué). RESPECTE le format demandé par l'utilisateur : s'il demande Word → 'word', PDF → 'pdf'. Ne bascule PAS vers 'carte' sans qu'il le demande." },
+                                ignorer_modele: { type: 'boolean', description: "À n'utiliser QUE si l'utilisateur veut une présentation entièrement NOUVELLE alors qu'un .pptx est joint à la conversation. Par défaut, un .pptx joint doit être actualisé SUR PLACE avec modifier_presentation." },
                                 orientation: { type: 'string', enum: ['portrait', 'paysage'], description: "Orientation de la page pour word et pdf (défaut portrait). Utilise 'paysage' pour les tableaux larges (nombreuses colonnes, ex. matrice ZS × canevas)." },
                                 sous_titre: { type: 'string' },
                                 periode: { type: 'string', description: "Période analysée, ex. 'Janvier – Juin 2026'" },
@@ -10057,6 +10060,51 @@
                                             couleur: { type: 'string', description: "colorer_cellule : couleur de fond de la cellule — jeton légende (vert/jaune/orange/rouge/bleu/gris) ou hex RRGGBB. Ex. légende logistique : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge." },
                                             pleine_page: { type: 'boolean', description: 'remplacer_graphique/inserer_image : true = agrandir à la pleine largeur (1 figure par page avec saut de page pour remplacer_graphique)' },
                                             saut_de_page: { type: 'boolean', description: 'inserer_image : true = commencer la nouvelle image sur une nouvelle page' }
+                                        }, required: ['op']
+                                    }
+                                }
+                            }, required: ['fichier', 'operations']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'modifier_presentation',
+                        description: "Modifie SUR PLACE une PRÉSENTATION PowerPoint (.pptx) jointe par l'utilisateur, en préservant INTÉGRALEMENT sa structure, son plan, sa mise en page, ses rubriques, ses tableaux, ses codes couleurs, ses polices et son style — seuls les contenus ciblés changent. C'EST L'OUTIL À UTILISER dès qu'un canevas / modèle / ancienne présentation .pptx est joint et qu'il faut l'actualiser, la compléter ou la corriger : ne régénère JAMAIS une présentation jointe avec generer_rapport (cela détruit le design et produit un document non conforme). Les adresses viennent de l'extraction du fichier : [D#]=diapositive (ordre d'affichage), [D#:F#]=zone de texte, [D#:T#]=tableau, [D#:T#:L#:C#]=cellule (base 1), [D#:IMG#]=image, [D#:GRAPH#]=graphique natif. Opérations : remplacer_texte {cherche, remplace, d?} (partout, ou sur la seule diapositive d ; la mise en forme des caractères est conservée) ; remplacer_forme {d, f, texte} ; remplacer_cellule {d, t, ligne, colonne, texte} ; colorer_cellule {d, t, ligne, colonne, couleur, texte?} (fond de cellule : jeton vert/jaune/orange/rouge/bleu/gris ou hex, texte lisible automatique) ; ajouter_lignes {d, t, lignes, apres?} (nouvelles lignes calquées sur le style de la dernière ligne — pour les listes d'aires de santé, de problèmes, de recommandations ; une cellule peut être {t, bg} pour la colorer) ; supprimer_ligne {d, t, ligne} ; remplacer_image {d, image, figure|vega|image_b64} (dans le cadre existant) ; remplacer_graphique {d, graphique, figure|vega} (actualise un graphique NATIF au même emplacement) ; inserer_image {d, figure|vega, x?, y?, largeur?, hauteur?} (AJOUTE un graphique sur une diapositive existante ; positions et tailles en CENTIMÈTRES, centré sous le titre par défaut) ; nouvelle_diapositive {apres, titre, figure|vega?, modele?} (crée une diapositive AU STYLE DU DECK en copiant la mise en page de modele) ; dupliquer_diapositive {d, apres?} ; supprimer_diapositive {d}. ⚠ Les insertions/suppressions de diapositives DÉCALENT la numérotation [D#] des suivantes : traite-les en DERNIER, ou de la fin vers le début. ⚠ APPELS CUMULATIFS : chaque appel repart de la présentation DÉJÀ MODIFIÉE — pour un gros canevas, envoie plusieurs lots d'opérations successifs (jamais tout d'un coup), sans JAMAIS recommencer les lots précédents ; mets telecharger:false sur les lots intermédiaires et telecharger:true (ou rien) sur le dernier. La présentation modifiée est téléchargée automatiquement chez l'utilisateur.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                fichier: { type: 'string', description: 'Nom EXACT du fichier .pptx joint dans la conversation' },
+                                nom_sortie: { type: 'string', description: "Nom du fichier téléchargé, sans extension (défaut : nom d'origine + _MAJ)" },
+                                telecharger: { type: 'boolean', description: 'false = appliquer et conserver sans télécharger (lots intermédiaires). Défaut true.' },
+                                operations: {
+                                    type: 'array', items: {
+                                        type: 'object', properties: {
+                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_forme', 'remplacer_cellule', 'colorer_cellule', 'ajouter_lignes', 'supprimer_ligne', 'remplacer_image', 'remplacer_graphique', 'inserer_image', 'nouvelle_diapositive', 'dupliquer_diapositive', 'supprimer_diapositive'] },
+                                            d: { type: 'integer', description: 'Numéro de la diapositive [D#] (ordre d\'affichage, base 1)' },
+                                            f: { type: 'integer', description: 'Numéro de la zone de texte [D#:F#]' },
+                                            t: { type: 'integer', description: 'Numéro du tableau [D#:T#] sur cette diapositive' },
+                                            ligne: { type: 'integer' },
+                                            colonne: { type: 'integer' },
+                                            texte: { type: 'string', description: 'Nouveau texte (\\n = saut de ligne)' },
+                                            cherche: { type: 'string' },
+                                            remplace: { type: 'string' },
+                                            lignes: { type: 'array', items: { type: 'array' }, description: 'ajouter_lignes : lignes à ajouter ; cellule = valeur simple ou {t, bg} pour la colorer' },
+                                            apres: { type: 'integer', description: 'ajouter_lignes : après quelle ligne · nouvelle_diapositive/dupliquer_diapositive : après quelle diapositive' },
+                                            image: { type: 'integer', description: "remplacer_image : numéro de l'image [D#:IMG#]" },
+                                            graphique: { type: 'integer', description: 'remplacer_graphique : numéro du graphique natif [D#:GRAPH#]' },
+                                            figure: { type: 'object', description: 'Figure Plotly {data, layout} rendue en image (au ratio du cadre pour un remplacement)' },
+                                            vega: { type: 'object', description: 'Spécification Vega-Lite/Vega complète (alternative à figure)' },
+                                            image_b64: { type: 'string', description: 'Image PNG déjà prête, base64 ou dataURL' },
+                                            image_fichier: { type: 'string', description: "Nom exact d'une image jointe à la conversation" },
+                                            couleur: { type: 'string', description: 'colorer_cellule : jeton vert/jaune/orange/rouge/bleu/gris ou hex RRGGBB' },
+                                            titre: { type: 'string', description: 'nouvelle_diapositive : titre de la diapositive créée' },
+                                            modele: { type: 'integer', description: 'nouvelle_diapositive : diapositive dont on copie la mise en page (défaut : celle indiquée par apres)' },
+                                            x: { type: 'number', description: 'inserer_image : position horizontale en cm (défaut : centré)' },
+                                            y: { type: 'number', description: 'inserer_image : position verticale en cm (défaut : sous le titre)' },
+                                            largeur: { type: 'number', description: 'inserer_image : largeur en cm (défaut : 84 % de la diapositive)' },
+                                            hauteur: { type: 'number', description: 'inserer_image : hauteur en cm (défaut : déduite du ratio de la figure)' }
                                         }, required: ['op']
                                     }
                                 }
@@ -10287,10 +10335,20 @@
                 }
                 if (name === 'afficher_resultat') { iaRenderResult(input, msgsEl); return 'OK : résultat affiché à l\'utilisateur avec boutons de téléchargement.'; }
                 if (name === 'generer_rapport') {
+                    /* Garde-fou : régénérer une présentation alors qu'un canevas .pptx
+                       est joint détruit sa structure et ses couleurs — c'est l'échec
+                       qui a coûté une livraison client. On force l'édition sur place,
+                       avec une porte de sortie explicite pour un deck vraiment neuf. */
+                    var fmtAsk = String(input.format || '').toLowerCase();
+                    if (fmtAsk.indexOf('ppt') === 0 && !input.ignorer_modele) {
+                        var joints = Object.keys(IA.docs || {}).filter(function (n) { return /\.pptx$/i.test(n); });
+                        if (joints.length) throw new Error('REFUSÉ : la présentation « ' + joints[0] + ' » est jointe à cette conversation. La régénérer avec generer_rapport détruirait sa structure, son plan, sa mise en page et ses couleurs — c\'est exactement ce que le client refuse. Utilise modifier_presentation pour l\'actualiser SUR PLACE (adresses [D#], [D#:F#], [D#:T#:L#:C#] de l\'extraction), par lots successifs et cumulatifs. Si — et seulement si — l\'utilisateur demande une présentation entièrement NOUVELLE sans rapport avec le fichier joint, rappelle generer_rapport avec ignorer_modele:true.');
+                    }
                     var fmtDone = await iaGenReport(input, msgsEl);
                     return 'OK : rapport ' + fmtDone.toUpperCase() + ' (' + ((input.sections || []).length) + ' sections) généré et téléchargé chez l\'utilisateur.';
                 }
                 if (name === 'modifier_document') return await iaDocxModify(input, msgsEl);
+                if (name === 'modifier_presentation') return await iaPptxModify(input, msgsEl);
                 if (name === 'generer_excel') {
                     await iaGenExcel(input, msgsEl);
                     return 'OK : classeur Excel (' + ((input.feuilles || []).length) + ' feuille(s)) généré et téléchargé chez l\'utilisateur.';
@@ -11026,16 +11084,13 @@
                                             res({ kind: 'text', text: '<fichier nom="' + f.name + '" note="Document Word structuré. Chaque paragraphe est adressé [P#] et chaque cellule de tableau [T#:L#:C#] (les cellules d\'une ligne sont séparées par ¦). Pour actualiser ce document en préservant TOUTE sa mise en forme, utilise l\'outil modifier_document avec ces adresses — ne le régénère pas.">\n' + txt.slice(0, 80000) + '\n</fichier>' });
                                         });
                                     }
-                                    var slides = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })
-                                        .sort(function (a, b) { return parseInt(a.match(/slide(\d+)/)[1], 10) - parseInt(b.match(/slide(\d+)/)[1], 10); });
-                                    if (!slides.length) throw new Error('Fichier PowerPoint invalide (aucune diapositive)');
-                                    return Promise.all(slides.map(function (n) { return zip.file(n).async('string'); })).then(function (xmls) {
-                                        var txt = xmls.map(function (xml, i) {
-                                            var runs = [], re = /<a:t>([^<]*)<\/a:t>/g, mm;
-                                            while ((mm = re.exec(xml))) runs.push(iaXmlText(mm[1]));
-                                            return '### Diapositive ' + (i + 1) + '\n' + runs.join('\n');
-                                        }).join('\n\n');
-                                        res({ kind: 'text', text: '<fichier nom="' + f.name + '">\n' + txt.slice(0, 80000) + '\n</fichier>' });
+                                    if (!Object.keys(zip.files).some(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })) throw new Error('Fichier PowerPoint invalide (aucune diapositive)');
+                                    IA.docs[f.name] = r5.result; /* fichier brut conservé pour modifier_presentation */
+                                    return iaPptxOutline(zip).then(function (txt) {
+                                        res({
+                                            kind: 'text', text: '<fichier nom="' + f.name + '" note="Présentation PowerPoint structurée et ADRESSÉE. [D#] = diapositive (dans l\'ordre d\'affichage), [D#:F#] = zone de texte, [D#:T#] = tableau, [D#:T#:L#:C#] = cellule (les cellules d\'une ligne sont séparées par ¦, ∅ = cellule vide à remplir), [D#:IMG#] = image, [D#:GRAPH#] = graphique natif. Pour actualiser cette présentation en préservant INTÉGRALEMENT sa structure, son plan, sa mise en page, ses couleurs et ses tableaux, utilise l\'outil modifier_presentation avec ces adresses — ne la régénère JAMAIS avec generer_rapport.">\n' +
+                                                txt.slice(0, 120000) + '\n</fichier>'
+                                        });
                                     });
                                 }).catch(rej);
                             };
@@ -11184,7 +11239,11 @@
                 }
                 return rows;
             }
-            function iaCellText(tc) {
+            /* Texte d'une cellule Word (nœud w:tc). ⚠ NE PAS renommer en iaCellText :
+               ce nom appartient au normaliseur de cellules de données {t,bg} défini
+               plus haut — une redéclaration l'écrasait silencieusement (hoisting),
+               vidant les en-têtes Excel et les exports CSV. */
+            function iaDocxCellText(tc) {
                 var ps = [];
                 for (var ch = tc.firstChild; ch; ch = ch.nextSibling) {
                     if (ch.nodeType === 1 && ch.localName === 'p') ps.push(iaParaText(ch));
@@ -11212,7 +11271,7 @@
                         var rows = iaTblRows(it.n);
                         out.push('[T' + tIdx + '] Tableau (' + rows.length + ' ligne(s))');
                         rows.forEach(function (r, ri) {
-                            out.push('[T' + tIdx + ':L' + (ri + 1) + '] ' + r.map(function (tc) { return iaCellText(tc).replace(/\n/g, ' ⏎ ') || '∅'; }).join(' ¦ '));
+                            out.push('[T' + tIdx + ':L' + (ri + 1) + '] ' + r.map(function (tc) { return iaDocxCellText(tc).replace(/\n/g, ' ⏎ ') || '∅'; }).join(' ¦ '));
                         });
                     }
                 });
@@ -11549,6 +11608,647 @@
                     msgsEl.appendChild(card); iaScroll(msgsEl);
                 }
                 return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s), document « ' + outName + ' » téléchargé chez l\'utilisateur (mise en forme d\'origine préservée).\n' + log.join('\n');
+            }
+
+            /* ══════ PRÉSENTATIONS PowerPoint (.pptx) — ÉDITION SUR PLACE ══════
+               Jumeau de modifier_document pour les .pptx. Un canevas de revue
+               (≈50 diapositives, ≈30 tableaux, >1000 zones de texte) ne peut PAS
+               être régénéré : le modèle devrait réémettre toute la présentation,
+               ce qui tronque sa réponse et détruit la mise en page, les couleurs
+               et les tableaux d'origine. On édite donc le fichier joint SUR PLACE,
+               exactement comme pour Word.
+               Adresses : [D#] diapositive · [D#:F#] zone de texte · [D#:T#] tableau
+               · [D#:T#:L#:C#] cellule · [D#:IMG#] image · [D#:GRAPH#] graphique natif. */
+            var IA_P_NS = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+            var IA_PKG_REL = 'http://schemas.openxmlformats.org/package/2006/relationships';
+            var IA_REL_IMG = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
+            var IA_REL_SLD = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
+            var IA_CT_SLIDE = 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml';
+            var IA_EMU_CM = 360000;
+            function iaXmlEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+            /* Résout une cible de relation (Target) en chemin de package OPC. */
+            function iaOpcRes(fromPart, target) {
+                var t = String(target || '');
+                if (!t || /^[a-z][a-z0-9+.-]*:\/\//i.test(t)) return null;
+                if (t.charAt(0) === '/') return t.replace(/^\/+/, '');
+                var parts = String(fromPart).split('/'); parts.pop();
+                t.split('/').forEach(function (s) {
+                    if (!s || s === '.') return;
+                    if (s === '..') parts.pop(); else parts.push(s);
+                });
+                return parts.join('/');
+            }
+            function iaRelsPath(part) { return String(part).replace(/([^\/]+)$/, '_rels/$1.rels'); }
+            function iaReEsc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+            function iaCtDrop(ct, part) { return String(ct).replace(new RegExp('<Override[^>]*PartName="/' + iaReEsc(part) + '"[^>]*/>', 'g'), ''); }
+            /* Ordre d'AFFICHAGE réel des diapositives : presentation.xml (sldIdLst)
+               → relations → parts. L'ordre des noms de fichiers slideN.xml ne
+               correspond PAS toujours à l'ordre vu dans PowerPoint. */
+            async function iaPptxOrder(zip) {
+                var out = [], pf = zip.file('ppt/presentation.xml'), rf = zip.file('ppt/_rels/presentation.xml.rels');
+                if (pf && rf) {
+                    var px = await pf.async('string'), rx = await rf.async('string'), rmap = {}, m;
+                    var reR = /<Relationship\b[^>]*>/g;
+                    while ((m = reR.exec(rx))) {
+                        var id = (m[0].match(/\bId="([^"]*)"/) || [])[1], tg = (m[0].match(/\bTarget="([^"]*)"/) || [])[1];
+                        if (id && tg) rmap[id] = iaOpcRes('ppt/presentation.xml', tg);
+                    }
+                    var reS = /<p:sldId\b[^>]*>/g;
+                    while ((m = reS.exec(px))) {
+                        var rid = (m[0].match(/r:id="([^"]*)"/) || [])[1], p = rid && rmap[rid];
+                        if (p && zip.file(p)) out.push(p);
+                    }
+                }
+                if (!out.length) out = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); })
+                    .sort(function (a, b) { return parseInt(a.match(/slide(\d+)/)[1], 10) - parseInt(b.match(/slide(\d+)/)[1], 10); });
+                return out;
+            }
+            function iaPptxShapeName(sp) {
+                try { var nv = sp.getElementsByTagNameNS(IA_P_NS, 'cNvPr')[0]; return nv ? (nv.getAttribute('name') || '') : ''; }
+                catch (e) { return ''; }
+            }
+            /* Repère le placeholder de TITRE d'une diapositive (sinon la 1re forme). */
+            function iaPptxTitle(shapes) {
+                for (var i = 0; i < shapes.length; i++) {
+                    var ph = shapes[i].sp.getElementsByTagNameNS(IA_P_NS, 'ph');
+                    for (var j = 0; j < ph.length; j++) {
+                        var ty = (ph[j].getAttribute('type') || '').toLowerCase();
+                        if (ty === 'title' || ty === 'ctrtitle') return shapes[i];
+                    }
+                }
+                return shapes[0] || null;
+            }
+            /* Zones de texte d'une diapositive, dans l'ordre du document (groupes inclus).
+               Seuls les p:txBody (formes) comptent : les a:txBody appartiennent aux
+               cellules de tableau, adressées séparément en [D#:T#:L#:C#]. */
+            function iaPptxShapes(doc) {
+                var out = [], tree = doc.getElementsByTagNameNS(IA_P_NS, 'spTree')[0];
+                if (!tree) return out;
+                (function rec(n) {
+                    for (var ch = n.firstChild; ch; ch = ch.nextSibling) {
+                        if (ch.nodeType !== 1) continue;
+                        if (ch.localName === 'graphicFrame') continue;         /* tableaux / graphiques */
+                        if (ch.localName === 'txBody' && ch.namespaceURI === IA_P_NS) { out.push({ body: ch, sp: n, nom: iaPptxShapeName(n) }); continue; }
+                        rec(ch);
+                    }
+                })(tree);
+                return out;
+            }
+            function iaPptxTables(doc) {
+                var out = [], gfs = doc.getElementsByTagNameNS(IA_P_NS, 'graphicFrame');
+                for (var i = 0; i < gfs.length; i++) {
+                    var tb = gfs[i].getElementsByTagNameNS(IA_A_NS, 'tbl');
+                    if (tb.length) out.push({ tbl: tb[0], frame: gfs[i] });
+                }
+                return out;
+            }
+            function iaPptxCharts(doc) {
+                var out = [], gfs = doc.getElementsByTagNameNS(IA_P_NS, 'graphicFrame');
+                for (var i = 0; i < gfs.length; i++) {
+                    var gd = gfs[i].getElementsByTagNameNS(IA_A_NS, 'graphicData')[0];
+                    if (gd && (gd.getAttribute('uri') || '').indexOf('chart') >= 0) out.push({ gd: gd, frame: gfs[i] });
+                }
+                return out;
+            }
+            function iaPptxRows(tbl) {
+                var rows = [];
+                for (var ch = tbl.firstChild; ch; ch = ch.nextSibling) {
+                    if (ch.nodeType === 1 && ch.localName === 'tr') {
+                        var cells = [];
+                        for (var c = ch.firstChild; c; c = c.nextSibling) if (c.nodeType === 1 && c.localName === 'tc') cells.push(c);
+                        rows.push({ tr: ch, cells: cells });
+                    }
+                }
+                return rows;
+            }
+            function iaPptxParaText(p) {
+                var s = '';
+                (function rec(n) {
+                    for (var ch = n.firstChild; ch; ch = ch.nextSibling) {
+                        if (ch.nodeType !== 1) continue;
+                        var ln = ch.localName;
+                        if (ln === 't') s += ch.textContent;
+                        else if (ln === 'br') s += '\n';
+                        else if (ln !== 'pPr' && ln !== 'rPr' && ln !== 'endParaRPr') rec(ch);
+                    }
+                })(p);
+                return s;
+            }
+            function iaPptxParas(body) {
+                var out = [];
+                for (var ch = body.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1 && ch.localName === 'p') out.push(ch);
+                return out;
+            }
+            function iaPptxBodyText(body) {
+                return iaPptxParas(body).map(iaPptxParaText).join('\n').replace(/[ \t]{2,}/g, ' ').trim();
+            }
+            function iaPptxCellBody(tc) {
+                for (var ch = tc.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1 && ch.localName === 'txBody') return ch;
+                return null;
+            }
+            function iaPptxCellText(tc) { var b = iaPptxCellBody(tc); return b ? iaPptxBodyText(b) : ''; }
+            /* Convertit un <a:endParaRPr> en <a:rPr> (mêmes attributs) : c'est souvent
+               la SEULE trace de mise en forme d'une cellule vide à remplir. */
+            function iaPptxAsRPr(xmlDoc, src) {
+                var r = xmlDoc.createElementNS(IA_A_NS, 'a:rPr');
+                if (src && src.attributes) {
+                    for (var i = 0; i < src.attributes.length; i++) {
+                        var a = src.attributes[i];
+                        if (!a.name || a.name === 'xmlns' || a.name.indexOf('xmlns:') === 0) continue;
+                        try { r.setAttribute(a.name, a.value); } catch (e) { }
+                    }
+                    for (var ch = src.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1) r.appendChild(ch.cloneNode(true));
+                }
+                return r;
+            }
+            /* Réécrit un paragraphe en conservant son a:pPr et la mise en forme
+               (a:rPr) de son premier segment. \n → saut de ligne (a:br). */
+            function iaPptxSetParaText(xmlDoc, p, texte) {
+                var rPr = null, ch, nx, i;
+                var rs = p.getElementsByTagNameNS(IA_A_NS, 'r');
+                if (rs.length) { var rp = rs[0].getElementsByTagNameNS(IA_A_NS, 'rPr'); if (rp.length) rPr = rp[0].cloneNode(true); }
+                if (!rPr) { var ep = p.getElementsByTagNameNS(IA_A_NS, 'endParaRPr'); if (ep.length) rPr = iaPptxAsRPr(xmlDoc, ep[0]); }
+                for (ch = p.firstChild; ch; ch = nx) { nx = ch.nextSibling; if (!(ch.nodeType === 1 && ch.localName === 'pPr')) p.removeChild(ch); }
+                var parts = String(texte == null ? '' : texte).split('\n');
+                for (i = 0; i < parts.length; i++) {
+                    if (i) p.appendChild(xmlDoc.createElementNS(IA_A_NS, 'a:br'));
+                    var run = xmlDoc.createElementNS(IA_A_NS, 'a:r');
+                    if (rPr) run.appendChild(rPr.cloneNode(true));
+                    var t = xmlDoc.createElementNS(IA_A_NS, 'a:t');
+                    t.appendChild(xmlDoc.createTextNode(parts[i]));
+                    run.appendChild(t);
+                    p.appendChild(run);
+                }
+            }
+            /* Remplace le texte d'un corps (forme ou cellule) : le 1er paragraphe est
+               réécrit, les suivants supprimés — style du paragraphe conservé. */
+            function iaPptxSetText(xmlDoc, body, texte) {
+                var ps = iaPptxParas(body), p0 = ps[0], k;
+                if (!p0) { p0 = xmlDoc.createElementNS(IA_A_NS, 'a:p'); body.appendChild(p0); }
+                else for (k = 1; k < ps.length; k++) body.removeChild(ps[k]);
+                iaPptxSetParaText(xmlDoc, p0, texte);
+            }
+            function iaPptxSetCellText(xmlDoc, tc, texte) {
+                var b = iaPptxCellBody(tc);
+                if (!b) { b = xmlDoc.createElementNS(IA_A_NS, 'a:txBody'); b.appendChild(xmlDoc.createElementNS(IA_A_NS, 'a:bodyPr')); tc.insertBefore(b, tc.firstChild); }
+                iaPptxSetText(xmlDoc, b, texte);
+            }
+            /* Remplacement de texte dans un paragraphe. On tente d'abord segment par
+               segment (mise en forme intégralement préservée, même en gras/couleur
+               mixtes) ; on ne reconstruit le paragraphe que si la chaîne cherchée est
+               répartie sur plusieurs segments. */
+            function iaPptxReplaceInPara(xmlDoc, p, cherche, remplace) {
+                var runs = [], n = 0, i;
+                (function rec(nn) {
+                    for (var ch = nn.firstChild; ch; ch = ch.nextSibling) {
+                        if (ch.nodeType !== 1) continue;
+                        var ln = ch.localName;
+                        if (ln === 't') runs.push(ch);
+                        else if (ln !== 'pPr' && ln !== 'rPr' && ln !== 'endParaRPr') rec(ch);
+                    }
+                })(p);
+                for (i = 0; i < runs.length; i++) {
+                    var tv = runs[i].textContent;
+                    if (tv.indexOf(cherche) >= 0) { n += tv.split(cherche).length - 1; runs[i].textContent = tv.split(cherche).join(remplace); }
+                }
+                if (n) return n;
+                var full = iaPptxParaText(p);
+                if (full.indexOf(cherche) < 0) return 0;
+                n = full.split(cherche).length - 1;
+                iaPptxSetParaText(xmlDoc, p, full.split(cherche).join(remplace));
+                return n;
+            }
+            /* Remplissage d'une cellule. Ordre imposé par le schéma CT_TableCellProperties :
+               les ln* d'abord, le remplissage ensuite, headers/extLst à la fin — sinon
+               PowerPoint propose de « réparer » le fichier. */
+            function iaPptxSetCellFill(xmlDoc, tc, hex) {
+                var tcPr = null, ch, nx;
+                for (ch = tc.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1 && ch.localName === 'tcPr') { tcPr = ch; break; }
+                if (!tcPr) { tcPr = xmlDoc.createElementNS(IA_A_NS, 'a:tcPr'); tc.appendChild(tcPr); }
+                for (ch = tcPr.firstChild; ch; ch = nx) {
+                    nx = ch.nextSibling;
+                    if (ch.nodeType === 1 && /^(solidFill|noFill|gradFill|blipFill|pattFill|grpFill)$/.test(ch.localName)) tcPr.removeChild(ch);
+                }
+                var sf = xmlDoc.createElementNS(IA_A_NS, 'a:solidFill');
+                var cl = xmlDoc.createElementNS(IA_A_NS, 'a:srgbClr'); cl.setAttribute('val', hex);
+                sf.appendChild(cl);
+                var ref = null;
+                for (ch = tcPr.firstChild; ch; ch = ch.nextSibling) if (ch.nodeType === 1 && (ch.localName === 'headers' || ch.localName === 'extLst')) { ref = ch; break; }
+                if (ref) tcPr.insertBefore(sf, ref); else tcPr.appendChild(sf);
+            }
+            /* Couleur du texte d'une cellule (lisibilité sur fond coloré). */
+            function iaPptxSetCellFg(xmlDoc, tc, hex) {
+                var b = iaPptxCellBody(tc); if (!b) return;
+                var rs = b.getElementsByTagNameNS(IA_A_NS, 'rPr');
+                for (var i = 0; i < rs.length; i++) {
+                    var rPr = rs[i], ch, nx;
+                    for (ch = rPr.firstChild; ch; ch = nx) { nx = ch.nextSibling; if (ch.nodeType === 1 && ch.localName === 'solidFill') rPr.removeChild(ch); }
+                    var sf = xmlDoc.createElementNS(IA_A_NS, 'a:solidFill');
+                    var cl = xmlDoc.createElementNS(IA_A_NS, 'a:srgbClr'); cl.setAttribute('val', hex);
+                    sf.appendChild(cl);
+                    rPr.insertBefore(sf, rPr.firstChild);
+                }
+            }
+            /* Position/taille (EMU) d'un p:graphicFrame ou d'une forme. */
+            function iaPptxXfrm(el) {
+                var xf = null, all = el.getElementsByTagNameNS(IA_A_NS, 'off');
+                if (all.length) xf = all[0].parentNode;
+                if (!xf) return null;
+                var off = null, ext = null, ch;
+                for (ch = xf.firstChild; ch; ch = ch.nextSibling) {
+                    if (ch.nodeType !== 1) continue;
+                    if (ch.localName === 'off') off = ch; else if (ch.localName === 'ext') ext = ch;
+                }
+                if (!off || !ext) return null;
+                var r = { x: +off.getAttribute('x') || 0, y: +off.getAttribute('y') || 0, cx: +ext.getAttribute('cx') || 0, cy: +ext.getAttribute('cy') || 0 };
+                return (r.cx > 0 && r.cy > 0) ? r : null;
+            }
+            /* Cadre (EMU) contenant une image, pour rendre la figure au bon ratio. */
+            function iaPptxBlipExt(el) {
+                var host = null;
+                for (var n = el; n; n = n.parentNode) if (n.nodeType === 1 && (n.localName === 'pic' || n.localName === 'sp')) { host = n; break; }
+                if (!host) return null;
+                var x = iaPptxXfrm(host);
+                return x ? { cx: x.cx, cy: x.cy } : null;
+            }
+            function iaPptxPicNode(xmlDoc, rid, id, x, y, cx, cy, nom) {
+                var s = '<p:pic xmlns:p="' + IA_P_NS + '" xmlns:a="' + IA_A_NS + '" xmlns:r="' + IA_R_NS + '">' +
+                    '<p:nvPicPr><p:cNvPr id="' + id + '" name="' + iaXmlEsc(nom || ('Figure ' + id)) + '"/>' +
+                    '<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>' +
+                    '<p:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>' +
+                    '<p:spPr><a:xfrm><a:off x="' + Math.round(x) + '" y="' + Math.round(y) + '"/><a:ext cx="' + Math.round(cx) + '" cy="' + Math.round(cy) + '"/></a:xfrm>' +
+                    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>';
+                var frag = new DOMParser().parseFromString(s, 'application/xml').documentElement;
+                return xmlDoc.importNode(frag, true);
+            }
+            /* Zone de texte autonome (titre d'une diapositive créée de toutes pièces). */
+            function iaPptxTextBox(xmlDoc, id, x, y, cx, cy, texte, sz, couleur) {
+                var s = '<p:sp xmlns:p="' + IA_P_NS + '" xmlns:a="' + IA_A_NS + '">' +
+                    '<p:nvSpPr><p:cNvPr id="' + id + '" name="Titre ' + id + '"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>' +
+                    '<p:spPr><a:xfrm><a:off x="' + Math.round(x) + '" y="' + Math.round(y) + '"/><a:ext cx="' + Math.round(cx) + '" cy="' + Math.round(cy) + '"/></a:xfrm>' +
+                    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>' +
+                    '<p:txBody><a:bodyPr wrap="square" rtlCol="0" anchor="ctr"><a:normAutofit/></a:bodyPr><a:lstStyle/>' +
+                    '<a:p><a:r><a:rPr lang="fr-FR" sz="' + (sz || 2400) + '" b="1" dirty="0"><a:solidFill><a:srgbClr val="' + (couleur || '0B3A56') + '"/></a:solidFill></a:rPr>' +
+                    '<a:t>' + iaXmlEsc(texte) + '</a:t></a:r></a:p></p:txBody></p:sp>';
+                var frag = new DOMParser().parseFromString(s, 'application/xml').documentElement;
+                return xmlDoc.importNode(frag, true);
+            }
+            /* Extraction adressée d'une présentation, destinée à l'IA. */
+            async function iaPptxOutline(zip) {
+                var order = await iaPptxOrder(zip), out = [], d;
+                for (d = 0; d < order.length; d++) {
+                    var D = d + 1, doc;
+                    try { doc = new DOMParser().parseFromString(await zip.file(order[d]).async('string'), 'application/xml'); }
+                    catch (e) { out.push('=== [D' + D + '] (illisible)'); continue; }
+                    if (doc.getElementsByTagName('parsererror').length) { out.push('=== [D' + D + '] (illisible)'); continue; }
+                    var shapes = iaPptxShapes(doc), tables = iaPptxTables(doc), imgs = iaDocxImages(doc), charts = iaPptxCharts(doc), bits = [];
+                    if (tables.length) bits.push(tables.length + ' tableau(x)');
+                    if (imgs.length) bits.push(imgs.length + ' image(s) [D' + D + ':IMG1' + (imgs.length > 1 ? '–IMG' + imgs.length : '') + ']');
+                    if (charts.length) bits.push(charts.length + ' graphique(s) natif(s) [D' + D + ':GRAPH1' + (charts.length > 1 ? '–GRAPH' + charts.length : '') + ']');
+                    out.push('=== [D' + D + ']' + (bits.length ? ' — ' + bits.join(' · ') : ''));
+                    shapes.forEach(function (s, k) {
+                        var t = iaPptxBodyText(s.body).replace(/\n/g, ' ⏎ ');
+                        if (t) out.push('[D' + D + ':F' + (k + 1) + '] ' + t.slice(0, 400));
+                    });
+                    tables.forEach(function (tb, ti) {
+                        var rows = iaPptxRows(tb.tbl);
+                        out.push('[D' + D + ':T' + (ti + 1) + '] tableau ' + rows.length + ' ligne(s) × ' + (rows[0] ? rows[0].cells.length : 0) + ' colonne(s)');
+                        rows.forEach(function (r, ri) {
+                            out.push('[D' + D + ':T' + (ti + 1) + ':L' + (ri + 1) + '] ' + r.cells.map(function (tc) { return iaPptxCellText(tc).replace(/\n/g, ' ⏎ ').slice(0, 140) || '∅'; }).join(' ¦ '));
+                        });
+                    });
+                }
+                out.push('(Les zones de texte vides ne sont pas listées mais comptent dans la numérotation [D#:F#].)');
+                return out.join('\n');
+            }
+
+            /* Outil modifier_presentation : applique les opérations sur le .pptx joint
+               puis le télécharge — structure, plan, mise en page, couleurs, polices et
+               tableaux d'origine intégralement préservés. Les appels successifs sont
+               CUMULATIFS (chaque appel repart du fichier déjà modifié), ce qui permet
+               de traiter un gros canevas en plusieurs lots sans jamais tout réémettre. */
+            async function iaPptxModify(inp, msgsEl) {
+                var name = String(inp.fichier || '');
+                var buf = IA.docs[name];
+                if (!buf) {
+                    var known = Object.keys(IA.docs || {});
+                    throw new Error('Présentation .pptx introuvable dans la conversation : « ' + name + ' »' + (known.length ? ' — disponibles : ' + known.join(', ') : ". Aucun document n'a été joint : demande à l'utilisateur de joindre le fichier .pptx (un .ppt doit d'abord être réenregistré en .pptx dans PowerPoint)."));
+                }
+                await iaEnsureZip();
+                var zip = await JSZip.loadAsync(buf);
+                if (!zip.file('ppt/presentation.xml')) throw new Error('« ' + name + " » n'est pas une présentation PowerPoint (.pptx) valide.");
+                var order = await iaPptxOrder(zip);
+                var docs = {}, dirty = {}, relsC = {}, relsDirty = {}, imgSeq = 0;
+                var presDoc = null, presDirty = false, prDoc = null, prDirty = false, ctStr = null, ctDirty = false;
+                var presStr = await zip.file('ppt/presentation.xml').async('string');
+                var mSz = /<p:sldSz[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"/.exec(presStr);
+                var sldW = mSz ? +mSz[1] : 12192000, sldH = mSz ? +mSz[2] : 6858000;
+
+                async function sDoc(i) {
+                    if (!((i | 0) > 0)) throw new Error('champ « d » manquant : indique le numéro de la diapositive visée (1–' + order.length + ')');
+                    var path = order[(i | 0) - 1];
+                    if (!path) throw new Error('[D' + i + '] inexistante — la présentation compte ' + order.length + ' diapositive(s) (D1–D' + order.length + ')');
+                    if (!docs[path]) {
+                        var dd = new DOMParser().parseFromString(await zip.file(path).async('string'), 'application/xml');
+                        if (dd.getElementsByTagName('parsererror').length) throw new Error('[D' + i + '] XML illisible');
+                        docs[path] = dd;
+                    }
+                    return { path: path, doc: docs[path] };
+                }
+                async function CT() { if (ctStr == null) { var cf = zip.file('[Content_Types].xml'); ctStr = cf ? await cf.async('string') : ''; } return ctStr; }
+                async function ensurePngCT() {
+                    var ct = await CT();
+                    if (ct && !/Extension="png"/i.test(ct)) { ctStr = ct.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>'); ctDirty = true; }
+                }
+                async function pres() {
+                    if (!presDoc) presDoc = new DOMParser().parseFromString(presStr, 'application/xml');
+                    return presDoc;
+                }
+                async function presRels() {
+                    if (!prDoc) {
+                        var f = zip.file('ppt/_rels/presentation.xml.rels');
+                        prDoc = new DOMParser().parseFromString(f ? await f.async('string') : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="' + IA_PKG_REL + '"></Relationships>', 'application/xml');
+                    }
+                    return prDoc;
+                }
+                function newRelId(relDoc, pfx) {
+                    var used = {}, all = relDoc.getElementsByTagName('*'), j, rid;
+                    for (j = 0; j < all.length; j++) { var iv = all[j].getAttribute && all[j].getAttribute('Id'); if (iv) used[iv] = 1; }
+                    do { rid = pfx + Math.floor(Math.random() * 900000 + 100000); } while (used[rid]);
+                    return rid;
+                }
+                async function sRels(path) {
+                    var rp = iaRelsPath(path);
+                    if (!relsC[rp]) {
+                        var f = zip.file(rp);
+                        relsC[rp] = new DOMParser().parseFromString(f ? await f.async('string') : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="' + IA_PKG_REL + '"></Relationships>', 'application/xml');
+                    }
+                    return { path: rp, doc: relsC[rp] };
+                }
+                async function addImg(path, b64png) {
+                    var R = await sRels(path);
+                    imgSeq++;
+                    var fname = 'ia_fig_' + Date.now().toString(36) + '_' + imgSeq + '.png';
+                    zip.file('ppt/media/' + fname, b64png, { base64: true });
+                    var rid = newRelId(R.doc, 'rIdIA');
+                    var rel = R.doc.createElementNS(IA_PKG_REL, 'Relationship');
+                    rel.setAttribute('Id', rid);
+                    rel.setAttribute('Type', IA_REL_IMG);
+                    rel.setAttribute('Target', '../media/' + fname);
+                    R.doc.documentElement.appendChild(rel);
+                    relsDirty[R.path] = true;
+                    await ensurePngCT();
+                    return rid;
+                }
+                function spTreeOf(doc) {
+                    var t = doc.getElementsByTagNameNS(IA_P_NS, 'spTree')[0];
+                    if (!t) throw new Error('diapositive sans arbre de formes');
+                    return t;
+                }
+                /* Duplique une diapositive et l'insère après la position demandée. */
+                async function dupSlide(srcIdx, afterIdx) {
+                    var src = order[(srcIdx | 0) - 1];
+                    if (!src) throw new Error('[D' + srcIdx + '] inexistante (D1–D' + order.length + ')');
+                    var n = 1; while (zip.file('ppt/slides/slide' + n + '.xml')) n++;
+                    var dst = 'ppt/slides/slide' + n + '.xml';
+                    zip.file(dst, docs[src] ? new XMLSerializer().serializeToString(docs[src]) : await zip.file(src).async('string'));
+                    var srp = iaRelsPath(src), drp = iaRelsPath(dst);
+                    var rxml = relsC[srp] ? new XMLSerializer().serializeToString(relsC[srp])
+                        : (zip.file(srp) ? await zip.file(srp).async('string') : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="' + IA_PKG_REL + '"></Relationships>');
+                    var rd = new DOMParser().parseFromString(rxml, 'application/xml'), rl = rd.getElementsByTagName('*'), i;
+                    for (i = rl.length - 1; i >= 0; i--) {   /* la note appartient à la diapo d'origine */
+                        var e = rl[i];
+                        if (e.localName === 'Relationship' && /notesSlide/i.test(e.getAttribute('Type') || '')) e.parentNode.removeChild(e);
+                    }
+                    zip.file(drp, new XMLSerializer().serializeToString(rd));
+                    var ct = await CT();
+                    if (ct.indexOf('PartName="/' + dst + '"') < 0) { ctStr = ct.replace('</Types>', '<Override PartName="/' + dst + '" ContentType="' + IA_CT_SLIDE + '"/></Types>'); ctDirty = true; }
+                    var PR = await presRels(), rid = newRelId(PR, 'rIdSl');
+                    var rel = PR.createElementNS(IA_PKG_REL, 'Relationship');
+                    rel.setAttribute('Id', rid); rel.setAttribute('Type', IA_REL_SLD); rel.setAttribute('Target', 'slides/slide' + n + '.xml');
+                    PR.documentElement.appendChild(rel); prDirty = true;
+                    var P = await pres(), lst = P.getElementsByTagNameNS(IA_P_NS, 'sldIdLst')[0];
+                    if (!lst) throw new Error('sldIdLst absent de presentation.xml');
+                    var ids = lst.getElementsByTagNameNS(IA_P_NS, 'sldId'), maxId = 255, k;
+                    for (k = 0; k < ids.length; k++) maxId = Math.max(maxId, +ids[k].getAttribute('id') || 0);
+                    var nd = P.createElementNS(IA_P_NS, 'p:sldId');
+                    nd.setAttribute('id', String(maxId + 1));
+                    nd.setAttributeNS(IA_R_NS, 'r:id', rid);
+                    var pos = Math.max(0, Math.min(order.length, afterIdx | 0));
+                    var ref = ids[pos - 1] || null;
+                    if (ref) lst.insertBefore(nd, ref.nextSibling); else lst.insertBefore(nd, lst.firstChild);
+                    presDirty = true;
+                    order.splice(pos, 0, dst);
+                    return { path: dst, index: pos + 1 };
+                }
+                async function delSlide(idx) {
+                    var path = order[(idx | 0) - 1];
+                    if (!path) throw new Error('[D' + idx + '] inexistante (D1–D' + order.length + ')');
+                    if (order.length <= 1) throw new Error('impossible de supprimer la dernière diapositive');
+                    var PR = await presRels(), rels = PR.getElementsByTagName('*'), rid = null, i;
+                    for (i = 0; i < rels.length; i++) {
+                        var e = rels[i];
+                        if (e.localName !== 'Relationship') continue;
+                        if (iaOpcRes('ppt/presentation.xml', e.getAttribute('Target') || '') === path) { rid = e.getAttribute('Id'); e.parentNode.removeChild(e); prDirty = true; break; }
+                    }
+                    var P = await pres(), ids = P.getElementsByTagNameNS(IA_P_NS, 'sldId');
+                    for (i = ids.length - 1; i >= 0; i--) if (ids[i].getAttributeNS(IA_R_NS, 'id') === rid) { ids[i].parentNode.removeChild(ids[i]); presDirty = true; }
+                    /* parts liées (note de la diapo comprise) */
+                    var rp = iaRelsPath(path), kill = [path, rp];
+                    var srf = zip.file(rp);
+                    if (srf) {
+                        var sx = await srf.async('string'), m2, reR = /<Relationship\b[^>]*>/g;
+                        while ((m2 = reR.exec(sx))) {
+                            if (!/notesSlide/i.test(m2[0])) continue;
+                            var tg = (m2[0].match(/\bTarget="([^"]*)"/) || [])[1], np = tg && iaOpcRes(path, tg);
+                            if (np) { kill.push(np); kill.push(iaRelsPath(np)); }
+                        }
+                    }
+                    var ct = await CT();
+                    kill.forEach(function (p) {
+                        if (zip.file(p)) zip.remove(p);
+                        delete docs[p]; delete dirty[p]; delete relsC[p]; delete relsDirty[p];
+                        ct = iaCtDrop(ct, p);
+                    });
+                    ctStr = ct; ctDirty = true;
+                    order.splice((idx | 0) - 1, 1);
+                    return path;
+                }
+
+                var ops = inp.operations || [], log = [], nOK = 0, i;
+                for (i = 0; i < ops.length; i++) {
+                    var o = ops[i] || {};
+                    try {
+                        if (o.op === 'remplacer_texte') {
+                            var cherche = String(o.cherche || ''); if (!cherche) throw new Error('champ « cherche » manquant');
+                            var remplace = String(o.remplace == null ? '' : o.remplace), nrep = 0;
+                            var range = (o.d | 0) > 0 ? [o.d | 0] : [], z;
+                            if (!range.length) for (z = 1; z <= order.length; z++) range.push(z);
+                            for (z = 0; z < range.length; z++) {
+                                var SD = await sDoc(range[z]), bodies = [], touched = 0;
+                                iaPptxShapes(SD.doc).forEach(function (s) { bodies.push(s.body); });
+                                iaPptxTables(SD.doc).forEach(function (tb) {
+                                    iaPptxRows(tb.tbl).forEach(function (r) { r.cells.forEach(function (tc) { var b = iaPptxCellBody(tc); if (b) bodies.push(b); }); });
+                                });
+                                bodies.forEach(function (b) {
+                                    iaPptxParas(b).forEach(function (p) { touched += iaPptxReplaceInPara(SD.doc, p, cherche, remplace); });
+                                });
+                                if (touched) { nrep += touched; dirty[SD.path] = true; }
+                            }
+                            if (!nrep) throw new Error('texte introuvable : « ' + cherche.slice(0, 80) + ' »');
+                            log.push('✔ remplacer_texte « ' + cherche.slice(0, 60) + ' » : ' + nrep + ' occurrence(s)'); nOK++;
+                        } else if (o.op === 'remplacer_forme') {
+                            var S1 = await sDoc(o.d), sh = iaPptxShapes(S1.doc), tgt1 = sh[(o.f | 0) - 1];
+                            if (!tgt1) throw new Error('[D' + o.d + ':F' + o.f + '] inexistante (' + sh.length + ' zone(s) de texte : F1–F' + sh.length + ')');
+                            iaPptxSetText(S1.doc, tgt1.body, o.texte); dirty[S1.path] = true;
+                            log.push('✔ [D' + o.d + ':F' + o.f + '] texte remplacé'); nOK++;
+                        } else if (o.op === 'remplacer_cellule' || o.op === 'colorer_cellule') {
+                            var S2 = await sDoc(o.d), tbs = iaPptxTables(S2.doc), tb2 = tbs[(o.t | 0) - 1];
+                            if (!tb2) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbs.length + ' tableau(x) sur cette diapositive)');
+                            var rows2 = iaPptxRows(tb2.tbl), row2 = rows2[(o.ligne | 0) - 1];
+                            if (!row2) throw new Error('[D' + o.d + ':T' + o.t + ':L' + o.ligne + '] inexistante (' + rows2.length + ' ligne(s))');
+                            var tc2 = row2.cells[(o.colonne | 0) - 1];
+                            if (!tc2) throw new Error('[D' + o.d + ':T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] inexistante (' + row2.cells.length + ' colonne(s))');
+                            var adr = '[D' + o.d + ':T' + o.t + ':L' + o.ligne + ':C' + o.colonne + ']';
+                            if (o.texte != null) iaPptxSetCellText(S2.doc, tc2, o.texte);
+                            if (o.couleur != null && String(o.couleur) !== '') {
+                                var cn = iaCellNorm({ t: '', bg: o.couleur });
+                                if (!cn.fill) throw new Error('couleur invalide : « ' + o.couleur + ' » (jetons vert/jaune/orange/rouge/bleu/gris ou hex RRGGBB)');
+                                iaPptxSetCellFill(S2.doc, tc2, cn.fill);
+                                if (cn.fg) iaPptxSetCellFg(S2.doc, tc2, cn.fg);
+                            } else if (o.op === 'colorer_cellule') throw new Error('champ « couleur » manquant');
+                            dirty[S2.path] = true;
+                            log.push('✔ ' + adr + (o.texte != null ? ' remplacée' : '') + (o.couleur ? ' colorée' : '')); nOK++;
+                        } else if (o.op === 'ajouter_lignes') {
+                            var S3 = await sDoc(o.d), tbs3 = iaPptxTables(S3.doc), tb3 = tbs3[(o.t | 0) - 1];
+                            if (!tb3) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbs3.length + ' tableau(x))');
+                            var rows3 = iaPptxRows(tb3.tbl);
+                            if (!rows3.length) throw new Error('tableau vide');
+                            var lignes3 = iaParseMaybe(o.lignes) || [];
+                            if (!Array.isArray(lignes3) || !lignes3.length) throw new Error('champ « lignes » manquant (tableau de lignes)');
+                            var modele = rows3[rows3.length - 1], apres = (o.apres | 0) > 0 ? rows3[(o.apres | 0) - 1] : rows3[rows3.length - 1];
+                            if (!apres) throw new Error('ligne « apres » inexistante');
+                            var anchor = apres.tr, added = 0;
+                            lignes3.forEach(function (ln) {
+                                var tr = modele.tr.cloneNode(true), cells = [], c;
+                                for (c = tr.firstChild; c; c = c.nextSibling) if (c.nodeType === 1 && c.localName === 'tc') cells.push(c);
+                                var arr = Array.isArray(ln) ? ln : [ln];
+                                cells.forEach(function (tc, ci) {
+                                    var cell = iaCellNorm(arr[ci]);
+                                    iaPptxSetCellText(S3.doc, tc, cell.text);
+                                    if (cell.fill) { iaPptxSetCellFill(S3.doc, tc, cell.fill); if (cell.fg) iaPptxSetCellFg(S3.doc, tc, cell.fg); }
+                                });
+                                anchor.parentNode.insertBefore(tr, anchor.nextSibling);
+                                anchor = tr; added++;
+                            });
+                            dirty[S3.path] = true;
+                            log.push('✔ [D' + o.d + ':T' + o.t + '] ' + added + ' ligne(s) ajoutée(s)'); nOK++;
+                        } else if (o.op === 'supprimer_ligne') {
+                            var S4 = await sDoc(o.d), tbs4 = iaPptxTables(S4.doc), tb4 = tbs4[(o.t | 0) - 1];
+                            if (!tb4) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbs4.length + ' tableau(x))');
+                            var rows4 = iaPptxRows(tb4.tbl), row4 = rows4[(o.ligne | 0) - 1];
+                            if (!row4) throw new Error('[D' + o.d + ':T' + o.t + ':L' + o.ligne + '] inexistante (' + rows4.length + ' ligne(s))');
+                            if (rows4.length <= 1) throw new Error('impossible de supprimer la seule ligne du tableau');
+                            row4.tr.parentNode.removeChild(row4.tr); dirty[S4.path] = true;
+                            log.push('✔ [D' + o.d + ':T' + o.t + ':L' + o.ligne + '] ligne supprimée'); nOK++;
+                        } else if (o.op === 'remplacer_image') {
+                            var S5 = await sDoc(o.d), imgs5 = iaDocxImages(S5.doc), tgt5 = imgs5[(o.image | 0) - 1];
+                            if (!tgt5) throw new Error('[D' + o.d + ':IMG' + o.image + '] inexistante (' + imgs5.length + ' image(s) sur cette diapositive)');
+                            var ext5 = iaPptxBlipExt(tgt5.el);
+                            var durl5 = await iaDocxRenderPng(o, ext5);
+                            var rid5 = await addImg(S5.path, iaStripData(durl5));
+                            tgt5.el.setAttributeNS(IA_R_NS, tgt5.qname, rid5);
+                            dirty[S5.path] = true;
+                            log.push('✔ [D' + o.d + ':IMG' + o.image + '] image remplacée (cadre d\'origine conservé)'); nOK++;
+                        } else if (o.op === 'remplacer_graphique') {
+                            var S6 = await sDoc(o.d), ch6 = iaPptxCharts(S6.doc), tgt6 = ch6[(o.graphique | 0) - 1];
+                            if (!tgt6) throw new Error('[D' + o.d + ':GRAPH' + o.graphique + '] inexistant (' + ch6.length + ' graphique(s) natif(s) sur cette diapositive)');
+                            var box6 = iaPptxXfrm(tgt6.frame) || { x: Math.round(sldW * 0.08), y: Math.round(sldH * 0.2), cx: Math.round(sldW * 0.84), cy: Math.round(sldH * 0.66) };
+                            var durl6 = await iaDocxRenderPng(o, { cx: box6.cx, cy: box6.cy });
+                            var rid6 = await addImg(S6.path, iaStripData(durl6));
+                            var pic6 = iaPptxPicNode(S6.doc, rid6, 900 + i, box6.x, box6.y, box6.cx, box6.cy, 'Graphique actualisé');
+                            tgt6.frame.parentNode.replaceChild(pic6, tgt6.frame);
+                            dirty[S6.path] = true;
+                            log.push('✔ [D' + o.d + ':GRAPH' + o.graphique + '] graphique natif actualisé (même emplacement)'); nOK++;
+                        } else if (o.op === 'inserer_image') {
+                            var S7 = await sDoc(o.d);
+                            var durl7 = await iaDocxRenderPng(o, null), dims7 = iaPngDims(durl7);
+                            var iw = o.largeur != null ? Math.round(+o.largeur * IA_EMU_CM) : Math.round(sldW * 0.84);
+                            var ih = o.hauteur != null ? Math.round(+o.hauteur * IA_EMU_CM) : (dims7 ? Math.round(iw * dims7.h / dims7.w) : Math.round(iw * 0.56));
+                            var maxH = Math.round(sldH * 0.72);
+                            if (ih > maxH) { var k7 = maxH / ih; ih = maxH; if (o.largeur == null) iw = Math.round(iw * k7); }
+                            var ix = o.x != null ? Math.round(+o.x * IA_EMU_CM) : Math.round((sldW - iw) / 2);
+                            var iy = o.y != null ? Math.round(+o.y * IA_EMU_CM) : Math.round(sldH * 0.24);
+                            if (iy + ih > sldH) iy = Math.max(0, sldH - ih);
+                            var rid7 = await addImg(S7.path, iaStripData(durl7));
+                            spTreeOf(S7.doc).appendChild(iaPptxPicNode(S7.doc, rid7, 950 + i, ix, iy, iw, ih, o.nom || 'Figure'));
+                            dirty[S7.path] = true;
+                            log.push('✔ [D' + o.d + '] figure insérée'); nOK++;
+                        } else if (o.op === 'dupliquer_diapositive') {
+                            var r8 = await dupSlide(o.d, (o.apres | 0) > 0 ? (o.apres | 0) : (o.d | 0));
+                            log.push('✔ [D' + o.d + '] dupliquée → nouvelle [D' + r8.index + '] (les diapositives suivantes sont décalées de 1)'); nOK++;
+                        } else if (o.op === 'nouvelle_diapositive') {
+                            var modIdx = (o.modele | 0) > 0 ? (o.modele | 0) : (o.apres | 0) > 0 ? (o.apres | 0) : 1;
+                            var r9 = await dupSlide(modIdx, (o.apres | 0) > 0 ? (o.apres | 0) : order.length);
+                            var S9 = await sDoc(r9.index), tree9 = spTreeOf(S9.doc);
+                            var shapes9 = iaPptxShapes(S9.doc), ttl9 = iaPptxTitle(shapes9), cn9, nx9;
+                            var keep = ttl9 ? ttl9.sp : null;               /* ancêtre de 1er niveau du titre */
+                            while (keep && keep.parentNode && keep.parentNode !== tree9) keep = keep.parentNode;
+                            for (cn9 = tree9.firstChild; cn9; cn9 = nx9) {   /* on ne garde que le titre */
+                                nx9 = cn9.nextSibling;
+                                if (cn9.nodeType !== 1) continue;
+                                if (cn9 === keep || cn9.localName === 'nvGrpSpPr' || cn9.localName === 'grpSpPr') continue;
+                                tree9.removeChild(cn9);
+                            }
+                            if (ttl9) iaPptxSetText(S9.doc, ttl9.body, o.titre == null ? '' : o.titre);
+                            else if (o.titre != null && String(o.titre) !== '')   /* modèle sans zone de titre (diapo 100 % tableau) */
+                                tree9.appendChild(iaPptxTextBox(S9.doc, 960 + i, Math.round(sldW * 0.06), Math.round(sldH * 0.05), Math.round(sldW * 0.88), Math.round(sldH * 0.13), String(o.titre)));
+                            if (o.figure != null || o.vega != null || o.image_b64 != null || o.image_fichier != null) {
+                                var durl9 = await iaDocxRenderPng(o, null), dims9 = iaPngDims(durl9);
+                                var iw9 = Math.round(sldW * 0.84), ih9 = dims9 ? Math.round(iw9 * dims9.h / dims9.w) : Math.round(iw9 * 0.56);
+                                var mh9 = Math.round(sldH * 0.68);
+                                if (ih9 > mh9) { iw9 = Math.round(iw9 * mh9 / ih9); ih9 = mh9; }
+                                var rid9 = await addImg(S9.path, iaStripData(durl9));
+                                tree9.appendChild(iaPptxPicNode(S9.doc, rid9, 970 + i, Math.round((sldW - iw9) / 2), Math.round(sldH * 0.26), iw9, ih9, 'Figure'));
+                            }
+                            dirty[S9.path] = true;
+                            log.push('✔ nouvelle diapositive [D' + r9.index + ']' + (o.titre ? ' — ' + String(o.titre).slice(0, 50) : '') + ' (les suivantes sont décalées de 1)'); nOK++;
+                        } else if (o.op === 'supprimer_diapositive') {
+                            await delSlide(o.d);
+                            log.push('✔ [D' + o.d + '] supprimée (les diapositives suivantes remontent de 1)'); nOK++;
+                        } else throw new Error('opération inconnue : ' + o.op);
+                    } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
+                }
+                if (!nOK) return 'AUCUNE opération appliquée — présentation NON modifiée et NON téléchargée. Corrige les adresses ci-dessous et rappelle l\'outil.\n' + log.join('\n');
+                Object.keys(dirty).forEach(function (p) { if (docs[p]) zip.file(p, new XMLSerializer().serializeToString(docs[p])); });
+                Object.keys(relsDirty).forEach(function (p) { if (relsC[p]) zip.file(p, new XMLSerializer().serializeToString(relsC[p])); });
+                if (presDirty && presDoc) zip.file('ppt/presentation.xml', new XMLSerializer().serializeToString(presDoc));
+                if (prDirty && prDoc) zip.file('ppt/_rels/presentation.xml.rels', new XMLSerializer().serializeToString(prDoc));
+                if (ctDirty && ctStr != null) zip.file('[Content_Types].xml', ctStr);
+                /* Le fichier de travail est mis à jour : les appels suivants repartent
+                   de l'état modifié (édition d'un gros canevas en plusieurs lots). */
+                var ab = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+                IA.docs[name] = ab;
+                var restant = ops.length - nOK;
+                if (inp.telecharger === false) {
+                    return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s) et ENREGISTRÉE(S) dans le fichier de travail (pas encore téléchargé, comme demandé). Le prochain appel repart de cet état. Termine par un appel avec telecharger:true.\n' + log.join('\n');
+                }
+                var outName = (inp.nom_sortie ? String(inp.nom_sortie).replace(/\.pptx$/i, '') : name.replace(/\.pptx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.pptx';
+                var mime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                var blob = new Blob([ab], { type: mime });
+                iaDlBlob(outName, mime, blob);
+                if (msgsEl) {
+                    var card = E('div', 'ia-card');
+                    card.appendChild(E('h4', '', '📊 Présentation actualisée — ' + esc(outName)));
+                    card.appendChild(E('div', 'ia-note', nOK + '/' + ops.length + ' modification(s) appliquée(s) · ' + order.length + ' diapositive(s) · structure, mise en page et couleurs d\'origine préservées · le téléchargement a démarré automatiquement.'));
+                    var dl = E('div', 'ia-dl'), b8 = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
+                    b8.onclick = function () { iaDlBlob(outName, mime, blob); };
+                    dl.appendChild(b8); card.appendChild(dl);
+                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                }
+                return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s), présentation « ' + outName + ' » (' + order.length + ' diapositives) téléchargée chez l\'utilisateur — mise en page d\'origine préservée.' +
+                    (restant ? ' ⚠ ' + restant + ' opération(s) en échec, voir le détail.' : '') +
+                    ' Le fichier de travail est MIS À JOUR : si tu as encore des lots d\'opérations, rappelle simplement modifier_presentation sur le même fichier (les modifications s\'accumulent, ne recommence RIEN).\n' + log.join('\n');
             }
 
             function iaScroll(el) { try { el.lastElementChild && el.lastElementChild.scrollIntoView({ block: 'end' }); } catch (e) { } }
