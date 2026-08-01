@@ -2073,6 +2073,9 @@
         }
 
         /* ═══ CASCADING FILTERS ═══ */
+                /* Référentiel DHIS2 des entités (ou_map, basé UID) pour les listes
+                   et comptages des filtres ZS/AS/FOSA — null tant que non chargé. */
+                var _ouMapData = null, _ouProvC = null;
                 function computeCascade(changedDim) {
                         var src = S.data;
                         var order = ['antenne', 'zs', 'as', 'fosa'];
@@ -2103,26 +2106,98 @@
                             S.filters.antenne = avAnt.slice();
                         }
 
-                        var srcAnt = _fastSub(src, function (r) { return r.antenne; }, S.filters.antenne, avAnt.length);
-                        var avZS = uv(srcAnt, function (r) { return r.org3; });
+                        /* Remplit une dimension en préservant un choix manuel : la liste
+                           complète n'est rechargée que si l'utilisateur n'a rien changé
+                           (vide ou liste complète précédente) — sinon son choix est
+                           conservé, découpé aux valeurs encore disponibles. */
+                        function _fillDim(dimK, idx, newList) {
+                            var prev = S.cascaded[dimK] || [];
+                            var prevSet = _toSet(prev);
+                            var sel = S.filters[dimK] || [];
+                            var untouched = !sel.length || (sel.length === prev.length && sel.every(function (v) { return prevSet[v]; }));
+                            var setN = _toSet(newList);
+                            S.filters[dimK] = sel.filter(function (v) { return setN[v]; });
+                            if (chIdx < idx && untouched) S.filters[dimK] = newList.slice();
+                        }
+
+                        /* ZS / AS / FOSA : listes et comptages issus du RÉFÉRENTIEL DHIS2
+                           (ou_map, basé UID) dès qu'il est chargé — conformes au DHIS2,
+                           entités sans données rapportées incluses. Repli (avant
+                           chargement) : noms distincts des agrégats mensuels. */
+                        if (!_ouMapData) {
+                            _loadOuMap().then(function (d) {
+                                if (!d || !Object.keys(d).length) return;
+                                _ouMapData = d; _ouProvC = null;
+                                computeCascade(null); rFlt(); apFlt(); render();
+                            });
+                        }
+                        var omProv = null;
+                        if (_ouMapData) {
+                            if (!_ouProvC) _ouProvC = {};
+                            var _pv = S.filters.province;
+                            if (!_ouProvC[_pv]) {
+                                var _arr = [];
+                                for (var _uid in _ouMapData) { var _v = _ouMapData[_uid]; if (_v && _v.Org2 === _pv) _arr.push(_v); }
+                                _ouProvC[_pv] = _arr;
+                            }
+                            omProv = _ouProvC[_pv];
+                        }
+
+                        var avZS, avAS, avFOSA, asPairsN = 0, fosaPairsN = 0;
+                        if (omProv && omProv.length) {
+                            /* antenne → ensemble d'Org3 (l'antenne n'existe pas dans le
+                               DHIS2 : correspondance établie via les données courantes) */
+                            var antZS = {};
+                            src.forEach(function (r) { if (r.antenne && r.org3) { (antZS[r.antenne] = antZS[r.antenne] || {})[r.org3] = 1; } });
+                            var selAnt = S.filters.antenne, allAnt = !selAnt.length || selAnt.length >= avAnt.length;
+                            var omAnt = omProv.filter(function (v) {
+                                if (allAnt) return true;
+                                for (var i = 0; i < selAnt.length; i++) { var m = antZS[selAnt[i]]; if (m && m[v.Org3]) return true; }
+                                return false;
+                            });
+                            avZS = uv(omAnt, function (v) { return v.Org3; });
+                            _fillDim('zs', 1, avZS);
+                            var setZS = _toSet(S.filters.zs);
+                            var omZS = omAnt.filter(function (v) { return setZS[v.Org3]; });
+                            var asPair = {}, asNameSet = {}, asNames = [];
+                            omZS.forEach(function (v) {
+                                if (!v.Org4) return;
+                                var k = (v.Org3 || '') + '|' + v.Org4;
+                                if (!asPair[k]) asPair[k] = 1;           /* comptage DHIS2 : paires ZS|AS (homonymes entre ZS = AS distinctes) */
+                                if (!asNameSet[v.Org4]) { asNameSet[v.Org4] = 1; asNames.push(v.Org4); }  /* liste : noms uniques */
+                            });
+                            asNames.sort();
+                            avAS = asNames;
+                            asPairsN = Object.keys(asPair).length;
+                            _fillDim('as', 2, avAS);
+                            var setAS = _toSet(S.filters.as);
+                            var fNameSet = {}, fNames = [], fosaUidN = 0;
+                            omZS.forEach(function (v) {
+                                if (!v.Org5 || !setAS[v.Org4]) return;
+                                fosaUidN++;   /* chaque entrée ou_map = 1 FOSA (UID) — comptage identique au DHIS2 */
+                                if (!fNameSet[v.Org5]) { fNameSet[v.Org5] = 1; fNames.push(v.Org5); }     /* liste : noms uniques */
+                            });
+                            fNames.sort();
+                            avFOSA = fNames;
+                            fosaPairsN = fosaUidN;
+                            _fillDim('fosa', 3, avFOSA);
+                        } else {
+                            var srcAnt = _fastSub(src, function (r) { return r.antenne; }, S.filters.antenne, avAnt.length);
+                            avZS = uv(srcAnt, function (r) { return r.org3; });
+                            _fillDim('zs', 1, avZS);
+                            var srcZS = _fastSub(srcAnt, function (r) { return r.org3; }, S.filters.zs, avZS.length);
+                            avAS = uv(srcZS, function (r) { return r.org4; });
+                            _fillDim('as', 2, avAS);
+                            var srcAS = _fastSub(srcZS, function (r) { return r.org4; }, S.filters.as, avAS.length);
+                            avFOSA = uv(srcAS, function (r) { return r.org5; });
+                            _fillDim('fosa', 3, avFOSA);
+                        }
                         S.cascaded.zs = avZS;
-                        var _sZS = _toSet(avZS);
-                        S.filters.zs = S.filters.zs.filter(function (a) { return _sZS[a]; });
-                        if (chIdx < 1) S.filters.zs = avZS.slice();
-
-                        var srcZS = _fastSub(srcAnt, function (r) { return r.org3; }, S.filters.zs, avZS.length);
-                        var avAS = uv(srcZS, function (r) { return r.org4; });
                         S.cascaded.as = avAS;
-                        var _sAS = _toSet(avAS);
-                        S.filters.as = S.filters.as.filter(function (a) { return _sAS[a]; });
-                        if (chIdx < 2) S.filters.as = avAS.slice();
-
-                        var srcAS = _fastSub(srcZS, function (r) { return r.org4; }, S.filters.as, avAS.length);
-                        var avFOSA = uv(srcAS, function (r) { return r.org5; });
                         S.cascaded.fosa = avFOSA;
-                        var _sFOSA = _toSet(avFOSA);
-                        S.filters.fosa = S.filters.fosa.filter(function (a) { return _sFOSA[a]; });
-                        if (chIdx < 3) S.filters.fosa = avFOSA.slice();
+                        /* Comptages DHIS2 de référence (paires ZS|entité — les homonymes
+                           entre ZS comptent chacun) pour l'affichage des filtres. */
+                        S.cascaded.cnt = { zs: avZS.length, as: (asPairsN || avAS.length), fosa: (fosaPairsN || avFOSA.length) };
                     }
 
         /* ═══ APPLY FILTER ═══ */
@@ -2282,11 +2357,15 @@
 
             var bt = document.createElement('button'); bt.className = 'fbtn';
             var tot = options.length, nSel = selected.length;
+            /* Comptage affiché : référentiel DHIS2 (paires ZS|entité — homonymes
+               entre ZS comptés chacun) quand il est chargé, sinon taille de la liste. */
+            var refTot = (S.cascaded.cnt && (dimKey === 'zs' || dimKey === 'as' || dimKey === 'fosa')) ? S.cascaded.cnt[dimKey] : 0;
+            var dispTot = refTot || tot;
             var btnLabel;
             if (dimKey === 'period' && nSel === 1) { btnLabel = mL(selected[0]); }
             else if (nSel === 1) { btnLabel = tr(selected[0], 22); }
-            else if (nSel === tot && tot > 0) { btnLabel = 'Tout (' + tot + ')'; }
-            else { btnLabel = nSel + '/' + tot; }
+            else if (nSel === tot && tot > 0) { btnLabel = 'Tout (' + dispTot + ')'; }
+            else { btnLabel = nSel + '/' + dispTot; }
             bt.innerHTML = '<span>' + btnLabel + '</span><span class="cn">' + nSel + '</span><span>▼</span>';
             bt.onclick = function (e) {
                 e.stopPropagation();
@@ -2299,6 +2378,15 @@
             var sr = document.createElement('input'); sr.className = 'sr'; sr.placeholder = 'Rechercher...'; sr.type = 'text';
             sr.oninput = function () { var q = sr.value.toLowerCase(); dd.querySelectorAll('.fi:not(.fa)').forEach(function (it) { it.style.display = it.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none'; }); };
             dd.appendChild(sr);
+
+            /* Note de transparence quand le référentiel compte plus d'entités que
+               de noms uniques (AS/FOSA homonymes dans des ZS différentes). */
+            if (refTot && refTot !== tot) {
+                var dupNote = E('div', 'fi');
+                dupNote.style.cssText = 'font-size:10px;color:#92400e;background:#fef3c7;cursor:default;line-height:1.3';
+                dupNote.textContent = '⚠ ' + tot + ' noms uniques pour ' + refTot + ' entités DHIS2 — homonymes entre ZS (le filtre agit par nom).';
+                dd.appendChild(dupNote);
+            }
 
             /* Tout sélectionner */
             var aD = E('div', 'fi fa');

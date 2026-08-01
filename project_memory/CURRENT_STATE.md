@@ -497,3 +497,17 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   = distinctes (plus de sur-compte FOSA×mois), non-rapportantes et % rapportage
   calculés sur l'attendu DHIS2, titres des graphiques annotés « n avec données /
   N attendues (DHIS2) ». Antenne traduite en liste de ZS (absente du DHIS2).
+
+État actuel (01/08/2026 — filtres : comptages DHIS2) :
+- FILTRES ZS/AS/FOSA alimentés par le RÉFÉRENTIEL ou_map (basé UID) au lieu des
+  noms distincts des agrégats mensuels (qui sous-comptaient : seules les entités
+  AYANT RAPPORTÉ apparaissaient — ex. Tshopo : 713 vues pour 813 au DHIS2 ;
+  Kinshasa : 2 248 FOSA au DHIS2). computeCascade réécrite (chemin référentiel
+  + repli agrégats avant chargement, _fillDim préserve les choix manuels),
+  antenne→ZS résolue via les données (l'antenne n'existe pas dans DHIS2).
+- Comptages affichés (boutons filtres) = DHIS2 : AS = paires ZS|AS (homonymes
+  entre ZS = AS distinctes, ex. Kinshasa 427 pour 393 noms) ; FOSA = entrées
+  UID (2 248 pour 2 011 noms — doublons de noms comptés comme dans DHIS2).
+  Note d'information dans la liste quand noms uniques ≠ comptage DHIS2.
+- Validation : Kinshasa 35 ZS / 427 AS / 2 248 FOSA = DHIS2 en direct ;
+  Kasa Vubu 7 AS ; 0 nom de donnée absent du référentiel (Tshopo, Kasai).
