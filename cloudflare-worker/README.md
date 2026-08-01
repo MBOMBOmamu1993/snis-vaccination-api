@@ -3,9 +3,9 @@
 Ce dossier contient le **proxy Cloudflare Worker** qui alimente l'onglet
 **« Assistant IA DHIS2 RDC »** du dashboard (`docs/index.html`).
 
-Il remplit 3 fonctions :
+Il remplit 4 fonctions :
 
-1. **Proxy API Claude (Anthropic)** — votre clé API reste secrète côté serveur ;
+1. **Proxy IA (OpenAI, Claude, Kimi et Ollama Cloud)** — vos clés API restent secrètes côté serveur ;
    les utilisateurs consomment avec un **code d'accès** à quota.
 2. **Proxy DHIS2 (lecture seule)** — l'IA peut interroger l'API Web du SNIS RDC
    (n'importe quel élément de données/indicateur) sans jamais exposer vos
@@ -32,6 +32,7 @@ Il remplit 3 fonctions :
 | Compte | Où | Pour quoi |
 |---|---|---|
 | Anthropic Console | https://console.anthropic.com | Clé API + crédits (min 5–10 $) |
+| OpenAI Platform | https://platform.openai.com | Clé API + facturation API (séparée de ChatGPT Plus) |
 | Cloudflare (gratuit) | https://dash.cloudflare.com | Héberger ce proxy |
 | Numéro WhatsApp dédié | SIM séparée (quelques $) | Recevoir les commandes des clients. *Une SIM dédiée préserve votre numéro personnel.* |
 | CinetPay (marchand) | https://cinetpay.com | Paiement automatique (KYC : pièce d'identité + RCCM). *Plus tard — tout fonctionne sans.* |
@@ -56,6 +57,7 @@ Copiez l'`id` affiché dans `wrangler.toml` (remplacez `REMPLACEZ_PAR_L_ID_GENER
 
 ```bash
 npx wrangler secret put ANTHROPIC_API_KEY     # sk-ant-... (console.anthropic.com)
+npx wrangler secret put OPENAI_API_KEY        # sk-... (platform.openai.com/api-keys)
 npx wrangler secret put DHIS2_BASE_URL        # ex. https://snisrdc.com
 npx wrangler secret put DHIS2_USERNAME        # compte DHIS2 (lecture seule conseillé)
 npx wrangler secret put DHIS2_PASSWORD
@@ -126,7 +128,10 @@ une requête Opus 4.8 coûte ≈ 0,01–0,05 $.
 
 ## Sécurité
 
-- Les clés (Anthropic, DHIS2, CinetPay) ne quittent **jamais** le Worker.
+- Les clés du service (OpenAI, Anthropic, DHIS2, CinetPay) ne quittent **jamais** le Worker.
+- OpenAI utilise la Responses API avec `store: false`. Le dashboard expose GPT-5.6
+  Terra aux clients (équilibre intelligence/coût) et réserve GPT-5.6 Sol à
+  l'administrateur. GPT-5.6 Luna n'est pas proposé.
 - Le proxy DHIS2 n'accepte que des **GET** (lecture seule) et bloque les
   endpoints sensibles (users, system…). Utilisez quand même un compte DHIS2
   **en lecture seule** dédié.

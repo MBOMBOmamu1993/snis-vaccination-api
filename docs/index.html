@@ -9685,6 +9685,18 @@
                 { id: 'kimi-k2.7-code', label: 'Kimi K2.7 Code' },
                 { id: 'kimi-k2.6', label: 'Kimi K2.6' }
             ];
+            /* OpenAI : les deux meilleurs GPT-5.6 seulement. Terra est proposé aux
+               clients pour son équilibre intelligence/coût ; Sol reste réservé à
+               la liste complète de l'administrateur. Luna est volontairement exclu. */
+            var IA_OPENAI_KEYMETA = {
+                keyLabel: 'Clé API OpenAI (commune à GPT-5.6 Terra et Sol)', keyPlaceholder: 'sk-...',
+                keyHint: 'Créez une clé sur <b>platform.openai.com/api-keys</b> après avoir activé la facturation API. <b>ChatGPT Plus ne finance pas l’API.</b> La clé est conservée uniquement dans votre navigateur et relayée par le proxy sécurisé sans y être stockée.'
+            };
+            var IA_OPENAI_MODELS = [
+                { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra — meilleur équilibre intelligence/coût', effort: 'medium' },
+                { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol — puissance maximale', effort: 'high' }
+            ];
+            var IA_CLIENT_GPT_PROVIDER = 'gpt:gpt-5.6-terra';
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['minimax-m3', 'deepseek-v4-pro', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'kimi:kimi-k3';
@@ -9693,8 +9705,9 @@
                (7 jours, à raison d'1 analyse par jour) donne accès à CES MÊMES
                modèles ; au-delà du rythme ou après les 7 jours, le proxy renvoie
                vers l'achat. (L'admin, lui, voit la liste complète dynamique
-               Ollama + Kimi + Claude.) */
+               Ollama + OpenAI + Kimi + Claude.) */
             var IA_CLIENT_MODELS = [
+                { v: IA_CLIENT_GPT_PROVIDER, label: 'GPT-5.6 Terra — 💳 Payant (économique et très intelligent)' },
                 { v: 'kimi:kimi-k3', label: 'Kimi K3 — 💳 Payant (par défaut, adapté aux tâches très complexes et compliquées)' },
                 { v: 'claude-opus5', label: 'Claude Opus 5 — 💳 Payant (le plus compétent, adapté aux tâches très complexes et compliquées)' },
                 { v: 'claude', label: 'Claude Opus 4.8 — 💳 Payant (adapté aux tâches très complexes et compliquées)' }
@@ -9720,6 +9733,12 @@
                 if (p === 'claude-fable' && !iaIsAdmin()) { cfg('provider', IA_DEFAULT_PROVIDER); return IA_DEFAULT_PROVIDER; }
                 if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
                 if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
+                if (p.indexOf('gpt:') === 0) {
+                    /* Le client ne voit/utilise que Terra ; Sol est réservé à la
+                       liste administrateur pour maîtriser le coût des codes vendus. */
+                    if (!iaIsAdmin() && p !== IA_CLIENT_GPT_PROVIDER) { cfg('provider', IA_CLIENT_GPT_PROVIDER); return IA_CLIENT_GPT_PROVIDER; }
+                    return p;
+                }
                 /* Ollama retiré de la liste client : tout ancien réglage Ollama
                    (ex. MiniMax M3) d'un CLIENT bascule définitivement sur le
                    modèle par défaut ; l'admin garde le libre choix. */
@@ -9732,6 +9751,16 @@
                 if (pk === 'claude') return IA_CLAUDE;
                 if (pk === 'claude-fable') return IA_CLAUDE_FABLE;
                 if (pk === 'claude-opus5') return IA_CLAUDE_OPUS5;
+                if (pk.indexOf('gpt:') === 0) {
+                    var gm = pk.slice(4) || 'gpt-5.6-terra';
+                    var gmMeta = IA_OPENAI_MODELS[0];
+                    for (var g = 0; g < IA_OPENAI_MODELS.length; g++) if (IA_OPENAI_MODELS[g].id === gm) gmMeta = IA_OPENAI_MODELS[g];
+                    return {
+                        label: gmMeta.label, model: gmMeta.id, kind: 'openai-responses',
+                        path: '/openai/v1/responses', keyHeader: 'x-openai-key', effort: gmMeta.effort,
+                        keyLabel: IA_OPENAI_KEYMETA.keyLabel, keyPlaceholder: IA_OPENAI_KEYMETA.keyPlaceholder, keyHint: IA_OPENAI_KEYMETA.keyHint
+                    };
+                }
                 if (pk.indexOf('kimi:') === 0) {
                     var km = pk.slice(5) || 'kimi-k3';
                     var kmMeta = null;
@@ -9749,11 +9778,12 @@
                     keyLabel: IA_OLLAMA_KEYMETA.keyLabel, keyPlaceholder: IA_OLLAMA_KEYMETA.keyPlaceholder, keyHint: IA_OLLAMA_KEYMETA.keyHint
                 };
             }
-            /* Clés personnelles : une pour Anthropic, une pour Kimi, UNE seule pour tous
+            /* Clés personnelles : une pour Anthropic, OpenAI, Kimi, UNE seule pour tous
                les modèles Ollama (même compte). Reprend les anciens réglages : migration douce. */
             function iaUserKey(pk) {
                 if (String(pk).indexOf('claude') === 0) return cfg('key_claude') || cfg('key');
                 if (String(pk).indexOf('kimi:') === 0) return cfg('key_kimi');
+                if (String(pk).indexOf('gpt:') === 0) return cfg('key_openai');
                 return cfg('key_ollama') || cfg('key_minimax');
             }
             /* Rafraîchit la liste des modèles Ollama Cloud via le proxy. */
@@ -10633,9 +10663,9 @@
                     if (m.role === 'user' && m.images && m.images.length) {
                         return { role: 'user', content: m.content || '', images: m.images.map(iaStripData) };
                     }
-                    if (m.role === 'assistant' && m._thinkBlocks) {
-                        /* les blocs signés Anthropic sont internes : ne pas les envoyer à Ollama */
-                        var c = {}; for (var k in m) if (k !== '_thinkBlocks') c[k] = m[k];
+                    if (m.role === 'assistant' && (m._thinkBlocks || m._openaiOutput)) {
+                        /* Blocs internes signés/rejouables : ne pas les envoyer à Ollama. */
+                        var c = {}; for (var k in m) if (k !== '_thinkBlocks' && k !== '_openaiOutput') c[k] = m[k];
                         return c;
                     }
                     return m;
@@ -10691,6 +10721,54 @@
                 return IA_TOOLS.map(function (t) {
                     return { name: t.function.name, description: t.function.description, input_schema: t.function.parameters };
                 });
+            }
+            /* Format natif de la Responses API : les fonctions ne sont pas
+               imbriquées sous `function`, contrairement à Chat Completions. */
+            function iaToolsResponses() {
+                return IA_TOOLS.map(function (t) {
+                    return { type: 'function', name: t.function.name, description: t.function.description, parameters: t.function.parameters };
+                });
+            }
+            function iaMsgsToResponses(messages) {
+                var out = [], ids = [];
+                for (var i = 0; i < messages.length; i++) {
+                    var m = messages[i];
+                    if (m.role === 'user') {
+                        if (m.images && m.images.length) {
+                            var parts = [];
+                            if (m.content) parts.push({ type: 'input_text', text: m.content });
+                            m.images.forEach(function (d) {
+                                parts.push({ type: 'input_image', image_url: String(d).indexOf('data:') === 0 ? d : ('data:image/png;base64,' + d) });
+                            });
+                            out.push({ role: 'user', content: parts.length ? parts : [{ type: 'input_text', text: '(vide)' }] });
+                        } else out.push({ role: 'user', content: m.content || '' });
+                    } else if (m.role === 'assistant') {
+                        ids = [];
+                        if (m._openaiOutput && m._openaiOutput.length) {
+                            /* Rejouer les output items (dont reasoning) est requis
+                               entre un function_call et son résultat. */
+                            m._openaiOutput.forEach(function (item) {
+                                out.push(item);
+                                if (item.type === 'function_call') ids.push(item.call_id);
+                            });
+                        } else {
+                            if (m.content) out.push({ role: 'assistant', content: m.content });
+                            (m.tool_calls || []).forEach(function (tc, k) {
+                                var id = tc.id || ('call_' + i + '_' + k);
+                                ids.push(id);
+                                out.push({ type: 'function_call', call_id: id, name: iaToolName(tc), arguments: JSON.stringify(iaToolArgs(tc)) });
+                            });
+                        }
+                    } else if (m.role === 'tool') {
+                        var k = 0;
+                        while (i < messages.length && messages[i].role === 'tool') {
+                            out.push({ type: 'function_call_output', call_id: messages[i].tool_call_id || ids[k] || ('call_' + i + '_' + k), output: String(messages[i].content || '') });
+                            i++; k++;
+                        }
+                        i--;
+                    }
+                }
+                return out;
             }
             /* Ollama -> OpenAI (Kimi) : messages texte ou multimodaux, tool_calls
                avec leurs identifiants NATIFS (tc.id renvoyé par Kimi — requis pour
@@ -10769,7 +10847,7 @@
                             for (var k = 0; k < need; k++) out.push(messages[++i]);
                         } else {
                             var c = {};
-                            for (var key in m) if (key !== 'tool_calls' && key !== '_thinkBlocks') c[key] = m[key];
+                            for (var key in m) if (key !== 'tool_calls' && key !== '_thinkBlocks' && key !== '_openaiOutput') c[key] = m[key];
                             if (!c.content) c.content = '(appel d\'outil interrompu)';
                             out.push(c);
                             if (got > 0) {
@@ -10818,6 +10896,13 @@
                        signés sont capturés puis rejoués (cf. iaMsgsToAnthropic). */
                     if (prov.think) body.thinking = { type: 'adaptive' };
                     if (prov.effort) body.output_config = { effort: prov.effort };
+                } else if (prov.kind === 'openai-responses') {
+                    body = {
+                        model: prov.model, max_output_tokens: 16000, stream: true, store: false,
+                        instructions: iaSystem(), input: iaMsgsToResponses(messages),
+                        tools: iaToolsResponses(), reasoning: { effort: prov.effort || 'medium' },
+                        include: ['reasoning.encrypted_content']
+                    };
                 } else if (prov.kind === 'openai') {
                     /* Kimi (Moonshot) — format OpenAI : system en tête, outils au
                        format function-calling, SSE en réponse. reasoning_effort est
@@ -10873,7 +10958,7 @@
                        corrompu : réponse tool manquante/orpheline, id non reconnu,
                        reasoning_content absent…) → UNE retry automatique sur une
                        copie assainie de l'historique (iaSanitizeHistory). */
-                    if (resp.status === 400 && (!_rs || !_rs.sanitized) && /tool[_ ]?calls?|tool_use|tool_result|tool_call_id|reasoning_content/i.test(msg)) {
+                    if (resp.status === 400 && (!_rs || !_rs.sanitized) && /tool[_ ]?calls?|tool_use|tool_result|tool_call_id|function_call|reasoning_content/i.test(msg)) {
                         if (onThink) onThink();
                         return await iaCallAPI(iaSanitizeHistory(messages), onText, onThink, pk, { sanitized: true });
                     }
@@ -10887,9 +10972,11 @@
                 }
                 return prov.kind === 'anthropic'
                     ? await iaReadAnthropicStream(resp, onText, onThink)
-                    : (prov.kind === 'openai'
-                        ? await iaReadOpenAIStream(resp, onText, onThink)
-                        : await iaReadOllamaStream(resp, onText, onThink));
+                    : (prov.kind === 'openai-responses'
+                        ? await iaReadResponsesStream(resp, onText, onThink)
+                        : (prov.kind === 'openai'
+                            ? await iaReadOpenAIStream(resp, onText, onThink)
+                            : await iaReadOllamaStream(resp, onText, onThink)));
             }
 
             /* Flux Ollama — NDJSON, une ligne JSON par événement :
@@ -10978,7 +11065,54 @@
                 return { content: text, thinking: thinkTxt, tool_calls: toolCalls, done_reason: stop, anthropic_thinking: thinkBlocks };
             }
 
-            /* Flux OpenAI/Kimi — SSE « data: {json} » terminé par « data: [DONE] ».
+            /* Flux OpenAI Responses API. Les output items complets sont conservés
+               pour pouvoir poursuivre correctement après les appels d'outils. */
+            async function iaReadResponsesStream(resp, onText, onThink) {
+                var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
+                var text = '', items = {}, completedOutput = null, doneReason = null;
+                function handleData(data) {
+                    if (!data || data === '[DONE]') return;
+                    var ev; try { ev = JSON.parse(data); } catch (e) { return; }
+                    if (ev.type === 'error') throw new Error(ev.message || (ev.error && ev.error.message) || 'Erreur API OpenAI');
+                    if (ev.type === 'response.failed') throw new Error(ev.response && ev.response.error && ev.response.error.message || 'La réponse OpenAI a échoué');
+                    if (ev.type === 'response.output_text.delta' && ev.delta) {
+                        text += ev.delta; if (onText) onText(ev.delta);
+                    } else if (ev.type === 'response.output_item.added' && ev.item && ev.item.type === 'reasoning') {
+                        if (onThink) onThink();
+                    } else if (/reasoning.*\.delta$/.test(ev.type || '')) {
+                        if (onThink) onThink();
+                    } else if (ev.type === 'response.output_item.done' && ev.item) {
+                        items[ev.output_index == null ? Object.keys(items).length : ev.output_index] = ev.item;
+                    } else if (ev.type === 'response.completed' && ev.response) {
+                        completedOutput = ev.response.output || null;
+                        doneReason = ev.response.status || 'completed';
+                    } else if (ev.type === 'response.incomplete' && ev.response) {
+                        completedOutput = ev.response.output || null;
+                        doneReason = 'incomplete';
+                    }
+                }
+                while (true) {
+                    var chunk = await reader.read(); if (chunk.done) break;
+                    buf += dec.decode(chunk.value, { stream: true });
+                    var lines = buf.split('\n'); buf = lines.pop();
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i].trim();
+                        if (line.indexOf('data:') === 0) handleData(line.slice(5).trim());
+                    }
+                }
+                var tail = buf.trim(); if (tail.indexOf('data:') === 0) handleData(tail.slice(5).trim());
+                var output = completedOutput || Object.keys(items).sort(function (a, b) { return a - b; }).map(function (k) { return items[k]; });
+                var toolCalls = [];
+                output.forEach(function (item) {
+                    if (item && item.type === 'function_call') {
+                        var args = {}; try { args = JSON.parse(item.arguments || '{}'); } catch (e) { }
+                        toolCalls.push({ id: item.call_id, function: { name: item.name, arguments: args } });
+                    }
+                });
+                return { content: text, thinking: '', tool_calls: toolCalls, done_reason: doneReason, openai_output: output };
+            }
+
+            /* Flux OpenAI-compatible/Kimi — SSE « data: {json} » terminé par « data: [DONE] ».
                  Deltas : choices[0].delta.content (texte), .reasoning_content (K3),
                  .tool_calls (fragments accumulés par index : id et name au 1er
                  fragment, arguments ensuite). L'identifiant NATIF du tool_call
@@ -11051,6 +11185,7 @@
                     if (resp.thinking) am.thinking = resp.thinking;
                     if (resp.tool_calls.length) am.tool_calls = resp.tool_calls;
                     if (resp.anthropic_thinking && resp.anthropic_thinking.length) am._thinkBlocks = resp.anthropic_thinking;
+                    if (resp.openai_output && resp.openai_output.length) am._openaiOutput = resp.openai_output;
                     IA.msgs.push(am);
                     if (!resp.tool_calls.length) return;
                     for (var i = 0; i < resp.tool_calls.length; i++) {
@@ -13576,9 +13711,12 @@
                         return;
                     }
                     var models = IA_OLLAMA_MODELS.slice();
-                    if (pk.indexOf('claude') !== 0 && pk.indexOf('kimi:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
+                    if (pk.indexOf('claude') !== 0 && pk.indexOf('kimi:') !== 0 && pk.indexOf('gpt:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
                     var html = '<optgroup label="Ollama Cloud — abonnement forfaitaire">' +
                         models.map(function (id) { return '<option value="' + esc(id) + '">' + esc(iaModelLabel(id)) + '</option>'; }).join('') +
+                        '</optgroup>' +
+                        '<optgroup label="OpenAI — API à crédits (usage)">' +
+                        IA_OPENAI_MODELS.map(function (x) { return '<option value="gpt:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
                         '</optgroup>' +
                         '<optgroup label="Moonshot AI — API à crédits (usage)">' +
                         IA_KIMI_MODELS.map(function (x) { return '<option value="kimi:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
@@ -13589,9 +13727,9 @@
                     if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
                 }
 
-                /* Une clé par fournisseur : Anthropic / Kimi / Ollama (commune à tous ses modèles) */
-                var keys = { claude: iaUserKey('claude'), kimi: cfg('key_kimi'), ollama: cfg('key_ollama') || cfg('key_minimax') };
-                function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama'); }
+                /* Une clé par fournisseur : Anthropic / OpenAI / Kimi / Ollama */
+                var keys = { claude: iaUserKey('claude'), openai: cfg('key_openai'), kimi: cfg('key_kimi'), ollama: cfg('key_ollama') || cfg('key_minimax') };
+                function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('gpt:') === 0 ? 'openai' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama')); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
                     pk = np;
@@ -13645,7 +13783,7 @@
                 m.querySelector('#iaSave').onclick = function () {
                     keys[keySlot(pk)] = kEl.value.trim();
                     cfg('mode', mode); cfg('provider', pk);
-                    cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || ''); cfg('key_kimi', keys.kimi || '');
+                    cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || ''); cfg('key_openai', keys.openai || ''); cfg('key_kimi', keys.kimi || '');
                     /* le code vient du panneau actif : champ dédié en mode clé, champ code en mode code */
                     cfg('code', (mode === 'key' && c2El) ? c2El.value.trim() : (cEl ? cEl.value.trim() : ''));
                     bg.remove();

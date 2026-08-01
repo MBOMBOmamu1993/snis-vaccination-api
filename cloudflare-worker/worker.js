@@ -3,12 +3,13 @@
  *  PROXY IA — Dashboard PEV de routine (snis-vaccination-api)
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
- *   1. DEUX fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
+ *   1. Fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
  *        /api/chat        → Ollama Cloud (MiniMax M3)   — clé OLLAMA_API_KEY
  *        /v1/messages     → Anthropic (Claude)          — clé ANTHROPIC_API_KEY
- *      Dans les deux cas : soit un code d'accès valide (quota décompté, clé du
+ *        /openai/v1/responses → OpenAI (GPT-5.6)        — clé OPENAI_API_KEY
+ *      Dans tous les cas : soit un code d'accès valide (quota décompté, clé du
  *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
- *      x-anthropic-key (relais pur, aucun quota consommé).
+ *      x-anthropic-key / x-openai-key (relais pur, aucun quota consommé).
  *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
  *      CORS, un appel direct depuis le navigateur est donc impossible.
  *   2. /dhis2/api/*        → proxy lecture seule vers le DHIS2 (SNIS RDC),
@@ -44,6 +45,8 @@
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
  *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
  *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
+ *   OPENAI_API_KEY      — clé API platform.openai.com (facturation API séparée
+ *                         de l'abonnement ChatGPT Plus)
  *   KIMI_API_KEY        — clé API platform.kimi.ai (Moonshot) : assistant de
  *                         lecture des captures + fournisseur Kimi K3 du dashboard
  *                         (les trois sont facultatives : un fournisseur sans clé
@@ -93,12 +96,14 @@ const OFFERS = [
    sans lui, Ollama cherche un modèle local et renvoie « model not found ». */
 const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
 const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-5', 'claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
+const ALLOWED_OPENAI_MODELS = ['gpt-5.6-terra', 'gpt-5.6-sol'];
 /* Tous les modèles clients (Claude Opus 5 / Opus 4.8 / Fable 5, Kimi K3) sont
    PUISSANTS et PAYANTS — les codes d'ESSAI y ont accès à raison d'1 analyse
    par jour pendant 7 jours (cf. resolveIaAuth) ; au-delà → achat. */
 const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
 const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 /* Moonshot : plateforme internationale api.moonshot.ai (platform.kimi.ai).
    Si la clé vient de la plateforme chinoise : poser KIMI_API_BASE =
    https://api.moonshot.cn dans les vars. */
@@ -133,6 +138,7 @@ export default {
       if (url.pathname === '/api/chat' && request.method === 'POST') return await proxyOllama(request, env, cors);
       if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/kimi/v1/chat/completions' && request.method === 'POST') return await proxyKimi(request, env, cors);
+      if (url.pathname === '/openai/v1/responses' && request.method === 'POST') return await proxyOpenAI(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
       if (url.pathname === '/envoyer' && request.method === 'POST') return await clientMail(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
@@ -193,7 +199,7 @@ function corsHeaders(env, origin) {
   return {
     'Access-Control-Allow-Origin': ok ? (origin || '*') : allowed[0],
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code,x-ollama-key,x-anthropic-key,x-kimi-key',
+    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code,x-ollama-key,x-anthropic-key,x-kimi-key,x-openai-key',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -396,6 +402,35 @@ async function proxyKimi(request, env, cors) {
     body: JSON.stringify(body),
   });
   return await finishIaResponse(env, upstream, resolved, cors, 'text/event-stream');
+}
+
+/* OpenAI Responses API — GPT-5.6 Terra (équilibre coût/intelligence) et Sol
+   (puissance maximale). Luna est volontairement exclu de l'offre. */
+async function proxyOpenAI(request, env, cors) {
+  let resolved;
+  try { resolved = await resolveIaAuth(request, env, 'x-openai-key', 'OPENAI_API_KEY'); }
+  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
+
+  if (!ALLOWED_OPENAI_MODELS.includes(body.model)) body.model = ALLOWED_OPENAI_MODELS[0];
+  if (!body.max_output_tokens || body.max_output_tokens > MAX_TOKENS_CAP) body.max_output_tokens = MAX_TOKENS_CAP;
+  /* Les conversations peuvent contenir des données sanitaires : ne pas conserver
+     les réponses côté OpenAI, même si un appelant envoie store:true. */
+  body.store = false;
+
+  const upstream = await fetch(OPENAI_RESPONSES_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: body.stream ? 'text/event-stream' : 'application/json',
+      authorization: 'Bearer ' + resolved.key,
+    },
+    body: JSON.stringify(body),
+  });
+  return await finishIaResponse(env, upstream, resolved, cors, body.stream ? 'text/event-stream' : 'application/json');
 }
 
 async function proxyAnthropic(request, env, cors) {
