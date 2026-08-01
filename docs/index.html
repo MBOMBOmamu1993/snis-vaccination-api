@@ -9876,6 +9876,9 @@
                     "- CALCUL d'un indicateur : laisse DHIS2 le faire — interroge l'indicateur directement dans analytics (dimension=dx:<UID_indicateur>&dimension=pe:…&dimension=ou:…) : la valeur renvoyée a déjà la formule officielle appliquée (numérateur/dénominateur × facteur du type : Percentage ×100, Per 100 000 ×100000, Number ×1). ⚠ Requête lourde côté serveur : UN SEUL indicateur par appel analytics ; si l'appel expire ou échoue (erreur 5xx), REPLI IMMÉDIAT : prends les dataElements du numerator/denominator de sa formule (légers) et calcule toi-même — pour comparer plusieurs séries ou indicateurs, c'est aussi la voie à privilégier.",
                     "- LECTURE DES FORMULES (numerator/denominator) : sommes de #{UID_élément} ou #{UID_élément.UID_combo} ; R{UID_dataset.ACTUAL_REPORTS}/EXPECTED_REPORTS/ACTUAL_REPORTS_ON_TIME = rapports soumis/attendus/à temps ; dénominateur souvent #{WLSKVyA8LoY} (population) × coefficient : 0,04 = grossesses/naissances vivantes attendues (maternité, SP, BCG, Td), 0,0349 = nourrissons survivants 0-11 mois (vaccins nourrisson), 0,149 = 12-59 mois, 0,113 = 24-59 mois, 0,057 = 6-23 mois.",
                     "- COMPLÉTUDE/PROMPTITUDE : dimension=dx:<UID_dataset>.REPORTING_RATE dans analytics (ex. ahT7ysZZ913.REPORTING_RATE = complétude du formulaire A-Edition 2025) et <UID_dataset>.REPORTING_RATE_ON_TIME pour la promptitude ; indicateurs globaux officiels : L3KahLq4YFo (complétude globale des rapports ESS, 11 formulaires) et bnyWMbmL5IR (promptitude globale).",
+                    "- ⛔⛔ « ND » / « non rapporté dans DHIS2 » EST INTERDIT tant que tu n'as pas fait LES TROIS vérifications : (1) l'INDICATEUR calculé — indicators.json?filter=name:ilike:<terme>&fields=id,name,numerator,denominator&paging=false ; (2) les ÉLÉMENTS DE DONNÉES BRUTS — dataElements.json?filter=name:ilike:<terme>&fields=id,name&paging=false : PRESQUE TOUT EST LÀ, c'est la source la plus riche ; (3) le DATASET qui les porte (dataSets/<UID>/dataSetElements?paging=false). Cherche par MOTS-CLÉS COURTS et VARIÉS (« séance », « lèpre », « TARV », « rupture »), jamais par le libellé entier du canevas, et attention aux sous-chaînes trompeuses (« eau » est contenu dans « Nouveaux »). Constat réel sur la revue de Maluku I : l'assistant a écrit « ND — non rapporté dans DHIS2 » pour des indicateurs qui AVAIENT des données (coïnfectés TB/VIH sous traitement = 100 % sur les 6 mois de S1 2025 ET S1 2026 ; PNLS_CU_TB/HIV-3.1a = 20 % ; femmes enceintes connaissant leur statut = 11,4 %). C'est une faute grave : le client le voit immédiatement.",
+                    "- ⭐ INDICATEUR SANS UID DIRECT → CALCULE-LE depuis les données brutes, en respectant la FORMULE DHIS2. Récupère la définition officielle : indicators.json?filter=id:eq:<UID>&fields=numerator,denominator,numeratorDescription,denominatorDescription — puis remplace chaque #{UID_element} (ou #{UID.UID_combo}) par sa valeur réelle et applique le rapport. Si l'indicateur n'existe pas du tout, reconstitue-le à partir des éléments bruts du canevas concerné. Exemple vérifié : « % des séances de vaccination réalisées » n'existe comme AUCUN indicateur, mais se calcule directement — « B 8.3 Séances réalisées » (lHB57kjRtUz) ÷ « B 8.3 Séances prévues » (s5EUr8GznWY) × 100. N'abandonne un indicateur QUE si ni l'indicateur, ni ses éléments bruts n'existent — et dis alors précisément ce qui manque.",
+                    "- COUVERTURE PARTIELLE : quand une valeur n'existe que sur une partie de la période, DONNE-LA en précisant la couverture (« 11,4 % — 3 mois sur 6 rapportés ») au lieu d'écrire ND. Une donnée partielle correctement qualifiée vaut infiniment mieux qu'un « ND » qui efface une information réelle. Signale aussi les valeurs > 100 % (incohérence numérateur/dénominateur) sans les masquer.",
                     "- ⭐⭐ SCORE QUALITÉ DES DONNÉES — DÉFINITION OFFICIELLE DPS, NE JAMAIS IMPROVISER. Quand un client demande « le score qualité », il s'agit TOUJOURS du score qualité des données DHIS2 (référence : « SCORE QUALITE_JUIN_2026_VF », DPS Kinshasa). Ce n'est PAS le score qualité de l'onglet « Qualité des données » de ce dashboard (score PEV maison : rapportage / exhaustivité / cohérence / valeurs atypiques / abandon, sur 5-6 critères) : ne confonds JAMAIS les deux et n'utilise JAMAIS le score du dashboard pour répondre à une demande de score qualité DHIS2. MÉTHODE OFFICIELLE — 5 critères notés chacun sur 20, TOTAL SUR 100 : (1) score du taux de COMPLÉTUDE GLOBALE ; (2) score du taux de PROMPTITUDE GLOBALE ; (3) score du NOMBRE DE CANEVAS (datasets) ayant atteint une complétude ≥ 95 % ; (4) score du RATIO RVV pour 100 rapports encodés ; (5) score des RVV CORRIGÉES — critère BINAIRE : 20 si l'entité a corrigé ses règles de validation violées, 0 sinon. RVV = Règles de Validation Violées. CATÉGORISATION du total : 100 = Très Performante ; 80–95 = Performante ; 60–75 = Moyenne ; 50–55 = Faible ; < 50 = Très faible.",
                     "- SCORE QUALITÉ — COMPLÉTUDE/PROMPTITUDE GLOBALES : moyenne sur TOUS LES CANEVAS DE TOUS LES PROGRAMMES du DHIS2, JAMAIS sur les seuls formulaires PEV. Canevas de référence (DPS Kinshasa, juin 2026) : A- Services de Base, B- Services Secondaires, C- SIGL BCZ_CDR_BCAF, C- SIGL ESS, D- Service Hôpital, E- Banque de Sang et Transfusion, F- Activités BCZ, PNLS_Canevas Unique, PNLP CS Site Sentinelle, PNLP HGR Site Sentinelle, PNLT_Rapport Mensuel Tuberculose, eSurveillance Hebdomadaire, J- Service Tertiaire (Éditions 2024/2025). Récupère la liste réelle via dataSets.json?fields=id,name,periodType&paging=false, puis analytics avec dx:<UID>.REPORTING_RATE (complétude) et dx:<UID>.REPORTING_RATE_ON_TIME (promptitude). Le taux GLOBAL est la MOYENNE des taux par canevas — surtout PAS le ratio (somme des rapports reçus / somme des attendus), qui dépasse 100 % dans plusieurs ZS et ne reproduit pas le document. ⚠ Un canevas NON ATTENDU dans une entité est EXCLU de la moyenne — ne le compte JAMAIS comme 0, cela fausse tout : analytics ne renvoie tout simplement pas de ligne (vérifié : PNLP CS et PNLP HGR Site Sentinelle n'existent qu'à Kingasani ; J- Service Tertiaire seulement à Gombe, Lemba, Limete et Ndjili). Le critère (3) se calcule sur ces mêmes canevas : nombre de ceux dont la complétude atteint 95 %.",
                     "- SCORE QUALITÉ — BARÈME de chaque critère : 20 / 15 / 10 / 5 / 0. Pour la complétude et la promptitude, seuils calés sur le document de référence : ≥ 95 % → 20 ; 85–94 % → 15 ; 70–84 % → 10 ; en dessous, 5 puis 0. ⚠ N'UTILISE JAMAIS la grille « ≥95→20 ; 90–94→15 ; 80–89→10 ; 70–79→5 ; <70→0 » : elle a été inventée lors d'un essai antérieur et CONTREDIT le document officiel (Police et Kisenso à 85 % y valent 15 et non 10 ; Selembao à 79 % vaut 10 et non 5). En cas de doute sur un palier, dis-le et demande confirmation — n'invente pas de seuil.",
@@ -9913,6 +9916,8 @@
                     "- COULEURS de tableaux (tableaux de suivi/logistique/score colorés selon une légende) : op colorer_cellule {t, ligne, colonne, couleur} applique un fond de cellule SUR PLACE (jeton vert/jaune/orange/rouge/bleu/gris ou hex) sans reconstruire le document ni changer le design. C'est POSSIBLE et attendu. Ex. légende logistique dashboard : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge (colonnes TX SATISFACTION/DISPONIBILITÉ). Émets un colorer_cellule par cellule à colorer.",
                     "- INTERDICTIONS ABSOLUES quand un .docx ou un .pptx est joint : ne JAMAIS répondre qu'une action est « impossible sur place » (remplacer un graphique natif, colorer des cellules, ajouter des lignes à un tableau, insérer des figures, ajouter une diapositive sont TOUS possibles via modifier_document / modifier_presentation) ; ne JAMAIS régénérer le document avec generer_rapport (cela change le design) ; ne JAMAIS livrer une « annexe » à copier-coller ni un fichier partiel « à compléter ». Toujours modifier le fichier joint et le rendre tel quel avec seulement les changements demandés.",
                     "- ⛔ NE DIS JAMAIS QUE C'EST TERMINÉ SANS AVOIR LIVRÉ LE FICHIER. Un livrable n'existe que si l'outil correspondant a répondu « OK : … téléchargé chez l'utilisateur ». Tant que ce n'est pas le cas, le travail n'est PAS fini : continue. Interdits formels : annoncer un document généré alors qu'aucun appel d'outil n'a abouti ; livrer un fichier tronqué en le présentant comme complet ; livrer PLUSIEURS fichiers partiels « complémentaires » (le client en attend UN SEUL, complet) ; conclure par un résumé de ce que « contient » le document au lieu de le produire. Si un appel échoue, lis le message d'erreur, corrige les adresses et relance — n'abandonne pas en silence et ne recommence pas depuis le début.",
+                    "- ⛔ FIDÉLITÉ ABSOLUE AU CANEVAS — n'AJOUTE RIEN qui n'y soit demandé. Constat réel : l'assistant a improvisé un graphique de couvertures vaccinales que le canevas ne demandait nulle part, et a mis un graphique de complétude à l'endroit où le canevas réclamait le TABLEAU DE SCORE QUALITÉ. Règles : (1) chaque diapositive reçoit EXACTEMENT ce que son intitulé demande — lis l'intitulé avant de produire ; (2) aucune diapositive, aucun graphique, aucune section en plus ; (3) là où le canevas demande « score qualité », mets le TABLEAU du score qualité des données à 5 critères sur 100 (méthode DPS ci-dessous), S1 2025 vs S1 2026, une ligne par critère plus le total et la catégorisation — JAMAIS un graphique de complétude, qui est un autre indicateur ; (4) si une rubrique du canevas ne relève pas du DHIS2 (budgets PTF, activités, signatures), laisse-la EXACTEMENT en l'état, ne la remplis pas et ne la supprime pas.",
+                    "- 📐 MISE EN PAGE — un livrable illisible est un livrable refusé. (1) RIEN ne doit dépasser de la diapositive : après ajouter_lignes, l'outil te signale un débordement — appelle alors paginer_tableau {d, t}. (2) Un tableau long se DÉCOUPE sur plusieurs diapositives (en-tête répété, titre « (suite) ») : augmenter le nombre de diapositives est TOUJOURS préférable à un tableau coupé ou minuscule. (3) Ne superpose jamais une figure à un tableau ou à un texte existant : insère-la sur une diapositive dédiée via nouvelle_diapositive, ou choisis explicitement x/y/largeur (en cm) dans une zone libre. (4) Respecte le pied de page : ne place aucun contenu sous ~17 cm sur une diapositive 16:9 de 19 cm. (5) Textes : phrases courtes et complètes, jamais de fragment tronqué ni de code/JSON brut dans une cellule.",
                     "- ⭐ CANEVAS / MODÈLE .pptx joint (revue semestrielle, revue annuelle, présentation de ZS…) → modifier_presentation UNIQUEMENT, JAMAIS generer_rapport. C'est la règle la plus importante de cette section : régénérer une présentation jointe détruit sa structure, son plan, ses couleurs et ses tableaux, et produit un fichier que le client REFUSE. Méthode obligatoire, dans cet ordre : (1) LIS l'extraction adressée du fichier joint et repère chaque cellule ∅ ou chaque valeur à actualiser ; (2) calcule TOUTES les valeurs nécessaires (executer_js / requete_dhis2) AVANT toute écriture ; (3) applique les modifications par LOTS successifs de modifier_presentation (une diapositive ou un groupe de diapositives par appel, telecharger:false sur les lots intermédiaires) — les appels sont CUMULATIFS, ne recommence JAMAIS un lot déjà appliqué ; (4) termine par un appel avec telecharger:true. Ne touche QU'aux données demandées : les rubriques, titres, textes, tableaux et sections sans rapport avec la mise à jour restent EXACTEMENT tels quels — y compris les sections vides et celles hors DHIS2 (budgets PTF, activités, signatures), qu'il ne faut ni remplir ni supprimer sauf demande explicite. Pour les graphiques demandés : inserer_image sur la diapositive concernée, ou nouvelle_diapositive {apres, titre, figure} pour en ajouter une au style du deck.",
                     "- Modèle .doc/.ppt/.pdf joint (ancien format binaire ou PDF, non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle. ⚠ Si le fichier est un .ppt ou .doc ANCIEN format, demande d'abord à l'utilisateur de le réenregistrer en .pptx/.docx : la modification sur place, bien plus fidèle, redevient alors possible.",
                     "- RESPECTE le format demandé : l'utilisateur demande Word → format:'word' ; PDF → format:'pdf'. Ne remplace JAMAIS le format demandé par 'carte' (HTML) — le Word et le PDF savent désormais colorer les cellules et se mettre en paysage.",
@@ -10078,7 +10083,7 @@
                     type: 'function',
                     function: {
                         name: 'modifier_presentation',
-                        description: "Modifie SUR PLACE une PRÉSENTATION PowerPoint (.pptx) jointe par l'utilisateur, en préservant INTÉGRALEMENT sa structure, son plan, sa mise en page, ses rubriques, ses tableaux, ses codes couleurs, ses polices et son style — seuls les contenus ciblés changent. C'EST L'OUTIL À UTILISER dès qu'un canevas / modèle / ancienne présentation .pptx est joint et qu'il faut l'actualiser, la compléter ou la corriger : ne régénère JAMAIS une présentation jointe avec generer_rapport (cela détruit le design et produit un document non conforme). Les adresses viennent de l'extraction du fichier : [D#]=diapositive (ordre d'affichage), [D#:F#]=zone de texte, [D#:T#]=tableau, [D#:T#:L#:C#]=cellule (base 1), [D#:IMG#]=image, [D#:GRAPH#]=graphique natif. Opérations : remplacer_texte {cherche, remplace, d?} (partout, ou sur la seule diapositive d ; la mise en forme des caractères est conservée) ; remplacer_forme {d, f, texte} ; remplacer_cellule {d, t, ligne, colonne, texte} ; colorer_cellule {d, t, ligne, colonne, couleur, texte?} (fond de cellule : jeton vert/jaune/orange/rouge/bleu/gris ou hex, texte lisible automatique) ; ajouter_lignes {d, t, lignes, apres?} (nouvelles lignes calquées sur le style de la dernière ligne — pour les listes d'aires de santé, de problèmes, de recommandations ; une cellule peut être {t, bg} pour la colorer) ; supprimer_ligne {d, t, ligne} ; remplacer_image {d, image, figure|vega|image_b64} (dans le cadre existant) ; remplacer_graphique {d, graphique, figure|vega} (actualise un graphique NATIF au même emplacement) ; inserer_image {d, figure|vega, x?, y?, largeur?, hauteur?} (AJOUTE un graphique sur une diapositive existante ; positions et tailles en CENTIMÈTRES, centré sous le titre par défaut) ; nouvelle_diapositive {apres, titre, figure|vega?, modele?} (crée une diapositive AU STYLE DU DECK en copiant la mise en page de modele) ; dupliquer_diapositive {d, apres?} ; supprimer_diapositive {d}. ⚠ Les insertions/suppressions de diapositives DÉCALENT la numérotation [D#] des suivantes : traite-les en DERNIER, ou de la fin vers le début. ⚠ APPELS CUMULATIFS : chaque appel repart de la présentation DÉJÀ MODIFIÉE — pour un gros canevas, envoie plusieurs lots d'opérations successifs (jamais tout d'un coup), sans JAMAIS recommencer les lots précédents ; mets telecharger:false sur les lots intermédiaires et telecharger:true (ou rien) sur le dernier. La présentation modifiée est téléchargée automatiquement chez l'utilisateur.",
+                        description: "Modifie SUR PLACE une PRÉSENTATION PowerPoint (.pptx) jointe par l'utilisateur, en préservant INTÉGRALEMENT sa structure, son plan, sa mise en page, ses rubriques, ses tableaux, ses codes couleurs, ses polices et son style — seuls les contenus ciblés changent. C'EST L'OUTIL À UTILISER dès qu'un canevas / modèle / ancienne présentation .pptx est joint et qu'il faut l'actualiser, la compléter ou la corriger : ne régénère JAMAIS une présentation jointe avec generer_rapport (cela détruit le design et produit un document non conforme). Les adresses viennent de l'extraction du fichier : [D#]=diapositive (ordre d'affichage), [D#:F#]=zone de texte, [D#:T#]=tableau, [D#:T#:L#:C#]=cellule (base 1), [D#:IMG#]=image, [D#:GRAPH#]=graphique natif. Opérations : remplacer_texte {cherche, remplace, d?} (partout, ou sur la seule diapositive d ; la mise en forme des caractères est conservée) ; remplacer_forme {d, f, texte} ; remplacer_cellule {d, t, ligne, colonne, texte} ; colorer_cellule {d, t, ligne, colonne, couleur, texte?} (fond de cellule : jeton vert/jaune/orange/rouge/bleu/gris ou hex, texte lisible automatique) ; ajouter_lignes {d, t, lignes, apres?} (nouvelles lignes calquées sur le style de la dernière ligne — pour les listes d'aires de santé, de problèmes, de recommandations ; une cellule peut être {t, bg} pour la colorer) ; supprimer_ligne {d, t, ligne} ; paginer_tableau {d, t, lignes_par_page?, entetes?} — DÉCOUPE un tableau trop long sur PLUSIEURS diapositives, en-tête répété et titre suffixé « (suite) » ; à appeler dès qu'un tableau déborde du bas de la diapositive (l'outil te le signale après ajouter_lignes) ; mieux vaut AUGMENTER le nombre de diapositives qu'avoir un tableau illisible ou coupé ; remplacer_image {d, image, figure|vega|image_b64} (dans le cadre existant) ; remplacer_graphique {d, graphique, figure|vega} (actualise un graphique NATIF au même emplacement) ; inserer_image {d, figure|vega, x?, y?, largeur?, hauteur?} (AJOUTE un graphique sur une diapositive existante ; positions et tailles en CENTIMÈTRES, centré sous le titre par défaut) ; nouvelle_diapositive {apres, titre, figure|vega?, modele?} (crée une diapositive AU STYLE DU DECK en copiant la mise en page de modele) ; dupliquer_diapositive {d, apres?} ; supprimer_diapositive {d}. ⚠ Les insertions/suppressions de diapositives DÉCALENT la numérotation [D#] des suivantes : traite-les en DERNIER, ou de la fin vers le début. ⚠ APPELS CUMULATIFS : chaque appel repart de la présentation DÉJÀ MODIFIÉE — pour un gros canevas, envoie plusieurs lots d'opérations successifs (jamais tout d'un coup), sans JAMAIS recommencer les lots précédents ; mets telecharger:false sur les lots intermédiaires et telecharger:true (ou rien) sur le dernier. La présentation modifiée est téléchargée automatiquement chez l'utilisateur.",
                         parameters: {
                             type: 'object',
                             properties: {
@@ -10088,7 +10093,9 @@
                                 operations: {
                                     type: 'array', items: {
                                         type: 'object', properties: {
-                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_forme', 'remplacer_cellule', 'colorer_cellule', 'ajouter_lignes', 'supprimer_ligne', 'remplacer_image', 'remplacer_graphique', 'inserer_image', 'nouvelle_diapositive', 'dupliquer_diapositive', 'supprimer_diapositive'] },
+                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_forme', 'remplacer_cellule', 'colorer_cellule', 'ajouter_lignes', 'supprimer_ligne', 'paginer_tableau', 'remplacer_image', 'remplacer_graphique', 'inserer_image', 'nouvelle_diapositive', 'dupliquer_diapositive', 'supprimer_diapositive'] },
+                                            lignes_par_page: { type: 'integer', description: 'paginer_tableau : nombre de lignes de données par diapositive (défaut : calculé pour tenir dans la hauteur disponible)' },
+                                            entetes: { type: 'integer', description: "paginer_tableau : nombre de lignes d'en-tête à répéter sur chaque page (défaut 1)" },
                                             d: { type: 'integer', description: 'Numéro de la diapositive [D#] (ordre d\'affichage, base 1)' },
                                             f: { type: 'integer', description: 'Numéro de la zone de texte [D#:F#]' },
                                             t: { type: 'integer', description: 'Numéro du tableau [D#:T#] sur cette diapositive' },
@@ -11739,6 +11746,19 @@
                 }
                 return rows;
             }
+            /* Hauteur déclarée d'un tableau (EMU) = somme des hauteurs de lignes.
+               Sert à détecter qu'un tableau déborde de la diapositive après ajout
+               de lignes, et à calculer combien de lignes tiennent par page. */
+            function iaPptxTblH(tbl) {
+                var h = 0;
+                iaPptxRows(tbl).forEach(function (r) { h += (+r.tr.getAttribute('h') || 0); });
+                return h;
+            }
+            function iaPptxRowH(rows, nEnt) {
+                var h = 0, n = 0;
+                rows.slice(nEnt).forEach(function (r) { var v = +r.tr.getAttribute('h') || 0; if (v > 0) { h += v; n++; } });
+                return n ? Math.round(h / n) : 370000;
+            }
             function iaPptxParaText(p) {
                 var s = '';
                 (function rec(n) {
@@ -12160,7 +12180,53 @@
                                 anchor = tr; added++;
                             });
                             dirty[S3.path] = true;
-                            log.push('✔ [D' + o.d + ':T' + o.t + '] ' + added + ' ligne(s) ajoutée(s)'); nOK++;
+                            /* Débordement : un tableau qui dépasse le bas de la diapositive
+                               est illisible et coupe la diapo — on le signale pour que le
+                               modèle appelle paginer_tableau. */
+                            var box3 = iaPptxXfrm(tb3.frame), h3 = iaPptxTblH(tb3.tbl);
+                            var trop3 = box3 ? (box3.y + h3) - sldH : 0;
+                            log.push('✔ [D' + o.d + ':T' + o.t + '] ' + added + ' ligne(s) ajoutée(s)' +
+                                (trop3 > 100000 ? ' ⚠ LE TABLEAU DÉBORDE de ' + (trop3 / IA_EMU_CM).toFixed(1) + ' cm sous la diapositive : appelle paginer_tableau {d:' + o.d + ', t:' + o.t + '} pour le découper proprement sur plusieurs diapositives.' : '')); nOK++;
+                        } else if (o.op === 'paginer_tableau') {
+                            var D0 = o.d | 0;
+                            var Sp = await sDoc(D0), tbsp = iaPptxTables(Sp.doc), tbp = tbsp[(o.t | 0) - 1];
+                            if (!tbp) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbsp.length + ' tableau(x))');
+                            var nEnt = Math.max(1, (o.entetes | 0) || 1);
+                            var rowsP = iaPptxRows(tbp.tbl);
+                            if (rowsP.length <= nEnt) throw new Error('tableau sans ligne de données');
+                            var boxP = iaPptxXfrm(tbp.frame);
+                            var dispo = (boxP ? sldH - boxP.y : sldH * 0.75) - 300000;
+                            var hEnt = 0; rowsP.slice(0, nEnt).forEach(function (r) { hEnt += (+r.tr.getAttribute('h') || 0); });
+                            var hL = iaPptxRowH(rowsP, nEnt);
+                            /* Répartition GREEDY sur la hauteur RÉELLE de chaque ligne : les
+                               lignes d'un canevas ont des hauteurs très inégales, une moyenne
+                               ferait déborder les pages contenant les lignes les plus hautes. */
+                            var dataP = rowsP.slice(nEnt), perFix = (o.lignes_par_page | 0) > 0 ? (o.lignes_par_page | 0) : 0;
+                            var chunks = [], cur = [], hAcc = hEnt;
+                            dataP.forEach(function (r, ix) {
+                                var hr = +r.tr.getAttribute('h') || hL;
+                                if (cur.length && ((hAcc + hr > dispo) || (perFix && cur.length >= perFix))) { chunks.push(cur); cur = []; hAcc = hEnt; }
+                                cur.push(ix); hAcc += hr;
+                            });
+                            if (cur.length) chunks.push(cur);
+                            if (chunks.length <= 1) { log.push('✔ [D' + o.d + ':T' + o.t + '] tient déjà sur une diapositive (' + dataP.length + ' ligne(s))'); nOK++; }
+                            else {
+                                var nPages = chunks.length, idxs = [D0], q;
+                                for (q = 1; q < nPages; q++) idxs.push((await dupSlide(D0, D0 + q - 1)).index);
+                                for (q = 0; q < nPages; q++) {
+                                    var Sq = await sDoc(idxs[q]), tq = iaPptxTables(Sq.doc)[(o.t | 0) - 1];
+                                    if (!tq) continue;
+                                    var rq = iaPptxRows(tq.tbl), keep = {};
+                                    chunks[q].forEach(function (ix) { keep[nEnt + ix] = 1; });
+                                    for (var z = rq.length - 1; z >= nEnt; z--) if (!keep[z]) rq[z].tr.parentNode.removeChild(rq[z].tr);
+                                    if (q > 0) {   /* « (suite) » sur le titre des pages suivantes */
+                                        var shq = iaPptxShapes(Sq.doc), tq2 = iaPptxTitle(shq);
+                                        if (tq2) { var t0 = iaPptxBodyText(tq2.body); if (t0 && t0.indexOf('(suite)') < 0) iaPptxSetText(Sq.doc, tq2.body, t0 + ' (suite ' + (q + 1) + '/' + nPages + ')'); }
+                                    }
+                                    dirty[Sq.path] = true;
+                                }
+                                log.push('✔ [D' + o.d + ':T' + o.t + '] découpé sur ' + nPages + ' diapositives (' + chunks.map(function (c) { return c.length; }).join('+') + ' lignes, en-tête répété) — les diapositives suivantes sont décalées de ' + (nPages - 1)); nOK++;
+                            }
                         } else if (o.op === 'supprimer_ligne') {
                             var S4 = await sDoc(o.d), tbs4 = iaPptxTables(S4.doc), tb4 = tbs4[(o.t | 0) - 1];
                             if (!tb4) throw new Error('[D' + o.d + ':T' + o.t + '] inexistant (' + tbs4.length + ' tableau(x))');
@@ -12237,6 +12303,28 @@
                         } else throw new Error('opération inconnue : ' + o.op);
                     } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
                 }
+                /* ── Audit de mise en page ──
+                   Un tableau qui dépasse le bas de la diapositive est coupé à
+                   l'affichage : le client le voit tout de suite. On le signale
+                   systématiquement (y compris les défauts DÉJÀ PRÉSENTS dans le
+                   canevas d'origine) pour que le modèle appelle paginer_tableau. */
+                var audit = [];
+                for (var ai = 1; ai <= order.length; ai++) {
+                    var ap = order[ai - 1], ad = docs[ap];
+                    if (!ad) {
+                        try { ad = new DOMParser().parseFromString(await zip.file(ap).async('string'), 'application/xml'); docs[ap] = ad; }
+                        catch (e) { continue; }
+                        if (ad.getElementsByTagName('parsererror').length) continue;
+                    }
+                    (function (n) {
+                        iaPptxTables(ad).forEach(function (tb, ti) {
+                            var box = iaPptxXfrm(tb.frame); if (!box) return;
+                            var trop = (box.y + Math.max(iaPptxTblH(tb.tbl), box.cy)) - sldH;
+                            if (trop > 200000) audit.push('[D' + n + ':T' + (ti + 1) + '] dépasse de ' + (trop / IA_EMU_CM).toFixed(1) + ' cm sous la diapositive → paginer_tableau {d:' + n + ', t:' + (ti + 1) + '}');
+                        });
+                    })(ai);
+                }
+                var alerte = audit.length ? '\n⚠ MISE EN PAGE — ' + audit.length + ' tableau(x) coupé(s) par le bas de la diapositive, À CORRIGER avant de livrer :\n' + audit.slice(0, 12).join('\n') + (audit.length > 12 ? '\n… et ' + (audit.length - 12) + ' autre(s).' : '') : '\n✔ Mise en page vérifiée : aucun tableau ne déborde.';
                 if (!nOK) return 'AUCUNE opération appliquée — présentation NON modifiée et NON téléchargée. Corrige les adresses ci-dessous et rappelle l\'outil.\n' + log.join('\n');
                 Object.keys(dirty).forEach(function (p) { if (docs[p]) zip.file(p, new XMLSerializer().serializeToString(docs[p])); });
                 Object.keys(relsDirty).forEach(function (p) { if (relsC[p]) zip.file(p, new XMLSerializer().serializeToString(relsC[p])); });
@@ -12249,7 +12337,7 @@
                 IA.docs[name] = ab;
                 var restant = ops.length - nOK;
                 if (inp.telecharger === false) {
-                    return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s) et ENREGISTRÉE(S) dans le fichier de travail (pas encore téléchargé, comme demandé). Le prochain appel repart de cet état. Termine par un appel avec telecharger:true.\n' + log.join('\n');
+                    return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s) et ENREGISTRÉE(S) dans le fichier de travail (pas encore téléchargé, comme demandé). Le prochain appel repart de cet état. Termine par un appel avec telecharger:true.' + alerte + '\n' + log.join('\n');
                 }
                 var outName = (inp.nom_sortie ? String(inp.nom_sortie).replace(/\.pptx$/i, '') : name.replace(/\.pptx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.pptx';
                 var mime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -12264,7 +12352,7 @@
                     dl.appendChild(b8); card.appendChild(dl);
                     msgsEl.appendChild(card); iaScroll(msgsEl);
                 }
-                return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s), présentation « ' + outName + ' » (' + order.length + ' diapositives) téléchargée chez l\'utilisateur — mise en page d\'origine préservée.' +
+                return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s), présentation « ' + outName + ' » (' + order.length + ' diapositives) téléchargée chez l\'utilisateur — mise en page d\'origine préservée.' + alerte +
                     (restant ? ' ⚠ ' + restant + ' opération(s) en échec, voir le détail.' : '') +
                     ' Le fichier de travail est MIS À JOUR : si tu as encore des lots d\'opérations, rappelle simplement modifier_presentation sur le même fichier (les modifications s\'accumulent, ne recommence RIEN).\n' + log.join('\n');
             }
@@ -12794,26 +12882,102 @@
                 s.addText(inp.titre || 'Rapport', { x: 0.5, y: 1.6, w: 9, h: 1.6, fontSize: 30, bold: true, color: 'FFFFFF', align: 'center' });
                 if (inp.sous_titre) s.addText(inp.sous_titre, { x: 0.5, y: 3.2, w: 9, h: 0.6, fontSize: 16, color: 'F0EEE6', align: 'center' });
                 s.addText((inp.periode ? inp.periode + ' · ' : '') + 'Source : DHIS2 (SNIS) · ' + new Date().toLocaleDateString('fr-FR'), { x: 0.5, y: 4.6, w: 9, h: 0.4, fontSize: 11, color: 'D5D2C8', align: 'center' });
-                (inp.sections || []).forEach(function (sec, i) {
+                /* ── Mise en page : zone de contenu bornée ──
+                   Diapositive 16:9 PptxGenJS = 10 × 5,625 pouces. Le contenu vit
+                   ENTRE le filet de titre et le pied de page : plus rien ne peut
+                   déborder ni passer sous le pied. Un tableau trop long n'est
+                   plus tronqué — il est DÉCOUPÉ sur autant de diapositives que
+                   nécessaire, en-tête répété et mention « (suite) ». */
+                var SW = 10, TOP = 1.10, BOT = 5.10, PIEDY = 5.28;
+                function iaPptxSlide(titre, suite) {
                     var sl = p.addSlide(); sl.background = { color: 'FFFFFF' };
                     if (logo) sl.addImage({ data: logo, x: 9.35, y: 0.12, w: 0.45, h: 0.45, sizing: { type: 'contain', w: 0.45, h: 0.45 } });
-                    if (pied) sl.addText(pied, { x: 0.4, y: 5.3, w: 9.2, h: 0.3, fontSize: 8, color: '999999', align: 'center' });
-                    sl.addText((i + 1) + '. ' + (sec.titre || ''), { x: 0.4, y: 0.25, w: 8.8, h: 0.6, fontSize: 20, bold: true, color: C, fontFace: 'Arial' });
+                    if (pied) sl.addText(pied, { x: 0.4, y: PIEDY, w: 9.2, h: 0.25, fontSize: 8, color: '999999', align: 'center' });
+                    sl.addText(String(titre || '') + (suite ? '  (suite)' : ''), { x: 0.4, y: 0.25, w: 8.8, h: 0.6, fontSize: 20, bold: true, color: C, fontFace: 'Arial', shrinkText: true, valign: 'middle' });
                     sl.addShape('rect', { x: 0.4, y: 0.92, w: 1.1, h: 0.045, fill: { color: C2 || C }, line: { type: 'none' } });
-                    var tbP = (sec.tableau && sec.tableau.colonnes) ? sec.tableau : ((sec.tableaux || []).filter(function (t2) { return t2 && t2.colonnes; })[0] || null);
-                    var hasVis = !!(sec._png || tbP);
-                    if (sec.contenu) {
-                        var bullets = String(sec.contenu).replace(/\*\*/g, '').split(/\n+/).filter(function (t) { return t.trim(); }).slice(0, 9)
-                            .map(function (t) { return { text: t.replace(/^[-•]\s*/, ''), options: { bullet: true, fontSize: 12.5, color: '363636', breakLine: true } }; });
-                        sl.addText(bullets, { x: 0.45, y: 1.1, w: hasVis ? 4.3 : 9.1, h: 4.2, valign: 'top' });
+                    return sl;
+                }
+                /* Découpe des lignes en pages qui TIENNENT dans la hauteur utile.
+                   Hauteur d'une ligne estimée d'après le nombre de retours à la
+                   ligne que provoquera la cellule la plus longue. */
+                function iaPptxPages(cols, lignes, w, fs) {
+                    var nC = Math.max(1, cols.length), colW = w / nC;
+                    var cpl = Math.max(6, Math.floor(colW * 96 / (fs * 0.58)));
+                    var lh = fs / 72 * 1.34;
+                    function hOf(cells, extra) {
+                        var n = 1;
+                        (cells || []).forEach(function (v) { n = Math.max(n, Math.ceil((String(iaCellNorm(v).text).length || 1) / cpl)); });
+                        return Math.min(n, 6) * lh + (extra || 0.10);
                     }
+                    var hHead = hOf(cols, 0.12), avail = BOT - TOP, pages = [], cur = [], h = hHead;
+                    (lignes || []).forEach(function (l) {
+                        var hr = hOf(l);
+                        if (cur.length && h + hr > avail) { pages.push(cur); cur = []; h = hHead; }
+                        cur.push(l); h += hr;
+                    });
+                    if (cur.length) pages.push(cur);
+                    return pages.length ? pages : [[]];
+                }
+                function iaPptxTable(sl, tb, x, y, w, fs) {
+                    var head = tb.colonnes.map(function (c) { return { text: iaCellNorm(c).text, options: { bold: true, color: 'FFFFFF', fill: { color: C }, fontSize: fs + 0.5 } }; });
+                    var body = (tb.lignes || []).map(function (l) {
+                        return (Array.isArray(l) ? l : [l]).map(function (v) {
+                            var cn = iaCellNorm(v), o = { fontSize: fs, color: cn.fg || '333333' };
+                            if (cn.fill) o.fill = { color: cn.fill };
+                            return { text: cn.text, options: o };
+                        });
+                    });
+                    sl.addTable([head].concat(body), {
+                        x: x, y: y, w: w, colW: tb.colonnes.map(function () { return w / Math.max(1, tb.colonnes.length); }),
+                        border: { pt: 0.5, color: 'CCCCCC' }, valign: 'middle', margin: 2, autoPage: false
+                    });
+                }
+                (inp.sections || []).forEach(function (sec, i) {
+                    var titre = (i + 1) + '. ' + (sec.titre || '');
+                    /* TOUS les tableaux de la section sont rendus (avant : le 1er seulement) */
+                    var tbs = [];
+                    if (sec.tableau && sec.tableau.colonnes) tbs.push(sec.tableau);
+                    (sec.tableaux || []).forEach(function (t2) { if (t2 && t2.colonnes && t2 !== sec.tableau) tbs.push(t2); });
+                    var bul = sec.contenu ? String(sec.contenu).replace(/\*\*/g, '').split(/\n+/).filter(function (t) { return t.trim(); }) : [];
+                    var hasVis = !!(sec._png || tbs.length);
+                    var sl = iaPptxSlide(titre, false), used = false;
+                    /* Texte : jamais tronqué — il continue sur une diapositive de plus */
+                    if (bul.length) {
+                        var parLot = hasVis ? 9 : 13;
+                        for (var b = 0; b < bul.length; b += parLot) {
+                            if (b) { sl = iaPptxSlide(titre, true); }
+                            sl.addText(bul.slice(b, b + parLot).map(function (t) {
+                                return { text: t.replace(/^[-•]\s*/, ''), options: { bullet: true, fontSize: 12.5, color: '363636', breakLine: true } };
+                            }), { x: 0.45, y: TOP, w: hasVis ? 4.3 : 9.1, h: BOT - TOP, valign: 'top', shrinkText: true });
+                            used = true;
+                            /* seul le 1er lot partage la diapositive avec le visuel */
+                            if (b + parLot < bul.length) { hasVis = false; }
+                        }
+                        hasVis = !!(sec._png || tbs.length);
+                    }
+                    /* Figure : mise à l'échelle DANS la zone utile, ratio conservé */
                     if (sec._png) {
-                        sl.addImage({ data: sec._png, x: sec.contenu ? 5.0 : 0.9, y: 1.2, w: sec.contenu ? 4.5 : 8.2, h: sec.contenu ? 2.52 : 4.59 });
-                    } else if (tbP) {
-                        var rows = [tbP.colonnes.map(function (c) { return { text: String(c), options: { bold: true, color: 'FFFFFF', fill: { color: C }, fontSize: 10 } }; })]
-                            .concat((tbP.lignes || []).slice(0, 13).map(function (l) { return l.map(function (v) { var cn = iaCellNorm(v); var o = { fontSize: 9.5, color: cn.fg || '333333' }; if (cn.fill) o.fill = { color: cn.fill }; return { text: cn.text, options: o }; }); }));
-                        sl.addTable(rows, { x: sec.contenu ? 5.0 : 0.4, y: 1.15, w: sec.contenu ? 4.6 : 9.2, border: { pt: 0.5, color: 'CCCCCC' } });
+                        var cote = (bul.length && used) ? true : false;
+                        var maxW = cote ? 4.9 : 9.2, maxH = BOT - TOP;
+                        var dm = iaPngDims(sec._png), ar = (dm && dm.w) ? dm.h / dm.w : 0.5625;
+                        var iw = maxW, ih = iw * ar;
+                        if (ih > maxH) { ih = maxH; iw = ih / ar; }
+                        sl.addImage({ data: sec._png, x: (cote ? 5.0 : 0.4) + ((cote ? 4.9 : 9.2) - iw) / 2, y: TOP + (maxH - ih) / 2, w: iw, h: ih });
+                        used = true;
                     }
+                    /* Tableaux : découpés proprement, jamais tronqués */
+                    tbs.forEach(function (tb, ti) {
+                        var cote = (ti === 0 && bul.length && !sec._png && bul.length <= 9);
+                        var w = cote ? 4.6 : 9.2, x = cote ? 5.0 : 0.4;
+                        var fs = tb.colonnes.length > 8 ? 8 : (tb.colonnes.length > 6 ? 8.5 : 9.5);
+                        var pages = iaPptxPages(tb.colonnes, tb.lignes, w, fs);
+                        pages.forEach(function (pg, k) {
+                            if (k || ti || used) { sl = iaPptxSlide(titre + (tb.titre ? ' — ' + tb.titre : ''), k > 0 || ti > 0); }
+                            iaPptxTable(sl, { colonnes: tb.colonnes, lignes: pg }, x, TOP, (k || ti || !cote) ? 9.2 : w, fs);
+                            if (pages.length > 1) sl.addText((k + 1) + '/' + pages.length, { x: 8.6, y: PIEDY - 0.02, w: 1, h: 0.25, fontSize: 8, color: '999999', align: 'right' });
+                            used = true;
+                        });
+                    });
                 });
                 await p.writeFile({ fileName: safe + '.pptx' });
             }
