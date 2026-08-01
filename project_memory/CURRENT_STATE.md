@@ -511,3 +511,12 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   Note d'information dans la liste quand noms uniques ≠ comptage DHIS2.
 - Validation : Kinshasa 35 ZS / 427 AS / 2 248 FOSA = DHIS2 en direct ;
   Kasa Vubu 7 AS ; 0 nom de donnée absent du référentiel (Tshopo, Kasai).
+
+État actuel (01/08/2026 — RETOUR ARRIÈRE sur consigne population) :
+- Sur instruction explicite du propriétaire : la règle « TYPES DE POPULATION =
+  Pop × coefficients officiels, champs bruts interdits (éléments Pop 0-11m
+  artefactés ~12×) » est RETIRÉE du prompt iaSystem. La consigne Population est
+  revenue à son texte d'origine (WLSKVyA8LoY, valeur mensuelle répétée, une
+  valeur par unité et par an). Les formules de cibles du dashboard PEV
+  (NS = Pop AS × 3,49 %, NV = Pop AS × 4 % — _PEV_NS_RATE/_PEV_NV_RATE)
+  demeurent la référence pour l'assistant, comme dans le repo.
