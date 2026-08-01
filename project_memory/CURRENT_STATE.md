@@ -536,3 +536,4 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
 - Score qualité DPS déterministe exposé à l’IA par `ctx.scoreQualiteDps` (5 critères ×20, total non calculable si le statut RVV corrigées n’est pas démontré).
 - Anti-attente : Kimi limité à 12 tours d’outils et la boucle complète à 45 minutes ; jamais d’annonce de succès sans téléchargement et contrôles réussis.
 - Prétests : moteur réel sur le canevas original = 49→49, seule D35 modifiée, D6 PTF identique, rendu PowerPoint contrôlé visuellement ; Kimi K3 réel = PASS, deux lectures DHIS2 puis modification conforme, aucun graphique/slide ajouté.
+- Production : commit `19632949a` sur `main` ; GitHub Pages Actions réussi et code strict vérifié en ligne ; alias Vercel vérifié ; Worker `pev-ia-proxy` déployé en version `14f1c095-3835-4899-a3d2-a1ece8158d39`.
