@@ -9881,7 +9881,7 @@
                     "- SCORE QUALITÉ — BARÈME de chaque critère : 20 / 15 / 10 / 5 / 0. Pour la complétude et la promptitude, seuils calés sur le document de référence : ≥ 95 % → 20 ; 85–94 % → 15 ; 70–84 % → 10 ; en dessous, 5 puis 0. ⚠ N'UTILISE JAMAIS la grille « ≥95→20 ; 90–94→15 ; 80–89→10 ; 70–79→5 ; <70→0 » : elle a été inventée lors d'un essai antérieur et CONTREDIT le document officiel (Police et Kisenso à 85 % y valent 15 et non 10 ; Selembao à 79 % vaut 10 et non 5). En cas de doute sur un palier, dis-le et demande confirmation — n'invente pas de seuil.",
                     "- SCORE QUALITÉ — REPRODUCTIBILITÉ : les taux de complétude/promptitude d'une période passée CHANGENT dans le temps (encodage rétroactif : des rapports de juin sont encore saisis en août). Un score qualité recalculé aujourd'hui ne redonnera donc PAS les chiffres d'un rapport produit il y a quelques semaines, et c'est normal — ce n'est ni une erreur de méthode ni une donnée fausse. Indique TOUJOURS la date d'extraction avec le score, et si l'utilisateur compare à un rapport existant, explique cet écart au lieu de forcer les chiffres pour les faire coïncider.",
                     "- SCORE QUALITÉ — RVV (critères 4 et 5, ce sont eux qui font l'écart entre les entités). Les règles de validation SONT dans DHIS2 et sont lisibles — méthode VÉRIFIÉE le 01/08/2026, applique-la telle quelle. (a) Règles : validationRules.json?fields=id,name,importance,periodType&paging=false (ex. « 1q-Cas suspect de Paludisme de moins de 5 ans comparé aux Nouveaux cas de moins de 5 ans » ; beaucoup ont des noms peu parlants « 1 », « 11 »). (b) HISTORIQUE des violations : validationResults.json?pe=<période>&pageSize=1000&page=N — ⚠ le filtre ou= NE FONCTIONNE PAS sur cette instance (renvoie 0 même pour une unité réellement en violation) : récupère toutes les pages puis filtre côté code sur le path des unités (organisationUnits.json?filter=path:like:<UID_province>&fields=id,name,level,path&paging=false). (c) ÉTAT ACTUEL des violations : GET validation/dataSet/<UID_canevas>.json?pe=<période>&ou=<UID_unité> → recalcul en direct, mais UNE unité d'organisation à la fois (les violations vivent au niveau FOSA, pas ZS/province : interroger une ZS renvoie 0).",
-                    "- SCORE QUALITÉ — RVV CORRIGÉES (critère 5) : DHIS2 NE STOCKE AUCUN indicateur « corrigée » — une violation corrigée DISPARAÎT, tout simplement. Ce critère ne se calcule donc QUE par COMPARAISON entre deux états : les violations d'une période à une date antérieure (historique validationResults, ou la liste du rapport précédent) versus l'état recalculé aujourd'hui (validation/dataSet). ⚠ Les deux sources divergent et c'est NORMAL : l'historique persisté est un instantané d'anciennes exécutions planifiées, il peut manquer des violations bien réelles aujourd'hui (vérifié : une FOSA en violation au recalcul direct était absente de l'historique). Dis TOUJOURS laquelle des deux sources tu as utilisée. N'invente JAMAIS un nombre de RVV, et ne remplace JAMAIS les RVV par des contrôles de cohérence maison (Penta3 ≤ Penta1, etc.) : ce serait un autre indicateur. Le proxy DHIS2 étant en LECTURE SEULE, l'endpoint POST dataAnalysis/validationRules (celui de l'app « Qualité des données », qui balaie tout un sous-arbre d'un coup) N'EST PAS accessible : ne le tente pas.",
+                    "- SCORE QUALITÉ — RVV CORRIGÉES (critère 5) : DHIS2 NE STOCKE AUCUN indicateur « corrigée » — une violation corrigée DISPARAÎT, tout simplement. Ce critère ne se calcule donc QUE par COMPARAISON entre deux états : les violations d'une période à une date antérieure (historique validationResults, ou la liste du rapport précédent) versus l'état recalculé aujourd'hui (validation/dataSet). ⚠ Les deux sources divergent et c'est NORMAL : l'historique persisté est un instantané d'anciennes exécutions planifiées, il peut manquer des violations bien réelles aujourd'hui (vérifié : une FOSA en violation au recalcul direct était absente de l'historique). Dis TOUJOURS laquelle des deux sources tu as utilisée. N'invente JAMAIS un nombre de RVV, et ne remplace JAMAIS les RVV par des contrôles de cohérence maison (Penta3 ≤ Penta1, etc.) : ce serait un autre indicateur. ⭐ MOYEN LE PLUS EFFICACE, à préférer aux deux précédents : requete_dhis2 avec endpoint 'dataAnalysis/validationRules' et corps {startDate:'2026-06-01', endDate:'2026-06-30', ou:'<UID_ZS>'} → TOUTES les RVV du sous-arbre en UN SEUL appel (mesuré : 148 violations pour la ZS Kinshasa en 6 s, là où l'interrogation FOSA par FOSA demandait ~500 appels). Le proxy force persist=false : rien n'est écrit dans le DHIS2. ⚠ UNE ZONE DE SANTÉ à la fois — une province entière dépasse le délai (erreur 524) ; pour une DPS, boucle sur ses ZS.",
                     "- SCORE QUALITÉ — EXHAUSTIVITÉ : analyse présentée À CÔTÉ du score qualité mais qui n'est PAS un des 5 critères. Taux d'exhaustivité = nombre de cellules remplies / nombre de cellules attendues. Sert à montrer qu'une forte complétude (rapport transmis) ne garantit pas la qualité (rapport bien rempli) : commente systématiquement les entités à forte complétude mais faible exhaustivité.",
                     "- SCORE QUALITÉ — RESTITUTION : présente TOUJOURS le détail des 5 critères par entité (tableau coloré cellule par cellule via {t, bg}, code couleur du document source : score de critère 20 = vert foncé, 15 = vert clair, 10 = jaune, 5 et 0 = rouge ; TOTAL 100 = vert foncé, 80–95 = vert clair, 60–75 = jaune, 50–55 = orange, < 50 = rouge), le total sur 100, la catégorisation, puis le classement décroissant et la répartition par catégorie (nombre et % d'entités). Cite nommément les entités n'ayant pas corrigé leurs RVV. ⚠ Dans un CANEVAS DE REVUE (semestrielle/annuelle) où « score qualité » figure comme INDICATEUR, c'est CE score-là (5 critères sur 100, méthode DPS ci-dessus) qu'il faut renseigner — jamais le score du dashboard.",
                     "- PROGRAM INDICATORS (programIndicators.json) : ils n'existent que pour les canevas d'enquête infrastructure « DV » (programmes à événements ABANDONNÉS, sans données) — ne les utilise pas sauf demande historique explicite. Toute l'analyse de routine repose sur dataElements + indicators + datasets.",
@@ -9963,8 +9963,8 @@
                     type: 'function',
                     function: {
                         name: 'requete_dhis2',
-                        description: "GET en lecture seule sur l'API Web du DHIS2 (SNIS RDC) via proxy sécurisé. endpoint = chemin après /api/ (ex. 'analytics.json', 'dataElements.json') ; params = query string SANS '?'. Réponse tronquée à " + IA_TOOL_RESULT_MAX + " caractères — filtre/pagine ; gros volumes → ctx.dhis2 dans executer_js.",
-                        parameters: { type: 'object', properties: { endpoint: { type: 'string' }, params: { type: 'string' } }, required: ['endpoint'] }
+                        description: "Lecture seule sur l'API Web du DHIS2 (SNIS RDC) via proxy sécurisé. endpoint = chemin après /api/ (ex. 'analytics.json', 'dataElements.json') ; params = query string SANS '?'. Réponse tronquée à " + IA_TOOL_RESULT_MAX + " caractères — filtre/pagine ; gros volumes → ctx.dhis2 dans executer_js. ⭐ ANALYSES DE QUALITÉ DES DONNÉES : elles s'appellent avec le champ `corps` (DHIS2 ne les expose qu'en POST) — endpoint 'dataAnalysis/validationRules' et corps {startDate:'2026-06-01', endDate:'2026-06-30', ou:'<UID>'} renvoie TOUTES les règles de validation violées du sous-arbre en UN appel (≈6 s pour une ZS). Aussi : dataAnalysis/stdDevOutlier, minMaxOutlier, followup. Le proxy force persist=false : rien n'est jamais écrit dans le DHIS2. ⚠ Prends une ZONE DE SANTÉ à la fois : une province entière dépasse le délai (524).",
+                        parameters: { type: 'object', properties: { endpoint: { type: 'string' }, params: { type: 'string' }, corps: { type: 'object', description: "Corps JSON, UNIQUEMENT pour les analyses dataAnalysis/* (ex. {startDate, endDate, ou}). Absent = simple GET." } }, required: ['endpoint'] }
                     }
                 },
                 {
@@ -10198,7 +10198,7 @@
             /* Accès DHIS2 via le proxy sécurisé — partagé entre l'outil requete_dhis2
                (réponse renvoyée à l'IA) et ctx.dhis2 dans executer_js (réponse
                traitée en code, sans limite de taille). */
-            async function iaDhis2(endpoint, params) {
+            async function iaDhis2(endpoint, params, corps) {
                 if (!IA_PROXY_URL) throw new Error("L'accès DHIS2 en direct nécessite le proxy sécurisé (non configuré).");
                 /* Tolérance : endpoint peut contenir déjà sa query string ; params peut
                    être une chaîne, un objet {clé:valeur} ou absent. */
@@ -10218,7 +10218,18 @@
                 qs = [inline, qs].filter(Boolean).join('&');
                 var hdrs = {};
                 var codeV = cfg('code') || IA_DHIS2_CODE; if (codeV) hdrs['x-access-code'] = codeV;
-                var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), { headers: hdrs });
+                /* Analyses de qualité des données : DHIS2 ne les expose qu'en POST
+                   (règles de validation violées, valeurs aberrantes). Le proxy
+                   n'autorise que celles-là en POST et y force persist=false :
+                   rien n'est jamais écrit dans le DHIS2. */
+                var opts = { headers: hdrs };
+                if (corps != null) {
+                    var bd = iaParseMaybe(corps);
+                    opts.method = 'POST';
+                    hdrs['Content-Type'] = 'application/json';
+                    opts.body = typeof bd === 'string' ? bd : JSON.stringify(bd);
+                }
+                var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), opts);
                 var tt = await rr.text();
                 if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 400));
                 try { return JSON.parse(tt); } catch (e) { return tt; }
@@ -10335,7 +10346,7 @@
                     return s;
                 }
                 if (name === 'requete_dhis2') {
-                    var out2 = await iaDhis2(input.endpoint, input.params);
+                    var out2 = await iaDhis2(input.endpoint, input.params, input.corps);
                     var tt = typeof out2 === 'string' ? out2 : JSON.stringify(out2);
                     if (tt.length > IA_TOOL_RESULT_MAX) tt = tt.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ — pour de gros volumes, utilise ctx.dhis2(endpoint, params) dans executer_js et agrège en code]';
                     return tt;

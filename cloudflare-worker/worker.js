@@ -11,8 +11,12 @@
  *      x-anthropic-key (relais pur, aucun quota consommé).
  *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
  *      CORS, un appel direct depuis le navigateur est donc impossible.
- *   2. /dhis2/api/*        → proxy GET lecture seule vers le DHIS2 (SNIS RDC),
+ *   2. /dhis2/api/*        → proxy lecture seule vers le DHIS2 (SNIS RDC),
  *                            identifiants cachés ici, codes d'accès requis.
+ *                            GET pour tout ; POST uniquement pour les analyses
+ *                            de qualité des données (dataAnalysis/*), que DHIS2
+ *                            n'expose qu'en POST — avec persist/notification
+ *                            forcés à false : rien n'est jamais écrit.
  *   3. Vente de codes. Trois modes (PAYMENT_PROVIDER pour forcer) :
  *        • Commande en ligne (défaut, sans config) : /commander → le client
  *          laisse nom + email, suit sa commande en direct (barre de progression),
@@ -419,23 +423,53 @@ async function proxyAnthropic(request, env, cors) {
 }
 
 /* ═══ 2. Proxy DHIS2 (GET, lecture seule) ═══ */
+/* Analyses de qualité des données : ce sont des LECTURES, mais DHIS2 ne les
+   expose qu'en POST (l'app « Qualité des données » les appelle ainsi). On les
+   autorise donc nommément — et uniquement elles — pour pouvoir balayer tout un
+   sous-arbre d'unités d'un seul appel (règles de validation violées, valeurs
+   aberrantes). Tout le reste du proxy demeure en lecture seule : aucun POST
+   d'écriture (dataValueSets, metadata, tracker…) n'est joignable. */
+const DHIS2_POST_OK = [
+  'dataAnalysis/validationRules',
+  'dataAnalysis/stdDevOutlier',
+  'dataAnalysis/minMaxOutlier',
+  'dataAnalysis/followup',
+];
 async function proxyDhis2(request, env, cors, url) {
-  if (request.method !== 'GET') return json({ error: 'GET uniquement (lecture seule)' }, 405, cors);
+  const path = url.pathname.replace(/^\/dhis2\/api\//, '');
+  const isPost = request.method === 'POST';
+  const bare = path.replace(/\.json$/i, '');
+  if (isPost && !DHIS2_POST_OK.includes(bare)) {
+    return json({ error: 'Lecture seule : seules les analyses de qualité des données sont autorisées en POST (' + DHIS2_POST_OK.join(', ') + ')' }, 405, cors);
+  }
+  if (!isPost && request.method !== 'GET') return json({ error: 'GET uniquement (lecture seule)' }, 405, cors);
   try { await requireCode(request, env); }
   catch (e) { return json({ error: e.message }, e.status || 401, cors); }
   if (!env.DHIS2_BASE_URL) return json({ error: 'DHIS2 non configuré sur le proxy' }, 503, cors);
 
-  const path = url.pathname.replace(/^\/dhis2\/api\//, '');
   /* Endpoints en écriture ou sensibles interdits */
   if (/^(users|me\/|system\/|apps|dataStore.*\bPOST)/i.test(path)) return json({ error: 'Endpoint non autorisé' }, 403, cors);
 
-  const target = env.DHIS2_BASE_URL.replace(/\/+$/, '') + '/api/' + path + url.search;
-  const upstream = await fetch(target, {
+  const init = {
+    method: isPost ? 'POST' : 'GET',
     headers: {
       Authorization: 'Basic ' + btoa(env.DHIS2_USERNAME + ':' + env.DHIS2_PASSWORD),
       Accept: 'application/json',
     },
-  });
+  };
+  if (isPost) {
+    /* persist/notification forcés à false : l'analyse ne doit RIEN écrire
+       dans DHIS2 ni déclencher d'envoi de notifications aux utilisateurs. */
+    let body = {};
+    try { body = await request.json(); } catch (e) { body = {}; }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) body = {};
+    body.persist = false;
+    body.notification = false;
+    init.headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(body);
+  }
+  const target = env.DHIS2_BASE_URL.replace(/\/+$/, '') + '/api/' + path + url.search;
+  const upstream = await fetch(target, init);
   const text = await upstream.text();
   return new Response(text, { status: upstream.status, headers: { 'content-type': 'application/json; charset=utf-8', ...cors } });
 }
