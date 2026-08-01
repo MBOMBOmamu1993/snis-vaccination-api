@@ -520,3 +520,12 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
   valeur par unité et par an). Les formules de cibles du dashboard PEV
   (NS = Pop AS × 3,49 %, NV = Pop AS × 4 % — _PEV_NS_RATE/_PEV_NV_RATE)
   demeurent la référence pour l'assistant, comme dans le repo.
+
+État actuel (01/08/2026 — cible PEV unifiée, instruction propriétaire) :
+- RÈGLE MÉTIER ACTÉE (identique au code dashboard _cxCvAg : den = BCG/TD ? nv : ns) :
+  pour TOUTE couverture vaccinale, quelle que soit la tranche d'âge, la cible de
+  TOUS les antigènes = NS (Pop AS × 3,49 %), SAUF BCG et Td = NV (Pop AS × 4 %).
+  VAR2 et VAP4 (15 mois) = même cible NS (même cohorte 0-11 mois). Le 3,6 %
+  (12-23 mois) est RETIRÉ du prompt (ligne LECTURE DES FORMULES) et NE doit plus
+  servir à aucune cible PEV. Doses VAR2 : valeur ventilée 12-23 mois (VAR2_12_23),
+  pas le total toutes catégories (qui inclut les 0-11 mois, ~25 000 à Kinshasa).
