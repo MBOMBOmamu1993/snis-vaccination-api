@@ -9881,7 +9881,7 @@
                     "## FIDÉLITÉ DES CALCULS — RÈGLE ABSOLUE (anti-hallucination)",
                     "Un indicateur n'est JAMAIS calculé selon ta connaissance générale (définitions OMS/EPI apprises « de tête »). Chaque calcul doit être rattaché à UNE source vérifiable, dans cet ordre :",
                     "1) DEMANDE PEV DE CV / ÉVOLUTION DE CV / ZÉRO-DOSE / SOUS-VACCINÉS → appelle OBLIGATOIREMENT le tool calculer_pev_direct. Il est la SEULE voie autorisée : il contient les UID dataElement.categoryOptionCombo exacts du repo, somme les doses au niveau FOSA, déduplique la population au niveau AS et reproduit les clamps du dashboard. N'utilise NI l'indicateur officiel DHIS2, NI un UID nu, NI un calcul libre via requete_dhis2/executer_js pour ces quatre demandes. Le client compare avec SON dashboard : toute dérive détruit sa confiance.",
-                    "2) TOUT PROGRAMME → la CONFIGURATION du DHIS2 national : cherche l'indicateur officiel (indicators.json?filter=name:ilike:<mot-clé>&fields=id,name,numerator,denominator) et utilise-le tel quel (formule appliquée côté serveur) ; à défaut, prends les dataElements du canevas concerné (sections du dataset) et applique la formule officielle lue dans numerator/denominator. Les canevas et indicateurs configurés dans le DHIS2 définissent comment calculer CHAQUE indicateur : réfère-toi à EUX, jamais à tes habitudes générales.",
+                    "2) TOUT PROGRAMME → la CONFIGURATION du DHIS2 national : cherche d'abord l'indicateur agrégé officiel (indicators.json), puis l'indicateur de programme événementiel (programIndicators.json). Un programIndicator analyticsType=EVENT se calcule OBLIGATOIREMENT avec calculer_indicateur_programme_direct ou analytics/events/aggregate/<UID_PROGRAMME>.json ; l'endpoint analytics.json agrégé renvoie 0 ligne pour ces objets même lorsqu'ils ont des données. À défaut seulement, prends les dataElements du canevas/dataset et applique exactement la formule officielle numerator/denominator. Les canevas et indicateurs configurés dans le DHIS2 définissent comment calculer CHAQUE indicateur : réfère-toi à EUX, jamais à tes habitudes générales.",
                     "3) Ni recette dashboard ni configuration DHIS2 ne couvrent la demande → dis-le franchement et propose l'indicateur officiel le plus proche. N'INVENTE JAMAIS une définition.",
                     "4) DIVERGENCE dashboard/repo vs DHIS2 en ligne → le DHIS2 EN LIGNE EST LA RÉFÉRENCE : donne la valeur DHIS2 au client et signale brièvement l'écart constaté.",
                     "",
@@ -9904,13 +9904,13 @@
                     "- COUVERTURE PARTIELLE : quand une valeur n'existe que sur une partie de la période, DONNE-LA en précisant la couverture (« 11,4 % — 3 mois sur 6 rapportés ») au lieu d'écrire ND. Une donnée partielle correctement qualifiée vaut infiniment mieux qu'un « ND » qui efface une information réelle. Signale aussi les valeurs > 100 % (incohérence numérateur/dénominateur) sans les masquer.",
                     "- ⭐⭐ SCORE QUALITÉ DES DONNÉES — DÉFINITION OFFICIELLE DPS, NE JAMAIS IMPROVISER. Quand un client demande « le score qualité », il s'agit TOUJOURS du score qualité des données DHIS2 (référence : « SCORE QUALITE_JUIN_2026_VF », DPS Kinshasa). Ce n'est PAS le score qualité de l'onglet « Qualité des données » de ce dashboard (score PEV maison : rapportage / exhaustivité / cohérence / valeurs atypiques / abandon, sur 5-6 critères) : ne confonds JAMAIS les deux et n'utilise JAMAIS le score du dashboard pour répondre à une demande de score qualité DHIS2. MÉTHODE OFFICIELLE — 5 critères notés chacun sur 20, TOTAL SUR 100 : (1) score du taux de COMPLÉTUDE GLOBALE ; (2) score du taux de PROMPTITUDE GLOBALE ; (3) score du NOMBRE DE CANEVAS (datasets) ayant atteint une complétude ≥ 95 % ; (4) score du RATIO RVV pour 100 rapports encodés ; (5) score des RVV CORRIGÉES — critère BINAIRE : 20 si l'entité a corrigé ses règles de validation violées, 0 sinon. RVV = Règles de Validation Violées. CATÉGORISATION du total : 100 = Très Performante ; 80–95 = Performante ; 60–75 = Moyenne ; 50–55 = Faible ; < 50 = Très faible.",
                     "- SCORE QUALITÉ — COMPLÉTUDE/PROMPTITUDE GLOBALES : moyenne sur TOUS LES CANEVAS DE TOUS LES PROGRAMMES du DHIS2, JAMAIS sur les seuls formulaires PEV. Canevas de référence (DPS Kinshasa, juin 2026) : A- Services de Base, B- Services Secondaires, C- SIGL BCZ_CDR_BCAF, C- SIGL ESS, D- Service Hôpital, E- Banque de Sang et Transfusion, F- Activités BCZ, PNLS_Canevas Unique, PNLP CS Site Sentinelle, PNLP HGR Site Sentinelle, PNLT_Rapport Mensuel Tuberculose, eSurveillance Hebdomadaire, J- Service Tertiaire (Éditions 2024/2025). Récupère la liste réelle via dataSets.json?fields=id,name,periodType&paging=false, puis analytics avec dx:<UID>.REPORTING_RATE (complétude) et dx:<UID>.REPORTING_RATE_ON_TIME (promptitude). Le taux GLOBAL est la MOYENNE des taux par canevas — surtout PAS le ratio (somme des rapports reçus / somme des attendus), qui dépasse 100 % dans plusieurs ZS et ne reproduit pas le document. ⚠ Un canevas NON ATTENDU dans une entité est EXCLU de la moyenne — ne le compte JAMAIS comme 0, cela fausse tout : analytics ne renvoie tout simplement pas de ligne (vérifié : PNLP CS et PNLP HGR Site Sentinelle n'existent qu'à Kingasani ; J- Service Tertiaire seulement à Gombe, Lemba, Limete et Ndjili). Le critère (3) se calcule sur ces mêmes canevas : nombre de ceux dont la complétude atteint 95 %.",
-                    "- SCORE QUALITÉ — BARÈME DÉTERMINISTE : appelle TOUJOURS ctx.scoreQualiteDps, ne recode pas le barème à la main. Complétude/promptitude : ≥95→20 ; 85–94,99→15 ; 70–84,99→10 ; 50–69,99→5 ; <50→0. Part des canevas applicables ayant une complétude ≥95 % : 100→20 ; ≥80→15 ; ≥60→10 ; ≥40→5 ; <40→0. Ratio RVV pour 100 rapports reçus : 0→20 ; ≤1→15 ; ≤2→10 ; ≤5→5 ; >5→0. RVV corrigées : 20 seulement si la correction est démontrée, sinon 0 si la non-correction est démontrée ; statut inconnu→null et total non calculable. Catégories : 100 Très Performante ; 80–95 Performante ; 60–75 Moyenne ; 50–55 Faible ; <50 Très faible.",
+                    "- SCORE QUALITÉ — BARÈME DÉTERMINISTE : appelle TOUJOURS ctx.scoreQualiteDps, ne recode pas le barème à la main. Complétude/promptitude : ≥95→20 ; 85–94,99→15 ; 70–84,99→10 ; 50–69,99→5 ; <50→0. Part des canevas applicables ayant une complétude ≥95 % : 100→20 ; ≥80→15 ; ≥60→10 ; ≥40→5 ; <40→0. Ratio RVV pour 100 rapports reçus : 0→20 ; ≤1→15 ; ≤2→10 ; ≤5→5 ; >5→0. RVV corrigées : appelle verifier_correction_rvv_direct pour la période exacte ; aucune RVV actuellement présente→20, au moins une RVV présente→0. Catégories : 100 Très Performante ; 80–95 Performante ; 60–75 Moyenne ; 50–55 Faible ; <50 Très faible.",
                     "- SCORE QUALITÉ — REPRODUCTIBILITÉ : les taux de complétude/promptitude d'une période passée CHANGENT dans le temps (encodage rétroactif : des rapports de juin sont encore saisis en août). Un score qualité recalculé aujourd'hui ne redonnera donc PAS les chiffres d'un rapport produit il y a quelques semaines, et c'est normal — ce n'est ni une erreur de méthode ni une donnée fausse. Indique TOUJOURS la date d'extraction avec le score, et si l'utilisateur compare à un rapport existant, explique cet écart au lieu de forcer les chiffres pour les faire coïncider.",
                     "- SCORE QUALITÉ — RVV (critères 4 et 5, ce sont eux qui font l'écart entre les entités). Les règles de validation SONT dans DHIS2 et sont lisibles — méthode VÉRIFIÉE le 01/08/2026, applique-la telle quelle. (a) Règles : validationRules.json?fields=id,name,importance,periodType&paging=false (ex. « 1q-Cas suspect de Paludisme de moins de 5 ans comparé aux Nouveaux cas de moins de 5 ans » ; beaucoup ont des noms peu parlants « 1 », « 11 »). (b) HISTORIQUE des violations : validationResults.json?pe=<période>&pageSize=1000&page=N — ⚠ le filtre ou= NE FONCTIONNE PAS sur cette instance (renvoie 0 même pour une unité réellement en violation) : récupère toutes les pages puis filtre côté code sur le path des unités (organisationUnits.json?filter=path:like:<UID_province>&fields=id,name,level,path&paging=false). (c) ÉTAT ACTUEL des violations : GET validation/dataSet/<UID_canevas>.json?pe=<période>&ou=<UID_unité> → recalcul en direct, mais UNE unité d'organisation à la fois (les violations vivent au niveau FOSA, pas ZS/province : interroger une ZS renvoie 0).",
-                    "- SCORE QUALITÉ — RVV CORRIGÉES (critère 5) : DHIS2 NE STOCKE AUCUN indicateur « corrigée » — une violation corrigée DISPARAÎT, tout simplement. Ce critère ne se calcule donc QUE par COMPARAISON entre deux états : les violations d'une période à une date antérieure (historique validationResults, ou la liste du rapport précédent) versus l'état recalculé aujourd'hui (validation/dataSet). ⚠ Les deux sources divergent et c'est NORMAL : l'historique persisté est un instantané d'anciennes exécutions planifiées, il peut manquer des violations bien réelles aujourd'hui (vérifié : une FOSA en violation au recalcul direct était absente de l'historique). Dis TOUJOURS laquelle des deux sources tu as utilisée. N'invente JAMAIS un nombre de RVV, et ne remplace JAMAIS les RVV par des contrôles de cohérence maison (Penta3 ≤ Penta1, etc.) : ce serait un autre indicateur. ⭐ MOYEN LE PLUS EFFICACE, à préférer aux deux précédents : requete_dhis2 avec endpoint 'dataAnalysis/validationRules' et corps {startDate:'2026-06-01', endDate:'2026-06-30', ou:'<UID_ZS>'} → TOUTES les RVV du sous-arbre en UN SEUL appel (mesuré : 148 violations pour la ZS Kinshasa en 6 s, là où l'interrogation FOSA par FOSA demandait ~500 appels). Le proxy force persist=false : rien n'est écrit dans le DHIS2. ⚠ UNE ZONE DE SANTÉ à la fois — une province entière dépasse le délai (erreur 524) ; pour une DPS, boucle sur ses ZS.",
+                    "- SCORE QUALITÉ — RVV CORRIGÉES (critère 5) : applique la convention opérationnelle du rapport DPS « SCORE QUALITE_JUIN_2026_VF ». Pour LA PÉRIODE DEMANDÉE, une RVV encore présente signifie qu'elle n'est pas corrigée : critère 5 = 0. L'absence de toute RVV actuelle signifie qu'aucune violation ne persiste : critère 5 = 20. Appelle OBLIGATOIREMENT verifier_correction_rvv_direct, qui interroge dataAnalysis/validationRules avec persist=false sur le sous-arbre de l'entité. Ne compare JAMAIS le mois demandé au mois précédent : ce sont deux périodes de données différentes et cela ne prouve pas une correction. Une comparaison de deux extractions du MÊME mois peut seulement servir de traçabilité complémentaire pour compter les violations disparues. N'invente JAMAIS un nombre de RVV et ne remplace jamais les RVV par des contrôles de cohérence maison.",
                     "- SCORE QUALITÉ — EXHAUSTIVITÉ : analyse présentée À CÔTÉ du score qualité mais qui n'est PAS un des 5 critères. Taux d'exhaustivité = nombre de cellules remplies / nombre de cellules attendues. Sert à montrer qu'une forte complétude (rapport transmis) ne garantit pas la qualité (rapport bien rempli) : commente systématiquement les entités à forte complétude mais faible exhaustivité.",
                     "- SCORE QUALITÉ — RESTITUTION : hors canevas, présente le détail des 5 critères par entité, le total /100, la catégorie, le classement et la répartition. Dans un canevas qui exige un tableau comparatif par AS sur une seule diapositive, privilégie un tableau lisible AS | total période 1 | catégorie | total période 2 | catégorie | écart ; les 5 critères restent obligatoires dans le calcul et peuvent être résumés dans le commentaire/notes si la place manque. Cellules {t,bg} : 20 vert foncé, 15 vert clair, 10 jaune, 5/0 rouge ; total 100 vert foncé, 80–95 vert clair, 60–75 jaune, 50–55 orange, <50 rouge. Jamais le score maison de l'onglet Qualité des données.",
-                    "- PROGRAM INDICATORS (programIndicators.json) : ils n'existent que pour les canevas d'enquête infrastructure « DV » (programmes à événements ABANDONNÉS, sans données) — ne les utilise pas sauf demande historique explicite. Toute l'analyse de routine repose sur dataElements + indicators + datasets.",
+                    "- PROGRAM INDICATORS (programIndicators.json) : ils sont ACTIFS et doivent être contrôlés. Instance vérifiée : 76 indicateurs EVENT répartis entre Canevas BCZ, Centre de Santé, DPS et Hôpital ; à Kasavubu, 55 valeurs S1 2025/S1 2026 ont été retrouvées via l'endpoint événementiel correct. Ne les interroge JAMAIS comme des dx dans analytics.json : utilise calculer_indicateur_programme_direct, qui résout le programme et appelle analytics/events/aggregate/<programme>.json avec dimension=pe, filter=ou et dimension=<UID_programIndicator>. Une absence n'est conclue qu'après cet appel.",
                     "",
                     "## Conventions PEV RDC — dénominateurs et UID clés (à utiliser directement, ne les recherche pas)",
                     "- Population : élément WLSKVyA8LoY ('Pop. par AS'), valeur MENSUELLE RÉPÉTÉE (identique chaque mois) → prendre UNE valeur par unité et par an (ex. pe:<AAAA>01), JAMAIS la somme des 12 mois.",
@@ -9941,7 +9941,7 @@
                     "- INTERDICTIONS ABSOLUES quand un .docx ou un .pptx est joint : ne JAMAIS régénérer avec generer_rapport ; ne JAMAIS livrer une annexe, un fichier partiel ou plusieurs fichiers complémentaires. Dans un PPTX à structure stricte, modifier uniquement les objets existants et utiliser remplacer_forme_par_tableau pour une zone d'instruction ; l'ajout de diapositives reste interdit sauf demande explicite de changement d'architecture.",
                     "- ⛔ NE DIS JAMAIS QUE C'EST TERMINÉ SANS AVOIR LIVRÉ LE FICHIER. Un livrable n'existe que si l'outil correspondant a répondu « OK : … téléchargé chez l'utilisateur ». Tant que ce n'est pas le cas, le travail n'est PAS fini : continue. Interdits formels : annoncer un document généré alors qu'aucun appel d'outil n'a abouti ; livrer un fichier tronqué en le présentant comme complet ; livrer PLUSIEURS fichiers partiels « complémentaires » (le client en attend UN SEUL, complet) ; conclure par un résumé de ce que « contient » le document au lieu de le produire. Si un appel échoue, lis le message d'erreur, corrige les adresses et relance — n'abandonne pas en silence et ne recommence pas depuis le début.",
                     "- ⛔ FIDÉLITÉ ABSOLUE AU CANEVAS — structure_stricte=true est le défaut. Le fichier final doit avoir EXACTEMENT le même nombre de diapositives, le même ordre et les mêmes rubriques que l'original. N'ajoute, ne duplique, ne supprime et ne pagine AUCUNE diapositive. Une demande générique de « graphiques pertinents » signifie : actualiser seulement les graphiques/cadres explicitement prévus dans le canevas ; si le canevas n'en prévoit pas, n'en crée aucun. Les rubriques hors DHIS2 — notamment PTF, budgets, activités, signatures — restent VIDES ou remplies exactement comme dans l'original : ne les corrige pas, ne les normalise pas et ne les pagine jamais.",
-                    "- ⭐ SCORE QUALITÉ DANS UN CANEVAS : quand la diapositive dit « tableau comparatif ... par AS », produis UN VRAI TABLEAU SUR CETTE MÊME DIAPOSITIVE avec une ligne par AS et, au minimum, Score S1 2025, Catégorie 2025, Score S1 2026, Catégorie 2026 et Écart. Utilise remplacer_forme_par_tableau sur la zone [D#:F#] contenant la consigne ; ne crée jamais une diapositive de synthèse séparée et ne remplace jamais ce tableau par un graphique de complétude. Les cinq critères servent au calcul de chaque total ; calcule-les exclusivement avec ctx.scoreQualiteDps. Si le statut RVV corrigées n'est pas démontré par deux états DHIS2 comparables, le total doit rester « Non calculable » : n'invente jamais 0 ou 20.",
+                    "- ⭐ SCORE QUALITÉ DANS UN CANEVAS : quand la diapositive dit « tableau comparatif ... par AS », produis UN VRAI TABLEAU SUR CETTE MÊME DIAPOSITIVE avec une ligne par AS et, au minimum, Score S1 2025, Catégorie 2025, Score S1 2026, Catégorie 2026 et Écart. Utilise remplacer_forme_par_tableau sur la zone [D#:F#] contenant la consigne ; ne crée jamais une diapositive de synthèse séparée et ne remplace jamais ce tableau par un graphique de complétude. Les cinq critères servent au calcul de chaque total ; détermine d'abord le critère 5 avec verifier_correction_rvv_direct pour chaque période exacte, puis calcule le total exclusivement avec ctx.scoreQualiteDps.",
                     "- 📐 MISE EN PAGE — ne modifie que les objets ciblés. Le moteur contrôle uniquement les tableaux touchés ; il n'a pas le droit de « réparer » un tableau préexistant hors périmètre. Pour une consigne vide à remplacer, utiliser remplacer_forme_par_tableau : le tableau est dimensionné dans la zone utile de la même diapositive. Toute opération en échec annule le lot entier. Au dernier appel telecharger:true, fournis controles : pour la diapositive score qualité, min_tableaux:1 et texte_absent:'Mettre un tableau comparatif'; pour les diapositives sans graphique prévu, max_images/max_graphiques selon l'original. Ne dis jamais « terminé » si le contrôle final n'a pas répondu OK.",
                     "- ⭐ CANEVAS / MODÈLE .pptx joint → modifier_presentation UNIQUEMENT, JAMAIS generer_rapport. Ordre obligatoire : (1) lire l'extraction adressée et établir un inventaire immuable des diapositives ; (2) classer chaque rubrique DHIS2 / hors DHIS2 ; (3) calculer et vérifier une première section ; (4) l'écrire IMMÉDIATEMENT avec telecharger:false, puis continuer section par section — ne reporte jamais toute l'écriture à la fin des extractions ; (5) dernier appel telecharger:true, structure_stricte:true, autoriser_nouvelles_diapos:false, autoriser_ajout_visuel:false et controles explicites. Ne livre qu'UN fichier complet. Une rubrique hors DHIS2, même vide ou imparfaite, reste byte-for-byte inchangée dans son contenu et sa géométrie.",
                     "- Modèle .doc/.ppt/.pdf joint (ancien format binaire ou PDF, non modifiable sur place) → reproduis le document INTÉGRALEMENT avec generer_rapport : TOUTES les sections du modèle, dans l'ordre exact, avec leurs titres d'origine ; recopie TELS QUELS les textes non concernés par la mise à jour (en-tête institutionnel multi-lignes via style.entete_lignes, commentaires conservés, bloc signature via signature) ; conserve même les tableaux et sections vides du modèle ; actualise uniquement les données et analyses demandées. N'omets AUCUNE section et n'invente JAMAIS ta propre structure à la place de celle du modèle. ⚠ Si le fichier est un .ppt ou .doc ANCIEN format, demande d'abord à l'utilisateur de le réenregistrer en .pptx/.docx : la modification sur place, bien plus fidèle, redevient alors possible.",
@@ -9985,7 +9985,7 @@
                     type: 'function',
                     function: {
                         name: 'executer_js',
-                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data, flt, AG, load, dhis2, geo, loadUrl, mL. ⭐ ctx.scoreQualiteDps({completude,promptitude,datasets_atteints,datasets_applicables,rvv,rapports_recus,rvv_corrigees}) applique le barème DPS 5×20 de façon déterministe ; si rvv_corrigees n'est pas prouvé (true/false), total=null — ne jamais le remplacer par une supposition. ⭐ ctx.afficher(spec) affiche directement un résultat ; ctx.keep(valeur) conserve une donnée volumineuse. ctx.dhis2, ctx.geo, ctx.load et ctx.loadUrl sont ASYNCHRONES : toujours await. Termine par return d'une valeur compacte ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data, flt, AG, load, dhis2, geo, loadUrl, pevDirect, programIndicatorDirect, rvvCorrectionDirect, mL. ⭐ ctx.programIndicatorDirect({uid|nom,entite,niveau,periodes}) est la voie correcte pour les programIndicators EVENT. ⭐ ctx.rvvCorrectionDirect({entite,niveau,periode}) détermine le critère 5 DPS : aucune RVV actuelle=20, présence d'une RVV=0. ⭐ ctx.scoreQualiteDps({completude,promptitude,datasets_atteints,datasets_applicables,rvv,rapports_recus,rvv_corrigees}) applique ensuite le barème DPS 5×20. ⭐ ctx.afficher(spec) affiche directement un résultat ; ctx.keep(valeur) conserve une donnée volumineuse. ctx.dhis2, ctx.geo, ctx.load, ctx.loadUrl, ctx.programIndicatorDirect et ctx.rvvCorrectionDirect sont ASYNCHRONES : toujours await. Termine par return d'une valeur compacte ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
                         parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
@@ -10014,6 +10014,42 @@
                                 indicateurs: { type: 'array', items: { type: 'string', enum: ['cv', 'zero_dose', 'sous_vaccines'] } }
                             },
                             required: ['entite', 'debut', 'fin', 'granularite', 'indicateurs']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'calculer_indicateur_programme_direct',
+                        description: "OUTIL OBLIGATOIRE pour un objet programIndicators.json de type EVENT. Il retrouve le programme propriétaire et appelle analytics/events/aggregate/<programme>.json avec l'unité et les périodes demandées. Ne passe jamais un programIndicator comme dx dans analytics.json : cela renvoie zéro ligne même quand des événements existent. Utilise uid si connu, sinon un nom assez précis.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                uid: { type: 'string', description: "UID DHIS2 du programIndicator, si connu." },
+                                nom: { type: 'string', description: "Nom ou fragment de nom si l'UID n'est pas connu." },
+                                entite: { type: 'string', description: "Nom ou UID DHIS2 de l'entité." },
+                                niveau: { type: 'integer', enum: [1, 2, 3, 4, 5], description: 'Niveau DHIS2 attendu.' },
+                                periodes: { type: 'array', items: { type: 'string' }, description: "Périodes DHIS2, ex. ['2025S1','2026S1']." }
+                            },
+                            required: ['entite', 'periodes']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'verifier_correction_rvv_direct',
+                        description: "OUTIL OBLIGATOIRE pour le critère 5 « RVV corrigées » du score qualité DPS. Il recalcule dans DHIS2 les règles de validation encore violées pour la période exacte et le sous-arbre demandé. Résultat institutionnel : 0 violation persistante = corrigées, score 20/20 ; au moins 1 violation persistante = non corrigées, score 0/20. Ne compare pas au mois précédent. Exemple : {entite:'Kasa Vubu',niveau:3,periode:'202606'}.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                entite: { type: 'string', description: "Nom ou UID DHIS2 de la ZS ou de l'AS." },
+                                niveau: { type: 'integer', enum: [3, 4], description: '3=ZS, 4=AS.' },
+                                periode: { type: 'string', description: "YYYYMM, YYYYS1, YYYYS2 ou YYYY." },
+                                debut: { type: 'string', description: 'Date explicite YYYY-MM-DD, si periode est omise.' },
+                                fin: { type: 'string', description: 'Date explicite YYYY-MM-DD, si periode est omise.' }
+                            },
+                            required: ['entite']
                         }
                     }
                 },
@@ -10297,6 +10333,82 @@
                 try { return JSON.parse(tt); } catch (e) { return tt; }
             }
 
+            /* Indicateurs de programme DHIS2 (EVENT). Ils ne sont pas des dx
+               agrégés : analytics.json renvoie légitimement zéro ligne. Cette
+               voie déterministe résout les métadonnées puis utilise l'endpoint
+               événementiel du programme propriétaire. */
+            async function iaProgramIndicatorDirect(input) {
+                input = input || {};
+                var uid = String(input.uid || '').trim(), q = String(input.nom || '').trim();
+                var fields = 'id,name,shortName,analyticsType,aggregationType,expression,filter,program[id,name]';
+                var pi;
+                if (/^[A-Za-z][A-Za-z0-9]{10}$/.test(uid)) {
+                    pi = await iaDhis2('programIndicators/' + uid + '.json', 'fields=' + fields);
+                } else {
+                    if (!q) throw new Error('Précise uid ou nom pour l’indicateur de programme.');
+                    var found = await iaDhis2('programIndicators.json', 'filter=name:ilike:' + encodeURIComponent(q) + '&fields=' + fields + '&paging=false');
+                    var list = (found && found.programIndicators) || [];
+                    if (list.length !== 1) throw new Error('Indicateur de programme ambigu ou introuvable : ' + q + '. Candidats : ' + list.slice(0, 10).map(function (x) { return x.name + ' (' + x.id + ')'; }).join(', '));
+                    pi = list[0];
+                }
+                if (!pi || !pi.id || !pi.program || !pi.program.id) throw new Error('Métadonnées incomplètes pour l’indicateur de programme.');
+                if (String(pi.analyticsType || '').toUpperCase() !== 'EVENT') throw new Error('Cet objet n’est pas un indicateur de programme EVENT : ' + pi.name);
+                var entity = await iaPevResolveOu(input.entite, input.niveau);
+                var periods = Array.isArray(input.periodes) ? input.periodes.map(String) : String(input.periodes || '').split(/[;,\s]+/).filter(Boolean);
+                if (!periods.length) throw new Error('Précise au moins une période DHIS2 (ex. 2025S1, 2026S1 ou 202506).');
+                var params = 'dimension=' + encodeURIComponent('pe:' + periods.join(';')) + '&filter=' + encodeURIComponent('ou:' + entity.id) + '&dimension=' + encodeURIComponent(pi.id) + '&displayProperty=NAME';
+                var d = await iaDhis2('analytics/events/aggregate/' + pi.program.id + '.json', params);
+                var hdr = (d.headers || []).map(function (h) { return h.name; }), iPe = hdr.indexOf('pe'), iVal = hdr.indexOf('value');
+                var byPe = {};
+                (d.rows || []).forEach(function (r) { if (iPe >= 0 && iVal >= 0) byPe[String(r[iPe])] = Number(r[iVal]); });
+                return {
+                    indicateur: { id: pi.id, name: pi.name, analyticsType: pi.analyticsType, aggregationType: pi.aggregationType, expression: pi.expression, filter: pi.filter },
+                    programme: pi.program,
+                    entite: { id: entity.id, name: entity.name || entity.displayName, level: entity.level },
+                    series: periods.map(function (pe) { return { periode: pe, valeur: Object.prototype.hasOwnProperty.call(byPe, pe) ? byPe[pe] : null }; }),
+                    source: 'DHIS2 analytics/events/aggregate/' + pi.program.id,
+                    methode: 'programIndicator EVENT officiel'
+                };
+            }
+
+            function iaRvvDates(input) {
+                input = input || {};
+                var pe = String(input.periode || '').trim().toUpperCase();
+                var debut = String(input.debut || '').trim(), fin = String(input.fin || '').trim(), m;
+                function lastDay(y, mo) { return String(new Date(Date.UTC(y, mo, 0)).getUTCDate()).padStart(2, '0'); }
+                if ((m = /^(\d{4})(\d{2})$/.exec(pe))) {
+                    var mm = Number(m[2]); if (mm < 1 || mm > 12) throw new Error('Mois RVV invalide : ' + pe);
+                    debut = m[1] + '-' + m[2] + '-01'; fin = m[1] + '-' + m[2] + '-' + lastDay(Number(m[1]), mm);
+                } else if ((m = /^(\d{4})S([12])$/.exec(pe))) {
+                    debut = m[1] + (m[2] === '1' ? '-01-01' : '-07-01'); fin = m[1] + (m[2] === '1' ? '-06-30' : '-12-31');
+                } else if ((m = /^(\d{4})$/.exec(pe))) {
+                    debut = m[1] + '-01-01'; fin = m[1] + '-12-31';
+                } else if (pe) throw new Error('Période RVV invalide : utilise YYYYMM, YYYYS1, YYYYS2 ou YYYY.');
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(debut) || !/^\d{4}-\d{2}-\d{2}$/.test(fin) || debut > fin) throw new Error('Précise une période RVV valide ou deux dates YYYY-MM-DD cohérentes.');
+                return { debut: debut, fin: fin, periode: pe || (debut + '/' + fin) };
+            }
+            async function iaRvvCorrectionDirect(input) {
+                input = input || {};
+                var entity = await iaPevResolveOu(input.entite, input.niveau);
+                if (Number(entity.level) < 3 || Number(entity.level) > 4) throw new Error('Le contrôle RVV direct doit cibler une ZS (L3) ou une AS (L4).');
+                var dates = iaRvvDates(input);
+                var raw = await iaDhis2('dataAnalysis/validationRules', '', { startDate: dates.debut, endDate: dates.fin, ou: entity.id });
+                var list = Array.isArray(raw) ? raw : (raw && (raw.validationResults || raw.results)) || [];
+                var seen = {}, n = 0;
+                list.forEach(function (v) {
+                    var vr = v.validationRule || {}, ou = v.organisationUnit || {}, per = v.period || {}, aoc = v.attributeOptionCombo || {};
+                    var key = [v.validationRuleId || vr.id || '', v.organisationUnitId || ou.id || '', v.periodId || per.id || per || '', v.attributeOptionComboId || aoc.id || '', v.leftsideValue, v.rightsideValue].join('|');
+                    if (!seen[key]) { seen[key] = 1; n++; }
+                });
+                var corrigees = n === 0;
+                return {
+                    entite: { id: entity.id, name: entity.name || entity.displayName, level: entity.level }, periode: dates.periode, debut: dates.debut, fin: dates.fin,
+                    rvv_persistantes: n, rvv_corrigees: corrigees, score_critere_5: corrigees ? 20 : 0,
+                    interpretation: corrigees ? 'Aucune RVV actuellement présente : critère 5 corrigées = 20/20.' : n + ' RVV actuellement présente(s) : critère 5 non corrigées = 0/20.',
+                    source: 'DHIS2 dataAnalysis/validationRules (persist=false)', methode: 'Convention DPS : présence actuelle = non corrigée ; absence actuelle = corrigée. Aucun rapprochement avec le mois précédent.'
+                };
+            }
+
             /* PEV_DIRECT_BEGIN
                Calcul PEV déterministe partagé par le tool calculer_pev_direct et
                ctx.pevDirect. Les UID nus sont volontairement exclus : un dataElement
@@ -10530,7 +10642,7 @@
                qui renvoie une Promise vide (résultats à 0) et fait boucler le modèle.
                On prévient le modèle dans le résultat pour qu'il corrige au tour suivant. */
             function iaMissingAwait(code) {
-                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo|pevDirect)\s*\(/g, m, hits = [];
+                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo|pevDirect|programIndicatorDirect|rvvCorrectionDirect)\s*\(/g, m, hits = [];
                 while ((m = re.exec(code))) {
                     var before = code.slice(Math.max(0, m.index - 40), m.index);
                     if (!/await\s*(\(\s*)?$/.test(before) && !/(Promise\s*\.\s*all|\.then|return)\s*[([]?\s*$/.test(before)) hits.push(m[1]);
@@ -10540,8 +10652,8 @@
 
             /* Barème officiel du score qualité DPS : calcul déterministe, jamais
                laissé à l'improvisation du modèle. Si le statut de correction des
-               RVV n'est pas démontré par deux états DHIS2 comparables, le total
-               reste volontairement non calculable. */
+               RVV est fourni par iaRvvCorrectionDirect selon l'état actuel de la
+               période exacte : aucune violation=20, présence d'une violation=0. */
             function iaScoreQualiteDps(o) {
                 o = o || {};
                 function num(v) { v = Number(v); return isFinite(v) ? v : null; }
@@ -10578,7 +10690,7 @@
                     if (iaPevManualQuery(input.code)) throw new Error('REFUSÉ : calcul PEV manuel détecté. Utilise calculer_pev_direct avec les antigènes, l’entité et la période demandés ; les UID nus/Analytics libres produisent des CV incohérentes avec le dashboard.');
                     if (!IA.reg) IA.reg = {};
                     var ctx = {
-                        S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, pevDirect: iaPevDirect, geo: iaGeo, mL: mL, scoreQualiteDps: iaScoreQualiteDps,
+                        S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, pevDirect: iaPevDirect, programIndicatorDirect: iaProgramIndicatorDirect, rvvCorrectionDirect: iaRvvCorrectionDirect, geo: iaGeo, mL: mL, scoreQualiteDps: iaScoreQualiteDps,
                         /* Rendu DIRECT dans le chat depuis le code (la grosse géométrie
                            reste dans le navigateur, JAMAIS renvoyée à l'IA) : idéal pour
                            les cartes choroplèthes (GeoJSON volumineux). spec = même forme
@@ -10610,6 +10722,14 @@
                 if (name === 'calculer_pev_direct') {
                     var pev = await iaPevDirect(input);
                     return JSON.stringify(pev);
+                }
+                if (name === 'calculer_indicateur_programme_direct') {
+                    var piv = await iaProgramIndicatorDirect(input);
+                    return JSON.stringify(piv);
+                }
+                if (name === 'verifier_correction_rvv_direct') {
+                    var rvvCheck = await iaRvvCorrectionDirect(input);
+                    return JSON.stringify(rvvCheck);
                 }
                 if (name === 'afficher_resultat') { iaRenderResult(input, msgsEl); return 'OK : résultat affiché à l\'utilisateur avec boutons de téléchargement.'; }
                 if (name === 'generer_rapport') {
