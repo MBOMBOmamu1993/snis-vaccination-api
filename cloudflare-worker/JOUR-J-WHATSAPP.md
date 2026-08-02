@@ -45,10 +45,10 @@ WhatsApp (avant le secret : page « bientôt disponible »).
 ## 3. Test (5 min)
 
 1. Ouvrir https://pev-ia-proxy.pev-rdc.workers.dev/acheter
-   → les 4 offres (5 / 10 / 20 / 30 $) + « Montant libre » s'affichent avec
+   → les 5 offres (20 / 30 / 40 / 50 / 100 $) + « Montant libre » (10 $ minimum) s'affichent avec
    les boutons verts « 💬 Commander ».
 2. Cliquer un bouton → WhatsApp s'ouvre sur votre numéro dédié avec le message
-   pré-rempli (« Bonjour, je souhaite acheter l'offre Standard (±25 analyses — 10 $)… »).
+   pré-rempli (« Bonjour, je souhaite acheter l'offre Standard (±75 analyses — 30 $)… »).
 3. Console admin : ouvrir https://pev-ia-proxy.pev-rdc.workers.dev/admin sur
    votre téléphone → **mettre en favori**. Token admin + 100 requêtes + note
    « test » → un code `PEV-XXXX-XXXX` s'affiche.
@@ -62,7 +62,7 @@ WhatsApp (avant le secret : page « bientôt disponible »).
    rapide » dans WhatsApp Business).
 2. Il paie et envoie la **capture** du paiement.
 3. Vous vérifiez la réception, puis ouvrez `/admin` (favori) :
-   token + requêtes (5 $=50 · 10 $=100 · 20 $=200 · 30 $=300) + note
+   token + requêtes (20 $=200 · 30 $=300 · 40 $=400 · 50 $=500 · 100 $=1 000) + note
    (nom du client, montant) → **Générer**.
 4. Vous collez le code dans la conversation. Terminé — le client suit son
    solde lui-même dans l'application (⚙ Accès → vérifier).

@@ -1,9 +1,11 @@
 # Dernière requête
 
-Date : 01/08/2026
+Date : 02/08/2026
 
-Demande : corriger les skills de l’onglet « Assistant IA DHIS2 RDC » afin qu’un canevas PPTX joint soit actualisé avec les données DHIS2 sans modifier sa structure, sans toucher aux diapositives hors DHIS2 (notamment PTF, volontairement vide), sans ajouter de graphiques ou diapositives non demandés, et avec un vrai tableau comparatif du score qualité. Prétester l’Assistant IA/Kimi et inspecter sa production avant de conclure.
+Demande : retirer toute limite de 30 étapes de l’Assistant IA ; limiter les offres client aux codes de 20, 30, 40, 50 et 100 USD avec montant libre à partir de 10 USD ; intégrer dans les skills IA tous les UID vérifiés par l’audit `Audit_indicateurs_DHIS2_Assistant_IA_Kasa-Vubu_2026.xlsx` et contrôler les indicateurs vides du canevas `Revue_Semestrielle_S1_2026_ZS_Kasa_Vubu.pptx`, notamment ECV, réunions CODESA et réunions de validation ; pousser et déployer en production.
 
-Fichiers concernés : `docs/index.html`, `scripts/test-ia-pptx-canevas.mjs`, `scripts/test-ia-kimi-pptx-policy.mjs`, `scripts/test_ia_ollama.mjs`, `project_memory/*`.
+Règles métier confirmées : Proportion ECV (%) = somme du dataElement `M2JQW0H44dI` sur toute la période sélectionnée ÷ nourrissons survivants de la même période × 100. Réunions CODESA = indicator `N3HHnz0Waos`. Réunions de validation/hebdomadaires ECZ = indicator `zLIRMEWlQXy`, avec lecture des opérandes DHIS2 si le canevas demande les nombres prévus/tenus.
 
-Statut : CORRECTIF URGENT VALIDÉ — le délai global de 45 minutes et la limite Kimi spéciale de 12 étapes ont été entièrement supprimés après interruption réelle d’un canevas au moment de son écriture. Kimi dispose des 30 étapes communes, sans arrêt chronométré, et doit écrire le PPTX par lots `telecharger:false` dès qu’une section est calculée. Le mode structure stricte, le tableau score qualité et la protection PTF restent actifs. Prétest moteur : PASS, 49 → 49 diapositives, seule D35 modifiée, D6 PTF identique.
+Implémentation : catalogue local généré depuis l’audit (481 lignes + ECV confirmé, 393 UID audit + ECV, 76 programIndicators EVENT dans 4 programmes, 83 lignes à configurer), tool `rechercher_uid_canevas` et helper `ctx.uidSearch`, programme EVENT via leurs UID exacts, règle d’affichage des valeurs partielles au lieu de N/D, ECV ajouté au calcul PEV direct, offres et validation serveur mises à jour dans les trois modes de paiement. La boucle agentique reste sans limite globale de durée ou d’étapes.
+
+Statut : tests catalogue/ECV/EVENT/RVV/achats, dry-run Worker et prétest navigateur PPTX réussis (49→49 diapositives, seule D35 modifiée, PTF identique). Production pas encore déployée à cet instant.

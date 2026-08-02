@@ -9796,9 +9796,9 @@
                         .catch(function () { if (cb) cb(); });
                 } catch (e) { if (cb) cb(); }
             }
-            /* Limite d'étapes uniquement : aucun délai global ne doit interrompre
-               un canevas lourd tant que l'agent progresse et appelle ses outils. */
-            var IA_MAX_TOOL_TURNS = 30;
+            /* Aucune limite globale de durée ou de tours : l'agent poursuit tant
+               qu'il appelle des outils et s'arrête uniquement quand le modèle
+               rend sa réponse finale ou qu'une erreur réelle survient. */
             var IA_TOOL_RESULT_MAX = 8000; /* caractères renvoyés à l'IA par outil — retourner des résultats compacts */
             /* Fond de carte STATIQUE des 519 ZS de la RDC (TopoJSON léger, ~1,3 Mo,
                chargé PAR URL → aucune géométrie ne transite par l'IA). Chaque entité
@@ -9880,7 +9880,7 @@
                     "",
                     "## FIDÉLITÉ DES CALCULS — RÈGLE ABSOLUE (anti-hallucination)",
                     "Un indicateur n'est JAMAIS calculé selon ta connaissance générale (définitions OMS/EPI apprises « de tête »). Chaque calcul doit être rattaché à UNE source vérifiable, dans cet ordre :",
-                    "1) DEMANDE PEV DE CV / ÉVOLUTION DE CV / ZÉRO-DOSE / SOUS-VACCINÉS → appelle OBLIGATOIREMENT le tool calculer_pev_direct. Il est la SEULE voie autorisée : il contient les UID dataElement.categoryOptionCombo exacts du repo, somme les doses au niveau FOSA, déduplique la population au niveau AS et reproduit les clamps du dashboard. N'utilise NI l'indicateur officiel DHIS2, NI un UID nu, NI un calcul libre via requete_dhis2/executer_js pour ces quatre demandes. Le client compare avec SON dashboard : toute dérive détruit sa confiance.",
+                    "1) DEMANDE PEV DE CV / ÉVOLUTION DE CV / ECV / ZÉRO-DOSE / SOUS-VACCINÉS → appelle OBLIGATOIREMENT le tool calculer_pev_direct. Il est la SEULE voie autorisée : il contient les UID dataElement.categoryOptionCombo exacts du repo, ainsi que l'UID ECV vérifié, somme les doses au niveau FOSA, déduplique la population au niveau AS et reproduit les clamps du dashboard. N'utilise NI l'indicateur officiel DHIS2, NI un calcul libre via requete_dhis2/executer_js pour ces demandes. Le client compare avec SON dashboard : toute dérive détruit sa confiance.",
                     "2) TOUT PROGRAMME → la CONFIGURATION du DHIS2 national : cherche d'abord l'indicateur agrégé officiel (indicators.json), puis l'indicateur de programme événementiel (programIndicators.json). Un programIndicator analyticsType=EVENT se calcule OBLIGATOIREMENT avec calculer_indicateur_programme_direct ou analytics/events/aggregate/<UID_PROGRAMME>.json ; l'endpoint analytics.json agrégé renvoie 0 ligne pour ces objets même lorsqu'ils ont des données. À défaut seulement, prends les dataElements du canevas/dataset et applique exactement la formule officielle numerator/denominator. Les canevas et indicateurs configurés dans le DHIS2 définissent comment calculer CHAQUE indicateur : réfère-toi à EUX, jamais à tes habitudes générales.",
                     "3) Ni recette dashboard ni configuration DHIS2 ne couvrent la demande → dis-le franchement et propose l'indicateur officiel le plus proche. N'INVENTE JAMAIS une définition.",
                     "4) DIVERGENCE dashboard/repo vs DHIS2 en ligne → le DHIS2 EN LIGNE EST LA RÉFÉRENCE : donne la valeur DHIS2 au client et signale brièvement l'écart constaté.",
@@ -9892,6 +9892,8 @@
                     "STRATÉGIE (impératif) : regroupe plusieurs requêtes dans un même executer_js et vise ≤ 8 tours d'outils. Si une requête renvoie 0 ligne deux fois, NE répète PAS la même piste : change d'approche — formules officielles via indicators.json?filter=name:ilike:<mot-clé>&fields=id,name,numerator,denominator, autre niveau (LEVEL-5), ou les conventions ci-dessous.",
                     "",
                     "## Tous les programmes du SNIS — repères vérifiés sur l'instance DHIS2",
+                    "- ⭐ CATALOGUE UID DU CANEVAS — AVANT toute recherche libre, appelle rechercher_uid_canevas avec le libellé demandé. Le catalogue local vérifié le 02/08/2026 contient 481 indicateurs du canevas tous programmes, 393 UID auditables, 76 programIndicators EVENT avec leur UID de programme et 83 lignes à reconfigurer. Utilise l'UID exact retourné et vérifie ensuite la métadonnée vivante. Pour une ligne à configurer, le meilleur candidat n'est qu'une piste : ne l'affirme jamais sans validation DHIS2.",
+                    "- REPÈRES PRIORITAIRES DU CANEVAS : ECV/enfant complètement vacciné = dataElement M2JQW0H44dI ; formule demandée Proportion ECV (%) = somme ECV sur TOUTE la période sélectionnée ÷ nourrissons survivants de la même période × 100. Réunions CODESA réalisées avec comptes rendus = indicator N3HHnz0Waos. Réunions de validation des données/hebdomadaires ECZ = indicator zLIRMEWlQXy ; si le canevas demande les nombres prévus et tenus, lis d'abord les opérandes de sa formule DHIS2. Ne renvoie jamais N/D pour ces libellés sans avoir interrogé ces UID.",
                     "- DATASETS (formulaires mensuels, dataSets.json?fields=id,name,periodType) : A = Services de Base/primaires (consultation curative, maternité CPN/accouchement/CPoN, planification familiale, laboratoire, gestion/financement) ; B = Services Secondaires (santé de l'enfant CPS, vaccination PEV section B 8.4, nutrition UNTA, références, décès) ; C = SIGL (logistique/médicaments, ESS et BCZ) ; D = Service Hôpital ; E = Banque de Sang et Transfusion ; F = Activités BCZ (logistique PEV, supervisions) ; J = Service Tertiaire. Plus les datasets programmes : PNLP (paludisme, sites sentinelles CS/HGR), PNLT (tuberculose, mensuel + trimestriel), PNLS (VIH, canevas unique), PNSR (santé reproductive), NUT (nutrition complémentaire), PNSM (santé mentale), PNSOV (santé oculaire), PNRBC (réadaptation), PNSBD (bucco-dentaire/Noma), PNEL (lèpre/pian/ulcère de Buruli, trimestriel), PNIRA (IRA), PROSANI-USAID, Surveillance Hebdomadaire IDSR (datasets HEBDOMADAIRES : semaines pe:2026W12), campagnes (MIILD, rougeole/rubéole, fièvre jaune — quotidiennes). Les dataElements sont préfixés par section du formulaire ('A 2.1 …', 'B 8.4 …', 'D 10.2 …', 'F 4.1 …') : dataSets/<UID>/dataSetElements?paging=false pour lister les éléments d'un formulaire.",
                     "- ÉDITIONS (piège classique) : les formulaires « -Edition 2025 » succèdent aux anciennes versions (données jusqu'à 2024) MAIS les UID des dataElements sont IDENTIQUES d'une édition à l'autre : une requête analytics sur l'UID de l'élément couvre TOUTES les années sans couture. Ne conclus JAMAIS qu'une donnée est absente parce qu'un dataset n'a pas de données récentes — interroge l'élément lui-même.",
                     "- INDICATEURS OFFICIELS (~1 570, voie prioritaire) : leurs noms sont préfixés par domaine : 1a-Banque de sang, 1b-Bucco-dentaire/Noma, 1c-Communication, 1d-Consultation curative, 1e-Diabète, 1f-Campagnes, 1g-Démographie, 1i-Financement, 1k-Hospitalisation, 1l-Interventions communautaires, 1m-Laboratoire, 1n-Lèpre/Pian/UB, 1p-Nutrition, 1q-Paludisme, 1r-Planification Familiale, 1t-Ressources Humaines, 1u-Santé de la mère, 1v-Santé du nouveau-né, 1w-Santé mentale, 1x-Santé oculaire, 1y-Surveillance épidémiologique, 1z-Tuberculose, 2a-Vaccination, 2b-VIH/IST, 2c-Violences Basées sur le Genre, 2i-Cancers, 2j-Diarrhée, 2k-Gestion des médicaments, 2l-Imagerie, 2m-Management, 2n-Oxygénothérapie/Pneumonie ; plus IDSR (taux d'attaque /100 000 et létalité hebdomadaires), cartes de score (Malaria, SRMNEA) et campagnes.",
@@ -9910,7 +9912,7 @@
                     "- SCORE QUALITÉ — RVV CORRIGÉES (critère 5) : applique la convention opérationnelle du rapport DPS « SCORE QUALITE_JUIN_2026_VF ». Pour LA PÉRIODE DEMANDÉE, une RVV encore présente signifie qu'elle n'est pas corrigée : critère 5 = 0. L'absence de toute RVV actuelle signifie qu'aucune violation ne persiste : critère 5 = 20. Appelle OBLIGATOIREMENT verifier_correction_rvv_direct, qui interroge dataAnalysis/validationRules avec persist=false sur le sous-arbre de l'entité. Ne compare JAMAIS le mois demandé au mois précédent : ce sont deux périodes de données différentes et cela ne prouve pas une correction. Une comparaison de deux extractions du MÊME mois peut seulement servir de traçabilité complémentaire pour compter les violations disparues. N'invente JAMAIS un nombre de RVV et ne remplace jamais les RVV par des contrôles de cohérence maison.",
                     "- SCORE QUALITÉ — EXHAUSTIVITÉ : analyse présentée À CÔTÉ du score qualité mais qui n'est PAS un des 5 critères. Taux d'exhaustivité = nombre de cellules remplies / nombre de cellules attendues. Sert à montrer qu'une forte complétude (rapport transmis) ne garantit pas la qualité (rapport bien rempli) : commente systématiquement les entités à forte complétude mais faible exhaustivité.",
                     "- SCORE QUALITÉ — RESTITUTION : hors canevas, présente le détail des 5 critères par entité, le total /100, la catégorie, le classement et la répartition. Dans un canevas qui exige un tableau comparatif par AS sur une seule diapositive, privilégie un tableau lisible AS | total période 1 | catégorie | total période 2 | catégorie | écart ; les 5 critères restent obligatoires dans le calcul et peuvent être résumés dans le commentaire/notes si la place manque. Cellules {t,bg} : 20 vert foncé, 15 vert clair, 10 jaune, 5/0 rouge ; total 100 vert foncé, 80–95 vert clair, 60–75 jaune, 50–55 orange, <50 rouge. Jamais le score maison de l'onglet Qualité des données.",
-                    "- PROGRAM INDICATORS (programIndicators.json) : ils sont ACTIFS et doivent être contrôlés. Instance vérifiée : 76 indicateurs EVENT répartis entre Canevas BCZ, Centre de Santé, DPS et Hôpital ; à Kasavubu, 55 valeurs S1 2025/S1 2026 ont été retrouvées via l'endpoint événementiel correct. Ne les interroge JAMAIS comme des dx dans analytics.json : utilise calculer_indicateur_programme_direct, qui résout le programme et appelle analytics/events/aggregate/<programme>.json avec dimension=pe, filter=ou et dimension=<UID_programIndicator>. Une absence n'est conclue qu'après cet appel.",
+                    "- PROGRAM INDICATORS (programIndicators.json) : ils sont ACTIFS et doivent être contrôlés. Instance vérifiée : 76 indicateurs EVENT répartis entre Canevas BCZ (QQXfuAm7cQL), Centre de Santé (BjD13mVG82e), DPS (pbirwrEK5xY) et Hôpital (IvjxiT221Ms) ; à Kasa-Vubu, 55 valeurs S1 2025/S1 2026 ont été retrouvées via l'endpoint événementiel correct. Ne les interroge JAMAIS comme des dx dans analytics.json : utilise rechercher_uid_canevas puis calculer_indicateur_programme_direct, qui appelle analytics/events/aggregate/<programme>.json avec dimension=pe, filter=ou et dimension=<UID_programIndicator>. Une absence n'est conclue qu'après cet appel.",
                     "",
                     "## Conventions PEV RDC — dénominateurs et UID clés (à utiliser directement, ne les recherche pas)",
                     "- Population : élément WLSKVyA8LoY ('Pop. par AS'), valeur MENSUELLE RÉPÉTÉE (identique chaque mois) → prendre UNE valeur par unité et par an (ex. pe:<AAAA>01), JAMAIS la somme des 12 mois.",
@@ -9985,7 +9987,7 @@
                     type: 'function',
                     function: {
                         name: 'executer_js',
-                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data, flt, AG, load, dhis2, geo, loadUrl, pevDirect, programIndicatorDirect, rvvCorrectionDirect, mL. ⭐ ctx.programIndicatorDirect({uid|nom,entite,niveau,periodes}) est la voie correcte pour les programIndicators EVENT. ⭐ ctx.rvvCorrectionDirect({entite,niveau,periode}) détermine le critère 5 DPS : aucune RVV actuelle=20, présence d'une RVV=0. ⭐ ctx.scoreQualiteDps({completude,promptitude,datasets_atteints,datasets_applicables,rvv,rapports_recus,rvv_corrigees}) applique ensuite le barème DPS 5×20. ⭐ ctx.afficher(spec) affiche directement un résultat ; ctx.keep(valeur) conserve une donnée volumineuse. ctx.dhis2, ctx.geo, ctx.load, ctx.loadUrl, ctx.programIndicatorDirect et ctx.rvvCorrectionDirect sont ASYNCHRONES : toujours await. Termine par return d'une valeur compacte ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data, flt, AG, load, dhis2, geo, loadUrl, uidSearch, pevDirect, programIndicatorDirect, rvvCorrectionDirect, mL. ⭐ Commence par await ctx.uidSearch({recherche,programme}) pour retrouver les UID vérifiés de tous les programmes du canevas. ⭐ ctx.programIndicatorDirect({uid|nom,entite,niveau,periodes}) est la voie correcte pour les programIndicators EVENT. ⭐ ctx.rvvCorrectionDirect({entite,niveau,periode}) détermine le critère 5 DPS. ctx.dhis2, ctx.geo, ctx.load, ctx.loadUrl, ctx.uidSearch, ctx.programIndicatorDirect et ctx.rvvCorrectionDirect sont ASYNCHRONES : toujours await. Termine par return d'une valeur compacte ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
                         parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
@@ -10000,8 +10002,24 @@
                 {
                     type: 'function',
                     function: {
+                        name: 'rechercher_uid_canevas',
+                        description: "RECHERCHE PRIORITAIRE dans le catalogue vérifié du canevas Kasa-Vubu : 481 indicateurs de tous les programmes, leurs UID indicator/dataElement, 76 programIndicators EVENT avec UID programme, et les lignes restant à configurer. Appelle cet outil avant toute recherche DHIS2 libre. Il reconnaît aussi ECV, réunions CODESA et réunions de validation des données.",
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                recherche: { type: 'string', description: "Libellé, mots-clés ou UID à rechercher." },
+                                programme: { type: 'string', description: "Programme souhaité, facultatif." },
+                                limite: { type: 'integer', minimum: 1, maximum: 50, description: "Nombre maximum de correspondances (défaut 15)." }
+                            },
+                            required: ['recherche']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
                         name: 'calculer_pev_direct',
-                        description: "OUTIL OBLIGATOIRE pour toute couverture vaccinale PEV, évolution de CV, enfants zéro-dose ou enfants sous-vaccinés. Il reproduit automatiquement la méthode du dashboard avec les UID dataElement.categoryOptionCombo exacts : doses sommées au niveau FOSA, population annuelle WLSKVyA8LoY sommée/dédupliquée au niveau AS, cible NV=4% pour BCG/Td et NS=3,49% pour tous les autres antigènes (VAR2/VAP4 inclus), clamp ZD/SV au niveau demandé. Ne recalcule jamais ces indicateurs manuellement avec requete_dhis2 ou executer_js. Pour une province, niveau=2 ; ZS=3 ; AS=4. Exemple VAR2 Kinshasa 2023-2025 : {entite:'Kinshasa',niveau:2,debut:'2023',fin:'2025',granularite:'annuelle',antigenes:['VAR2'],indicateurs:['cv']}.",
+                        description: "OUTIL OBLIGATOIRE pour toute couverture vaccinale PEV, ECV/enfants complètement vaccinés, évolution de CV, enfants zéro-dose ou enfants sous-vaccinés. Il reproduit automatiquement la méthode du dashboard avec les UID exacts : doses sommées au niveau FOSA, population annuelle WLSKVyA8LoY sommée/dédupliquée au niveau AS, cible NV=4% pour BCG/Td et NS=3,49% pour tous les autres antigènes. ECV utilise M2JQW0H44dI et Proportion ECV = somme ECV de la période / NS de la période ×100. Ne recalcule jamais ces indicateurs manuellement avec requete_dhis2 ou executer_js.",
                         parameters: {
                             type: 'object',
                             properties: {
@@ -10010,7 +10028,7 @@
                                 debut: { type: 'string', description: "YYYY pour une série annuelle, YYYYMM pour une série mensuelle." },
                                 fin: { type: 'string', description: "YYYY ou YYYYMM inclus ; même format que debut." },
                                 granularite: { type: 'string', enum: ['annuelle', 'mensuelle', 'total'] },
-                                antigenes: { type: 'array', items: { type: 'string', enum: ['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2','DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2','TD','VAP1','VAP2','VAP3','VAP4'] } },
+                                antigenes: { type: 'array', items: { type: 'string', enum: ['BCG','VPO0','DTC1','VPO1','ROTA1','PCV13_1','DTC2','VPO2','ROTA2','PCV13_2','DTC3','VPO3','VPI1','ROTA3','PCV13_3','VAR1','VPI2','VAA','VAR2','TD','VAP1','VAP2','VAP3','VAP4','ECV'] } },
                                 indicateurs: { type: 'array', items: { type: 'string', enum: ['cv', 'zero_dose', 'sous_vaccines'] } }
                             },
                             required: ['entite', 'debut', 'fin', 'granularite', 'indicateurs']
@@ -10333,6 +10351,41 @@
                 try { return JSON.parse(tt); } catch (e) { return tt; }
             }
 
+            var IA_UID_CATALOGUE_PATH = './data/ia/uid_catalogue_kasavubu_2026.json';
+            var IA_UID_CATALOGUE_PROMISE = null;
+            function iaUidNorm(value) {
+                return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, ' ').trim();
+            }
+            async function iaUidSearch(input) {
+                input = input || {};
+                var query = iaUidNorm(input.recherche), programme = iaUidNorm(input.programme);
+                var limit = Math.max(1, Math.min(50, Number(input.limite) || 15));
+                if (!query) throw new Error('Précise un libellé, des mots-clés ou un UID à rechercher.');
+                if (!IA_UID_CATALOGUE_PROMISE) IA_UID_CATALOGUE_PROMISE = iaLoadPath(IA_UID_CATALOGUE_PATH);
+                var cat = await IA_UID_CATALOGUE_PROMISE;
+                var all = [];
+                (cat.indicateurs || []).forEach(function (r) { all.push(Object.assign({ source_catalogue: 'indicateur_canevas' }, r)); });
+                (cat.program_indicators || []).forEach(function (r) { all.push(Object.assign({ source_catalogue: 'programIndicator_EVENT', indicateur: r.nom, type: 'programIndicator' }, r)); });
+                (cat.a_configurer || []).forEach(function (r) { all.push(Object.assign({ source_catalogue: 'a_configurer', observation: 'Aucun UID exact validé : vérifier le candidat dans les métadonnées vivantes.' }, r)); });
+                var tokens = query.split(/\s+/).filter(function (t) { return t.length > 1; });
+                var ranked = all.map(function (r) {
+                    var rp = iaUidNorm(r.programme), uid = iaUidNorm(r.uid);
+                    if (programme && rp.indexOf(programme) < 0 && programme.indexOf(rp) < 0) return null;
+                    var hay = iaUidNorm([r.indicateur, r.nom, r.nom_dhis2, r.aliases, r.description, r.meilleur_candidat_dhis2, r.uid, r.uid_programme].join(' '));
+                    var matched = tokens.filter(function (t) { return hay.indexOf(t) >= 0; }).length;
+                    var score = uid === query ? 2000 : hay === query ? 1500 : hay.indexOf(query) >= 0 ? 1000 : matched === tokens.length && tokens.length ? 700 + matched : matched * 80;
+                    return score > 0 ? { score: score, row: r } : null;
+                }).filter(Boolean).sort(function (a, b) { return b.score - a.score; }).slice(0, limit);
+                return {
+                    recherche: input.recherche,
+                    statistiques_catalogue: cat.statistiques,
+                    regles: cat.regles,
+                    resultats: ranked.map(function (x) { return x.row; }),
+                    rappel: 'Vérifie la métadonnée DHIS2 vivante puis interroge les données. Toute valeur présente, même partielle, doit être affichée avec sa couverture de période.'
+                };
+            }
+
             /* Indicateurs de programme DHIS2 (EVENT). Ils ne sont pas des dx
                agrégés : analytics.json renvoie légitimement zéro ligne. Cette
                voie déterministe résout les métadonnées puis utilise l'endpoint
@@ -10411,9 +10464,9 @@
 
             /* PEV_DIRECT_BEGIN
                Calcul PEV déterministe partagé par le tool calculer_pev_direct et
-               ctx.pevDirect. Les UID nus sont volontairement exclus : un dataElement
-               PEV porte plusieurs âges/stratégies et gonfle notamment VAR2 avec les
-               catégories 0-11 et 24-59 mois. */
+               ctx.pevDirect. Les UID nus sont volontairement exclus pour les doses
+               d'antigènes ; ECV est l'exception vérifiée du dépôt et utilise son
+               dataElement agrégé M2JQW0H44dI. */
             var IA_PEV_ANTIGENES = {
                 BCG: { den: 'nv', field: 'BCG_0_11', dx: ['W25tOXS0rxS.dqydGQFHahb','W25tOXS0rxS.NOHlOxLczjc','W25tOXS0rxS.vbx8t4WAbR8','W25tOXS0rxS.KPDzIsWq7JK','W25tOXS0rxS.oSYTyzezWif','W25tOXS0rxS.Dr4rWTqepnP'] },
                 VPO0: { den: 'ns', field: 'VPO0_0_11', dx: ['f1MiAAIu366.dqydGQFHahb','f1MiAAIu366.NOHlOxLczjc','f1MiAAIu366.vbx8t4WAbR8','f1MiAAIu366.KPDzIsWq7JK','f1MiAAIu366.oSYTyzezWif','f1MiAAIu366.Dr4rWTqepnP'] },
@@ -10438,7 +10491,8 @@
                 VAP1: { den: 'ns', field: 'VAP1_0_11', dx: ['Nyke8sWJbn9.dqydGQFHahb','Nyke8sWJbn9.vbx8t4WAbR8','Nyke8sWJbn9.oSYTyzezWif'] },
                 VAP2: { den: 'ns', field: 'VAP2_0_11', dx: ['slj1Yy0YgAc.dqydGQFHahb','slj1Yy0YgAc.vbx8t4WAbR8','slj1Yy0YgAc.oSYTyzezWif'] },
                 VAP3: { den: 'ns', field: 'VAP3_0_11', dx: ['OnKbxNJzsCw.dqydGQFHahb','OnKbxNJzsCw.vbx8t4WAbR8','OnKbxNJzsCw.oSYTyzezWif'] },
-                VAP4: { den: 'ns', field: 'VAP4_12_23', dx: ['KVjtJyNKcYQ.g6mIyKoGIh2','KVjtJyNKcYQ.Rby9Jdri29F','KVjtJyNKcYQ.FCXzheCQXtr'] }
+                VAP4: { den: 'ns', field: 'VAP4_12_23', dx: ['KVjtJyNKcYQ.g6mIyKoGIh2','KVjtJyNKcYQ.Rby9Jdri29F','KVjtJyNKcYQ.FCXzheCQXtr'] },
+                ECV: { den: 'ns', field: 'ECV', dx: ['M2JQW0H44dI'] }
             };
 
             function iaPevNormName(s) {
@@ -10562,7 +10616,7 @@
                 }
                 var used = {};
                 needed.forEach(function (a) { used[a] = IA_PEV_ANTIGENES[a].dx.slice(); });
-                return { entite: { id: entity.id, nom: entity.name || entity.displayName, niveau: Number(entity.level) }, granularite: gran, series: series, uids_operandes: used, controle_population_as: popRowsByYear, lignes_fantomes_ignorees: ignored, extrait_le: new Date().toISOString(), methode: 'Dashboard PEV : somme FOSA des COC exacts ; population WLSKVyA8LoY au niveau AS et une requête isolée par année ; NV=4%, NS=3,49% ; clamp ZD/SV au niveau demandé.' };
+                return { entite: { id: entity.id, nom: entity.name || entity.displayName, niveau: Number(entity.level) }, granularite: gran, series: series, uids_operandes: used, controle_population_as: popRowsByYear, lignes_fantomes_ignorees: ignored, extrait_le: new Date().toISOString(), methode: 'Dashboard PEV : somme FOSA des COC exacts ; ECV=M2JQW0H44dI/NS de la période ; population WLSKVyA8LoY au niveau AS et une requête isolée par année ; NV=4%, NS=3,49% ; clamp ZD/SV au niveau demandé.' };
             }
             /* PEV_DIRECT_END */
 
@@ -10642,7 +10696,7 @@
                qui renvoie une Promise vide (résultats à 0) et fait boucler le modèle.
                On prévient le modèle dans le résultat pour qu'il corrige au tour suivant. */
             function iaMissingAwait(code) {
-                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo|pevDirect|programIndicatorDirect|rvvCorrectionDirect)\s*\(/g, m, hits = [];
+                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo|uidSearch|pevDirect|programIndicatorDirect|rvvCorrectionDirect)\s*\(/g, m, hits = [];
                 while ((m = re.exec(code))) {
                     var before = code.slice(Math.max(0, m.index - 40), m.index);
                     if (!/await\s*(\(\s*)?$/.test(before) && !/(Promise\s*\.\s*all|\.then|return)\s*[([]?\s*$/.test(before)) hits.push(m[1]);
@@ -10690,7 +10744,7 @@
                     if (iaPevManualQuery(input.code)) throw new Error('REFUSÉ : calcul PEV manuel détecté. Utilise calculer_pev_direct avec les antigènes, l’entité et la période demandés ; les UID nus/Analytics libres produisent des CV incohérentes avec le dashboard.');
                     if (!IA.reg) IA.reg = {};
                     var ctx = {
-                        S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, pevDirect: iaPevDirect, programIndicatorDirect: iaProgramIndicatorDirect, rvvCorrectionDirect: iaRvvCorrectionDirect, geo: iaGeo, mL: mL, scoreQualiteDps: iaScoreQualiteDps,
+                        S: S, data: S.data || [], flt: S.flt || [], AG: (typeof AG !== 'undefined' ? AG : []), load: iaLoadPath, loadUrl: iaLoadUrl, dhis2: iaDhis2, uidSearch: iaUidSearch, pevDirect: iaPevDirect, programIndicatorDirect: iaProgramIndicatorDirect, rvvCorrectionDirect: iaRvvCorrectionDirect, geo: iaGeo, mL: mL, scoreQualiteDps: iaScoreQualiteDps,
                         /* Rendu DIRECT dans le chat depuis le code (la grosse géométrie
                            reste dans le navigateur, JAMAIS renvoyée à l'IA) : idéal pour
                            les cartes choroplèthes (GeoJSON volumineux). spec = même forme
@@ -10718,6 +10772,10 @@
                     var tt = typeof out2 === 'string' ? out2 : JSON.stringify(out2);
                     if (tt.length > IA_TOOL_RESULT_MAX) tt = tt.slice(0, IA_TOOL_RESULT_MAX) + '\n…[TRONQUÉ — pour de gros volumes, utilise ctx.dhis2(endpoint, params) dans executer_js et agrège en code]';
                     return tt;
+                }
+                if (name === 'rechercher_uid_canevas') {
+                    var uidMatches = await iaUidSearch(input);
+                    return JSON.stringify(uidMatches);
                 }
                 if (name === 'calculer_pev_direct') {
                     var pev = await iaPevDirect(input);
@@ -11476,9 +11534,9 @@
                    avec un modèle se termine avec lui (le raisonnement signé de
                    Claude n'est pas transférable à mi-parcours). */
                 var loopProv = iaProvKey();
-                var maxTurns = IA_MAX_TOOL_TURNS;
-                while (turns++ < maxTurns) {
-                    var work = E('div', 'ia-work', '<i></i><i></i><i></i> <span>Analyse en cours — étape ' + turns + '/' + maxTurns + '…</span>');
+                while (true) {
+                    turns++;
+                    var work = E('div', 'ia-work', '<i></i><i></i><i></i> <span>Analyse en cours — étape ' + turns + '…</span>');
                     msgsEl.appendChild(work); iaScroll(msgsEl);
                     var txtDiv = null;
                     var resp;
@@ -11511,7 +11569,6 @@
                         } finally { w2.remove(); }
                     }
                 }
-                msgsEl.appendChild(E('div', 'ia-err', 'Analyse interrompue : limite de ' + maxTurns + ' étapes atteinte et aucun fichier final validé. Aucun fichier incomplet n’a été livré ; relancez la demande.'));
             }
 
             /* ── PDF joints ──

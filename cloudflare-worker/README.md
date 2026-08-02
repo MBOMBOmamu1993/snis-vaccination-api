@@ -119,8 +119,8 @@ Solde public d'un code : `GET /verifier?code=PEV-A7K2-9MQ4` (sans token).
 ## Tarifs
 
 Les offres se modifient en tête de `worker.js` (constante `OFFERS`) :
-**5 $ / 10 $ / 20 $ / 30 $** (≈ 12 / 25 / 50 / 75 analyses), plus un **montant
-libre** saisi par le client (`REQUESTS_PER_USD` requêtes par dollar, bornes
+**20 $ / 30 $ / 40 $ / 50 $ / 100 $** (≈ 50 / 75 / 100 / 125 / 250 analyses), plus un **montant
+libre de 10 $ minimum** saisi par le client (`REQUESTS_PER_USD` requêtes par dollar, bornes
 `CUSTOM_MIN_USD`–`CUSTOM_MAX_USD`).
 Tarif : 0,10 $/requête ≈ 3× le coût API (vous encaissez le triple de votre
 dépense Anthropic). Repère : une analyse complète ≈ 3 à 6 requêtes IA ;

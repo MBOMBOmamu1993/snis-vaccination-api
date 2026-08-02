@@ -16,6 +16,7 @@ const FILES = [
   ["docs/pev-logo.svg", "dist/pev-logo.svg"],
   ["docs/pev-logo-officiel.png", "dist/pev-logo-officiel.png"],
   ["docs/canevas_revue_formative_pev.pptx", "dist/canevas_revue_formative_pev.pptx"],
+  ["docs/data/ia/uid_catalogue_kasavubu_2026.json", "dist/data/ia/uid_catalogue_kasavubu_2026.json"],
   ["docs/.nojekyll", "dist/.nojekyll"],
 ];
 
@@ -23,6 +24,7 @@ await rm(DIST, { recursive: true, force: true });
 await mkdir(DIST, { recursive: true });
 for (const [src, dst] of FILES) {
   try {
+    await mkdir(path.dirname(path.join(ROOT, dst)), { recursive: true });
     await cp(path.join(ROOT, src), path.join(ROOT, dst));
     console.log(`[build-static] ${src} → ${dst}`);
   } catch (e) {

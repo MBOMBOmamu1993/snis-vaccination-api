@@ -11,6 +11,7 @@ const totals = {
   VAR2: { 2023: 1000, 2024: 2000, 2025: 3000 },
   DTC1: { 2023: 3000, 2024: 3200, 2025: 3000 },
   DTC3: { 2023: 2500, 2024: 2700, 2025: 2500 },
+  ECV: { 2025: 100 },
 };
 const analyticsCalls = [];
 
@@ -53,6 +54,8 @@ vm.runInContext(match[0], sandbox);
 assert.equal(sandbox.IA_PEV_ANTIGENES.VAR2.field, 'VAR2_12_23');
 assert.equal(sandbox.IA_PEV_ANTIGENES.VAR2.dx.length, 5);
 assert.ok(sandbox.IA_PEV_ANTIGENES.VAR2.dx.every((uid) => uid.startsWith('i5zmivDIHN8.')), 'VAR2 doit utiliser uniquement les COC 12-23 mois');
+assert.equal(sandbox.IA_PEV_ANTIGENES.ECV.den, 'ns');
+assert.deepEqual(Array.from(sandbox.IA_PEV_ANTIGENES.ECV.dx), ['M2JQW0H44dI']);
 
 const cv = await sandbox.iaPevDirect({
   entite: 'Kinshasa', niveau: 2, debut: '2023', fin: '2025',
@@ -78,8 +81,18 @@ assert.equal(enfants.series[0].cible_ns, 120000 * 0.0349);
 assert.equal(enfants.series[0].zero_dose, 120000 * 0.0349 - 3000);
 assert.equal(enfants.series[0].sous_vaccines, 120000 * 0.0349 - 2500);
 
+const ecv = await sandbox.iaPevDirect({
+  entite: 'Kinshasa', niveau: 2, debut: '202501', fin: '202506',
+  granularite: 'total', antigenes: ['ECV'], indicateurs: ['cv'],
+});
+assert.equal(ecv.series[0].doses.ECV, 600);
+assert.ok(Math.abs(ecv.series[0].cv_pct.ECV - (600 / (120000 * 0.0349 * 6 / 12) * 100)) < 1e-9);
+assert.deepEqual(Array.from(ecv.uids_operandes.ECV), ['M2JQW0H44dI']);
+assert.match(ecv.methode, /ECV=M2JQW0H44dI\/NS de la période/);
+
 assert.match(html, /calculer_pev_direct exclusivement/);
 assert.match(html, /un UID dataElement NU est INTERDIT/);
+assert.match(html, /Proportion ECV \(%\) = somme ECV sur TOUTE la période sélectionnée ÷ nourrissons survivants de la même période × 100/);
 assert.doesNotMatch(html, /dx:UID sans \.COC = total toutes catégories \(suffisant/);
 
-console.log('OK — calcul PEV direct : COC exacts, population AS, CV VAR2, ZD/SV et filtre anti-lignes-fantômes.');
+console.log('OK — calcul PEV direct : COC exacts, ECV/NS sur période sélectionnée, population AS, CV VAR2, ZD/SV et filtre anti-lignes-fantômes.');

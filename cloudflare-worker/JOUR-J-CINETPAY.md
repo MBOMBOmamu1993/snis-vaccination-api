@@ -59,9 +59,9 @@ de « bientôt disponible » aux offres.
 
 ## 4. Test réel (10 min)
 
-1. Ouvrir https://pev-ia-proxy.pev-rdc.workers.dev/acheter → les 4 offres
-   (5 $ / 10 $ / 20 $ / 30 $) + le champ « Montant libre » s'affichent.
-2. Acheter l'offre Découverte (5 $) avec votre propre mobile money.
+1. Ouvrir https://pev-ia-proxy.pev-rdc.workers.dev/acheter → les 5 offres
+   (20 $ / 30 $ / 40 $ / 50 $ / 100 $) + le champ « Montant libre » (10 $ minimum) s'affichent.
+2. Acheter l'offre Essentiel (20 $) avec votre propre mobile money.
 3. Après paiement → la page /retour affiche un code `PEV-XXXX-XXXX`.
 4. Dashboard → onglet IA → ⚙ Accès → « 🎫 Code d'accès » → coller le code → poser une question.
 5. Vérifier la transaction dans l'espace CinetPay, puis le reversement
