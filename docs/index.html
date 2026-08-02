@@ -9699,17 +9699,16 @@
             /* Liste de secours si /api/tags est momentanément injoignable */
             var IA_OLLAMA_MODELS = ['kimi-k3', 'deepseek-v4-pro', 'deepseek-v4-flash', 'minimax-m3', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
             var IA_DEFAULT_PROVIDER = 'kimi:kimi-k3';
-            var IA_CLIENT_DEFAULT_PROVIDER = 'kimi-k3';
-            /* Liste FIXE proposée aux clients : uniquement trois modèles Ollama
-               Cloud. L'essai gratuit
-               (7 jours, à raison d'1 analyse par jour) donne accès à CES MÊMES
-               modèles ; au-delà du rythme ou après les 7 jours, le proxy renvoie
-               vers l'achat. (L'admin, lui, voit la liste complète dynamique
-               Ollama + OpenAI + Kimi + Claude.) */
+            var IA_CLIENT_DEFAULT_PROVIDER = 'kimi:kimi-k3';
+            /* Liste FIXE proposée aux clients : UN SEUL modèle — Kimi K3 servi par
+               l'API Kimi officielle (Moonshot / platform.kimi.ai), via la route proxy
+               /kimi/v1/chat/completions. Aucun modèle Ollama Cloud, OpenAI ni Claude
+               n'est proposé côté client. L'essai gratuit (7 jours, à raison d'1 analyse
+               par jour) donne accès à CE modèle ; au-delà du rythme ou après les 7 jours,
+               le proxy renvoie vers l'achat. (L'admin, lui, garde la liste complète
+               dynamique Ollama + OpenAI + Kimi + Claude.) */
             var IA_CLIENT_MODELS = [
-                { v: 'kimi-k3', label: 'Kimi K3 — Ollama Cloud — 💳 Payant (par défaut, puissance maximale)' },
-                { v: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro — Ollama Cloud — 💳 Payant (raisonnement avancé)' },
-                { v: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash — Ollama Cloud — 💳 Payant (rapide et économique)' }
+                { v: 'kimi:kimi-k3', label: 'Kimi K3 — API Kimi (Moonshot) — raisonnement étendu HIGH' }
             ];
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
             function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
@@ -9726,8 +9725,9 @@
             }
             function iaProvKey() {
                 var p = cfg('provider') || '';
-                /* Liste blanche client stricte : un ancien choix Claude, OpenAI,
-                   Kimi API ou autre modèle Ollama bascule vers Kimi K3 Cloud. */
+                /* Liste blanche client stricte : tout ancien réglage (Claude, OpenAI,
+                   Ollama Cloud — y compris l'ancien « kimi-k3 » d'Ollama) bascule
+                   automatiquement sur Kimi K3 de l'API Kimi. */
                 if (!iaIsAdmin()) {
                     for (var ci = 0; ci < IA_CLIENT_MODELS.length; ci++) if (IA_CLIENT_MODELS[ci].v === p) return p;
                     cfg('provider', IA_CLIENT_DEFAULT_PROVIDER);
@@ -14048,7 +14048,9 @@
                 m.innerHTML = '<h3>⚙ Accès à l\'assistant IA</h3>' +
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
-                    '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte.' + (isAdm ? ' La liste Ollama Cloud se met à jour automatiquement.' : '') + ' Basculez librement — y compris en cours de conversation.</div>' +
+                    (isAdm
+                        ? '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. La liste Ollama Cloud se met à jour automatiquement. Basculez librement — y compris en cours de conversation.</div>'
+                        : '<div class="ia-hint" style="margin-bottom:14px">L\'assistant fonctionne avec <b>Kimi K3</b>, servi par l\'<b>API Kimi</b> officielle, en <b>raisonnement étendu niveau HIGH</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails. Un seul code d\'accès suffit pour tout.</div>') +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
