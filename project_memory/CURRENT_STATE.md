@@ -6,6 +6,7 @@
 - Repères imposés : ECV `M2JQW0H44dI`, formule ECV/NS de la période ; CODESA `N3HHnz0Waos` ; validation/hebdomadaire ECZ `zLIRMEWlQXy`. Programmes EVENT : BCZ `QQXfuAm7cQL`, CS `BjD13mVG82e`, DPS `pbirwrEK5xY`, Hôpital `IvjxiT221Ms`.
 - Vente client : seules les offres 20/30/40/50/100 USD sont proposées ; montant personnalisé entier de 10 à 500 USD. Les trois parcours Worker (commande, WhatsApp, CinetPay) utilisent la même liste et la même validation serveur.
 - Tests verts : catalogue UID, calcul ECV/NS S1, programIndicators EVENT, RVV, offres client, `wrangler deploy --dry-run` et prétest navigateur PPTX (49→49, seule D35 modifiée, PTF identique).
+- Production : fusion `4bcfcf39` sur `main`; GitHub Pages et alias Vercel vérifiés avec le nouvel Assistant et le catalogue UID HTTP 200 ; Worker Cloudflare déployé en version `969c7008-f60c-412d-9f75-0593a7c4bac3`, page achat vérifiée 20/30/40/50/100 USD, aucun forfait 5 USD, minimum libre 10 USD.
 
 Projet : snis-vaccination-api (Dashboard PEV + worker Cloudflare pev-ia-proxy)
 
