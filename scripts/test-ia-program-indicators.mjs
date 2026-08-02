@@ -8,6 +8,9 @@ assert.match(html, /analytics\/events\/aggregate\//, 'endpoint événementiel ab
 assert.match(html, /name: 'calculer_indicateur_programme_direct'/, 'tool programIndicator absent');
 assert.match(html, /programIndicatorDirect: iaProgramIndicatorDirect/, 'helper non exposé dans ctx');
 assert.match(html, /ils sont ACTIFS et doivent être contrôlés/, 'consigne active absente');
+for (const uid of ['QQXfuAm7cQL', 'BjD13mVG82e', 'pbirwrEK5xY', 'IvjxiT221Ms']) {
+  assert.match(html, new RegExp(uid), `UID programme EVENT absent : ${uid}`);
+}
 assert.doesNotMatch(html, /programmes à événements ABANDONNÉS, sans données/, 'ancienne consigne erronée encore présente');
 
 console.log('OK — indicateurs de programme EVENT : endpoint, tool, ctx et consigne vérifiés.');

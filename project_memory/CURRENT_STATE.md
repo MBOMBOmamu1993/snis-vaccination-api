@@ -1,5 +1,12 @@
 # État actuel du projet
 
+État actuel (02/08/2026 — Assistant IA, UID canevas et vente de codes) :
+- Boucle agentique sans aucune limite globale de durée ou d’étapes : le plafond commun de 30 tours et le message d’interruption ont été supprimés ; l’IA continue tant qu’elle appelle des outils.
+- Catalogue `docs/data/ia/uid_catalogue_kasavubu_2026.json` généré depuis l’audit Kasa-Vubu : 481 indicateurs du canevas, 393 UID vérifiés, 76 programIndicators EVENT dans 4 programmes et 83 lignes à configurer. `rechercher_uid_canevas` / `ctx.uidSearch` est la recherche obligatoire avant les métadonnées DHIS2 libres ; une valeur partielle doit être affichée avec sa couverture au lieu de N/D.
+- Repères imposés : ECV `M2JQW0H44dI`, formule ECV/NS de la période ; CODESA `N3HHnz0Waos` ; validation/hebdomadaire ECZ `zLIRMEWlQXy`. Programmes EVENT : BCZ `QQXfuAm7cQL`, CS `BjD13mVG82e`, DPS `pbirwrEK5xY`, Hôpital `IvjxiT221Ms`.
+- Vente client : seules les offres 20/30/40/50/100 USD sont proposées ; montant personnalisé entier de 10 à 500 USD. Les trois parcours Worker (commande, WhatsApp, CinetPay) utilisent la même liste et la même validation serveur.
+- Tests verts : catalogue UID, calcul ECV/NS S1, programIndicators EVENT, RVV, offres client, `wrangler deploy --dry-run` et prétest navigateur PPTX (49→49, seule D35 modifiée, PTF identique).
+
 Projet : snis-vaccination-api (Dashboard PEV + worker Cloudflare pev-ia-proxy)
 
 Contexte permanent :
@@ -534,7 +541,7 @@ D) Leçons techniques du 27/07 (corrections des notes B) :
 - Nouvelle opération `remplacer_forme_par_tableau` : remplace une consigne textuelle par un vrai tableau PowerPoint éditable sur la même diapositive. Le tableau « Score qualité S1 2025–S1 2026 par AS » est imposé sur D35, avec contrôles finaux bloquants.
 - Les diapositives hors DHIS2, dont PTF vide, restent inchangées. L’audit et le recalage de mise en page ne touchent plus globalement les tableaux du canevas, seulement les objets modifiés.
 - Score qualité DPS déterministe exposé à l’IA par `ctx.scoreQualiteDps` (5 critères ×20, total non calculable si le statut RVV corrigées n’est pas démontré).
-- Anti-attente : Kimi limité à 12 tours d’outils et la boucle complète à 45 minutes ; jamais d’annonce de succès sans téléchargement et contrôles réussis.
+- Boucle agentique sans limite globale de durée ni de nombre d’étapes ; jamais d’annonce de succès sans téléchargement et contrôles réussis.
 - Prétests : moteur réel sur le canevas original = 49→49, seule D35 modifiée, D6 PTF identique, rendu PowerPoint contrôlé visuellement ; Kimi K3 réel = PASS, deux lectures DHIS2 puis modification conforme, aucun graphique/slide ajouté.
 - Production : commit `19632949a` sur `main` ; GitHub Pages Actions réussi et code strict vérifié en ligne ; alias Vercel vérifié ; Worker `pev-ia-proxy` déployé en version `14f1c095-3835-4899-a3d2-a1ece8158d39`.
-- Correctif après retour production (capture 01/08/2026 19:14) : suppression TOTALE du délai global de 45 minutes et de la limite Kimi à 12 étapes, qui interrompaient un rapport actif juste avant l’écriture. La boucle conserve uniquement 30 tours d’outils, sans chronomètre. Le prompt impose l’écriture progressive du canevas par lots `telecharger:false`, section après section.
+- Correctif final après retour production (capture 02/08/2026 16:09) : suppression TOTALE du délai global de 45 minutes, de la limite Kimi à 12 étapes et de la limite commune à 30 étapes. La boucle continue tant que le modèle appelle des outils, sans chronomètre ni compteur maximal. Le prompt impose l’écriture progressive du canevas par lots `telecharger:false`, section après section.

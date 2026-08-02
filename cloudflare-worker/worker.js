@@ -81,13 +81,14 @@
    (forfait mensuel, pas de facturation à la requête) : la marge dépend donc
    du volume mensuel, pas d'un coût unitaire à l'appel. */
 const REQUESTS_PER_USD = 10;
-const CUSTOM_MIN_USD = 1;
+const CUSTOM_MIN_USD = 10;
 const CUSTOM_MAX_USD = 500;
 const OFFERS = [
-  { id: 'S', label: 'Découverte', analyses: '±12 analyses', requests: 50, amount: 5, currency: 'USD' },
-  { id: 'M', label: 'Standard', analyses: '±25 analyses', requests: 100, amount: 10, currency: 'USD' },
-  { id: 'L', label: 'Pro', analyses: '±50 analyses', requests: 200, amount: 20, currency: 'USD' },
-  { id: 'XL', label: 'Expert', analyses: '±75 analyses', requests: 300, amount: 30, currency: 'USD' },
+  { id: '20', label: 'Essentiel', analyses: '±50 analyses', requests: 200, amount: 20, currency: 'USD' },
+  { id: '30', label: 'Standard', analyses: '±75 analyses', requests: 300, amount: 30, currency: 'USD' },
+  { id: '40', label: 'Pro', analyses: '±100 analyses', requests: 400, amount: 40, currency: 'USD' },
+  { id: '50', label: 'Expert', analyses: '±125 analyses', requests: 500, amount: 50, currency: 'USD' },
+  { id: '100', label: 'Premium', analyses: '±250 analyses', requests: 1000, amount: 100, currency: 'USD' },
 ];
 
 /* Modèles Ollama Cloud : la liste vit chez Ollama (route /api/tags relayée au
@@ -651,7 +652,7 @@ async function adminDashboard(env, tok, flash) {
        <input type="text" name="note" placeholder="Note (client, offre, paiement…)" style="${inp}">
        <button type="submit">Générer le code</button>
      </form>
-     <small>Repères : 5 $ = 50 requêtes · 10 $ = 100 · 20 $ = 200 · 30 $ = 300.</small>`);
+     <small>Repères : 20 $ = 200 requêtes · 30 $ = 300 · 40 $ = 400 · 50 $ = 500 · 100 $ = 1 000.</small>`);
 }
 
 /* Image de preuve (réservée à l'admin, via token dans l'URL signée à la volée) */
@@ -787,7 +788,7 @@ function buyPage(env, url) {
      <div class="offer" style="cursor:default;display:block">
        <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — payez le montant de votre choix</small>
        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-         <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 7"
+         <input type="number" name="montant" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" required placeholder="ex. 15"
            style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
          <button type="submit" style="width:auto;padding:10px 18px">Payer</button>
        </div>
@@ -818,7 +819,7 @@ function whatsappBuyPage(env) {
     `<div class="offer" style="cursor:default;display:block">
       <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — choisissez le montant de votre choix</small>
       <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-        <input type="number" id="mt" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" placeholder="ex. 7"
+        <input type="number" id="mt" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" placeholder="ex. 15"
           style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
         <button onclick="var v=Math.floor(Number(document.getElementById('mt').value));if(!(v>=${CUSTOM_MIN_USD}&&v<=${CUSTOM_MAX_USD})){alert('Montant entre ${CUSTOM_MIN_USD} et ${CUSTOM_MAX_USD} $');return false;}window.open('https://wa.me/${num}?text='+encodeURIComponent('Bonjour, je souhaite acheter un code personnalisé de '+v+' $ ('+(v*${REQUESTS_PER_USD})+' requêtes IA) pour l’assistant IA du Dashboard PEV.'),'_blank');return false;"
           style="${WA_BTN}margin-top:0;padding:10px 18px;font-size:14px">💬 Commander</button>
@@ -867,7 +868,7 @@ function orderOffersPage(env) {
     `<div class="offer" style="cursor:default;display:block">
       <b>Montant libre</b> — <b style="color:#1a237e">≈ 2 à 3 analyses par dollar</b><br><small>${REQUESTS_PER_USD} requêtes IA par dollar — choisissez le montant de votre choix</small>
       <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-        <input type="number" id="mt" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" placeholder="ex. 7"
+        <input type="number" id="mt" min="${CUSTOM_MIN_USD}" max="${CUSTOM_MAX_USD}" step="1" placeholder="ex. 15"
           style="width:110px;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:15px"> <b>$</b>
         <button onclick="var v=Math.floor(Number(document.getElementById('mt').value));if(!(v>=${CUSTOM_MIN_USD}&&v<=${CUSTOM_MAX_USD})){alert('Montant entre ${CUSTOM_MIN_USD} et ${CUSTOM_MAX_USD} $');return false;}location.href='/commander?offre=C&montant='+v;return false;"
           style="width:auto;padding:10px 18px">Commander</button>

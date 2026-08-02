@@ -71,7 +71,7 @@ puis **supprimez `secrets.json`**. Aucun redéploiement nécessaire.
 
 ## 5. Test de bout en bout (10 min)
 
-1. `/acheter` → offre Découverte → remplissez nom/email → le dépôt s'affiche
+1. `/acheter` → offre Essentiel (20 $) → remplissez nom/email → le dépôt s'affiche
    avec VOTRE numéro.
 2. Envoyez une capture quelconque → vous êtes alerté sur votre téléphone.
 3. `/admin` → la commande apparaît avec le récap IA 🤖 → **🎫 Livrer** →
@@ -88,7 +88,7 @@ puis **supprimez `secrets.json`**. Aucun redéploiement nécessaire.
 | `KIMI_API_KEY` | requis si provider `kimi` (platform.kimi.ai) | — |
 | `KIMI_API_BASE` | `https://api.moonshot.cn` si clé de la plateforme chinoise | `.ai` |
 | `PAYMENT_PROVIDER` | `commande` · `whatsapp` · `cinetpay` (force le mode) | auto |
-| `OFFERS` (code) | offres et prix | 5/10/20/30 $ |
+| `OFFERS` (code) | offres et prix | 20/30/40/50/100 $ + montant libre dès 10 $ |
 
 ⚠️ Pour Ollama, le modèle doit être **vision** — `minimax-m3:cloud` par défaut.
 `kimi-k3` est le modèle vedette actuel de Moonshot (vision native) ; épinglez une
