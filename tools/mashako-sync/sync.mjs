@@ -1406,6 +1406,15 @@ async function main() {
       });
     }
     const treeOut = tree_.map((t) => ({ path: PFX + t.path, mode: t.mode, type: t.type, sha: t.sha }));
+    /* GARDE VERCEL : la branche de données n'a ni package.json ni build — le
+       push y déclenchait un déploiement preview qui échouait à chaque synchro
+       (« No Next.js version detected »). vercel.json vit à la RACINE de la
+       branche (hors PFX) ; base_tree le conserve, on le réécrit quand même
+       pour couvrir le cas d'une branche recréée de zéro. */
+    treeOut.push({
+      path: "vercel.json", mode: "100644", type: "blob",
+      sha: blob(Buffer.from(JSON.stringify({ $schema: "https://openapi.vercel.sh/vercel.json", git: { deploymentEnabled: { [DATA_BRANCH]: false } } }, null, 2) + "\n")),
+    });
     const tp = path.join(OUT, "_tree.json");
     writeFileSync(tp, JSON.stringify(oldTreeSha ? { base_tree: oldTreeSha, tree: treeOut } : { tree: treeOut }));
     const tree = JSON.parse(gh([`${REPO}/git/trees`, "-X", "POST"], tp)).sha;
