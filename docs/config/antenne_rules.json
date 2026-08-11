@@ -42,7 +42,6 @@
     "Aru": "Aru",
     "Aungba": "Aru",
     "Biringi": "Aru",
-    "Gety": "Aru",
     "Kambala": "Aru",
     "Laybo": "Aru",
     "Logo": "Aru",
@@ -56,6 +55,7 @@
     "Damas": "Bunia",
     "Drodro": "Bunia",
     "Fataki": "Bunia",
+    "Gety": "Bunia",
     "Jiba": "Bunia",
     "Kilo": "Bunia",
     "Komanda": "Bunia",
@@ -103,6 +103,7 @@
   "tu Tshuapa Province": {
     "Befale": "Boende",
     "Boende": "Boende",
+    "Djolu": "Boende",
     "Lingomo": "Boende",
     "Mompono": "Boende",
     "Monkoto": "Boende",
@@ -110,7 +111,6 @@
 
     "Bokungu": "Bokungu",
     "Busanga": "Bokungu",
-    "Djolu": "Bokungu",
     "Ikela": "Bokungu",
     "Mondombe": "Bokungu",
     "Yalifafu": "Bokungu"
@@ -272,19 +272,20 @@
   },
   "md Maindombe Province": {
     "Banzow Moke": "Inongo",
-    "Bokoro": "Inongo",
-    "Bolobo": "Inongo",
-    "Bosobe": "Inongo",
     "Inongo": "Inongo",
     "Kiri": "Inongo",
-    "Kwamouth": "Inongo",
     "Mimia": "Inongo",
-    "Mushie": "Inongo",
-    "Nioki": "Inongo",
     "Ntandembelo": "Inongo",
     "Oshwe": "Inongo",
     "Pendjwa": "Inongo",
-    "Yumbi": "Inongo"
+    "Yumbi": "Inongo",
+
+    "Bokoro": "Nioki",
+    "Bolobo": "Nioki",
+    "Bosobe": "Nioki",
+    "Kwamouth": "Nioki",
+    "Mushie": "Nioki",
+    "Nioki": "Nioki"
   },
   "hu Haut Uele Province": {
     "Boma Mangbetu": "Isiro",
@@ -412,14 +413,15 @@
     "Tunda": "Kasongo",
 
     "Alunguli": "Kindu",
-    "Ferekeni": "Kindu",
     "Kailo": "Kindu",
     "Kalima": "Kindu",
     "Kindu": "Kindu",
-    "Lubutu": "Kindu",
-    "Obokote": "Kindu",
     "Pangi": "Kindu",
-    "Punia": "Kindu"
+
+    "Ferekeni": "Lubutu",
+    "Lubutu": "Lubutu",
+    "Obokote": "Lubutu",
+    "Punia": "Lubutu"
   },
   "kn Kinshasa Province": {
     "Bumbu": "Kin Centre",
@@ -534,22 +536,24 @@
     "Vangu": "Lubumbashi"
   },
   "sn Sankuru Province": {
-    "Bena Dibele": "Lodja",
-    "Dikungu": "Lodja",
-    "Djalo Ndjeka": "Lodja",
-    "Katako Kombe": "Lodja",
-    "Kole": "Lodja",
     "Lodja": "Lodja",
     "Lomela": "Lodja",
-    "Lusambo": "Lodja",
-    "Minga": "Lodja",
     "Omendjadi": "Lodja",
     "Ototo": "Lodja",
-    "Pania Mutombo": "Lodja",
     "Tshudi Loto": "Lodja",
-    "Tshumbe": "Lodja",
     "Vanga Kete": "Lodja",
-    "Wembo Nyama": "Lodja"
+
+    "Bena Dibele": "Lusambo",
+    "Kole": "Lusambo",
+    "Lusambo": "Lusambo",
+    "Minga": "Lusambo",
+    "Pania Mutombo": "Lusambo",
+
+    "Dikungu": "Tshumbe",
+    "Djalo Ndjeka": "Tshumbe",
+    "Katako Kombe": "Tshumbe",
+    "Tshumbe": "Tshumbe",
+    "Wembo Nyama": "Tshumbe"
   },
   "ke Kasai Oriental Province": {
     "Bibanga": "Mbuji Mayi",
@@ -581,6 +585,7 @@
     "Mikope": "Mweka",
     "Mushenge": "Mweka",
     "Mweka": "Mweka",
+    "Ndjoko Mpunda": "Mweka",
 
     "Banga Lubaka": "Tshikapa",
     "Kalonda Ouest": "Tshikapa",
@@ -589,7 +594,6 @@
     "Kanzala": "Tshikapa",
     "Kitangwa": "Tshikapa",
     "Mutena": "Tshikapa",
-    "Ndjoko Mpunda": "Tshikapa",
     "Nyanga": "Tshikapa",
     "Tshikapa": "Tshikapa"
   }
