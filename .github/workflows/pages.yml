@@ -8,9 +8,21 @@
 # cibles_ajustees, config). Ce workflow publie docs/ en excluant monthly/.
 name: Deploy GitHub Pages (docs sans données brutes)
 
+# ⚠️ Les commits des workflows de données (aggregate, syncs) sont signés
+# GITHUB_TOKEN : GitHub NE déclenche PAS `push` sur ces commits — le site
+# est resté figé du 11 au 30 août 2026 alors que main était à jour.
+# D'où les déclencheurs workflow_run ci-dessous + un cron filet de sécurité.
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows:
+      - "Aggregate ALL data for dashboard"
+      - "Sync Tableau Mashako 3.0"
+      - "Mashako 3.0 — synchro de secours (cloud)"
+    types: [completed]
+  schedule:
+    - cron: "15 6,18 * * *"   # filet de sécurité 2×/jour
   workflow_dispatch:
 
 permissions:
