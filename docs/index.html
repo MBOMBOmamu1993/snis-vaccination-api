@@ -15109,6 +15109,17 @@
             function mkReunionCrit(part, rem) {
                 return "*Une réunion est considérée comme fonctionnelle lorsqu'elle satisfait simultanément aux trois critères suivants :<br>- <b>Tenue:</b> La réunion a effectivement eu lieu pendant la période prévue.<br>- <b>Participation:</b> Les participants clés concernés étaient présents (" + part + ")<br>- <b>Suivi:</b> Des données de performance ont été présentées, un compte rendu incluant les points d'action a été partagé, et les points d'action de la réunion précédente (si elle a eu lieu) ont été revus et suivis.<br><br><b>Remarque:</b> " + rem;
             }
+            /* Complément de lieu pour la page de garde ZS : « (Province, Antenne) »,
+               comme dans l'original Tableau — d'après la cascade de filtres. */
+            function mkCoverLocSuffix() {
+                if (!mkPfx) return '';
+                var parts = [];
+                [typeof mkProv !== 'undefined' ? mkProv : '', typeof mkAntZS !== 'undefined' ? mkAntZS : ''].forEach(function (v) {
+                    v = String(v || '').replace(/^[a-z]{2}\s+/i, '').replace(/\s*Province\s*$/i, '').trim();
+                    if (v) parts.push(v);
+                });
+                return parts.length ? ' (' + parts.join(', ') + ')' : '';
+            }
             function mkStaticHtml(pageKey, loc, per) {
                 var locLbl = loc || mkLocLbl();
                 if (pageKey === 'kpi1') return mkKpiTable([
@@ -15147,7 +15158,7 @@
                         '<img src="' + mkOrigin() + '/pev-logo-officiel.png" alt="PEV — Programme Élargi de Vaccination, République Démocratique du Congo" style="height:46px">' +
                         '</div>' +
                         '<h2 style="font-size:26px;font-weight:800;color:#333;line-height:1.25;margin:0 0 26px;max-width:640px">Rapport mensuel des activités de vaccination - suivi du processus</h2>' +
-                        chip(MK_ICON_PIN, (mkPfx ? 'Zone de Santé' : 'Antenne') + ' | ' + esc(locLbl)) +
+                        chip(MK_ICON_PIN, (mkPfx ? 'Zone de Santé' : 'Antenne') + ' | ' + esc(locLbl) + esc(mkCoverLocSuffix())) +
                         chip(MK_ICON_CAL, esc(per || '')) +
                         '<div style="position:absolute;right:40px;bottom:26px;text-align:right">' +
                         '<div style="font-style:italic;font-weight:700;color:#555;font-size:12.5px;margin-bottom:4px">En partenariat avec :</div>' +
@@ -16779,6 +16790,12 @@
                 var cols = d.columns || [], rows = d.rows || [];
                 var name = d.name || (vm && vm.name) || '';
                 var cfg = MK_CFG[name] || null;
+                /* Rapport ZS : la page de garde n'existe qu'en UN SEUL PNG (celui
+                   de la ZS par défaut — « Aketi ») alors que le classeur compte 519
+                   ZS : elle restait figée quel que soit le filtre. On la rend donc
+                   en HTML dynamique, pilotée par la sélection ZS + période — même
+                   comportement que la page de garde du rapport Antenne. */
+                if (mkPfx && /^cover ?page$/i.test(name)) cfg = { mode: 'static', page: 'cover' };
                 var PGS = 40, pg = 0, q = '', antSel = '', moisSel = '', anSel = '';
                 var antCol = cols.filter(function (c) { return /^antenne$/i.test(c); })[0] || cols.filter(function (c) { return /antenne/i.test(c); })[0] || null;
                 var antVals = [];
