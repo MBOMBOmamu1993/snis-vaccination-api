@@ -256,10 +256,13 @@ def ratio_check_vs_stored(
     for col, old in old_t.items():
         if old < min_col_total:
             continue
-        # Ajustements de stock : valeurs signées qui changent légitimement
-        # d'amplitude et de signe entre deux runs, même pour un mois clôturé
-        # — un ratio n'y détecte aucune corruption, seulement du bruit.
-        if "_ajustement" in col.lower():
+        # Colonnes logistiques/taux (stock, ajustements signés, complétude…) :
+        # les registres de stock reçoivent des corrections rétroactives x2+
+        # même pour un mois clôturé (backfill AS du 30/08/2026 : dose-sortie
+        # x2.03-x2.32) et les ajustements changent de signe — un ratio n'y
+        # détecte aucune corruption analytics, seulement du bruit. Le contrôle
+        # ne porte que sur les doses administrées, cible réelle de l'incident.
+        if not _is_cross_level_comparable(col):
             continue
         new = new_t.get(col, 0.0)
         ratio = new / old
