@@ -256,6 +256,11 @@ def ratio_check_vs_stored(
     for col, old in old_t.items():
         if old < min_col_total:
             continue
+        # Ajustements de stock : valeurs signées qui changent légitimement
+        # d'amplitude et de signe entre deux runs, même pour un mois clôturé
+        # — un ratio n'y détecte aucune corruption, seulement du bruit.
+        if "_ajustement" in col.lower():
+            continue
         new = new_t.get(col, 0.0)
         ratio = new / old
         if ratio >= inflate or ratio <= collapse:
@@ -285,6 +290,12 @@ _NON_ADDITIVE_PATTERNS = (
     "dose-sortie", "dose_sortie",
     "_pertes", "_stock_", "_re_ues", "_utilis_es",
     "_administr_es", "_jours_rupture",
+    # ajustements de stock : valeurs SIGNÉES saisies séparément à chaque
+    # niveau (vaccins, diluants, SAB, adaptateurs…) — elles divergent entre
+    # niveaux et peuvent changer de signe entre deux runs pour un mois
+    # clôturé : tout ratio est dénué de sens (backfill ZS du 30/08/2026 :
+    # les 15 mois en échec l'étaient tous sur des colonnes _ajustement).
+    "_ajustement",
     "s_ances", "pop_", "naissances",
 )
 
