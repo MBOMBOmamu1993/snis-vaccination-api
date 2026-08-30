@@ -1470,6 +1470,12 @@ def main() -> int:
                 dx_chunk_chars=args.dx_chunk_chars,
                 sleep_s=args.sleep,
             )
+            # Un mois sans AUCUN enregistrement = analytics transitoire
+            # (« mois à zéro » pendant le rebuild nocturne) : ne jamais
+            # écraser les fichiers existants avec du vide — cause du trou
+            # ZS 202606 d'août 2026. Le mois part en retry_queue.
+            if not records:
+                raise RuntimeError("analytics a renvoyé 0 enregistrement")
             # Garde-fou : rejette le mois si analytics renvoie des valeurs
             # transitoires (x2/x3 sur les combos 12-23, mois à zéro, …).
             # Référence = données FOSA du même mois (validées contre le brut).

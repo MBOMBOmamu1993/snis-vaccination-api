@@ -273,6 +273,27 @@ def ratio_check_vs_stored(
 # Contrôle 3 : totaux nationaux vs référence FOSA (pour AS/ZS)
 # ------------------------------------------------------------------
 
+# Colonnes non additives entre niveaux : taux de rapportage (Complétude,
+# Promptitude — un pourcentage sommé sur ~20 000 FOSA n'a rien à voir avec la
+# somme sur 519 ZS), logistique/stock (saisie séparément à chaque niveau de la
+# pyramide) et dénominateurs de population. Le cross-check FOSA↔AS/ZS n'a de
+# sens que pour les doses administrées — précisément ce que l'incident
+# analytics de mars-juillet 2026 corrompait. Comparer le reste faisait rejeter
+# TOUS les mois mûrs au niveau ZS (juin/juillet 2026 restés vides/figés).
+_NON_ADDITIVE_PATTERNS = (
+    "compl_tude", "promptitude", "rapports_attendus",
+    "dose-sortie", "dose_sortie",
+    "_pertes", "_stock_", "_re_ues", "_utilis_es",
+    "_administr_es", "_jours_rupture",
+    "s_ances", "pop_", "naissances",
+)
+
+
+def _is_cross_level_comparable(col: str) -> bool:
+    c = col.lower()
+    return not any(p in c for p in _NON_ADDITIVE_PATTERNS)
+
+
 def cross_check_vs_reference(
     reference_month_folder: Path,
     new_records: List[dict],
@@ -297,6 +318,8 @@ def cross_check_vs_reference(
         if ref < min_col_total:
             continue
         if col not in new_t:
+            continue
+        if not _is_cross_level_comparable(col):
             continue
         ratio = new_t[col] / ref
         if ratio < lo or ratio > hi:
