@@ -15144,26 +15144,27 @@
                     ['Formation des infirmier titulaire au PEV', "% des aires de santé disposent d'au moins un infirmier titulaire formé au PEV", "Nombre d'AS disposant d'au moins un infirmier titulaire formé au PEV", "Nombre total d'AS", '']
                 ], 'Disponibilité des vaccins (Antenne): 0% &nbsp;|&nbsp; Disponibilité des vaccins (ZS): 15% &nbsp;|&nbsp; Satisfaction des besoins (livraison antenne vers HZ): 10% &nbsp;|&nbsp; Suivi de la réalisation des séances de vaccination: 30% &nbsp;|&nbsp; Récupération des enfants: 10% &nbsp;|&nbsp; Formation des infirmier titulaire au PEV: 5%', '1c');
                 if (pageKey === 'cover') {
-                    var chip = function (ic, t) {
-                        return '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">' +
-                            '<div style="width:52px;height:52px;border-radius:4px;background:#eceff4;display:flex;align-items:center;justify-content:center;color:#fff">' + ic + '</div>' +
-                            '<div style="font-size:17px;font-weight:800;color:#333">' + t + '</div></div>';
+                    /* Réplique fidèle de la page de garde Tableau : les éléments
+                       graphiques (bandeau drapeau-carte RDC, logos PEV/Ministère,
+                       Gavi, icônes) sont découpés du PNG original
+                       (docs/mashako-assets/), seuls le lieu et la période changent. */
+                    var _A = mkOrigin() + '/mashako-assets/';
+                    var chip = function (img, t) {
+                        return '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">' +
+                            '<img src="' + _A + img + '" alt="" style="width:58px;height:auto;flex:0 0 auto">' +
+                            '<div style="font-size:18px;font-weight:800;color:#333">' + t + '</div></div>';
                     };
-                    return '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px;display:flex;min-height:420px">' +
-                        '<div style="flex:0 0 22%;background:' + MKS_BLUE + ';display:flex;align-items:center;justify-content:center">' +
-                        '<svg viewBox="0 0 120 120" style="width:70%;max-width:150px" aria-hidden="true"><path d="M18 40 L40 18 L92 26 L104 62 L84 104 L40 100 L14 74 Z" fill="#2196f3"/><path d="M26 96 L96 30 L104 44 L36 104 Z" fill="#f7d117"/><path d="M32 98 L96 38 L100 48 L40 102 Z" fill="#d62828"/><path d="M34 34 l5 14 h15 l-12 9 5 14 -13 -9 -13 9 5 -14 -12 -9 h15 z" fill="#f7d117"/></svg>' +
+                    return '<div class="cb" style="padding:0;overflow:hidden;border-radius:14px;display:flex;min-height:460px;background:#fff">' +
+                        '<img src="' + _A + 'garde-bande.png" alt="" style="flex:0 0 22.5%;width:22.5%;object-fit:cover;align-self:stretch">' +
+                        '<div style="flex:1;padding:28px 40px 26px;position:relative;display:flex;flex-direction:column">' +
+                        '<div style="display:flex;justify-content:flex-end"><img src="' + _A + 'garde-logos.png" alt="PEV — République Démocratique du Congo — Ministère de la Santé" style="height:60px;max-width:46%;object-fit:contain"></div>' +
+                        '<div style="margin-top:56px">' +
+                        '<h2 style="font-size:27px;font-weight:800;color:#333;line-height:1.3;margin:0 0 30px;max-width:680px">Rapport mensuel des activités de vaccination - suivi du processus</h2>' +
+                        chip('garde-ic-lieu.png', (mkPfx ? 'Zone de Santé' : 'Antenne') + ' | ' + esc(locLbl) + esc(mkCoverLocSuffix())) +
+                        chip('garde-ic-mois.png', esc(per || '')) +
                         '</div>' +
-                        '<div style="flex:1;padding:34px 40px;position:relative">' +
-                        '<div style="display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-bottom:26px">' +
-                        '<img src="' + mkOrigin() + '/pev-logo-officiel.png" alt="PEV — Programme Élargi de Vaccination, République Démocratique du Congo" style="height:46px">' +
-                        '</div>' +
-                        '<h2 style="font-size:26px;font-weight:800;color:#333;line-height:1.25;margin:0 0 26px;max-width:640px">Rapport mensuel des activités de vaccination - suivi du processus</h2>' +
-                        chip(MK_ICON_PIN, (mkPfx ? 'Zone de Santé' : 'Antenne') + ' | ' + esc(locLbl) + esc(mkCoverLocSuffix())) +
-                        chip(MK_ICON_CAL, esc(per || '')) +
-                        '<div style="position:absolute;right:40px;bottom:26px;text-align:right">' +
-                        '<div style="font-style:italic;font-weight:700;color:#555;font-size:12.5px;margin-bottom:4px">En partenariat avec :</div>' +
-                        '<div style="font-size:22px;font-weight:800;color:#0f6cbd;letter-spacing:.5px">Gavi<span style="font-size:11px;font-weight:600;color:#5b7f2e;margin-left:6px">The Vaccine Alliance</span></div>' +
-                        '</div></div></div>';
+                        '<img src="' + _A + 'garde-gavi.png" alt="En partenariat avec Gavi, The Vaccine Alliance" style="position:absolute;right:40px;bottom:26px;height:100px">' +
+                        '</div></div>';
                 }
                 if (pageKey === 'contacts') {
                     var mail = function (a) { return '<a href="mailto:' + a + '" style="color:' + MKS_BLUE + ';font-weight:800;text-decoration:none">' + a + '</a>'; };
