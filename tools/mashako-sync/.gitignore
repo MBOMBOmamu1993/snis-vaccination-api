@@ -1,0 +1,7 @@
+# Jamais dans le dépôt (public) : profils navigateur, cookies, sessions, sorties locales
+browser-profile*/
+cookies-tableau.json
+cookies-cache.json
+session-cloud.enc
+out*/
+*.log

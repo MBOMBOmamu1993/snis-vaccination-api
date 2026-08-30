@@ -96,6 +96,7 @@ jobs:
             tools/mashako-sync/zs_as_ledger_s2.json
             tools/mashako-sync/zs_as_ledger_s3.json
             tools/mashako-sync/out-zs/views
+            tools/mashako-sync/session-cloud.enc
           key: mashako-etat-${{ github.run_id }}
           restore-keys: mashako-etat-
 
@@ -151,13 +152,27 @@ jobs:
             ${CANAL:+--canal "$CANAL"} \
             ${{ inputs.force == '1' && '--force' || '' }}
 
-      - name: Injecter la session Tableau du PC dans un profil Chrome
+      # La session est prise D'ABORD dans le cache chiffré (reconduite par le
+      # relais précédent : toujours plus fraîche), et le secret TABLEAU_COOKIES
+      # (déposé par le PC) ne sert plus que de repli. C'est ce qui permet à la
+      # session de survivre indéfiniment PC éteint : chaque relais la rajeunit
+      # et la retransmet au suivant (gel de fin juillet 2026, issue #71).
+      - name: Injecter la session Tableau (cache chiffré, sinon secret du PC)
         id: session
         if: (env.MASHAKO_A_FAIRE == '1' || env.CONTROLE_SESSION == '1') && inputs.dry != '1'
         working-directory: tools/mashako-sync
         env:
           TABLEAU_COOKIES: ${{ secrets.TABLEAU_COOKIES }}
+          MASHAKO_SESSION_KEY: ${{ secrets.MASHAKO_SESSION_KEY }}
         run: |
+          if [ -n "$MASHAKO_SESSION_KEY" ] && node cloud/session-cache.mjs --charger; then
+            if node cloud/seed-profile.mjs --fichier cookies-cache.json; then
+              echo "Session reprise du cache chiffré du relais précédent."
+              exit 0
+            fi
+            echo "Cache de session périmé — repli sur le secret TABLEAU_COOKIES."
+            rm -rf browser-profile
+          fi
           if [ -z "$TABLEAU_COOKIES" ]; then
             echo "::error::Secret TABLEAU_COOKIES absent. Sur le PC : node cloud/publier-cookies.mjs"
             exit 1
@@ -192,6 +207,16 @@ jobs:
           node cloud/arbitre.mjs --tache "$TACHE" \
             --canal "${MASHAKO_CANAL_UTILE:-$CANAL}" \
             ${{ inputs.force == '1' && '--force' || '' }}
+
+      # Reconduction : les cookies rafraîchis par CE passage repartent, chiffrés,
+      # dans le cache Actions pour le passage suivant (même si la synchro
+      # elle-même a échoué : la session, elle, est valide et doit survivre).
+      - name: Reconduire la session pour le prochain relais
+        if: always() && steps.session.outcome == 'success' && inputs.dry != '1'
+        working-directory: tools/mashako-sync
+        env:
+          MASHAKO_SESSION_KEY: ${{ secrets.MASHAKO_SESSION_KEY }}
+        run: node cloud/session-cache.mjs --sauver || echo "(reconduite impossible — le secret du PC restera la référence)"
 
       - name: Journal de l'arbitre
         if: always()
