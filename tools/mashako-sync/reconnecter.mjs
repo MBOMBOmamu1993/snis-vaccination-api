@@ -132,7 +132,17 @@ try {
      Tableau), sinon on conclut à tort sur une page de passage. */
   let e = await attendre(page, (s) => s.choixCompte || s.aVignette || s.motDePasse || s.deuxFacteurs ||
     (s.tableau && !/\/public\/idp\//.test(s.url)), 120000);
-  if (e.tableau && !e.google && await sessionValide(page)) {
+  /* L'URL Tableau est elle-même un état de PASSAGE : la coquille SPA se pose
+     d'abord sur l'URL de la vue, PUIS (plusieurs secondes après) décide de
+     rediriger vers le SSO Google. Conclure ici gelait la reconnexion en
+     « Page inattendue » (août 2026) : si la session est morte, on laisse à la
+     redirection le temps d'arriver avant de trancher. */
+  let vivante = e.tableau && !e.google && await sessionValide(page);
+  if (e.tableau && !e.google && !vivante) {
+    e = await attendre(page, (s) => s.choixCompte || s.aVignette || s.motDePasse || s.deuxFacteurs, 90000);
+    vivante = e.tableau && !e.google && await sessionValide(page);
+  }
+  if (vivante) {
     log("✓ Session Tableau valide — rien à faire (la visite compte comme maintien en vie).");
     code = 0;
   }
