@@ -84,6 +84,7 @@ jobs:
           MONTHS="${{ inputs.months || '3' }}"
           python scripts/fetch_dhis2_vaccination.py \
             --months "$MONTHS" \
+            --retry_failed --retry_limit 3 \
             --out docs/data
 
       - name: Commit & push
@@ -95,6 +96,13 @@ jobs:
           git commit -m "auto: sync FOSA (last ${{ inputs.months || '3' }} months)"
           chmod +x scripts/safe_push.sh
           ./scripts/safe_push.sh main
+
+      # Après le commit (les données validées sont publiées quoi qu'il
+      # arrive) : run rouge + notification si un mois clôturé reste en
+      # échec ou stocké vide — plus jamais de gel silencieux type
+      # ZS juin/juillet 2026.
+      - name: Sonde de santé (mois clôturés en échec ?)
+        run: python scripts/check_sync_health.py docs/data/index.json
 
 # ─────────────────────────────────────────────────────────────
 # JOB AS  (12:30 UTC auto  OU  manuel level=AS)
@@ -142,6 +150,7 @@ jobs:
           MONTHS="${{ inputs.months || '3' }}"
           python scripts/fetch_dhis2_as.py \
             --months "$MONTHS" \
+            --retry_failed --retry_limit 3 \
             --out docs/data_as
 
       - name: Commit & push
@@ -153,6 +162,9 @@ jobs:
           git commit -m "auto: sync AS (last ${{ inputs.months || '3' }} months)"
           chmod +x scripts/safe_push.sh
           ./scripts/safe_push.sh main
+
+      - name: Sonde de santé (mois clôturés en échec ?)
+        run: python scripts/check_sync_health.py docs/data_as/index.json
 
 # ─────────────────────────────────────────────────────────────
 # JOB ZS  (13:00 UTC auto  OU  manuel level=ZS)
@@ -200,6 +212,7 @@ jobs:
           MONTHS="${{ inputs.months || '3' }}"
           python scripts/fetch_dhis2_zs.py \
             --months "$MONTHS" \
+            --retry_failed --retry_limit 3 \
             --out docs/data_zs
 
       - name: Commit & push
@@ -211,3 +224,6 @@ jobs:
           git commit -m "auto: sync ZS (last ${{ inputs.months || '3' }} months)"
           chmod +x scripts/safe_push.sh
           ./scripts/safe_push.sh main
+
+      - name: Sonde de santé (mois clôturés en échec ?)
+        run: python scripts/check_sync_health.py docs/data_zs/index.json

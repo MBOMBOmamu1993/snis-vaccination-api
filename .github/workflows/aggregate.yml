@@ -24,8 +24,15 @@ concurrency:
 
 jobs:
   aggregate-all:
-    # Ne se lance que si la synchronisation a réussi, ou si c'est un lancement manuel
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Se lance après toute synchronisation terminée (success OU failure) ou en
+    # manuel. Un run de synchro peut finir « failure » à cause de la sonde de
+    # santé ALORS QUE les données validées sont déjà commitées : l'agrégation
+    # (idempotente, elle ne lit que les fichiers commités) doit quand même
+    # rafraîchir le dashboard.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success' ||
+      github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     
     # J'ai augmenté à 40 minutes car il y a maintenant 3 scripts à faire tourner l'un après l'autre
