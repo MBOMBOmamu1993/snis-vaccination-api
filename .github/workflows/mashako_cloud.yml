@@ -49,6 +49,10 @@ on:
         description: "1 = expliquer la décision sans rien lancer"
         required: false
         default: ""
+      force_backfill:
+        description: "1 = lever le garde « mois courant ZS d'abord » (registre local absent du cloud)"
+        required: false
+        default: ""
       redo:
         description: "Ré-archiver des périodes déjà publiées (ex: 2026-07 ou 2026-07,2026-06) — tache=backfill"
         required: false
@@ -225,6 +229,7 @@ jobs:
           # Ré-archivage d'une période déjà publiée (backfill-periods.mjs
           # hérite de l'environnement) — ex. juillet 2026 refait après coup.
           MASHAKO_REDO: ${{ inputs.redo || '' }}
+          MASHAKO_FORCE_BACKFILL: ${{ inputs.force_backfill || '' }}
         run: |
           node cloud/arbitre.mjs --tache "$TACHE" \
             --canal "${MASHAKO_CANAL_UTILE:-$CANAL}" \
