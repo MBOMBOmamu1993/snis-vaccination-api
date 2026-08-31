@@ -18,14 +18,18 @@ name: Mashako 3.0 — synchro de secours (cloud)
 on:
   schedule:
     # ── Horaires en UTC ; Kinshasa = UTC+1, sans heure d'été.
-    - cron: "45 6 * * *"      # 07h45 — synchro Antenne        (PC : 7h00)
-    - cron: "15 10 * * *"     # 11h15 — synchro Zone de Santé  (PC : 10h30)
-    - cron: "45 19 * * *"     # 20h45 — backfill Antenne       (PC : 20h00)
-    - cron: "15 23 * * *"     # 00h15 — backfill Zone de Santé (PC : 23h30)
-    # ── Ronde de rattrapage toutes les 2 h : c'est elle qui reprend le travail
-    #    quand le PC s'éteint EN PLEINE synchro (son bail périme en 25 min).
-    #    Quand il n'y a rien à faire, la ronde s'arrête en ~40 s sans réveiller
-    #    ni Chrome ni Tableau.
+    # Depuis le 31/08/2026 le CLOUD est le travailleur PRINCIPAL (demande
+    # Felly : ne plus dépendre du PC allumé) : il part À l'heure planifiée
+    # (MASHAKO_GRACE_MIN=0), les tâches planifiées du PC sont désactivées.
+    # Un PC allumé qui tient un bail frais garde quand même la main (pas de
+    # duel sur la même session Tableau).
+    - cron: "0 6 * * *"       # 07h00 — synchro Antenne
+    - cron: "30 9 * * *"      # 10h30 — synchro Zone de Santé
+    - cron: "0 19 * * *"      # 20h00 — backfill Antenne
+    - cron: "30 22 * * *"     # 23h30 — backfill Zone de Santé
+    # ── Ronde de rattrapage toutes les 2 h : reprend tout travail interrompu
+    #    (bail périmé en 25 min). Quand il n'y a rien à faire, la ronde
+    #    s'arrête en ~40 s sans réveiller ni Chrome ni Tableau.
     - cron: "0 */2 * * *"
   workflow_dispatch:
     inputs:
@@ -124,10 +128,10 @@ jobs:
       - name: Canal et tâche, selon l'horaire déclencheur
         run: |
           case "${{ github.event.schedule }}" in
-            "45 6 * * *")   echo "CANAL=ant" >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
-            "15 10 * * *")  echo "CANAL=zs"  >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
-            "45 19 * * *")  echo "CANAL=ant" >> "$GITHUB_ENV"; echo "TACHE=backfill" >> "$GITHUB_ENV" ;;
-            "15 23 * * *")  echo "CANAL=zs"  >> "$GITHUB_ENV"; echo "TACHE=backfill" >> "$GITHUB_ENV" ;;
+            "0 6 * * *")    echo "CANAL=ant" >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
+            "30 9 * * *")   echo "CANAL=zs"  >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
+            "0 19 * * *")   echo "CANAL=ant" >> "$GITHUB_ENV"; echo "TACHE=backfill" >> "$GITHUB_ENV" ;;
+            "30 22 * * *")  echo "CANAL=zs"  >> "$GITHUB_ENV"; echo "TACHE=backfill" >> "$GITHUB_ENV" ;;
             "0 */2 * * *")  echo "CANAL="    >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
             *)              echo "CANAL=${{ inputs.canal }}" >> "$GITHUB_ENV"
                             echo "TACHE=${{ inputs.tache || 'sync' }}" >> "$GITHUB_ENV" ;;
@@ -136,7 +140,7 @@ jobs:
           # MÊME s'il n'y a rien à synchroniser : c'est ce qui détecte une
           # session morte au plus tôt, et qui la maintient en vie — ainsi que la
           # licence Tableau, révoquée après un mois sans connexion.
-          if [ "${{ github.event.schedule }}" = "45 6 * * *" ]; then
+          if [ "${{ github.event.schedule }}" = "0 6 * * *" ]; then
             echo "CONTROLE_SESSION=1" >> "$GITHUB_ENV"
           fi
 
@@ -147,6 +151,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MASHAKO_ROLE: actions
+          # Cloud = travailleur principal : il part À l'heure planifiée au lieu
+          # d'attendre 45 min que le PC fasse le travail (31/08/2026).
+          MASHAKO_GRACE_MIN: "0"
         run: |
           node cloud/arbitre.mjs --decider --tache "$TACHE" \
             ${CANAL:+--canal "$CANAL"} \
@@ -202,6 +209,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MASHAKO_ROLE: actions
+          MASHAKO_GRACE_MIN: "0"
           MASHAKO_HEADLESS: "1"
         run: |
           node cloud/arbitre.mjs --tache "$TACHE" \
