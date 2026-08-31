@@ -143,6 +143,13 @@ jobs:
           if [ "${{ github.event.schedule }}" = "0 6 * * *" ]; then
             echo "CONTROLE_SESSION=1" >> "$GITHUB_ENV"
           fi
+          # La ronde de 2 h entretient AUSSI la session : validation + cookies
+          # rafraîchis reconduits dans le cache chiffré. Sans cela, la session
+          # tourne côté serveur pendant que le secret vieillit — le 31/08 à
+          # 08h04 le cloud s'est retrouvé refusé alors que la session vivait.
+          if [ "${{ github.event.schedule }}" = "0 */2 * * *" ]; then
+            echo "CONTROLE_SESSION=1" >> "$GITHUB_ENV"
+          fi
 
       # Décision AVANT de réveiller quoi que ce soit : si le PC a fait le
       # travail, on s'arrête ici sans toucher à Tableau.
