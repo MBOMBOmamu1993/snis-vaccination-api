@@ -16796,7 +16796,7 @@
                    ZS : elle restait figée quel que soit le filtre. On la rend donc
                    en HTML dynamique, pilotée par la sélection ZS + période — même
                    comportement que la page de garde du rapport Antenne. */
-                if (mkPfx && /^cover ?page$/i.test(name)) cfg = { mode: 'static', page: 'cover' };
+                if (/^cover ?page$/i.test(name)) cfg = { mode: 'static', page: 'cover' };
                 var PGS = 40, pg = 0, q = '', antSel = '', moisSel = '', anSel = '';
                 var antCol = cols.filter(function (c) { return /^antenne$/i.test(c); })[0] || cols.filter(function (c) { return /antenne/i.test(c); })[0] || null;
                 var antVals = [];

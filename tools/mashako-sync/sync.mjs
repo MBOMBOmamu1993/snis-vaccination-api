@@ -1089,8 +1089,12 @@ async function main() {
     if (filterOK && imgLocs.length) {
       /* La page de garde est hors filtre pour les DONNÉES (NO_ANT) mais son
          visuel, lui, dépend bien de l'antenne : on l'ajoute aux visuels. */
-      const visualSheets = antSheets.filter((s) => !dataFiles[s.slug])
-        .concat(sheets.filter((s) => s.urlName && /^Cover ?Page$/i.test(s.label)));
+      /* Seule la « Synthèse des constats » est affichée en image par antenne
+         par le dashboard — KPI, Cover Page et Configuration sont rendus en
+         HTML statique côté front (31/08/2026). Capturer le reste coûtait
+         ~250 exports (~50 min) par run pour des fichiers jamais consultés. */
+      const visualSheets = antSheets.filter((s) =>
+        !dataFiles[s.slug] && /^Supervision_(ANT_P2|HZ_P3)$/i.test(s.label));
       const total = imgLocs.length * visualSheets.length;
       log(`→ Images par ${IS_ZS ? "zone de santé" : "antenne"} (visuels sans table) : ${imgLocs.length} × ${visualSheets.length} feuilles = ${total}…`);
       /* ── CAPTURE HAUTE DÉFINITION ──────────────────────────────────────────
