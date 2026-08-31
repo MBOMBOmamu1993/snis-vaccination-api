@@ -44,6 +44,19 @@ const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", 
 const TARGETS = [];
 for (let y = 2026, m = 5; !(y === 2025 && m === 6); m--) { if (m === 0) { m = 12; y--; } TARGETS.push({ key: `${y}-${String(m).padStart(2, "0")}`, month: MOIS[m - 1], year: String(y) }); }
 
+/* MASHAKO_REDO=2026-07[,2026-06…] : ré-archiver des périodes DÉJÀ publiées.
+   Utile quand une archive a été figée depuis un snapshot partiel — cas de
+   juillet 2026 : session morte le 30/07, archive posée le 06/08 avec les
+   supervisions saisies après le 30/07 absentes (confusions antenne Luiza). */
+const REDO = (process.env.MASHAKO_REDO || "").split(",").map((s) => s.trim()).filter(Boolean)
+  .map((k) => {
+    const [y, m] = k.split("-").map(Number);
+    return y >= 2024 && m >= 1 && m <= 12
+      ? { key: `${y}-${String(m).padStart(2, "0")}`, month: MOIS[m - 1], year: String(y) }
+      : null;
+  })
+  .filter(Boolean);
+
 /* Feuilles hors périmètre données (pages fixes / jamais exportables en CSV) —
    générique ANT+ZS ; côté ZS on ignore aussi OVM/surveillance/annexe (Felly). */
 const SKIP_DATA = IS_ZS
@@ -118,7 +131,7 @@ async function main() {
   /* périodes déjà archivées */
   let have = [];
   try { have = (await (await fetch(`${RAW}/${PFX}periods/index.json?_r=${Date.now()}`)).json()).periods || []; } catch (e) { }
-  let todo = TARGETS.filter((t) => !have.includes(t.key));
+  let todo = [...REDO, ...TARGETS.filter((t) => !have.includes(t.key) && !REDO.some((r) => r.key === t.key))];
   if (!todo.length) { log("✓ Toutes les périodes 2025-07 → 2026-05 sont archivées — rien à faire."); rmSync(LOCK, { force: true }); return 2; }
   /* UNE période par exécution (défaut) : le run de 20h archive un mois par
      soir (~20 min avec le groupé multi-valeurs), verrou libéré avant 23h30 —
