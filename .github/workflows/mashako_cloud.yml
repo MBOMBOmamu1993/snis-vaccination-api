@@ -49,6 +49,10 @@ on:
         description: "1 = expliquer la décision sans rien lancer"
         required: false
         default: ""
+      redo:
+        description: "Ré-archiver des périodes déjà publiées (ex: 2026-07 ou 2026-07,2026-06) — tache=backfill"
+        required: false
+        default: ""
       test_alerte:
         description: "1 = ouvrir puis refermer une alerte de test (vérifie que l'e-mail arrive)"
         required: false
@@ -218,6 +222,9 @@ jobs:
           MASHAKO_ROLE: actions
           MASHAKO_GRACE_MIN: "0"
           MASHAKO_HEADLESS: "1"
+          # Ré-archivage d'une période déjà publiée (backfill-periods.mjs
+          # hérite de l'environnement) — ex. juillet 2026 refait après coup.
+          MASHAKO_REDO: ${{ inputs.redo || '' }}
         run: |
           node cloud/arbitre.mjs --tache "$TACHE" \
             --canal "${MASHAKO_CANAL_UTILE:-$CANAL}" \
