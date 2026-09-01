@@ -31,6 +31,10 @@ on:
     #    (bail périmé en 25 min). Quand il n'y a rien à faire, la ronde
     #    s'arrête en ~40 s sans réveiller ni Chrome ni Tableau.
     - cron: "0 */2 * * *"
+    # Ronde décalée : GitHub saute parfois plusieurs crons d'affilée
+    # (3 rondes manquées la nuit du 31/08) et la session meurt d'inactivité.
+    # Deux grilles décalées d'une heure divisent ce risque.
+    - cron: "0 1-23/2 * * *"
   workflow_dispatch:
     inputs:
       canal:
@@ -141,6 +145,7 @@ jobs:
             "0 19 * * *")   echo "CANAL=ant" >> "$GITHUB_ENV"; echo "TACHE=backfill" >> "$GITHUB_ENV" ;;
             "30 22 * * *")  echo "CANAL=zs"  >> "$GITHUB_ENV"; echo "TACHE=backfill" >> "$GITHUB_ENV" ;;
             "0 */2 * * *")  echo "CANAL="    >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
+            "0 1-23/2 * * *") echo "CANAL="   >> "$GITHUB_ENV"; echo "TACHE=sync"     >> "$GITHUB_ENV" ;;
             *)              echo "CANAL=${{ inputs.canal }}" >> "$GITHUB_ENV"
                             echo "TACHE=${{ inputs.tache || 'sync' }}" >> "$GITHUB_ENV" ;;
           esac
@@ -155,7 +160,7 @@ jobs:
           # rafraîchis reconduits dans le cache chiffré. Sans cela, la session
           # tourne côté serveur pendant que le secret vieillit — le 31/08 à
           # 08h04 le cloud s'est retrouvé refusé alors que la session vivait.
-          if [ "${{ github.event.schedule }}" = "0 */2 * * *" ]; then
+          if [ "${{ github.event.schedule }}" = "0 */2 * * *" ] || [ "${{ github.event.schedule }}" = "0 1-23/2 * * *" ]; then
             echo "CONTROLE_SESSION=1" >> "$GITHUB_ENV"
           fi
 

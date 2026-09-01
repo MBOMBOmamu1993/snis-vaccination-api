@@ -145,6 +145,24 @@ try {
   if (vivante) {
     log("✓ Session Tableau valide — rien à faire (la visite compte comme maintien en vie).");
     code = 0;
+    /* Republication périodique vers le cloud : GitHub saute parfois plusieurs
+       rondes d'affilée (3 manquées la nuit du 31/08 → 01/09) et la session du
+       secret meurt d'inactivité pendant que celle du PC vit. Tant que le PC
+       passe ici, le secret reste frais — au plus une republication / 4 h. */
+    try {
+      const marque = path.join(HERE, "cloud", ".derniere-republication");
+      let age = Infinity;
+      try { age = Date.now() - statSync(marque).mtimeMs; } catch (e) { }
+      if (age > 4 * 3600 * 1000) {
+        await ctx.close().catch(() => { });
+        ctx = null; // le profil doit être LIBRE pour publier-cookies
+        execFileSync(process.execPath, [path.join(HERE, "cloud", "publier-cookies.mjs")], { stdio: "inherit" });
+        appendFileSync(marque, new Date().toISOString() + "\n");
+        log("✓ Secret TABLEAU_COOKIES rafraîchi (republication périodique).");
+      }
+    } catch (err) {
+      log(`⚠ Republication périodique impossible (${String(err.message).slice(0, 80)}).`);
+    }
   }
   else if (e.motDePasse || e.deuxFacteurs) {
     log(`⚠ Google demande ${e.motDePasse ? "le mot de passe" : "une validation en deux étapes"} — seule une intervention humaine peut répondre. Sur le PC : login.cmd`);
