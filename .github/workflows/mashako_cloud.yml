@@ -66,6 +66,13 @@ on:
         required: false
         default: ""
 
+# ── MODE RATTRAPAGE (demande Felly 01/09/2026) : tant que ce drapeau vaut 1,
+# TOUS les créneaux planifiés font du backfill d'archives (mois passés),
+# le mois courant est suspendu. Remettre à 0 une fois les archives finies
+# pour reprendre les synchros quotidiennes du mois courant.
+env:
+  MODE_RATTRAPAGE: "1"
+
 permissions:
   contents: write
   issues: write     # ouverture/fermeture de l'alerte « session Tableau expirée »
@@ -149,6 +156,10 @@ jobs:
             *)              echo "CANAL=${{ inputs.canal }}" >> "$GITHUB_ENV"
                             echo "TACHE=${{ inputs.tache || 'sync' }}" >> "$GITHUB_ENV" ;;
           esac
+          # Mode rattrapage : le mois courant est suspendu, tout va aux archives.
+          if [ "$MODE_RATTRAPAGE" = "1" ] && [ -n "${{ github.event.schedule }}" ]; then
+            echo "TACHE=backfill" >> "$GITHUB_ENV"
+          fi
           # Une fois par jour (créneau ANT du matin), on contrôle la session
           # MÊME s'il n'y a rien à synchroniser : c'est ce qui détecte une
           # session morte au plus tôt, et qui la maintient en vie — ainsi que la
@@ -177,7 +188,7 @@ jobs:
         run: |
           node cloud/arbitre.mjs --decider --tache "$TACHE" \
             ${CANAL:+--canal "$CANAL"} \
-            ${{ inputs.force == '1' && '--force' || '' }}
+            ${{ (inputs.force == '1' || env.MODE_RATTRAPAGE == '1') && '--force' || '' }}
 
       # La session est prise D'ABORD dans le cache chiffré (reconduite par le
       # relais précédent : toujours plus fraîche), et le secret TABLEAU_COOKIES
@@ -238,7 +249,7 @@ jobs:
         run: |
           node cloud/arbitre.mjs --tache "$TACHE" \
             --canal "${MASHAKO_CANAL_UTILE:-$CANAL}" \
-            ${{ inputs.force == '1' && '--force' || '' }}
+            ${{ (inputs.force == '1' || env.MODE_RATTRAPAGE == '1') && '--force' || '' }}
 
       # Reconduction : les cookies rafraîchis par CE passage repartent, chiffrés,
       # dans le cache Actions pour le passage suivant (même si la synchro
