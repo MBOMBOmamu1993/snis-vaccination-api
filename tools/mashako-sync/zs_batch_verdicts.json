@@ -1,0 +1,111 @@
+{
+ "at": "2026-09-01T15:34:37.614Z",
+ "n": 5,
+ "verdicts": {
+  "Performance Résumé_HZ": {
+   "groupe": 7,
+   "unitaire": 35,
+   "ok": false
+  },
+  "Performance Heatmap_HZ": {
+   "groupe": 13,
+   "unitaire": 65,
+   "ok": false
+  },
+  "Carte de Supervision_HZ": {
+   "groupe": 1,
+   "unitaire": 5,
+   "ok": false
+  },
+  "Supervision_HZ_P1": {
+   "groupe": 5,
+   "unitaire": 5,
+   "ok": true
+  },
+  "Supervision_HZ_P2": {
+   "groupe": 5,
+   "unitaire": 5,
+   "ok": true
+  },
+  "Supervision_HZ_P3": {
+   "groupe": 0,
+   "unitaire": 0,
+   "ok": false
+  },
+  "Vaccine_dispo_HZ_P1": {
+   "groupe": 320,
+   "unitaire": 784,
+   "ok": false
+  },
+  "Vaccine_dispo_HZ_P2": {
+   "groupe": 464,
+   "unitaire": 0,
+   "ok": true
+  },
+  "Vaccine_expiration_HZ_P1": {
+   "groupe": 200,
+   "unitaire": 490,
+   "ok": false
+  },
+  "Vaccine_expiration_HZ_P2": {
+   "groupe": 290,
+   "unitaire": 0,
+   "ok": true
+  },
+  "CDF_HZ_P1": {
+   "groupe": 120,
+   "unitaire": 294,
+   "ok": false
+  },
+  "CDF_HZ_P2": {
+   "groupe": 174,
+   "unitaire": 0,
+   "ok": true
+  },
+  "CDF_HZ_NF": {
+   "groupe": 20,
+   "unitaire": 49,
+   "ok": false
+  },
+  "Livraison_HZ_P1": {
+   "groupe": 40,
+   "unitaire": 98,
+   "ok": false
+  },
+  "Livraison_HZ_P2": {
+   "groupe": 58,
+   "unitaire": 0,
+   "ok": true
+  },
+  "Séances_HZ_P1": {
+   "groupe": 5,
+   "unitaire": 5,
+   "ok": true
+  },
+  "Séances_HZ_P2": {
+   "groupe": 5,
+   "unitaire": 5,
+   "ok": true
+  },
+  "Taux d'abandon_HZ_P1": {
+   "groupe": 5,
+   "unitaire": 5,
+   "ok": true
+  },
+  "Taux d'abandon_HZ_P2": {
+   "groupe": 5,
+   "unitaire": 5,
+   "ok": true
+  },
+  "Infirmier_HZ_P1": {
+   "groupe": 20,
+   "unitaire": 49,
+   "ok": false
+  },
+  "Infirmier_HZ_P2": {
+   "groupe": 29,
+   "unitaire": 0,
+   "ok": true
+  }
+ }
+}
