@@ -213,8 +213,12 @@ async function main() {
     const attendues = labels.filter((l) => !SKIP_DATA.test(l));
     let cur = null;
     try { cur = (await (await fetch(`${RAW}/${PFX}periods/index.json?_r=${Date.now()}`)).json()).current || null; } catch (e) { }
+    /* le « mois courant » exclu est le mois CALENDAIRE : index.current peut rester
+       sur le mois précédent tant que la synchro du nouveau mois n'a pas publié
+       (août 2026 le 02/09), or ce mois-là est justement le plus urgent à compléter. */
+    const moisCal = new Date().toISOString().slice(0, 7);
     for (const key of [...have].sort().reverse()) {
-      if (key === cur) continue;
+      if (key === cur && key === moisCal) continue;
       let m = null;
       try { m = await (await fetch(`${RAW}/${PFX}periods/${key}/meta.json?_r=${Date.now()}`)).json(); } catch (e) { }
       if (!m || !Array.isArray(m.views)) continue;
