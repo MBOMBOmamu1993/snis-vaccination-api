@@ -93,8 +93,10 @@ function log(msg) {
 /* Ne plus JAMAIS mourir en silence : le 26/07, quatre runs ont disparu sans
    aucune trace après le pré-contrôle. Toute erreur non attrapée est
    journalisée (et donc visible au prochain diagnostic) avant de quitter. */
-process.on("unhandledRejection", (e) => { try { log(`✖ ERREUR NON GÉRÉE (promesse) : ${(e && e.stack) || e}`); } catch (_) { } });
-process.on("uncaughtException", (e) => { try { log(`✖ ERREUR NON GÉRÉE : ${(e && e.stack) || e}`); } catch (_) { } });
+/* Une erreur non gérée doit se voir : code de sortie 1 (l'arbitre et le cloud
+   prenaient un plantage au démarrage pour un succès — constaté 02/09). */
+process.on("unhandledRejection", (e) => { process.exitCode = 1; try { log(`✖ ERREUR NON GÉRÉE (promesse) : ${(e && e.stack) || e}`); } catch (_) { } });
+process.on("uncaughtException", (e) => { process.exitCode = 1; try { log(`✖ ERREUR NON GÉRÉE : ${(e && e.stack) || e}`); } catch (_) { } });
 function notify(text) {
   try {
     execFileSync("powershell", ["-NoProfile", "-Command",
@@ -225,6 +227,10 @@ async function main() {
     }
   } catch (e) { /* pas encore de succès enregistré */ }
 
+  /* ⚠ 02/09/2026 : sur le runner cloud, out/ n'existe pas pour le canal ZS
+     (OUT = out-zs) → ENOENT sur le verrou, synchro ZS morte en 3 s avec code 0
+     depuis le 31/08 sans que personne ne le voie. */
+  mkdirSync(path.dirname(LOCK), { recursive: true });
   writeFileSync(LOCK, new Date().toISOString() + " pid=" + process.pid);
 
   /* Heartbeat du verrou : ce run dure souvent ~10 h, or les concurrents
