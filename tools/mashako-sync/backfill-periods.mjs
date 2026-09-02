@@ -23,7 +23,7 @@ const PROFILE = path.join(HERE, "browser-profile");
 /* ── DEUX CLASSEURS : ANT (défaut) et ZS (env MASHAKO_CFG=zs), publiés
    respectivement sous periods/ et zs/periods/ de la même branche. ── */
 const IS_ZS = process.env.MASHAKO_CFG === "zs";
-const OUT = path.join(HERE, IS_ZS ? "out-backfill-zs" : "out-backfill");
+const OUT = path.join(HERE, (IS_ZS ? "out-backfill-zs" : "out-backfill") + (process.env.MASHAKO_NOLOCK === "1" ? "-test" : "")); // tests : dossier séparé (le 02/09 un test a effacé les fichiers du run en cours)
 const LOG = path.join(HERE, IS_ZS ? "backfill-zs.log" : "backfill.log");
 const LOCK = path.join(HERE, "out", ".sync.lock"); // verrou PARTAGÉ avec sync.mjs (ANT + ZS)
 
