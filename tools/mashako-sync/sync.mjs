@@ -784,6 +784,33 @@ async function main() {
          feuille « collapse » — inviable. ×3 reste sous le seuil de file
          d'attente du serveur (voir la note de runBatch). */
       const pullZsLegacy = async (sh) => {
+        /* ── MOTEUR VizQL (02/09/2026) : cf. exportSheetLegacy côté Antenne.
+           Ici c'est LE poste de coût de la synchro ZS (7 feuilles × 519 zones à
+           ~33 s par URL ≈ 8-13 h) → ~13 s/zone à 6 sessions ≈ 20 min/feuille. ── */
+        if (process.env.MASHAKO_SESSION !== "0") {
+          try {
+            const { exportParSessions } = await import("./vizql-export.mjs");
+            const budget = Math.max(5, MAX_MINUTES - minutesActives());
+            const r = await exportParSessions({
+              ctx, wb: WORKBOOK, urlName: sh.urlName, slug: sh.slug, label: sh.label, month: CUR_MONTH, year: CUR_YEAR,
+              zones: cible, antLabel, log, deadline: Date.now() + budget * 60000,
+            });
+            tick();
+            const traitees = r.zonesOk + r.zonesVides;
+            if (r.budgetEpuise || traitees >= cible.length * 0.9) {
+              const a = acc[sh.slug] || (acc[sh.slug] = { label: sh.label, columns: [], rows: [] });
+              for (const c of r.columns) if (c !== "Antenne" && a.columns.indexOf(c) < 0) a.columns.push(c);
+              for (const o of r.records) {
+                a.rows.push(o);
+                (refreshedBySheet[sh.slug] = refreshedBySheet[sh.slug] || new Set()).add(o.Antenne);
+                globalDone.add(o.Antenne);
+              }
+              log(`    ✓ ${sh.label} : ${r.records.length} lignes par sessions VizQL (${r.zonesOk}/${cible.length} ZS avec données, ${r.minutes.toFixed(1)} min)`);
+              return r.records.length;
+            }
+            log(`    ⚠ ${sh.label} : moteur VizQL incomplet (${traitees}/${cible.length} ZS) — repli export par URL.`);
+          } catch (e) { log(`    ⚠ ${sh.label} : moteur VizQL indisponible (${String(e.message || e).slice(0, 120)}) — repli export par URL.`); }
+        }
         let nRows = 0, lotsVides = 0;
         for (let i = 0; i < cible.length; i += 60) {
           tick();
@@ -974,6 +1001,33 @@ async function main() {
       const zsToAnt = await loadZsAntMap();
       /* Ancien chemin (antenne par antenne) — conservé tel quel comme repli. */
       const exportSheetLegacy = async (sh) => {
+        /* ── MOTEUR VizQL (02/09/2026, vizql-export.mjs) : une session par
+           tranche d'antennes, categorical-filter + export « données résumé »
+           ≈ 13 s/antenne au lieu de ~33 s par export .csv URL (session neuve à
+           chaque requête). Même CSV. Sur la synchro du 01/09, ces 14 feuilles
+           coûtaient 2 h 46 sur 3 h 53. Repli sur le chemin URL ci-dessous si le
+           moteur échoue ou reste incomplet. MASHAKO_SESSION=0 pour le couper. ── */
+        if (process.env.MASHAKO_SESSION !== "0") {
+          try {
+            const { exportParSessions } = await import("./vizql-export.mjs");
+            const budget = Math.max(5, MAX_MINUTES - minutesActives());
+            const r = await exportParSessions({
+              ctx, wb: WORKBOOK, urlName: sh.urlName, slug: sh.slug, label: sh.label, month: CUR_MONTH, year: CUR_YEAR,
+              zones: activeAnt, antLabel, log, deadline: Date.now() + budget * 60000,
+            });
+            tick();
+            const traitees = r.zonesOk + r.zonesVides;
+            if (r.budgetEpuise || traitees >= activeAnt.length * 0.9) {
+              if (!r.records.length) { log(`  ✗ ${sh.label} : aucune donnée CSV (sessions VizQL : ${r.zonesVides} antennes vides)`); return false; }
+              const rel = `views/${sh.slug}.json`;
+              writeFileSync(path.join(OUT, rel), JSON.stringify({ name: sh.label, urlName: sh.slug, columns: r.columns, rows: r.records }));
+              dataFiles[sh.slug] = { file: rel, rows: r.records.length };
+              log(`  ✓ ${sh.label} : ${r.records.length} lignes (${r.zonesOk}/${activeAnt.length} antennes) [sessions VizQL, ${r.minutes.toFixed(1)} min]`);
+              return true;
+            }
+            log(`  ⚠ ${sh.label} : moteur VizQL incomplet (${traitees}/${activeAnt.length} antennes) — repli export par URL.`);
+          } catch (e) { log(`  ⚠ ${sh.label} : moteur VizQL indisponible (${String(e.message || e).slice(0, 120)}) — repli export par URL.`); }
+        }
         const pullAnt = async (ant) => {
           const r = await fetchBin(exportUrl(sh.urlName, "csv",
             `${encodeURIComponent(antField)}=${encodeURIComponent(ant)}&:refresh=yes`), 150000);

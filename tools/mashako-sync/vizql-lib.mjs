@@ -91,6 +91,11 @@ export async function openSession(ctx, wb, view, query, opts = {}) {
   /* toutes les feuilles portant le filtre de localisation (61 dans le classeur ZS) */
   s.filterSheets = [...new Set([...s.BOOT.matchAll(/"genFilterChangeEventPresModel":\{"fieldCaption": "_SELECTED_location_level"[^}]*"worksheet": "([^"]+)"/g)].map((m) => m[1]))];
   s.sheets = null; // renseigné par crosstabSheets()
+  /* feuilles DU dashboard courant, lues dans le bootstrap (visualIdPresModel
+     {worksheet, dashboard}) — indépendant du dialogue crosstab, qui exige les
+     vignettes (thumb-uris) et répond vide sans elles (classeur Antenne, 02/09). */
+  const dq = s.dashboard.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  s.dashboardSheets = [...new Set([...s.BOOT.matchAll(new RegExp('"worksheet":\\s*"([^"]+)",\\s*"dashboard":\\s*"' + dq + '"', "g"))].map((m) => m[1]))];
   s.params = Object.fromEntries([...s.BOOT.matchAll(/"fn": "(\[Parameters\]\.\[[^"]+\])","fieldCaption": "([^"]+)"/g)].map((m) => [m[2], m[1]]));
   s.tempfile = async (key, tries = 8) => {
     for (let e = 0; e < tries; e++) {
@@ -135,6 +140,8 @@ export async function setParam(s, caption, value) {
 export async function crosstabSheets(s, thumbs) {
   const d = await s.post("tabsrv/export-crosstab-server-dialog", { thumbnailUris: thumbs || "[]" });
   s.sheets = [...(d.txt || "").matchAll(/"sheetName"\s*:\s*"([^"]+)"\s*,\s*"sheetdocId"\s*:\s*"([^"]+)"/g)].map((m) => ({ name: m[1], id: m[2] }));
+  /* dialogue vide (pas de vignettes) → liste du bootstrap, sans sheetdocId */
+  if (!s.sheets.length && s.dashboardSheets && s.dashboardSheets.length) s.sheets = s.dashboardSheets.map((name) => ({ name, id: null }));
   return s.sheets;
 }
 

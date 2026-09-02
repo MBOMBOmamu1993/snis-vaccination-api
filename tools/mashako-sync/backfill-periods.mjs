@@ -498,7 +498,7 @@ async function main() {
           try {
             const { exportParSessions } = await import("./vizql-export.mjs");
             const r = await exportParSessions({
-              wb: WORKBOOK, urlName, label, month: t.month, year: t.year, zones: antennes, antLabel, log,
+              wb: WORKBOOK, urlName, slug: s, label, month: t.month, year: t.year, zones: antennes, antLabel, log,
               limit: Number(process.env.MASHAKO_ZS_LIMIT || 0) || undefined,
             });
             const traitees = r.zonesOk + r.zonesVides;

@@ -20,7 +20,7 @@ const DEST = "tools/mashako-sync/";
 const log = (m) => console.log(m);
 
 const DEFAUT = [
-  "sync.mjs", "backfill-periods.mjs", "vizql-lib.mjs", "vizql-export.mjs", "zs_expected_columns.json", "catchup.mjs", "publish-cache.mjs", "xlsx-lite.mjs",
+  "sync.mjs", "backfill-periods.mjs", "vizql-lib.mjs", "vizql-export.mjs", "zs_expected_columns.json", "ant_expected_columns.json", "catchup.mjs", "publish-cache.mjs", "xlsx-lite.mjs",
   "export-zs-as.mjs", "fusion-zs-as.mjs", "publish-zs-as.mjs", "extract-zs-filter-values.mjs",
   "urlnames.json", "urlnames-zs.json", "zs_ant_map.json", "zs_filter_values.json", "thumb-uris-zs.json",
   "package.json", "package-lock.json",

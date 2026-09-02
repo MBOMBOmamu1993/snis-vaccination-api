@@ -48,23 +48,31 @@ export function parseCsv(text) {
   return rows;
 }
 
-let EXPECTED = null;
-function expectedColumns(urlName) {
-  if (!EXPECTED) { try { EXPECTED = JSON.parse(readFileSync(path.join(HERE, "zs_expected_columns.json"), "utf8")); } catch (e) { EXPECTED = {}; } }
-  return EXPECTED[urlName] || null;
+const EXPECTED = {};
+/* colonnes de référence = celles des archives publiées (août 2026), par classeur */
+function expectedColumns(urlName, wb) {
+  const f = /Antenne/i.test(wb || "") ? "ant_expected_columns.json" : "zs_expected_columns.json";
+  if (!EXPECTED[f]) { try { EXPECTED[f] = JSON.parse(readFileSync(path.join(HERE, f), "utf8")); } catch (e) { EXPECTED[f] = {}; } }
+  return EXPECTED[f][urlName] || null;
 }
 
 /** Choisit, parmi les feuilles du dashboard, celle qui reproduit l'export .csv par URL. */
-async function choisirFeuille(s, urlName, log) {
-  const attendues = expectedColumns(urlName);
-  const sheets = await crosstabSheets(s, s.thumbs);
-  if (!sheets.length) throw new Error("dialogue crosstab vide (dashboard non rendu ?)");
+const slugify = (label) => String(label || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+async function choisirFeuille(s, urlName, log, slugArchive) {
+  /* clé des colonnes attendues = slug d'archive (« Performance_Resume_HZ »),
+     pas l'urlName Tableau (« PerformanceRsum_HZ ») */
+  const attendues = expectedColumns(slugArchive, s.wb) || expectedColumns(urlName, s.wb) || expectedColumns(slugify(s.dashboard), s.wb);
+  const sheets = s.sheets && s.sheets.length ? s.sheets : await crosstabSheets(s, s.thumbs);
+  if (!sheets.length) throw new Error("aucune feuille listée pour ce dashboard (dialogue vide et bootstrap muet)");
   let best = null;
   const ordre = attendues ? sheets : sheets.slice().sort((a, b) => (a.name < b.name ? -1 : 1));
   for (const sh of ordre) {
     if (/^_PAGE_TITLE/i.test(sh.name)) continue;
-    let vd;
-    try { vd = await viewDataColumns(s, sh.name); } catch (e) { log(`  ⚠ ${sh.name} : ${String(e.message).slice(0, 100)}`); continue; }
+    let vd = null, err = null;
+    for (let essai = 1; essai <= 3 && !vd; essai++) {
+      try { vd = await viewDataColumns(s, sh.name); } catch (e) { err = e; await sleep(1500 * essai); }
+    }
+    if (!vd) { log(`  ⚠ ${sh.name} : ${String(err && err.message).replace(/\s+/g, " ").slice(0, 100)}`); continue; }
     if (!vd.columns.length) continue;
     if (!attendues) { best = { sh, vd, score: 1 }; break; } // sans référence : 1re feuille (ordre ASCII) — règle de l'export .csv
     const hit = attendues.filter((c) => vd.captions.map(norm).includes(norm(c))).length;
@@ -80,27 +88,42 @@ async function choisirFeuille(s, urlName, log) {
 /**
  * Exporte une feuille « unitaire » pour toutes les zones, par sessions VizQL.
  * @param o { wb, urlName, label, month, year, zones: [valeurs composées], antLabel: {comp→court},
- *            sessions (déf. 6), log, limit (test), profile }
- * @returns { columns:[…], records:[{Antenne, …}], zonesOk, zonesVides, zonesEchec, sheet }
+ *            sessions (déf. 6), log, limit (test), profile,
+ *            ctx (contexte Playwright déjà ouvert — sync.mjs — réutilisé, jamais fermé ici),
+ *            deadline (ms epoch : on ne prend plus de zone au-delà → budgetEpuise=true) }
+ * @returns { columns:[…], records:[{Antenne, …}], zonesOk, zonesVides, zonesEchec, sheet, budgetEpuise, minutes }
  */
 export async function exportParSessions(o) {
   const log = o.log || ((m) => console.log(m));
   const P = Math.max(1, Math.min(Number(o.sessions || process.env.MASHAKO_SESSIONS || 6), 12));
   const zones = (o.limit ? o.zones.slice(0, o.limit) : o.zones).slice();
   const per = `_PARAM_month=${encodeURIComponent(o.month)}&_PARAM_year=${encodeURIComponent(o.year)}`;
-  const thumbs = (() => { try { return readFileSync(path.join(HERE, "thumb-uris-zs.json"), "utf8"); } catch (e) { return "[]"; } })();
-  const ctx = await launch({ profile: o.profile });
-  const out = { columns: [], records: [], zonesOk: 0, zonesVides: 0, zonesEchec: 0, sheet: null };
+  const thumbsFile = /Antenne/i.test(o.wb || "") ? "thumb-uris.json" : "thumb-uris-zs.json";
+  const thumbs = (() => { try { return readFileSync(path.join(HERE, thumbsFile), "utf8"); } catch (e) { return "[]"; } })();
+  const ownCtx = !o.ctx;
+  const ctx = o.ctx || await launch({ profile: o.profile });
+  const out = { columns: [], records: [], zonesOk: 0, zonesVides: 0, zonesEchec: 0, sheet: null, budgetEpuise: false };
   const colSet = new Set();
   const t0 = Date.now();
   let idx = 0; // curseur partagé : chaque session prend la zone suivante
-  const prochaine = () => (idx < zones.length ? zones[idx++] : null);
+  const prochaine = () => {
+    if (o.deadline && Date.now() > o.deadline) { if (!out.budgetEpuise) { out.budgetEpuise = true; log(`  ⏱ ${o.label} : budget temps épuisé — ${idx}/${zones.length} zones traitées, le reste au prochain run.`); } return null; }
+    return idx < zones.length ? zones[idx++] : null;
+  };
 
+  let choisie = null; // { name, columns } — même feuille pour toutes les sessions du run
   async function ouvrir(zone) {
     const s = await openSession(ctx, o.wb, o.urlName, `${per}&_SELECTED_location_level=${encodeURIComponent(zone)}`, { timeout: 240000 });
     s.thumbs = thumbs;
-    const f = await choisirFeuille(s, o.urlName, log);
-    if (!out.sheet) { out.sheet = f.sh.name; log(`  ↳ ${o.label} : feuille « ${f.sh.name} » (${f.vd.columns.length} colonnes, session ${(s.ms / 1000).toFixed(0)} s)`); }
+    await crosstabSheets(s, thumbs); // s.sheets : nécessaire à setZone (feuille du dashboard)
+    let f;
+    if (choisie) f = { sh: { name: choisie.name }, vd: { columns: choisie.columns } };
+    else {
+      f = await choisirFeuille(s, o.urlName, log, o.slug);
+      choisie = { name: f.sh.name, columns: f.vd.columns };
+      out.sheet = f.sh.name;
+      log(`  ↳ ${o.label} : feuille « ${f.sh.name} » (${f.vd.columns.length} colonnes, session ${(s.ms / 1000).toFixed(0)} s)`);
+    }
     return { s, f, courante: zone, exportsDepuisFiltre: 0 };
   }
 
@@ -149,7 +172,7 @@ export async function exportParSessions(o) {
     const n = Math.min(P, zones.length);
     await Promise.all(Array.from({ length: n }, (_, i) => travailleur(i + 1)));
   } finally {
-    await ctx.close().catch(() => { });
+    if (ownCtx) await ctx.close().catch(() => { });
   }
   out.columns = ["Antenne", ...colSet];
   out.minutes = (Date.now() - t0) / 60000;
