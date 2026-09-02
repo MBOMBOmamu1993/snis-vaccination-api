@@ -101,7 +101,7 @@ export async function exportParSessions(o) {
   const thumbsFile = /Antenne/i.test(o.wb || "") ? "thumb-uris.json" : "thumb-uris-zs.json";
   const thumbs = (() => { try { return readFileSync(path.join(HERE, thumbsFile), "utf8"); } catch (e) { return "[]"; } })();
   const ownCtx = !o.ctx;
-  const ctx = o.ctx || await launch({ profile: o.profile });
+  const ctx = o.ctx || await launch({ profile: o.profile, cookies: o.cookies });
   const out = { columns: [], records: [], zonesOk: 0, zonesVides: 0, zonesEchec: 0, sheet: null, budgetEpuise: false };
   const colSet = new Set();
   const t0 = Date.now();
@@ -120,17 +120,24 @@ export async function exportParSessions(o) {
   let reouverture = false;
   async function ouvrir(zone) {
     const s = await openSession(ctx, o.wb, o.urlName, `${per}&_SELECTED_location_level=${encodeURIComponent(zone)}`, { timeout: 240000 });
-    s.thumbs = thumbs;
-    await crosstabSheets(s, thumbs); // s.sheets : nécessaire à setZone (feuille du dashboard)
-    let f;
-    if (choisie) f = { sh: { name: choisie.name }, vd: { columns: choisie.columns } };
-    else {
-      f = await choisirFeuille(s, o.urlName, log, o.slug);
-      choisie = { name: f.sh.name, columns: f.vd.columns };
-      out.sheet = f.sh.name;
-      log(`  ↳ ${o.label} : feuille « ${f.sh.name} » (${f.vd.columns.length} colonnes, session ${(s.ms / 1000).toFixed(0)} s)`);
+    try {
+      s.thumbs = thumbs;
+      await crosstabSheets(s, thumbs); // s.sheets : nécessaire à setZone (feuille du dashboard)
+      let f;
+      if (choisie) f = { sh: { name: choisie.name }, vd: { columns: choisie.columns } };
+      else {
+        f = await choisirFeuille(s, o.urlName, log, o.slug);
+        choisie = { name: f.sh.name, columns: f.vd.columns };
+        out.sheet = f.sh.name;
+        log(`  ↳ ${o.label} : feuille « ${f.sh.name} » (${f.vd.columns.length} colonnes, session ${(s.ms / 1000).toFixed(0)} s)`);
+      }
+      return { s, f, courante: zone, zoneOuverture: zone, exportsDepuisFiltre: 0 };
+    } catch (e) {
+      /* ⚠ sans cette fermeture, chaque échec laissait une page Chrome ouverte :
+         boucle d'échecs → runner cloud à court de mémoire → run annulé (02/09). */
+      await s.close();
+      throw e;
     }
-    return { s, f, courante: zone, zoneOuverture: zone, exportsDepuisFiltre: 0 };
   }
 
   async function travailleur(n) {
