@@ -73,7 +73,14 @@ const DIRECT = process.env.MASHAKO_DIRECT !== "0";
 const COOKIE_FILE = path.join(HERE, "cookies-tableau.json");
 function cookieHeader() {
   try {
-    const raw = process.env.TABLEAU_COOKIES ? JSON.parse(process.env.TABLEAU_COOKIES) : JSON.parse(readFileSync(COOKIE_FILE, "utf8"));
+    /* PC : cookies-tableau.json (reconnecter.mjs) ; cloud : cookies-cache.json
+       (session-cache.mjs --charger) puis le secret TABLEAU_COOKIES. */
+    let raw = null;
+    for (const f of [COOKIE_FILE, path.join(HERE, "cookies-cache.json")]) {
+      try { raw = JSON.parse(readFileSync(f, "utf8")); break; } catch (e) { }
+    }
+    if (!raw && process.env.TABLEAU_COOKIES) raw = JSON.parse(process.env.TABLEAU_COOKIES);
+    if (!raw) return null;
     const list = Array.isArray(raw) ? raw : (raw.cookies || []);
     return list.filter((c) => c && c.name && c.value !== undefined).map((c) => `${c.name}=${c.value}`).join("; ") || null;
   } catch (e) { return null; }
