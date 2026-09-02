@@ -217,7 +217,7 @@ async function main() {
       if (!m || !Array.isArray(m.views)) continue;
       const manquantes = attendues.filter((l) => {
         const v = m.views.find((x) => x.name === l || x.urlName === slug(l));
-        return !(v && (v.file || v.empty));
+        return !(v && (v.file || (v.empty && v.mode === "unitaire")));
       });
       if (!manquantes.length) continue;
       const [y, mo] = key.split("-").map(Number);
@@ -421,6 +421,8 @@ async function main() {
       for (const label of dataLabels) {
         const urlName = urlCache[label], s = slug(label);
         let ok = [];
+        let unitaire = !BATCH_OK.test(label); // vrai si l'export a été (ou sera) fait zone par zone
+        let differe = false;
         if (BATCH_OK.test(label)) {
           /* groupé multi-valeurs : paquets de 51 antennes (ANT) ou 100 ZS (ZS) */
           const packs = [];
@@ -440,7 +442,18 @@ async function main() {
             }
             return null;
           });
-          for (const rows of results.filter(Boolean)) {
+          /* Même règle que sync.mjs : un export groupé SANS colonne de
+             localisation (« Zone de santé » côté ZS, « Antenne » côté ANT) ne
+             peut pas être attribué → ce n'est PAS « aucune donnée ». En phase
+             « groupe » on diffère la feuille (le complément la reprendra en
+             unitaire) ; en ciblé/complément on bascule tout de suite. */
+          const avecDonnees = results.filter(Boolean);
+          const attribuable = avecDonnees.some((rows) => rows[0].some((c) => IS_ZS ? /zone de sant/i.test(c) : (/^Antenne( En)?$/i.test(String(c).trim()) || /zone de sant/i.test(c))));
+          if (avecDonnees.length && !attribuable) {
+            if (ONLY.length) { log(`  ↪ ${label} : pas de colonne de localisation dans l'export groupé — repli unitaire (${antennes.length} requêtes).`); unitaire = true; }
+            else { log(`  ⏳ ${label} : pas de colonne de localisation dans l'export groupé — différée (complément unitaire).`); differe = true; }
+          }
+          if (!differe && !unitaire) for (const rows of avecDonnees) {
             const hdr = rows[0];
             const zi = hdr.findIndex((c) => /zone de sant/i.test(c));
             const ai = hdr.findIndex((c) => /^Antenne( En)?$/i.test(String(c).trim()));
@@ -453,7 +466,17 @@ async function main() {
               ok.push({ ant, rows: [hdr, rr] });
             }
           }
-        } else {
+          /* groupé sans aucune donnée (paquets vides / libellé seul) : en
+             phase groupe on diffère aussi — seul l'unitaire fait foi pour
+             déclarer une feuille vide. */
+          if (!differe && !unitaire && !ok.length && !avecDonnees.length && !ONLY.length) { log(`  ⏳ ${label} : export groupé vide — différée (complément unitaire).`); differe = true; }
+          if (!differe && !unitaire && !ok.length && !avecDonnees.length && ONLY.length) unitaire = true;
+        }
+        if (differe) {
+          metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: null, antImages: null, deferred: true });
+          continue;
+        }
+        if (unitaire) {
           const results = await runBatch(antennes, PARALLEL, async (ant) => {
             let r = await fetchBin(exportUrl(urlName, "csv",
               perParams(t, `${encodeURIComponent(antField)}=${encodeURIComponent(ant)}`)), 150000);
@@ -466,8 +489,8 @@ async function main() {
           ok = results.filter(Boolean);
         }
         if (!ok.length) {
-          log(`  ✗ ${label} : aucune donnée`);
-          metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: null, antImages: null, empty: true, checked_at: new Date().toISOString() });
+          log(`  ✗ ${label} : aucune donnée (${unitaire ? "vérifié zone par zone" : "groupé"})`);
+          metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: null, antImages: null, empty: true, mode: unitaire ? "unitaire" : "groupe", checked_at: new Date().toISOString() });
           continue;
         }
         const colSet = [];
@@ -522,7 +545,7 @@ async function main() {
           const views = old.views.slice();
           for (const v of metaViews) {
             const k = views.findIndex((x) => x.name === v.name || x.urlName === v.urlName);
-            if (k >= 0) views[k] = { ...views[k], ...v }; else views.push(v);
+            if (k >= 0) { if (!(v.deferred && views[k].file)) views[k] = { ...views[k], ...v }; } else views.push(v);
           }
           meta = { ...old, antennes: meta.antennes, views, repaired_at: new Date().toISOString(), repaired_views: [...(old.repaired_views || []), ...metaViews.map((v) => v.name)] };
           log(`  ↻ meta.json fusionné (${metaViews.length} vue(s) remplacée(s) sur ${views.length}).`);
