@@ -57,6 +57,41 @@ const REDO = (process.env.MASHAKO_REDO || "").split(",").map((s) => s.trim()).fi
   })
   .filter(Boolean);
 
+/* MASHAKO_ONLY="HZ Scores_ANT[,Infirmier_ANT…]" (avec MASHAKO_REDO=<période>) :
+   RÉPARATION CIBLÉE d'une archive déjà publiée — seules ces feuilles sont
+   ré-exportées puis FUSIONNÉES dans l'archive (meta.json conservé, vues
+   remplacées). Ajouté le 02/09/2026 pour HZ Scores_ANT de janvier 2026. */
+const ONLY = (process.env.MASHAKO_ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
+const onlyMatch = (label) => !ONLY.length || ONLY.some((o) => o.toLowerCase() === label.toLowerCase() || slug(o) === slug(label));
+
+/* MODE DIRECT (02/09/2026) : les exports CSV/PNG partent en HTTPS avec les
+   cookies de session (cookies-tableau.json, ou TABLEAU_COOKIES dans le cloud),
+   SANS Chrome : pas de profil à verrouiller, pas de rendu de vue, parallélisme
+   6 au lieu de 3. Repli automatique sur Playwright si la session directe est
+   refusée. MASHAKO_DIRECT=0 pour imposer le navigateur. */
+const DIRECT = process.env.MASHAKO_DIRECT !== "0";
+const COOKIE_FILE = path.join(HERE, "cookies-tableau.json");
+function cookieHeader() {
+  try {
+    const raw = process.env.TABLEAU_COOKIES ? JSON.parse(process.env.TABLEAU_COOKIES) : JSON.parse(readFileSync(COOKIE_FILE, "utf8"));
+    const list = Array.isArray(raw) ? raw : (raw.cookies || []);
+    return list.filter((c) => c && c.name && c.value !== undefined).map((c) => `${c.name}=${c.value}`).join("; ") || null;
+  } catch (e) { return null; }
+}
+const PAR = Number(process.env.MASHAKO_PAR || 0); // 0 = auto : 6 en direct, 3 via Chrome
+
+/* MASHAKO_PHASE=groupe|unitaire (02/09/2026). Mesuré côté ZS : un export
+   unitaire coûte ~33 s de calcul serveur (session VizQL neuve par requête),
+   ×519 zones ×7 feuilles ≈ 5 h 30 par période ; les 14 feuilles GROUPÉES
+   (paquets de 100 zones) tiennent en ~10-15 min. On archive donc d'abord le
+   groupé pour toutes les périodes, puis on complète l'unitaire période par
+   période (fusion dans le meta.json publié). MASHAKO_MERGE=0 : ne pas fusionner
+   avec l'archive existante (repartir d'un meta neuf — cas des archives fausses). */
+const PHASE = (process.env.MASHAKO_PHASE || "").toLowerCase();
+if (PHASE && !["groupe", "unitaire"].includes(PHASE)) { console.error(`MASHAKO_PHASE=${PHASE} inconnu (groupe|unitaire)`); process.exit(2); }
+const partial = () => ONLY.length > 0 || !!PHASE;
+const MERGE = process.env.MASHAKO_MERGE !== "0";
+
 /* Feuilles hors périmètre données (pages fixes / jamais exportables en CSV) —
    générique ANT+ZS ; côté ZS on ignore aussi OVM/surveillance/annexe (Felly). */
 const SKIP_DATA = IS_ZS
@@ -94,6 +129,10 @@ function parseCsv(text) {
   if (field !== "" || row.length) { row.push(field); rows.push(row); }
   return rows;
 }
+/* Un CSV réduit à la seule colonne « _SELECTED_location_level_LABEL » = la
+   feuille n'a AUCUNE donnée pour la période (Tableau n'exporte que le libellé
+   du filtre) — cas de Vaccine_expiration_ANT_P2 sur plusieurs mois. */
+const hasData = (rows) => rows.length > 1 && !(rows[0].length === 1 && /_LABEL$/i.test(String(rows[0][0] || "")));
 const vizFrame = (page) => page.frames().find((f) => f.url().includes(`/t/${SITE}/views/`)) || null;
 async function runBatch(items, size, fn) {
   const out = [];
@@ -105,12 +144,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function main() {
   mkdirSync(OUT, { recursive: true });
   mkdirSync(path.dirname(LOCK), { recursive: true });
-  /* verrou partagé : ne pas démarrer si une synchro tourne */
-  try {
-    const st = statSync(LOCK);
-    if (Date.now() - st.mtimeMs < 2 * 3600 * 1000) { log("⏭ Verrou récent (synchro en cours ?) — abandon, relancer plus tard."); return 3; }
-  } catch (e) { }
-  writeFileSync(LOCK, new Date().toISOString() + " backfill pid=" + process.pid);
+  /* verrou partagé : ne pas démarrer si une synchro tourne (MASHAKO_DRY=1 : lecture seule, verrou ignoré) */
+  const DRY = process.env.MASHAKO_DRY === "1";
+  if (!DRY) {
+    try {
+      const st = statSync(LOCK);
+      if (Date.now() - st.mtimeMs < 2 * 3600 * 1000) { log("⏭ Verrou récent (synchro en cours ?) — abandon, relancer plus tard."); return 3; }
+    } catch (e) { }
+    writeFileSync(LOCK, new Date().toISOString() + " backfill pid=" + process.pid);
+  }
 
   /* ZS : le mois COURANT d'abord. Avec 519 zones de santé, une passe complète
      prend plusieurs nuits (registre zs_ledger.json, couverture cumulative) ; on
@@ -118,9 +160,16 @@ async function main() {
      couvert, sinon les deux jobs se disputent la même session Tableau et les
      archives seraient très partielles. Lever avec MASHAKO_FORCE_BACKFILL=1. */
   if (IS_ZS && process.env.MASHAKO_FORCE_BACKFILL !== "1") {
-    let led = {};
-    try { led = JSON.parse(readFileSync(path.join(HERE, "zs_ledger.json"), "utf8")); } catch (e) { }
-    const n = Object.keys(led).length;
+    /* Source de vérité = l'archive PUBLIÉE du mois courant (zs/meta.json) ; le
+       registre local zs_ledger.json ne compte que ce que CETTE machine a
+       synchronisé (20 zones sur le PC depuis que le cloud est titulaire). */
+    let n = 0;
+    try { n = (((await (await fetch(`${RAW}/zs/meta.json?_r=${Date.now()}`)).json()).antennes || {}).values || []).length; } catch (e) { }
+    if (n < 500) {
+      let led = {};
+      try { led = JSON.parse(readFileSync(path.join(HERE, "zs_ledger.json"), "utf8")); } catch (e) { }
+      n = Math.max(n, Object.keys(led).length);
+    }
     if (n < 500) {
       log(`⏭ Mois courant pas encore couvert (${n}/519 zones de santé synchronisées) — backfill des mois passés en attente.`);
       rmSync(LOCK, { force: true });
@@ -132,13 +181,6 @@ async function main() {
   let have = [];
   try { have = (await (await fetch(`${RAW}/${PFX}periods/index.json?_r=${Date.now()}`)).json()).periods || []; } catch (e) { }
   let todo = [...REDO, ...TARGETS.filter((t) => !have.includes(t.key) && !REDO.some((r) => r.key === t.key))];
-  if (!todo.length) { log("✓ Toutes les périodes 2025-07 → 2026-05 sont archivées — rien à faire."); rmSync(LOCK, { force: true }); return 2; }
-  /* UNE période par exécution (défaut) : le run de 20h archive un mois par
-     soir (~20 min avec le groupé multi-valeurs), verrou libéré avant 23h30 —
-     fini les verrous de 27 h et les morts silencieuses à mi-parcours
-     (constaté 25-26/07). MASHAKO_BACKFILL_ALL=1 pour tout faire d'un coup. */
-  if (process.env.MASHAKO_BACKFILL_ALL !== "1") todo = todo.slice(0, 1);
-  log(`— Backfill périodes : ${todo.length} ce run (${TARGETS.filter((t) => !have.includes(t.key)).length} restantes : ${TARGETS.filter((t) => !have.includes(t.key)).map((t) => t.key).join(", ")}) —`);
 
   let urlCache;
   try { urlCache = JSON.parse(readFileSync(URLCACHE_FILE, "utf8")); }
@@ -149,13 +191,84 @@ async function main() {
   }
   const labels = Object.keys(urlCache);
 
+  /* ── AUTO-COMPLÉMENT (02/09/2026) : toutes les périodes archivées ? On cherche
+     alors les archives INCOMPLÈTES — feuilles de données attendues sans fichier
+     et non marquées vides (typiquement les feuilles unitaires laissées de côté
+     par la phase « groupe », ~33 s de calcul serveur par zone) — et on en
+     complète UNE par run, la plus récente d'abord, par lots de
+     MASHAKO_COMPLEMENT_MAX feuilles (défaut 3 ≈ 2 h 30 côté ZS, sous les 6 h
+     d'un job GitHub). Le mois courant (réécrit par la synchro) est exclu.
+     MASHAKO_COMPLEMENT=0 pour désactiver. Le complément est FUSIONNÉ. */
+  if (!todo.length && !ONLY.length && !PHASE && process.env.MASHAKO_COMPLEMENT !== "0") {
+    const attendues = labels.filter((l) => !SKIP_DATA.test(l));
+    let cur = null;
+    try { cur = (await (await fetch(`${RAW}/${PFX}periods/index.json?_r=${Date.now()}`)).json()).current || null; } catch (e) { }
+    for (const key of [...have].sort().reverse()) {
+      if (key === cur) continue;
+      let m = null;
+      try { m = await (await fetch(`${RAW}/${PFX}periods/${key}/meta.json?_r=${Date.now()}`)).json(); } catch (e) { }
+      if (!m || !Array.isArray(m.views)) continue;
+      const manquantes = attendues.filter((l) => {
+        const v = m.views.find((x) => x.name === l || x.urlName === slug(l));
+        return !(v && (v.file || v.empty));
+      });
+      if (!manquantes.length) continue;
+      const [y, mo] = key.split("-").map(Number);
+      const lot = manquantes.slice(0, Number(process.env.MASHAKO_COMPLEMENT_MAX || 3));
+      todo = [{ key, month: MOIS[mo - 1], year: String(y) }];
+      ONLY.push(...lot);
+      log(`— Auto-complément : ${PFX}${key} incomplète (${manquantes.length} feuille(s) sans fichier : ${manquantes.join(", ")}) → ce run : ${lot.join(", ")} —`);
+      break;
+    }
+  }
+  if (!todo.length) { log("✓ Toutes les périodes 2025-07 → 2026-05 sont archivées et complètes — rien à faire."); if (!DRY) rmSync(LOCK, { force: true }); return 2; }
+  if (DRY) { log(`[dry] périodes : ${todo.map((t) => t.key).join(", ")}${ONLY.length ? " — feuilles : " + ONLY.join(", ") : ""}${PHASE ? " — phase " + PHASE : ""} — rien lancé.`); return 0; }
+  /* UNE période par exécution (défaut) : le run de 20h archive un mois par
+     soir (~20 min avec le groupé multi-valeurs), verrou libéré avant 23h30 —
+     fini les verrous de 27 h et les morts silencieuses à mi-parcours
+     (constaté 25-26/07). MASHAKO_BACKFILL_ALL=1 pour tout faire d'un coup. */
+  if (process.env.MASHAKO_BACKFILL_ALL !== "1") todo = todo.slice(0, 1);
+  log(`— Backfill périodes : ${todo.length} ce run (${TARGETS.filter((t) => !have.includes(t.key)).length} restantes : ${TARGETS.filter((t) => !have.includes(t.key)).map((t) => t.key).join(", ")}) —`);
+
   /* Le profil Chrome peut être occupé par une synchro en cours (sync.mjs
      tourne parfois ~10 h ; son verrou est désormais rafraîchi par heartbeat,
      mais la fenêtre de 2 h laissait passer les runs longs → crash au
      lancement les 27-29/07). 3 essais espacés de 30 s (profil en cours de
      fermeture), puis abandon PROPRE — le verrou est libéré et le backfill
      retentera au prochain créneau — au lieu du crash non intercepté. */
-  let ctx = null, launchErr = null;
+  const exportUrl = (urlName, ext, params) =>
+    `${SERVER}/t/${SITE}/views/${WORKBOOK}/${encodeURIComponent(urlName)}.${ext}` + (params ? "?" + params : "");
+  let ctx = null, page = null, frame = null, mode = "chrome";
+  let fetchBin = null;
+  if (DIRECT) {
+    let ck = cookieHeader();
+    if (ck) {
+      const direct = async (url, timeout) => {
+        for (let essai = 0; essai < 2; essai++) {
+          const ctrl = new AbortController();
+          const to = setTimeout(() => ctrl.abort(), timeout);
+          try {
+            const r = await fetch(url, { headers: { Cookie: ck, Accept: "*/*" }, redirect: "manual", signal: ctrl.signal });
+            clearTimeout(to);
+            const ct = (r.headers.get("content-type") || "").toLowerCase();
+            if (r.ok && !ct.includes("html")) return { b64: Buffer.from(await r.arrayBuffer()).toString("base64"), ct };
+            if (r.status === 429 || r.status >= 500) return null; // bridage / panne serveur
+            /* HTML ou redirection SSO = session refusée ; reconnecter.mjs a
+               peut-être renouvelé les cookies entre-temps -> on relit UNE fois. */
+            const ck2 = cookieHeader();
+            if (ck2 && ck2 !== ck) { ck = ck2; continue; }
+            return null;
+          } catch (e) { clearTimeout(to); return null; }
+        }
+        return null;
+      };
+      const test = await direct(exportUrl(IS_ZS ? "FILTER_VALUES" : "FILTER_VALUES_ANT", "csv", ":refresh=yes"), 60000);
+      if (test && test.ct.includes("csv")) { fetchBin = direct; mode = "direct"; log("✓ Session valide (mode direct, sans navigateur)."); }
+      else log("⚠ Session directe refusée (cookies périmés ?) — repli sur Chrome.");
+    } else log("⚠ Aucun cookie de session (cookies-tableau.json / TABLEAU_COOKIES) — repli sur Chrome.");
+  }
+  if (mode === "chrome") {
+  let launchErr = null;
   for (let essai = 1; essai <= 3 && !ctx; essai++) {
     try {
       ctx = await chromium.launchPersistentContext(PROFILE, {
@@ -174,17 +287,20 @@ async function main() {
     rmSync(LOCK, { force: true });
     return 3;
   }
-  const page = ctx.pages()[0] || await ctx.newPage();
+  page = ctx.pages()[0] || await ctx.newPage();
+  }
+  const PARALLEL = PAR || (mode === "direct" ? 6 : 3);
+  log(`  mode ${mode}, parallélisme ${PARALLEL}${ONLY.length ? `, feuilles ciblées : ${ONLY.join(", ")}` : ""}${PHASE ? `, phase ${PHASE}` : ""}${partial() && !MERGE ? ", sans fusion" : ""}.`);
   let exitCode = 0;
   try {
+    if (mode === "chrome") {
     await page.goto(UI_URL, { waitUntil: "domcontentloaded", timeout: 120000 }).catch(() => { });
-    let frame = null;
     const dl = Date.now() + 90000;
     while (Date.now() < dl) { await sleep(3000); frame = vizFrame(page); if (frame) break; }
     if (!frame) throw new Error("Vue Tableau introuvable (session ?).");
     log("✓ Session valide.");
 
-    async function fetchBin(url, timeout) {
+    fetchBin = async function (url, timeout) {
       frame = vizFrame(page) || frame;
       const evalP = frame.evaluate(async (args) => {
         const ctrl = new AbortController();
@@ -202,34 +318,63 @@ async function main() {
       }, { url, timeout }).catch(() => null);
       const guard = new Promise((res) => setTimeout(() => res(null), timeout + 20000));
       return await Promise.race([evalP, guard]);
+    };
     }
-    const exportUrl = (urlName, ext, params) =>
-      `${SERVER}/t/${SITE}/views/${WORKBOOK}/${encodeURIComponent(urlName)}.${ext}` + (params ? "?" + params : "");
     const perParams = (t, extra) =>
       `_PARAM_month=${encodeURIComponent(t.month)}&_PARAM_year=${encodeURIComponent(t.year)}` + (extra ? "&" + extra : "") + "&:refresh=yes";
 
-    /* antennes composées + noms courts (FILTER_VALUES) */
-    const fvLabel = labels.find((l) => /FILTER/i.test(l));
-    const fvName = (fvLabel && urlCache[fvLabel]) || (IS_ZS ? "FILTERpage" : "FILTER_VALUES_ANT");
-    const fvR = await fetchBin(exportUrl(fvName, "csv", ":refresh=yes"), 150000);
-    if (!fvR) throw new Error("FILTER_VALUES illisible (throttle ?).");
-    const fvRows = parseCsv(Buffer.from(fvR.b64, "base64").toString("utf8"));
-    const fvCols = fvRows[0];
-    const si = fvCols.findIndex((c) => /SELECTED_location_level/i.test(c));
-    let ci = fvCols.findIndex((c) => (IS_ZS ? /zone|zs/i : /antenne/i).test(c));
-    if (ci < 0) ci = fvCols.findIndex((c) => /antenne|zone/i.test(c));
-    if (si < 0) throw new Error("Colonne _SELECTED_location_level absente de FILTER_VALUES.");
-    const antField = fvCols[si];
+    const shortLoc = (v) => {
+      let s = String(v || "").trim().replace(/\s*zones?\s+de\s+sant[eé]\s*$/i, "").trim();
+      return s.replace(/^[a-z]{2,3}\s+/, "").trim() || String(v || "").trim();
+    };
+    /* Localisations : ANT = FILTER_VALUES_ANT (51 antennes, libellé « Antenne En »).
+       ZS = les TROIS feuilles FILTER_VALUES, _2, _3 se partagent les 519 zones
+       (172-175 chacune) -> cumul obligatoire, puis complément par le référentiel
+       zs_filter_values.json (topojson). ⚠ Côté ZS la colonne « Antenne En » est
+       l'antenne de RATTACHEMENT : l'archive ZS de juin 2026 avait 172 zones
+       toutes libellées « Buta »… Le libellé ZS est le nom court de la zone. */
+    const fvLabels = labels.filter((l) => /^FILTER/i.test(l)).sort();
+    if (!fvLabels.length) fvLabels.push(IS_ZS ? "FILTER_VALUES" : "FILTER_VALUES_ANT");
+    let antField = null;
     const antLabel = {};
     const antennes = [];
-    for (const rr of fvRows.slice(1)) {
-      const comp = (rr[si] || "").trim(), court = (rr[ci >= 0 ? ci : si] || "").trim();
-      if (comp) { antennes.push(comp); antLabel[comp] = court || comp; }
+    for (const fvLabel of fvLabels) {
+      const fvName = urlCache[fvLabel] || fvLabel;
+      const fvR = await fetchBin(exportUrl(fvName, "csv", ":refresh=yes"), 150000);
+      if (!fvR) { log(`  ⚠ ${fvLabel} : CSV indisponible.`); continue; }
+      const fvRows = parseCsv(Buffer.from(fvR.b64, "base64").toString("utf8"));
+      if (fvRows.length < 2) continue;
+      const fvCols = fvRows[0];
+      const si = fvCols.findIndex((c) => /SELECTED_location_level/i.test(c));
+      if (si < 0) { log(`  ⚠ ${fvLabel} : colonne _SELECTED_location_level absente.`); continue; }
+      const ci = IS_ZS ? -1 : fvCols.findIndex((c) => /antenne/i.test(c));
+      antField = antField || fvCols[si];
+      let n = 0;
+      for (const rr of fvRows.slice(1)) {
+        const comp = (rr[si] || "").trim();
+        if (!comp || antennes.includes(comp)) continue;
+        const court = ci >= 0 ? (rr[ci] || "").trim() : "";
+        antennes.push(comp); antLabel[comp] = court || shortLoc(comp); n++;
+      }
+      log(`  ✓ ${fvLabel} : ${fvRows.length - 1} lignes (+${n}, cumul ${antennes.length}).`);
     }
-    log(`✓ ${antennes.length} antennes.`);
+    if (IS_ZS) {
+      try {
+        const ref = JSON.parse(readFileSync(path.join(HERE, "zs_filter_values.json"), "utf8"));
+        let added = 0;
+        for (const [court, comp] of Object.entries(ref)) {
+          if (comp && !antennes.includes(comp)) { antennes.push(comp); antLabel[comp] = court; added++; }
+        }
+        if (added) log(`  + ${added} zones de santé ajoutées depuis zs_filter_values.json (référentiel topojson).`);
+      } catch (e) { }
+    }
+    if (!antField) throw new Error("FILTER_VALUES illisible (throttle ?).");
+    if (!antennes.length) throw new Error("Aucune localisation lue dans FILTER_VALUES.");
+    log(`✓ ${antennes.length} ${IS_ZS ? "zones de santé" : "antennes"}.`);
 
-    const dataLabels = labels.filter((l) => !SKIP_DATA.test(l));
-    const imgLabels = labels.filter((l) => !SKIP_DATA.test(l) || IMG_ALSO.test(l));
+    let dataLabels = labels.filter((l) => !SKIP_DATA.test(l) && onlyMatch(l));
+    let imgLabels = labels.filter((l) => (!SKIP_DATA.test(l) || IMG_ALSO.test(l)) && onlyMatch(l));
+    if (ONLY.length && !dataLabels.length && !imgLabels.length) throw new Error(`MASHAKO_ONLY : aucune feuille ne correspond à « ${ONLY.join(", ")} ».`);
     /* ── LISTE BLANCHE multi-valeurs (même règle que sync.mjs, validée 27/07) :
        ces feuilles gardent toutes leurs lignes en export groupé ; les autres
        (pivots « Noms de mesures », classements, cartes) collapsent → unitaire. */
@@ -237,6 +382,9 @@ async function main() {
       ? /^(Supervision_HZ_P\d|CDF_HZ_P\d|CDF_HZ_NF|S.+ances_HZ_P\d|Taux d.abandon_HZ_P\d|Infirmier_HZ_P\d|Vaccine_expiration_HZ_P\d)$/i
       : /^(HZ Scores_ANT|Supervision_Quality_ANT|Supervision_ANT_P1|R.+union_ANT|CDF_ANT|S.+ances_ANT|Taux d.abandon_ANT|Infirmier_ANT|Livraison_ANT_P2)$/i;
     const ZS_PACK = Number(process.env.MASHAKO_ZS_PACK || 100);
+    if (PHASE === "groupe") { dataLabels = dataLabels.filter((l) => BATCH_OK.test(l)); imgLabels = imgLabels.filter((l) => BATCH_OK.test(l)); }
+    else if (PHASE === "unitaire") { dataLabels = dataLabels.filter((l) => !BATCH_OK.test(l)); imgLabels = imgLabels.filter((l) => !BATCH_OK.test(l)); }
+    if (PHASE) log(`  phase « ${PHASE} » : ${dataLabels.length} feuilles de données, ${imgLabels.length} images.`);
     /* carte ZS (nom court) → antenne, pour l'attribution des exports groupés
        ANT (les lignes « Zone de sante » n'ont pas de colonne antenne). */
     let zsToAnt = {};
@@ -244,10 +392,6 @@ async function main() {
       try { zsToAnt = JSON.parse(readFileSync(path.join(HERE, "zs_ant_map.json"), "utf8")).map || {}; } catch (e) { }
       log(`  carte ZS→antenne : ${Object.keys(zsToAnt).length} ZS (cache).`);
     }
-    const shortLoc = (v) => {
-      let s = String(v || "").trim().replace(/\s*zones?\s+de\s+sant[eé]\s*$/i, "").trim();
-      return s.replace(/^[a-z]{2,3}\s+/, "").trim() || String(v || "").trim();
-    };
 
     for (const t of todo) {
       writeFileSync(LOCK, new Date().toISOString() + " backfill " + t.key);
@@ -274,12 +418,20 @@ async function main() {
           /* groupé multi-valeurs : paquets de 51 antennes (ANT) ou 100 ZS (ZS) */
           const packs = [];
           for (let i = 0; i < antennes.length; i += IS_ZS ? ZS_PACK : 51) packs.push(antennes.slice(i, i + (IS_ZS ? ZS_PACK : 51)));
-          const results = await runBatch(packs, 3, async (pack) => {
-            const r = await fetchBin(exportUrl(urlName, "csv",
-              perParams(t, `${encodeURIComponent(antField)}=${pack.map(encodeURIComponent).join(",")}`)), 150000);
-            if (!r) return null;
-            const rows = parseCsv(Buffer.from(r.b64, "base64").toString("utf8"));
-            return rows.length > 1 ? rows : null;
+          const results = await runBatch(packs, PARALLEL, async (pack) => {
+            /* Un paquet de 100 zones qui revient vide n'est pas « sans donnée »,
+               c'est un serveur saturé (constaté 02/09 : 1 octet après 42 s) → on
+               réessaie, sinon 100 zones disparaissent en silence de l'archive. */
+            for (let essai = 1; essai <= 3; essai++) {
+              const r = await fetchBin(exportUrl(urlName, "csv",
+                perParams(t, `${encodeURIComponent(antField)}=${pack.map(encodeURIComponent).join(",")}`)), 150000);
+              if (r) {
+                const rows = parseCsv(Buffer.from(r.b64, "base64").toString("utf8"));
+                if (hasData(rows)) return rows;
+              }
+              if (essai < 3) { log(`  ⟳ ${label} : paquet de ${pack.length} vide ou refusé (essai ${essai}/3) — pause 20 s…`); await sleep(20000); }
+            }
+            return null;
           });
           for (const rows of results.filter(Boolean)) {
             const hdr = rows[0];
@@ -295,16 +447,22 @@ async function main() {
             }
           }
         } else {
-          const results = await runBatch(antennes, 3, async (ant) => {
-            const r = await fetchBin(exportUrl(urlName, "csv",
+          const results = await runBatch(antennes, PARALLEL, async (ant) => {
+            let r = await fetchBin(exportUrl(urlName, "csv",
               perParams(t, `${encodeURIComponent(antField)}=${encodeURIComponent(ant)}`)), 150000);
+            if (!r) { await sleep(10000); r = await fetchBin(exportUrl(urlName, "csv",
+              perParams(t, `${encodeURIComponent(antField)}=${encodeURIComponent(ant)}`)), 150000); }
             if (!r) return null;
             const rows = parseCsv(Buffer.from(r.b64, "base64").toString("utf8"));
-            return rows.length > 1 ? { ant, rows } : null;
+            return hasData(rows) ? { ant, rows } : null;
           });
           ok = results.filter(Boolean);
         }
-        if (!ok.length) { log(`  ✗ ${label} : aucune donnée`); continue; }
+        if (!ok.length) {
+          log(`  ✗ ${label} : aucune donnée`);
+          metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: null, antImages: null, empty: true, checked_at: new Date().toISOString() });
+          continue;
+        }
         const colSet = [];
         for (const { rows } of ok) for (const c of rows[0]) if (colSet.indexOf(c) < 0) colSet.push(c);
         const columns = ["Antenne", ...colSet];
@@ -323,7 +481,8 @@ async function main() {
         okSheets++;
         log(`  ✓ ${label} : ${records.length} lignes (${BATCH_OK.test(label) ? "groupé" : `${ok.length}/${antennes.length} ${IS_ZS ? "ZS" : "antennes"}`})`);
       }
-      if (okSheets < Math.ceil(dataLabels.length * 0.6)) {
+      if (partial() && !okSheets && !imgLabels.length) { log(`⚠ ${t.key} : aucune donnée obtenue pour ${ONLY.join(", ") || PHASE} — archive inchangée.`); continue; }
+      if (!partial() && okSheets < Math.ceil(dataLabels.length * 0.6)) {
         log(`⛔ Période ${t.key} trop incomplète (${okSheets}/${dataLabels.length} feuilles) — non publiée, arrêt (throttle probable).`);
         exitCode = 1; break;
       }
@@ -339,7 +498,7 @@ async function main() {
           else metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: rel, antImages: null });
         }
       }
-      const meta = {
+      let meta = {
         generated_at: new Date().toISOString(),
         server: SERVER.replace("https://", ""), site: SITE,
         workbook: { name: IS_ZS ? "Mashako 3.0 — Rapport de Zone de Santé" : "Mashako 3.0 — Rapport de l'Antenne", contentUrl: WORKBOOK },
@@ -348,6 +507,20 @@ async function main() {
         antennes: { field: antField, values: antennes.map((a) => antLabel[a] || a) },
         views: metaViews,
       };
+      if (partial() && MERGE) {
+        /* réparation / complément : on repart du meta.json PUBLIÉ et on ne remplace que les vues ré-exportées */
+        let old = null;
+        try { old = await (await fetch(`${RAW}/${PFX}periods/${t.key}/meta.json?_r=${Date.now()}`)).json(); } catch (e) { }
+        if (old && Array.isArray(old.views)) {
+          const views = old.views.slice();
+          for (const v of metaViews) {
+            const k = views.findIndex((x) => x.name === v.name || x.urlName === v.urlName);
+            if (k >= 0) views[k] = { ...views[k], ...v }; else views.push(v);
+          }
+          meta = { ...old, antennes: meta.antennes, views, repaired_at: new Date().toISOString(), repaired_views: [...(old.repaired_views || []), ...metaViews.map((v) => v.name)] };
+          log(`  ↻ meta.json fusionné (${metaViews.length} vue(s) remplacée(s) sur ${views.length}).`);
+        }
+      }
       writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2));
       /* ── publication : base_tree (ne touche qu'à periods/<key>/ et l'index) ── */
       log(`→ Publication de l'archive ${t.key}…`);
@@ -371,7 +544,7 @@ async function main() {
       writeFileSync(tp, JSON.stringify({ base_tree: oldTree, tree: entries }));
       const newTree = JSON.parse(gh([`${REPO}/git/trees`, "-X", "POST"], tp)).sha;
       const cp = path.join(OUT, "_commit.json");
-      writeFileSync(cp, JSON.stringify({ message: `auto: archive Mashako ${t.key} (${okSheets} feuilles, ${antennes.length} antennes)`, tree: newTree, parents: [] }));
+      writeFileSync(cp, JSON.stringify({ message: partial() ? `auto: archive Mashako ${PFX}${t.key} — ${PHASE || "réparation"} (${okSheets} feuilles${ONLY.length ? " : " + metaViews.map((v) => v.name).join(", ") : ""})` : `auto: archive Mashako ${PFX}${t.key} (${okSheets} feuilles, ${antennes.length} ${IS_ZS ? "zones de santé" : "antennes"})`, tree: newTree, parents: [] }));
       const commit = JSON.parse(gh([`${REPO}/git/commits`, "-X", "POST"], cp)).sha;
       gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`, "-X", "PATCH", "-f", `sha=${commit}`, "-F", "force=true"]);
       log(`✓ Archive ${t.key} publiée (${commit.slice(0, 9)}) — ${okSheets} feuilles de données.`);
@@ -400,14 +573,14 @@ async function main() {
           log(`⚠ Détail par aire de santé de ${t.key} interrompu (${String(e.message).slice(0, 90)}) — repris au prochain run.`);
         }
       }
-      await sleep(3 * 60 * 1000); // pause entre périodes (ménage le serveur)
+      if (t !== todo[todo.length - 1]) await sleep(3 * 60 * 1000); // pause entre périodes (ménage le serveur)
     }
     if (exitCode === 0) log("— Backfill terminé : toutes les périodes demandées sont archivées —");
   } catch (e) {
     log(`✖ ÉCHEC backfill : ${e.message}`);
     exitCode = 1;
   } finally {
-    await ctx.close().catch(() => { });
+    if (ctx) await ctx.close().catch(() => { });
     rmSync(LOCK, { force: true });
   }
   return exitCode;
