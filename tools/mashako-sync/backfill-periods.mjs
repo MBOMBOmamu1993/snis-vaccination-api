@@ -153,7 +153,10 @@ async function main() {
   mkdirSync(path.dirname(LOCK), { recursive: true });
   /* verrou partagé : ne pas démarrer si une synchro tourne (MASHAKO_DRY=1 : lecture seule, verrou ignoré) */
   const DRY = process.env.MASHAKO_DRY === "1";
-  if (!DRY) {
+  /* Tests du moteur VizQL (02/09/2026) : MASHAKO_NOLOCK=1 (verrou ignoré),
+     MASHAKO_ZS_LIMIT=n (n zones seulement), MASHAKO_NO_PUBLISH=1 (rien poussé). */
+  const NOLOCK = process.env.MASHAKO_NOLOCK === "1";
+  if (!DRY && !NOLOCK) {
     try {
       const st = statSync(LOCK);
       if (Date.now() - st.mtimeMs < 2 * 3600 * 1000) { log("⏭ Verrou récent (synchro en cours ?) — abandon, relancer plus tard."); return 3; }
@@ -417,13 +420,23 @@ async function main() {
       rmSync(path.join(OUT, "views"), { recursive: true, force: true });
       mkdirSync(path.join(OUT, "views"), { recursive: true });
       const metaViews = [];
+      /* complément / ciblé : le meta publié dit déjà quelles feuilles n'ont pas
+         de colonne de localisation en groupé → unitaire d'emblée (on économise
+         les 6 paquets + relances, ~1 min 30 par feuille). */
+      let dejaDifferees = new Set();
+      if (partial()) {
+        try {
+          const old = await (await fetch(`${RAW}/${PFX}periods/${t.key}/meta.json?_r=${Date.now()}`)).json();
+          for (const v of old.views || []) if (v.deferred || (v.empty && v.mode !== "unitaire")) dejaDifferees.add(v.name);
+        } catch (e) { }
+      }
       let okSheets = 0;
       for (const label of dataLabels) {
         const urlName = urlCache[label], s = slug(label);
         let ok = [];
-        let unitaire = !BATCH_OK.test(label); // vrai si l'export a été (ou sera) fait zone par zone
+        let unitaire = !BATCH_OK.test(label) || dejaDifferees.has(label); // vrai si l'export a été (ou sera) fait zone par zone
         let differe = false;
-        if (BATCH_OK.test(label)) {
+        if (!unitaire) {
           /* groupé multi-valeurs : paquets de 51 antennes (ANT) ou 100 ZS (ZS) */
           const packs = [];
           for (let i = 0; i < antennes.length; i += IS_ZS ? ZS_PACK : 51) packs.push(antennes.slice(i, i + (IS_ZS ? ZS_PACK : 51)));
@@ -476,7 +489,28 @@ async function main() {
           metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: null, antImages: null, deferred: true });
           continue;
         }
-        if (unitaire) {
+        let viaSession = false;
+        if (unitaire && IS_ZS && process.env.MASHAKO_SESSION !== "0") {
+          /* ── MOTEUR VizQL (02/09/2026) : une session par tranche de zones,
+             categorical-filter (~10-15 s) + export résumé (~0,7 s) par zone, au
+             lieu d'un export .csv par URL (~33 s, session neuve à chaque fois).
+             Même CSV que l'URL (vérifié). Repli URL si le moteur échoue. ── */
+          try {
+            const { exportParSessions } = await import("./vizql-export.mjs");
+            const r = await exportParSessions({
+              wb: WORKBOOK, urlName, label, month: t.month, year: t.year, zones: antennes, antLabel, log,
+              limit: Number(process.env.MASHAKO_ZS_LIMIT || 0) || undefined,
+            });
+            const traitees = r.zonesOk + r.zonesVides;
+            const attendu = Number(process.env.MASHAKO_ZS_LIMIT || 0) || antennes.length;
+            if (traitees >= attendu * 0.9) {
+              const cols = r.columns.filter((c) => c !== "Antenne");
+              for (const rec of r.records) ok.push({ ant: rec.Antenne, rows: [cols, cols.map((c) => rec[c] ?? "")] });
+              viaSession = true;
+            } else log(`  ⚠ ${label} : moteur VizQL incomplet (${traitees}/${attendu} zones) — repli export par URL.`);
+          } catch (e) { log(`  ⚠ ${label} : moteur VizQL indisponible (${String(e.message || e).slice(0, 120)}) — repli export par URL.`); }
+        }
+        if (unitaire && !viaSession) {
           const results = await runBatch(antennes, PARALLEL, async (ant) => {
             let r = await fetchBin(exportUrl(urlName, "csv",
               perParams(t, `${encodeURIComponent(antField)}=${encodeURIComponent(ant)}`)), 150000);
@@ -507,9 +541,9 @@ async function main() {
         }
         const rel = `views/${s}.json`;
         writeFileSync(path.join(OUT, rel), JSON.stringify({ name: label, urlName: s, columns, rows: records }));
-        metaViews.push({ name: label, urlName: s, rows: records.length, file: rel, image: null, antImages: null });
+        metaViews.push({ name: label, urlName: s, rows: records.length, file: rel, image: null, antImages: null, ...(viaSession ? { engine: "vizql-session" } : {}) });
         okSheets++;
-        log(`  ✓ ${label} : ${records.length} lignes (${BATCH_OK.test(label) ? "groupé" : `${ok.length}/${antennes.length} ${IS_ZS ? "ZS" : "antennes"}`})`);
+        log(`  ✓ ${label} : ${records.length} lignes (${viaSession ? "sessions VizQL" : !unitaire ? "groupé" : `${ok.length}/${antennes.length} ${IS_ZS ? "ZS" : "antennes"}`})`);
       }
       if (partial() && !okSheets && !imgLabels.length) { log(`⚠ ${t.key} : aucune donnée obtenue pour ${ONLY.join(", ") || PHASE} — archive inchangée.`); continue; }
       if (!partial() && okSheets < Math.ceil(dataLabels.length * 0.6)) {
@@ -553,6 +587,7 @@ async function main() {
       }
       writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2));
       /* ── publication : base_tree (ne touche qu'à periods/<key>/ et l'index) ── */
+      if (process.env.MASHAKO_NO_PUBLISH === "1") { log(`[test] ${t.key} : ${metaViews.length} vue(s) prêtes dans ${OUT} — publication SAUTÉE (MASHAKO_NO_PUBLISH).`); continue; }
       log(`→ Publication de l'archive ${t.key}…`);
       const oldRef = JSON.parse(gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`]));
       const oldTree = JSON.parse(gh([`${REPO}/git/commits/${oldRef.object.sha}`])).tree.sha;
@@ -611,7 +646,7 @@ async function main() {
     exitCode = 1;
   } finally {
     if (ctx) await ctx.close().catch(() => { });
-    rmSync(LOCK, { force: true });
+    if (!NOLOCK) rmSync(LOCK, { force: true });
   }
   return exitCode;
 }
