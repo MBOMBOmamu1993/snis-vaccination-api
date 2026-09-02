@@ -246,6 +246,10 @@ jobs:
           # hérite de l'environnement) — ex. juillet 2026 refait après coup.
           MASHAKO_REDO: ${{ inputs.redo || '' }}
           MASHAKO_FORCE_BACKFILL: ${{ inputs.force_backfill || '' }}
+          # Compléments d'archives (02/09/2026) : une période complète par run
+          # (13 feuilles unitaires, ~3-4 h) avec 6 sessions VizQL en parallèle.
+          MASHAKO_COMPLEMENT_MAX: "13"
+          MASHAKO_SESSIONS: "6"
         run: |
           node cloud/arbitre.mjs --tache "$TACHE" \
             --canal "${MASHAKO_CANAL_UTILE:-$CANAL}" \
