@@ -30,6 +30,19 @@ export async function launch(opts = {}) {
       });
     } catch (e) { if (essai === 3) throw e; await sleep(20000); }
   }
+  /* profil secondaire (le profil principal est verrouillé par un autre run) :
+     on y injecte la session Tableau du PC (cookies-tableau.json). */
+  if (opts.cookies) {
+    try {
+      const raw = JSON.parse((await import("node:fs")).readFileSync(opts.cookies, "utf8"));
+      const list = (Array.isArray(raw) ? raw : raw.cookies || []).filter((c) => c && c.name && c.domain).map((c) => ({
+        name: c.name, value: String(c.value), domain: c.domain, path: c.path || "/",
+        expires: typeof c.expires === "number" && c.expires > 0 ? c.expires : -1,
+        httpOnly: !!c.httpOnly, secure: c.secure !== false, sameSite: ["Strict", "Lax", "None"].includes(c.sameSite) ? c.sameSite : "Lax",
+      }));
+      await ctx.addCookies(list);
+    } catch (e) { console.log(`⚠ cookies non injectés : ${String(e.message).slice(0, 120)}`); }
+  }
   return ctx;
 }
 
@@ -87,9 +100,34 @@ export async function openSession(ctx, wb, view, query, opts = {}) {
   const evt = /"genFilterChangeEventPresModel":\{"fieldCaption": "_SELECTED_location_level","fn": "([^"]+)","globalFieldName": "([^"]+)","visualIdPresModel":\{"worksheet": "([^"]+)"/.exec(s.BOOT);
   s.filterField = evt ? evt[2] : null;
   s.filterWorksheet = evt ? evt[3] : null;
+  /* 2e source (02/09) : certains dashboards (Supervision_HZ_P3…) n'émettent aucun
+     « filter-changed-event » mais décrivent le filtre dans filtersJson :
+     {"caption":"_SELECTED_location_level","name":["<datasource>","<champ>"],"targetSheets":[…]} */
+  s.filterTargets = null;
+  {
+    /* on extrait chaque chaîne filtersJson (JSON encodé dans du JSON), sans regex fragile */
+    const B = s.BOOT; const re = /"filtersJson":\s*"/g; let m;
+    while ((m = re.exec(B)) && !s.filterTargets) {
+      let j = m.index + m[0].length;
+      while (j < B.length && B[j] !== '"') { if (B[j] === "\\") j += 2; else j++; }
+      try {
+        const arr = JSON.parse(JSON.parse('"' + B.slice(m.index + m[0].length, j) + '"'));
+        for (const f of arr || []) {
+          if (f && f.caption === "_SELECTED_location_level" && Array.isArray(f.name) && f.name.length >= 2) {
+            if (!s.filterField) s.filterField = `[${f.name[0]}].[${f.name[1]}]`;
+            s.filterTargets = Array.isArray(f.targetSheets) ? f.targetSheets.slice() : [];
+            if (!s.filterWorksheet && s.filterTargets.length) s.filterWorksheet = s.filterTargets[0];
+            break;
+          }
+        }
+      } catch (e) { }
+      re.lastIndex = j;
+    }
+  }
   s.dashboard = (/"dashboardPresModel":\{"sheetPath":\{"sheetName": "([^"]+)","isDashboard": true/.exec(s.BOOT) || /"active_tab":\s*"([^"]+)"/.exec(s.BOOT) || [])[1] || view;
   /* toutes les feuilles portant le filtre de localisation (61 dans le classeur ZS) */
   s.filterSheets = [...new Set([...s.BOOT.matchAll(/"genFilterChangeEventPresModel":\{"fieldCaption": "_SELECTED_location_level"[^}]*"worksheet": "([^"]+)"/g)].map((m) => m[1]))];
+  if (!s.filterSheets.length && s.filterTargets) s.filterSheets = s.filterTargets.slice();
   s.sheets = null; // renseigné par crosstabSheets()
   /* feuilles DU dashboard courant, lues dans le bootstrap (visualIdPresModel
      {worksheet, dashboard}) — indépendant du dialogue crosstab, qui exige les

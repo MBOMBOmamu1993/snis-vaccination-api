@@ -112,6 +112,12 @@ export async function exportParSessions(o) {
   };
 
   let choisie = null; // { name, columns } — même feuille pour toutes les sessions du run
+  /* Certaines feuilles (Supervision_HZ_P3 : texte + index()) renvoient un export
+     VIDE (même sans en-tête) après categorical-filter, alors que l'export juste
+     après le bootstrap est bon (constaté 02/09). Pour elles on rouvre une session
+     par zone (paramètre d'URL) : plus lent (~30 s/zone) mais juste. Le mode est
+     détecté au premier export vide-sans-en-tête et partagé entre les sessions. */
+  let reouverture = false;
   async function ouvrir(zone) {
     const s = await openSession(ctx, o.wb, o.urlName, `${per}&_SELECTED_location_level=${encodeURIComponent(zone)}`, { timeout: 240000 });
     s.thumbs = thumbs;
@@ -124,7 +130,7 @@ export async function exportParSessions(o) {
       out.sheet = f.sh.name;
       log(`  ↳ ${o.label} : feuille « ${f.sh.name} » (${f.vd.columns.length} colonnes, session ${(s.ms / 1000).toFixed(0)} s)`);
     }
-    return { s, f, courante: zone, exportsDepuisFiltre: 0 };
+    return { s, f, courante: zone, zoneOuverture: zone, exportsDepuisFiltre: 0 };
   }
 
   async function travailleur(n) {
@@ -136,9 +142,20 @@ export async function exportParSessions(o) {
     while (zone) {
       try {
         if (!w) { w = await ouvrir(zone); }
-        else if (w.courante !== zone) { await setZone(w.s, zone); w.courante = zone; }
+        else if (w.courante !== zone) {
+          if (reouverture) { await w.s.close(); w = await ouvrir(zone); }
+          else { await setZone(w.s, zone); w.courante = zone; }
+        }
         const csv = await summaryCsv(w.s, w.f.sh.name, w.f.vd.columns);
         const rows = parseCsv(csv.replace(/^﻿/, ""));
+        if (!rows.length && !reouverture && w.courante === zone && zone !== w.zoneOuverture) {
+          /* export sans en-tête après un changement de zone = le filtre en session
+             ne rafraîchit pas cette feuille → on rejoue la zone en rouvrant. */
+          reouverture = true;
+          log(`  ↺ ${o.label} : export vide après changement de zone — passage en mode « une session par zone » (plus lent, ~30 s/zone).`);
+          await w.s.close(); w = null;
+          continue;
+        }
         const hdr = rows[0] || [];
         const vide = rows.length < 2 || (hdr.length === 1 && /_LABEL$/i.test(String(hdr[0] || "")));
         if (vide) out.zonesVides++;
