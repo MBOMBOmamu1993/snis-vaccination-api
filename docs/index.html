@@ -14342,6 +14342,17 @@
                 return '<span title="Le miroir Tableau est rempli par tranches de zones de santé : les suivantes apparaîtront automatiquement au fil des synchronisations." style="padding:7px 12px;border-radius:9px;background:#eef1f8;border:1.5px solid #c9d4ea;color:#1a237e;font-size:12px;font-weight:800">🔄 Couverture : ' + k + '/' + t + ' ZS</span>';
             }
             var mkMeta = null, mkViewCache = {}, mkBase = MK_RAW, mkAnt = '', mkCurView = null, mkCurBox = null;
+            /* 03/09/2026 : les grosses vues (Vaccine_dispo_HZ_* complètes : ~67 Mo en objets)
+               sont publiées en format compact { format:'compact', columns, data:[[…]] } —
+               le blob GitHub n'acceptait plus le fichier. On regonfle en objets ici, une
+               seule fois, avant la mise en cache. */
+            function mkInflate(d) {
+                if (!d || d.format !== 'compact' || !Array.isArray(d.data)) return d;
+                var cols = d.columns || [];
+                d.rows = d.data.map(function (a) { var o = {}; for (var i = 0; i < cols.length; i++) o[cols[i]] = (a[i] == null ? '' : a[i]); return o; });
+                delete d.data;
+                return d;
+            }
             /* ── Filtres en cascade (demande Felly 27/07, ramenés au choix UNIQUE
                le 28/07 : les visuels sont bâtis pour une antenne et une période) ──
                mkProv  : province choisie (cascade Province → Antenne sur les 2 pages).
@@ -14789,7 +14800,7 @@
                 wait();
                 fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(function (d) { mkViewCache[v.file] = d; show(d); })
+                    .then(function (d) { d = mkInflate(d); mkViewCache[v.file] = d; show(d); })
                     .catch(function (e) { box.innerHTML = '<div style="padding:22px;color:#c0392b">Impossible de charger cette vue (' + esc(e.message) + ').</div>'; });
             }
 
@@ -15025,6 +15036,7 @@
                 fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
                     .then(function (r) { return r.json(); })
                     .then(function (dd) {
+                        dd = mkInflate(dd);
                         var r0 = (dd.rows || [])[0] || {};
                         if (r0['_PARAM_month']) mkPeriodCache = { m: r0['_PARAM_month'], y: r0['_PARAM_year'] || '' };
                         mkPeriodCbs.forEach(function (f) { f(mkPeriodCache); }); mkPeriodCbs = [];
@@ -15039,7 +15051,7 @@
                 if (mkViewCache[v.file]) { cb(mkViewCache[v.file]); return; }
                 fetch(mkUrl(v.file) + '?v=' + encodeURIComponent(mkMeta.generated_at || ''), { cache: 'no-store' })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(function (d) { mkViewCache[v.file] = d; cb(d); })
+                    .then(function (d) { d = mkInflate(d); mkViewCache[v.file] = d; cb(d); })
                     .catch(function () { cb(null); });
             }
             /* Topojson ZS RDC : nom normalisé ("aketi") → nom complet ("bu Aketi Zone de Santé") */
