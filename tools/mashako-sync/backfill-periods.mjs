@@ -85,6 +85,26 @@ function cookieHeader() {
     return list.filter((c) => c && c.name && c.value !== undefined).map((c) => `${c.name}=${c.value}`).join("; ") || null;
   } catch (e) { return null; }
 }
+/* 03/09/2026 : TOUTES les sources de cookies, dans l'ordre, pour que le mode
+   direct essaie chacune. Dans le cloud, cookies-cache.json (reconduit par le run
+   précédent) peut être PÉRIMÉ alors que le secret TABLEAU_COOKIES vient d'être
+   republié par le PC : le 03/09 à 11:49 le cache mort a fait basculer le run sur
+   Chrome (3 exports en parallèle, moteur VizQL bloqué par le profil occupé). */
+function cookieCandidates() {
+  const out = [];
+  const pousser = (src, raw) => {
+    try {
+      const list = Array.isArray(raw) ? raw : (raw.cookies || []);
+      const h = list.filter((c) => c && c.name && c.value !== undefined).map((c) => `${c.name}=${c.value}`).join("; ");
+      if (h && !out.some((o) => o.header === h)) out.push({ src, header: h });
+    } catch (e) { }
+  };
+  for (const f of [COOKIE_FILE, path.join(HERE, "cookies-cache.json")]) {
+    try { pousser(path.basename(f), JSON.parse(readFileSync(f, "utf8"))); } catch (e) { }
+  }
+  if (process.env.TABLEAU_COOKIES) { try { pousser("TABLEAU_COOKIES", JSON.parse(process.env.TABLEAU_COOKIES)); } catch (e) { } }
+  return out;
+}
 const PAR = Number(process.env.MASHAKO_PAR || 0); // 0 = auto : 6 en direct, 3 via Chrome
 
 /* MASHAKO_PHASE=groupe|unitaire (02/09/2026). Mesuré côté ZS : un export
@@ -267,7 +287,8 @@ async function main() {
   let ctx = null, page = null, frame = null, mode = "chrome";
   let fetchBin = null;
   if (DIRECT) {
-    let ck = cookieHeader();
+    const candidats = cookieCandidates();
+    let ck = candidats.length ? candidats[0].header : null;
     if (ck) {
       const direct = async (url, timeout) => {
         for (let essai = 0; essai < 2; essai++) {
@@ -288,9 +309,15 @@ async function main() {
         }
         return null;
       };
-      const test = await direct(exportUrl(IS_ZS ? "FILTER_VALUES" : "FILTER_VALUES_ANT", "csv", ":refresh=yes"), 60000);
-      if (test && test.ct.includes("csv")) { fetchBin = direct; mode = "direct"; log("✓ Session valide (mode direct, sans navigateur)."); }
-      else log("⚠ Session directe refusée (cookies périmés ?) — repli sur Chrome.");
+      let source = null;
+      for (const c of candidats) {
+        ck = c.header;
+        const test = await direct(exportUrl(IS_ZS ? "FILTER_VALUES" : "FILTER_VALUES_ANT", "csv", ":refresh=yes"), 90000);
+        if (test && test.ct.includes("csv")) { source = c.src; break; }
+        log(`  ⚠ session directe refusée avec ${c.src}${candidats.indexOf(c) < candidats.length - 1 ? " — essai de la source suivante" : ""}.`);
+      }
+      if (source) { fetchBin = direct; mode = "direct"; log(`✓ Session valide (mode direct, sans navigateur, source : ${source}).`); }
+      else log("⚠ Session directe refusée par toutes les sources (cookies périmés ?) — repli sur Chrome.");
     } else log("⚠ Aucun cookie de session (cookies-tableau.json / TABLEAU_COOKIES) — repli sur Chrome.");
   }
   if (mode === "chrome") {
@@ -584,6 +611,9 @@ async function main() {
               wb: WORKBOOK, urlName, slug: s, label, month: t.month, year: t.year, zones: antennes, antLabel, log,
               limit: Number(process.env.MASHAKO_ZS_LIMIT || 0) || undefined,
               deadline: DEADLINE || undefined,
+              /* en mode Chrome le profil est déjà ouvert par ce script : le moteur
+                 doit réutiliser ce contexte (ProcessSingleton sinon — 03/09 11:51). */
+              ctx: mode === "chrome" && ctx ? ctx : undefined,
             });
             const traitees = r.zonesOk + r.zonesVides;
             const attendu = Number(process.env.MASHAKO_ZS_LIMIT || 0) || antennes.length;
