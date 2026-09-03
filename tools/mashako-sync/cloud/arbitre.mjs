@@ -55,7 +55,12 @@ const DECIDER = args.includes("--decider");
 const DRY = args.includes("--dry") || DECIDER;
 const FORCE = args.includes("--force");
 const TACHE = opt("--tache", "sync");
-const CANAUX = opt("--canal") ? [opt("--canal")] : ["ant", "zs", "as"];
+/* 03/09/2026 : sans --canal, le BACKFILL examine la ZS d'abord — c'est elle qui
+   a 13 périodes à compléter (7 feuilles unitaires × 519 zones), alors que la
+   nuit du 02/09 les runs bihoraires ont dépensé leurs créneaux sur l'Antenne
+   (Vaccine_expiration_ANT_P2, feuille vide sur Tableau) pendant que juillet ZS
+   attendait. La synchro quotidienne garde l'ordre Antenne → ZS. */
+const CANAUX = opt("--canal") ? [opt("--canal")] : (TACHE === "backfill" ? ["zs", "ant", "as"] : ["ant", "zs", "as"]);
 
 function log(msg) {
   const ligne = `[${new Date().toISOString()}] ${msg}`;

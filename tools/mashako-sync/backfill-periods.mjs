@@ -99,6 +99,18 @@ if (PHASE && !["groupe", "unitaire"].includes(PHASE)) { console.error(`MASHAKO_P
 const partial = () => ONLY.length > 0 || !!PHASE;
 const MERGE = process.env.MASHAKO_MERGE !== "0";
 
+/* MASHAKO_BUDGET_MIN (03/09/2026) : budget temps du run, en minutes. Passé ce
+   délai on ne COMMENCE plus de feuille et le moteur VizQL ne prend plus de zone :
+   ce qui est acquis est publié, le reste revient au prochain run. Indispensable
+   dans le cloud : un job GitHub est tué à 350 min, et le run du 02/09 (13
+   feuilles de juillet ZS, 5 h 50 de travail, 6 feuilles acquises) a été perdu
+   EN ENTIER faute de publication intermédiaire. 0 = illimité (PC). */
+const BUDGET_MIN = Number(process.env.MASHAKO_BUDGET_MIN || 0);
+const T0 = Date.now();
+const DEADLINE = BUDGET_MIN > 0 ? T0 + BUDGET_MIN * 60000 : 0;
+const budgetEpuise = () => DEADLINE > 0 && Date.now() > DEADLINE;
+const minutesEcoulees = () => Math.round((Date.now() - T0) / 60000);
+
 /* Feuilles hors périmètre données (pages fixes / jamais exportables en CSV) —
    générique ANT+ZS ; côté ZS on ignore aussi OVM/surveillance/annexe (Felly). */
 const SKIP_DATA = IS_ZS
@@ -435,7 +447,74 @@ async function main() {
         } catch (e) { }
       }
       let okSheets = 0;
+      let arreteParBudget = false;
+
+      /* ── PUBLICATION (extraite le 03/09/2026 pour être appelée après CHAQUE
+         feuille acquise en mode complément/réparation) : base_tree, ne touche
+         qu'à periods/<key>/ et l'index. Les blobs des fichiers de vues sont
+         envoyés une seule fois par run (cache par chemin). ── */
+      const blobCache = new Map();
+      const publier = async (intermediaire) => {
+        let meta = {
+          generated_at: new Date().toISOString(),
+          server: SERVER.replace("https://", ""), site: SITE,
+          workbook: { name: IS_ZS ? "Mashako 3.0 — Rapport de Zone de Santé" : "Mashako 3.0 — Rapport de l'Antenne", contentUrl: WORKBOOK },
+          main_view: MAIN_VIEW, original_url: UI_URL, sync_mode: "backfill-period",
+          period: { key: t.key, month: t.month, year: t.year },
+          antennes: { field: antField, values: antennes.map((a) => antLabel[a] || a) },
+          views: metaViews,
+        };
+        if (partial() && MERGE) {
+          /* réparation / complément : on repart du meta.json PUBLIÉ et on ne remplace que les vues ré-exportées */
+          let old = null;
+          try { old = await (await fetch(`${RAW}/${PFX}periods/${t.key}/meta.json?_r=${Date.now()}`)).json(); } catch (e) { }
+          if (old && Array.isArray(old.views)) {
+            const views = old.views.slice();
+            for (const v of metaViews) {
+              const k = views.findIndex((x) => x.name === v.name || x.urlName === v.urlName);
+              if (k >= 0) { if (!(v.deferred && views[k].file)) views[k] = { ...views[k], ...v }; } else views.push(v);
+            }
+            meta = { ...old, antennes: meta.antennes, views, repaired_at: new Date().toISOString(), repaired_views: [...new Set([...(old.repaired_views || []), ...metaViews.map((v) => v.name)])] };
+            if (!intermediaire) log(`  ↻ meta.json fusionné (${metaViews.length} vue(s) remplacée(s) sur ${views.length}).`);
+          }
+        }
+        writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2));
+        if (process.env.MASHAKO_NO_PUBLISH === "1") { if (!intermediaire) log(`[test] ${t.key} : ${metaViews.length} vue(s) prêtes dans ${OUT} — publication SAUTÉE (MASHAKO_NO_PUBLISH).`); return false; }
+        log(intermediaire ? `  → Publication intermédiaire de ${t.key} (${okSheets} feuille(s) acquise(s), ${minutesEcoulees()} min)…` : `→ Publication de l'archive ${t.key}…`);
+        const oldRef = JSON.parse(gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`]));
+        const oldTree = JSON.parse(gh([`${REPO}/git/commits/${oldRef.object.sha}`])).tree.sha;
+        const blob = (buf) => {
+          const p = path.join(OUT, "_payload.json");
+          writeFileSync(p, JSON.stringify({ encoding: "base64", content: buf.toString("base64") }));
+          return JSON.parse(gh([`${REPO}/git/blobs`, "-X", "POST"], p)).sha;
+        };
+        const blobFichier = (rel) => { if (!blobCache.has(rel)) blobCache.set(rel, blob(readFileSync(path.join(OUT, rel)))); return blobCache.get(rel); };
+        const entries = [{ path: `${PFX}periods/${t.key}/meta.json`, mode: "100644", type: "blob", sha: blob(Buffer.from(JSON.stringify(meta, null, 2))) }];
+        for (const v of metaViews) {
+          if (v.file) entries.push({ path: `${PFX}periods/${t.key}/${v.file}`, mode: "100644", type: "blob", sha: blobFichier(v.file) });
+          if (v.image) entries.push({ path: `${PFX}periods/${t.key}/${v.image}`, mode: "100644", type: "blob", sha: blobFichier(v.image) });
+        }
+        let curIdx = { periods: [] };
+        try { curIdx = await (await fetch(`${RAW}/${PFX}periods/index.json?_r=${Date.now()}`)).json(); } catch (e) { }
+        const keys = [...new Set([...(curIdx.periods || []), t.key])].sort();
+        entries.push({ path: `${PFX}periods/index.json`, mode: "100644", type: "blob", sha: blob(Buffer.from(JSON.stringify({ periods: keys, current: curIdx.current || null, updated_at: new Date().toISOString() }, null, 2))) });
+        const tp = path.join(OUT, "_tree.json");
+        writeFileSync(tp, JSON.stringify({ base_tree: oldTree, tree: entries }));
+        const newTree = JSON.parse(gh([`${REPO}/git/trees`, "-X", "POST"], tp)).sha;
+        const cp = path.join(OUT, "_commit.json");
+        writeFileSync(cp, JSON.stringify({ message: partial() ? `auto: archive Mashako ${PFX}${t.key} — ${PHASE || "réparation"}${intermediaire ? " (intermédiaire)" : ""} (${okSheets} feuilles${ONLY.length ? " : " + metaViews.map((v) => v.name).join(", ") : ""})` : `auto: archive Mashako ${PFX}${t.key} (${okSheets} feuilles, ${antennes.length} ${IS_ZS ? "zones de santé" : "antennes"})`, tree: newTree, parents: [] }));
+        const commit = JSON.parse(gh([`${REPO}/git/commits`, "-X", "POST"], cp)).sha;
+        gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`, "-X", "PATCH", "-f", `sha=${commit}`, "-F", "force=true"]);
+        log(`${intermediaire ? "  " : ""}✓ Archive ${t.key} publiée (${commit.slice(0, 9)}) — ${okSheets} feuilles de données${intermediaire ? " (intermédiaire)" : ""}.`);
+        return true;
+      };
+      const PROGRESSIF = partial() && MERGE && process.env.MASHAKO_PUBLISH_PROGRESSIF !== "0";
+
       for (const label of dataLabels) {
+        if (budgetEpuise()) {
+          log(`  ⏱ Budget ${BUDGET_MIN} min épuisé (${minutesEcoulees()} min) — ${label} et les feuilles suivantes attendront le prochain run.`);
+          arreteParBudget = true; break;
+        }
         const urlName = urlCache[label], s = slug(label);
         let ok = [];
         let unitaire = !BATCH_OK.test(label) || dejaDifferees.has(label); // vrai si l'export a été (ou sera) fait zone par zone
@@ -504,9 +583,16 @@ async function main() {
             const r = await exportParSessions({
               wb: WORKBOOK, urlName, slug: s, label, month: t.month, year: t.year, zones: antennes, antLabel, log,
               limit: Number(process.env.MASHAKO_ZS_LIMIT || 0) || undefined,
+              deadline: DEADLINE || undefined,
             });
             const traitees = r.zonesOk + r.zonesVides;
             const attendu = Number(process.env.MASHAKO_ZS_LIMIT || 0) || antennes.length;
+            if (r.budgetEpuise && traitees < attendu * 0.9) {
+              /* coupée par le budget : ni repli URL (des heures), ni marquage — la feuille reste
+                 « manquante » et le prochain run la reprend depuis le début. */
+              log(`  ⏱ ${label} : interrompue par le budget (${traitees}/${attendu} zones) — reprise au prochain run.`);
+              arreteParBudget = true; break;
+            }
             if (traitees >= attendu * 0.9) {
               const cols = r.columns.filter((c) => c !== "Antenne");
               for (const rec of r.records) ok.push({ ant: rec.Antenne, rows: [cols, cols.map((c) => rec[c] ?? "")] });
@@ -548,7 +634,11 @@ async function main() {
         metaViews.push({ name: label, urlName: s, rows: records.length, file: rel, image: null, antImages: null, ...(viaSession ? { engine: "vizql-session" } : {}) });
         okSheets++;
         log(`  ✓ ${label} : ${records.length} lignes (${viaSession ? "sessions VizQL" : !unitaire ? "groupé" : `${ok.length}/${antennes.length} ${IS_ZS ? "ZS" : "antennes"}`})`);
+        /* complément : publier tout de suite — un run tué (limite GitHub, OOM,
+           PC éteint) ne perd plus que la feuille en cours. */
+        if (PROGRESSIF) { try { await publier(true); } catch (e) { log(`  ⚠ publication intermédiaire ratée (${String(e.message || e).slice(0, 120)}) — on continue.`); } }
       }
+      if (arreteParBudget && !okSheets && !imgLabels.length) { log(`⏱ ${t.key} : budget épuisé sans feuille acquise — archive inchangée.`); continue; }
       if (partial() && !okSheets && !imgLabels.length) { log(`⚠ ${t.key} : aucune donnée obtenue pour ${ONLY.join(", ") || PHASE} — archive inchangée.`); continue; }
       if (!partial() && okSheets < Math.ceil(dataLabels.length * 0.6)) {
         log(`⛔ Période ${t.key} trop incomplète (${okSheets}/${dataLabels.length} feuilles) — non publiée, arrêt (throttle probable).`);
@@ -566,57 +656,8 @@ async function main() {
           else metaViews.push({ name: label, urlName: s, rows: 0, file: null, image: rel, antImages: null });
         }
       }
-      let meta = {
-        generated_at: new Date().toISOString(),
-        server: SERVER.replace("https://", ""), site: SITE,
-        workbook: { name: IS_ZS ? "Mashako 3.0 — Rapport de Zone de Santé" : "Mashako 3.0 — Rapport de l'Antenne", contentUrl: WORKBOOK },
-        main_view: MAIN_VIEW, original_url: UI_URL, sync_mode: "backfill-period",
-        period: { key: t.key, month: t.month, year: t.year },
-        antennes: { field: antField, values: antennes.map((a) => antLabel[a] || a) },
-        views: metaViews,
-      };
-      if (partial() && MERGE) {
-        /* réparation / complément : on repart du meta.json PUBLIÉ et on ne remplace que les vues ré-exportées */
-        let old = null;
-        try { old = await (await fetch(`${RAW}/${PFX}periods/${t.key}/meta.json?_r=${Date.now()}`)).json(); } catch (e) { }
-        if (old && Array.isArray(old.views)) {
-          const views = old.views.slice();
-          for (const v of metaViews) {
-            const k = views.findIndex((x) => x.name === v.name || x.urlName === v.urlName);
-            if (k >= 0) { if (!(v.deferred && views[k].file)) views[k] = { ...views[k], ...v }; } else views.push(v);
-          }
-          meta = { ...old, antennes: meta.antennes, views, repaired_at: new Date().toISOString(), repaired_views: [...(old.repaired_views || []), ...metaViews.map((v) => v.name)] };
-          log(`  ↻ meta.json fusionné (${metaViews.length} vue(s) remplacée(s) sur ${views.length}).`);
-        }
-      }
-      writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2));
-      /* ── publication : base_tree (ne touche qu'à periods/<key>/ et l'index) ── */
-      if (process.env.MASHAKO_NO_PUBLISH === "1") { log(`[test] ${t.key} : ${metaViews.length} vue(s) prêtes dans ${OUT} — publication SAUTÉE (MASHAKO_NO_PUBLISH).`); continue; }
-      log(`→ Publication de l'archive ${t.key}…`);
-      const oldRef = JSON.parse(gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`]));
-      const oldTree = JSON.parse(gh([`${REPO}/git/commits/${oldRef.object.sha}`])).tree.sha;
-      const blob = (buf) => {
-        const p = path.join(OUT, "_payload.json");
-        writeFileSync(p, JSON.stringify({ encoding: "base64", content: buf.toString("base64") }));
-        return JSON.parse(gh([`${REPO}/git/blobs`, "-X", "POST"], p)).sha;
-      };
-      const entries = [{ path: `${PFX}periods/${t.key}/meta.json`, mode: "100644", type: "blob", sha: blob(Buffer.from(JSON.stringify(meta, null, 2))) }];
-      for (const v of metaViews) {
-        if (v.file) entries.push({ path: `${PFX}periods/${t.key}/${v.file}`, mode: "100644", type: "blob", sha: blob(readFileSync(path.join(OUT, v.file))) });
-        if (v.image) entries.push({ path: `${PFX}periods/${t.key}/${v.image}`, mode: "100644", type: "blob", sha: blob(readFileSync(path.join(OUT, v.image))) });
-      }
-      let curIdx = { periods: [] };
-      try { curIdx = await (await fetch(`${RAW}/${PFX}periods/index.json?_r=${Date.now()}`)).json(); } catch (e) { }
-      const keys = [...new Set([...(curIdx.periods || []), t.key])].sort();
-      entries.push({ path: `${PFX}periods/index.json`, mode: "100644", type: "blob", sha: blob(Buffer.from(JSON.stringify({ periods: keys, current: curIdx.current || null, updated_at: new Date().toISOString() }, null, 2))) });
-      const tp = path.join(OUT, "_tree.json");
-      writeFileSync(tp, JSON.stringify({ base_tree: oldTree, tree: entries }));
-      const newTree = JSON.parse(gh([`${REPO}/git/trees`, "-X", "POST"], tp)).sha;
-      const cp = path.join(OUT, "_commit.json");
-      writeFileSync(cp, JSON.stringify({ message: partial() ? `auto: archive Mashako ${PFX}${t.key} — ${PHASE || "réparation"} (${okSheets} feuilles${ONLY.length ? " : " + metaViews.map((v) => v.name).join(", ") : ""})` : `auto: archive Mashako ${PFX}${t.key} (${okSheets} feuilles, ${antennes.length} ${IS_ZS ? "zones de santé" : "antennes"})`, tree: newTree, parents: [] }));
-      const commit = JSON.parse(gh([`${REPO}/git/commits`, "-X", "POST"], cp)).sha;
-      gh([`${REPO}/git/refs/heads/${DATA_BRANCH}`, "-X", "PATCH", "-f", `sha=${commit}`, "-F", "force=true"]);
-      log(`✓ Archive ${t.key} publiée (${commit.slice(0, 9)}) — ${okSheets} feuilles de données.`);
+      if (!(await publier(false))) continue;
+      if (arreteParBudget) log(`⏱ ${t.key} : run borné par le budget — les feuilles restantes seront complétées au prochain run.`);
 
       /* ── Détail par aire de santé de la période archivée ───────────────────
          Hors flux par défaut, et c'est délibéré : le tableau croisé du détail
