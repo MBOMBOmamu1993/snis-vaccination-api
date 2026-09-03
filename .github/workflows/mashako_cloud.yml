@@ -250,6 +250,11 @@ jobs:
           # (13 feuilles unitaires, ~3-4 h) avec 6 sessions VizQL en parallèle.
           MASHAKO_COMPLEMENT_MAX: "13"
           MASHAKO_SESSIONS: "6"
+          # Budget temps (03/09/2026) : le job est tué à 350 min par GitHub et le run
+          # du 02/09 (juillet ZS, 5 h 50, 6 feuilles acquises) a été perdu en entier.
+          # Passé 270 min on ne commence plus de feuille ; chaque feuille acquise est
+          # désormais publiée immédiatement (publication progressive).
+          MASHAKO_BUDGET_MIN: "270"
         run: |
           node cloud/arbitre.mjs --tache "$TACHE" \
             --canal "${MASHAKO_CANAL_UTILE:-$CANAL}" \
