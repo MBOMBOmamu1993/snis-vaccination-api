@@ -117,6 +117,12 @@ const PAR = Number(process.env.MASHAKO_PAR || 0); // 0 = auto : 6 en direct, 3 v
 const PHASE = (process.env.MASHAKO_PHASE || "").toLowerCase();
 if (PHASE && !["groupe", "unitaire"].includes(PHASE)) { console.error(`MASHAKO_PHASE=${PHASE} inconnu (groupe|unitaire)`); process.exit(2); }
 const partial = () => ONLY.length > 0 || !!PHASE;
+/* 03/09/2026 : Supervision_HZ_P3 s'exporte « une session par zone » (~30 s/zone,
+   4 h+) — en tête de lot elle a bloqué le complément d'août 2026 toute une
+   journée (run 33755629701 : 1 feuille en 5 h). Les feuilles lentes passent en
+   DERNIER, après les feuilles ordinaires (~15 s/zone à 6 sessions). */
+const LENTES = /^Supervision_HZ_P3$/i;
+const lentesEnDernier = (a, b) => Number(LENTES.test(a)) - Number(LENTES.test(b));
 const MERGE = process.env.MASHAKO_MERGE !== "0";
 
 /* MASHAKO_BUDGET_MIN (03/09/2026) : budget temps du run, en minutes. Passé ce
@@ -146,7 +152,40 @@ function log(msg) {
 function gh(args, inputFile) {
   const a = ["api", ...args];
   if (inputFile) a.push("--input", inputFile);
-  return execFileSync("gh", a, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  /* 03/09/2026 : un POST de blob de ~90 Mo a répondu HTTP 504 (run 33755629701) et
+     la feuille acquise (77 374 lignes) a été perdue → 3 essais sur 5xx / délai. */
+  for (let essai = 1; ; essai++) {
+    try { return execFileSync("gh", a, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }); }
+    catch (e) {
+      const msg = String(e.stderr || e.message || "");
+      if (essai >= 3 || !/HTTP 5\d\d|couldn't respond|timed? ?out|ECONNRESET|unexpected EOF/i.test(msg)) throw e;
+      log(`  ⟳ GitHub API : ${msg.trim().split("\n").pop().slice(0, 100)} — nouvel essai ${essai + 1}/3 dans ${10 * essai} s…`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10000 * essai);
+    }
+  }
+}
+/* 03/09/2026 : FORMAT COMPACT pour les grosses vues. Vaccine_dispo_HZ_P1 complète
+   (519 zones × ~150 lignes × 63 colonnes) pèse ~67 Mo en objets {colonne: valeur}
+   — les clés répétées font 80 % du fichier — et son blob n'est pas passé sur
+   l'API GitHub. Au-delà de MASHAKO_COMPACT_MO (déf. 15) on publie
+   { columns, data: [[…]] } (~7 fois plus petit) ; le front (mkInflate) et la
+   reprise ci-dessous regonflent. */
+const COMPACT_OCTETS = Number(process.env.MASHAKO_COMPACT_MO || 15) * 1e6;
+function lignesDeVue(obj) {
+  if (obj && obj.format === "compact" && Array.isArray(obj.data)) {
+    const cols = obj.columns || [];
+    return obj.data.map((a) => { const o = {}; cols.forEach((c, i) => { o[c] = a[i] ?? ""; }); return o; });
+  }
+  return (obj && Array.isArray(obj.rows)) ? obj.rows : [];
+}
+function serialiserVue(obj, log) {
+  const txt = JSON.stringify(obj);
+  if (txt.length <= COMPACT_OCTETS) return txt;
+  const cols = obj.columns || [];
+  const data = obj.rows.map((r) => cols.map((c) => r[c] ?? ""));
+  const compact = JSON.stringify({ ...obj, rows: undefined, format: "compact", data });
+  if (log) log(`  ▤ ${obj.urlName} : format compact (${(compact.length / 1e6).toFixed(1)} Mo au lieu de ${(txt.length / 1e6).toFixed(1)} Mo).`);
+  return compact;
 }
 function slug(label) {
   return label.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "feuille";
@@ -256,8 +295,8 @@ async function main() {
       if (!m || !Array.isArray(m.views)) continue;
       const manquantes = attendues.filter((l) => {
         const v = m.views.find((x) => x.name === l || x.urlName === slug(l));
-        return !(v && (v.file || (v.empty && v.mode === "unitaire")));
-      });
+        return !(v && !v.partial && (v.file || (v.empty && v.mode === "unitaire")));
+      }).sort(lentesEnDernier);
       if (!manquantes.length) continue;
       const [y, mo] = key.split("-").map(Number);
       const lot = manquantes.slice(0, Number(process.env.MASHAKO_COMPLEMENT_MAX || 3));
@@ -426,6 +465,7 @@ async function main() {
     log(`✓ ${antennes.length} ${IS_ZS ? "zones de santé" : "antennes"}.`);
 
     let dataLabels = labels.filter((l) => !SKIP_DATA.test(l) && onlyMatch(l));
+    if (partial()) dataLabels.sort(lentesEnDernier);
     let imgLabels = labels.filter((l) => (!SKIP_DATA.test(l) || IMG_ALSO.test(l)) && onlyMatch(l));
     if (ONLY.length && !dataLabels.length && !imgLabels.length) throw new Error(`MASHAKO_ONLY : aucune feuille ne correspond à « ${ONLY.join(", ")} ».`);
     /* ── LISTE BLANCHE multi-valeurs (même règle que sync.mjs, validée 27/07) :
@@ -467,10 +507,16 @@ async function main() {
          de colonne de localisation en groupé → unitaire d'emblée (on économise
          les 6 paquets + relances, ~1 min 30 par feuille). */
       let dejaDifferees = new Set();
+      /* 03/09/2026 : vues PARTIELLES publiées (coupées par le budget) → on ne
+         refait que les zones manquantes (zones_traitees) et on fusionne. */
+      const partiels = new Map();
       if (partial()) {
         try {
           const old = await (await fetch(`${RAW}/${PFX}periods/${t.key}/meta.json?_r=${Date.now()}`)).json();
-          for (const v of old.views || []) if (v.deferred || (v.empty && v.mode !== "unitaire")) dejaDifferees.add(v.name);
+          for (const v of old.views || []) {
+            if (v.deferred || v.partial || (v.empty && v.mode !== "unitaire")) dejaDifferees.add(v.name);
+            if (v.partial && v.file) partiels.set(v.name, v);
+          }
         } catch (e) { }
       }
       let okSheets = 0;
@@ -499,7 +545,12 @@ async function main() {
             const views = old.views.slice();
             for (const v of metaViews) {
               const k = views.findIndex((x) => x.name === v.name || x.urlName === v.urlName);
-              if (k >= 0) { if (!(v.deferred && views[k].file)) views[k] = { ...views[k], ...v }; } else views.push(v);
+              if (k >= 0) {
+                if (!(v.deferred && views[k].file)) {
+                  views[k] = { ...views[k], ...v };
+                  if (v.file && !v.partial) { delete views[k].deferred; delete views[k].partial; delete views[k].zones_traitees; }
+                }
+              } else views.push(v);
             }
             meta = { ...old, antennes: meta.antennes, views, repaired_at: new Date().toISOString(), repaired_views: [...new Set([...(old.repaired_views || []), ...metaViews.map((v) => v.name)])] };
             if (!intermediaire) log(`  ↻ meta.json fusionné (${metaViews.length} vue(s) remplacée(s) sur ${views.length}).`);
@@ -607,28 +658,59 @@ async function main() {
              Même CSV que l'URL (vérifié). Repli URL si le moteur échoue. ── */
           try {
             const { exportParSessions } = await import("./vizql-export.mjs");
-            const r = await exportParSessions({
-              wb: WORKBOOK, urlName, slug: s, label, month: t.month, year: t.year, zones: antennes, antLabel, log,
+            /* reprise d'un export partiel publié : lignes déjà acquises + zones faites */
+            let anciens = [], zonesFaites = new Set();
+            const pp = partiels.get(label);
+            if (pp) {
+              try {
+                const vieux = await (await fetch(`${RAW}/${PFX}periods/${t.key}/${pp.file}?_r=${Date.now()}`)).json();
+                anciens = lignesDeVue(vieux);
+                zonesFaites = new Set(pp.zones_traitees || []);
+                log(`  ↩ ${label} : reprise d'un export partiel (${zonesFaites.size}/${antennes.length} zones déjà faites, ${anciens.length} lignes).`);
+              } catch (e) { anciens = []; zonesFaites = new Set(); log(`  ⚠ ${label} : export partiel publié illisible — reprise de zéro.`); }
+            }
+            const zonesARun = antennes.filter((z) => !zonesFaites.has(z));
+            const pousser = (rec) => { const cols = Object.keys(rec).filter((c) => c !== "Antenne"); ok.push({ ant: rec.Antenne, rows: [cols, cols.map((c) => rec[c] ?? "")] }); };
+            const r = zonesARun.length ? await exportParSessions({
+              wb: WORKBOOK, urlName, slug: s, label, month: t.month, year: t.year, zones: zonesARun, antLabel, log,
               limit: Number(process.env.MASHAKO_ZS_LIMIT || 0) || undefined,
               deadline: DEADLINE || undefined,
               /* en mode Chrome le profil est déjà ouvert par ce script : le moteur
                  doit réutiliser ce contexte (ProcessSingleton sinon — 03/09 11:51). */
               ctx: mode === "chrome" && ctx ? ctx : undefined,
-            });
+            }) : { zonesOk: 0, zonesVides: 0, zonesEchec: 0, records: [], zonesTraitees: [], budgetEpuise: false };
             const traitees = r.zonesOk + r.zonesVides;
-            const attendu = Number(process.env.MASHAKO_ZS_LIMIT || 0) || antennes.length;
+            const attendu = Number(process.env.MASHAKO_ZS_LIMIT || 0) || zonesARun.length;
             if (r.budgetEpuise && traitees < attendu * 0.9) {
-              /* coupée par le budget : ni repli URL (des heures), ni marquage — la feuille reste
-                 « manquante » et le prochain run la reprend depuis le début. */
-              log(`  ⏱ ${label} : interrompue par le budget (${traitees}/${attendu} zones) — reprise au prochain run.`);
+              /* coupée par le budget : pas de repli URL (des heures). 03/09/2026 : les zones
+                 déjà exportées sont SAUVÉES (vue « partial ») et publiées — le prochain run
+                 ne refait que les zones manquantes au lieu de repartir de zéro. */
+              const recs = [...anciens, ...r.records];
+              const zt = [...zonesFaites, ...(r.zonesTraitees || [])];
+              if (traitees > 0 && recs.length) {
+                const colsP = [];
+                for (const rec of recs) for (const c of Object.keys(rec)) if (c !== "Antenne" && colsP.indexOf(c) < 0) colsP.push(c);
+                const rel = `views/${s}.json`;
+                writeFileSync(path.join(OUT, rel), serialiserVue({ name: label, urlName: s, columns: ["Antenne", ...colsP], rows: recs, partial: true, zones_traitees: zt.length }, log));
+                blobCache.delete(rel);
+                metaViews.push({ name: label, urlName: s, rows: recs.length, file: rel, image: null, antImages: null, engine: "vizql-session", partial: true, zones_traitees: zt });
+                log(`  ⏱ ${label} : interrompue par le budget — ${zt.length}/${antennes.length} zones sauvées (${recs.length} lignes), le reste au prochain run.`);
+                if (PROGRESSIF) { try { await publier(true); } catch (e) { log(`  ⚠ publication du partiel ratée (${String(e.message || e).slice(0, 120)}).`); } }
+              } else log(`  ⏱ ${label} : interrompue par le budget (${traitees}/${attendu} zones) — reprise au prochain run.`);
               arreteParBudget = true; break;
             }
             if (traitees >= attendu * 0.9) {
-              const cols = r.columns.filter((c) => c !== "Antenne");
-              for (const rec of r.records) ok.push({ ant: rec.Antenne, rows: [cols, cols.map((c) => rec[c] ?? "")] });
+              for (const rec of anciens) pousser(rec);
+              for (const rec of r.records) pousser(rec);
               viaSession = true;
             } else log(`  ⚠ ${label} : moteur VizQL incomplet (${traitees}/${attendu} zones) — repli export par URL.`);
           } catch (e) { log(`  ⚠ ${label} : moteur VizQL indisponible (${String(e.message || e).slice(0, 120)}) — repli export par URL.`); }
+        }
+        if (unitaire && !viaSession && budgetEpuise()) {
+          /* 03/09/2026 : le repli URL (~33 s × 519 zones) ne vérifie pas le budget —
+             lancé après l'échéance il dépasse la limite du job (run 33755629701). */
+          log(`  ⏱ ${label} : budget épuisé avant le repli URL — reprise au prochain run.`);
+          arreteParBudget = true; break;
         }
         if (unitaire && !viaSession) {
           const results = await runBatch(antennes, PARALLEL, async (ant) => {
@@ -660,7 +742,8 @@ async function main() {
           }
         }
         const rel = `views/${s}.json`;
-        writeFileSync(path.join(OUT, rel), JSON.stringify({ name: label, urlName: s, columns, rows: records }));
+        writeFileSync(path.join(OUT, rel), serialiserVue({ name: label, urlName: s, columns, rows: records }, log));
+        blobCache.delete(rel);
         metaViews.push({ name: label, urlName: s, rows: records.length, file: rel, image: null, antImages: null, ...(viaSession ? { engine: "vizql-session" } : {}) });
         okSheets++;
         log(`  ✓ ${label} : ${records.length} lignes (${viaSession ? "sessions VizQL" : !unitaire ? "groupé" : `${ok.length}/${antennes.length} ${IS_ZS ? "ZS" : "antennes"}`})`);

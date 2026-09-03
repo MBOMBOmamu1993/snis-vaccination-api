@@ -25,7 +25,7 @@
  *   node cloud/arbitre.mjs --tache backfill --canal ant
  *   node cloud/arbitre.mjs --force         → ignore l'heure et la publication
  */
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -102,7 +102,20 @@ function jourDernierePublication(canal) {
   }
 }
 
-function lancer(canal, tache) {
+/* 03/09/2026 : spawnSync BLOQUAIT la boucle d'événements → le setInterval de
+   surveiller() ne tirait jamais, le bail périmait après 25 min alors que le
+   cloud travaillait (bail « périmé depuis 247 min » constaté en plein run) et un
+   PC allumé pouvait reprendre le canal en parallèle. Lancement asynchrone. */
+function attendre(cmd, args, opts) {
+  return new Promise((resolve) => {
+    const p = spawn(cmd, args, { cwd: opts.cwd, env: opts.env, stdio: "inherit" });
+    const t = opts.timeout ? setTimeout(() => { try { p.kill("SIGTERM"); } catch (_) { } }, opts.timeout) : null;
+    p.on("exit", (code, sig) => { if (t) clearTimeout(t); resolve({ status: code == null ? (sig ? 137 : 1) : code }); });
+    p.on("error", (e) => { if (t) clearTimeout(t); log(`✖ lancement impossible : ${e.message}`); resolve({ status: 1 }); });
+  });
+}
+
+async function lancer(canal, tache) {
   /* AS : export reprenable (journal zs_as_ledger*.json, porté par le cache
      Actions) plafonné à 4 h 30, puis fusion + publication — même enchaîné que
      la tâche locale de 06h15. */
@@ -110,12 +123,12 @@ function lancer(canal, tache) {
     log(`▶ Prise de relais AS : export-zs-as.mjs puis publish-zs-as.mjs — titulaire ${TITULAIRE}`);
     const bail = surveiller(canal, { note: "arbitre détail AS", tache: "sync" });
     if (!bail) log("⚠ Bail non posé (GitHub muet) — on lance quand même (fail-open).");
-    let r = spawnSync(process.execPath, [path.join(RACINE, "export-zs-as.mjs")], {
+    let r = await attendre(process.execPath, [path.join(RACINE, "export-zs-as.mjs")], {
       cwd: RACINE, env: { ...process.env, MASHAKO_ROLE: process.env.MASHAKO_ROLE || "vm", MASHAKO_HEADLESS: "1", MASHAKO_MINUTES: "270" }, stdio: "inherit", timeout: 300 * 60 * 1000,
     });
     /* On publie même un export partiel : le journal de reprise le complètera
        au prochain relais ; chaque zone publiée est gagnée pour le dashboard. */
-    const p = spawnSync(process.execPath, [path.join(RACINE, "publish-zs-as.mjs"), "--fusion"], { cwd: RACINE, env: process.env, stdio: "inherit", timeout: 30 * 60 * 1000 });
+    const p = await attendre(process.execPath, [path.join(RACINE, "publish-zs-as.mjs"), "--fusion"], { cwd: RACINE, env: process.env, stdio: "inherit", timeout: 30 * 60 * 1000 });
     const code = r.status === 0 ? p.status : r.status;
     liberer(canal, code === 0 ? "succès" : `code ${code}`);
     log(`■ Fin détail AS — export ${r.status}, publication ${p.status}`);
@@ -129,11 +142,11 @@ function lancer(canal, tache) {
     ...(canal === "zs" ? { MASHAKO_CFG: "zs" } : {}),
   };
   log(`▶ Prise de relais : ${script} (${canal}) — titulaire ${TITULAIRE}`);
-  /* Le bail est posé ici ET renouvelé par sync.mjs lui-même : si le script
-     enfant meurt, notre propre libération à la sortie remet le canal libre. */
+  /* Le bail est posé ici et renouvelé toutes les 10 min par surveiller() tant que
+     l'enfant tourne ; s'il meurt, notre libération à la sortie remet le canal libre. */
   const bail = surveiller(canal, { note: `arbitre ${tache}`, tache });
   if (!bail) log("⚠ Bail non posé (GitHub muet) — on lance quand même (fail-open).");
-  const r = spawnSync(process.execPath, [path.join(RACINE, script), "--background"], {
+  const r = await attendre(process.execPath, [path.join(RACINE, script), "--background"], {
     cwd: RACINE, env, stdio: "inherit", timeout: 20 * 3600 * 1000,
   });
   liberer(canal, r.status === 0 ? "succès" : `code ${r.status}`);
@@ -141,7 +154,7 @@ function lancer(canal, tache) {
   return r.status;
 }
 
-function examiner(canal) {
+async function examiner(canal) {
   const { jour, minutes } = partsKinshasa();
   const heure = (TACHE === "backfill" ? HORAIRES_BACKFILL : HORAIRES)[canal];
   const prefixe = `${canal.toUpperCase()} ${TACHE}`;
@@ -181,7 +194,7 @@ function examiner(canal) {
   }
 
   if (DRY) { log(`${prefixe} — ✅ il y a du travail : le secours prendrait la main (rien lancé).`); return "dry"; }
-  return lancer(canal, TACHE) === 0 ? "fait" : "echec";
+  return (await lancer(canal, TACHE)) === 0 ? "fait" : "echec";
 }
 
 /**
@@ -208,7 +221,7 @@ if (moi && !DRY) {
 } else {
   const verdicts = [];
   for (const c of CANAUX) {
-    try { verdicts.push(examiner(c)); } catch (e) { log(`✖ ${c} : ${e.stack || e}`); }
+    try { verdicts.push(await examiner(c)); } catch (e) { log(`✖ ${c} : ${e.stack || e}`); }
   }
   if (DECIDER && process.env.GITHUB_ENV) {
     const aFaire = verdicts.includes("dry") ? "1" : "0";

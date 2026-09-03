@@ -102,7 +102,7 @@ export async function exportParSessions(o) {
   const thumbs = (() => { try { return readFileSync(path.join(HERE, thumbsFile), "utf8"); } catch (e) { return "[]"; } })();
   const ownCtx = !o.ctx;
   const ctx = o.ctx || await launch({ profile: o.profile, cookies: o.cookies });
-  const out = { columns: [], records: [], zonesOk: 0, zonesVides: 0, zonesEchec: 0, sheet: null, budgetEpuise: false };
+  const out = { columns: [], records: [], zonesOk: 0, zonesVides: 0, zonesEchec: 0, sheet: null, budgetEpuise: false, zonesTraitees: [] };
   const colSet = new Set();
   const t0 = Date.now();
   let idx = 0; // curseur partagé : chaque session prend la zone suivante
@@ -118,6 +118,11 @@ export async function exportParSessions(o) {
      par zone (paramètre d'URL) : plus lent (~30 s/zone) mais juste. Le mode est
      détecté au premier export vide-sans-en-tête et partagé entre les sessions. */
   let reouverture = false;
+  /* 03/09/2026 : si les premières ouvertures échouent toutes en « aucune feuille
+     exportable » sans qu'une feuille ait jamais été choisie, la vue n'est pas
+     exportable par ce moteur (Supervision_HZ_P3 : 519 × 3 essais = 66 min de
+     vide le 03/09). On abandonne après 6 échecs → repli URL immédiat. */
+  let abandon = false, echecsSansFeuille = 0;
   async function ouvrir(zone) {
     const s = await openSession(ctx, o.wb, o.urlName, `${per}&_SELECTED_location_level=${encodeURIComponent(zone)}`, { timeout: 240000 });
     try {
@@ -146,7 +151,7 @@ export async function exportParSessions(o) {
     if (n > 1) await sleep((n - 1) * 8000);
     let w = null, zone = prochaine();
     let echecsConsecutifs = 0;
-    while (zone) {
+    while (zone && !abandon) {
       try {
         if (!w) { w = await ouvrir(zone); }
         else if (w.courante !== zone) {
@@ -176,6 +181,7 @@ export async function exportParSessions(o) {
           }
           out.zonesOk++;
         }
+        out.zonesTraitees.push(zone); // zones faites (avec ou sans données) → reprise possible après coupure budget
         echecsConsecutifs = 0;
         const fait = out.zonesOk + out.zonesVides + out.zonesEchec;
         if (fait % 50 === 0) log(`  … ${o.label} : ${fait}/${zones.length} zones (${((Date.now() - t0) / 60000).toFixed(1)} min, ${P} sessions)`);
@@ -183,6 +189,10 @@ export async function exportParSessions(o) {
       } catch (e) {
         const msg = String(e.message || e);
         echecsConsecutifs++;
+        if (!choisie && /aucune feuille/i.test(msg) && ++echecsSansFeuille >= 6) {
+          abandon = true;
+          log(`  ✖ ${o.label} : aucune feuille exportable par le moteur VizQL (${echecsSansFeuille} ouvertures) — abandon du moteur pour cette vue.`);
+        }
         log(`  ⟳ ${o.label} · ${((o.antLabel && o.antLabel[zone]) || zone).slice(0, 30)} : ${msg.slice(0, 120)} (essai ${echecsConsecutifs})`);
         if (w) { await w.s.close(); w = null; } // session perdue (410/503) ou état douteux → on rouvre
         if (echecsConsecutifs >= 3) { out.zonesEchec++; echecsConsecutifs = 0; zone = prochaine(); }
@@ -198,6 +208,7 @@ export async function exportParSessions(o) {
   } finally {
     if (ownCtx) await ctx.close().catch(() => { });
   }
+  if (abandon) throw new Error("aucune feuille exportable par le moteur VizQL");
   out.columns = ["Antenne", ...colSet];
   out.minutes = (Date.now() - t0) / 60000;
   log(`  ✓ ${o.label} : ${out.records.length} lignes, ${out.zonesOk} zones avec données, ${out.zonesVides} vides, ${out.zonesEchec} en échec — ${out.minutes.toFixed(1)} min par sessions VizQL`);
