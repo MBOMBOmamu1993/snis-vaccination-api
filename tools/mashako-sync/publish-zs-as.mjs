@@ -16,8 +16,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const VUES = path.join(HERE, "out-zs", "views");
-const PFX = "zs/";
+const OUTDIR = process.env.MASHAKO_AS_OUT || path.join(HERE, "out-zs");
+const VUES = path.join(OUTDIR, "views");
+/* --periode AAAA-MM : publier le détail AS d'un mois ARCHIVÉ dans zs/periods/<AAAA-MM>/views/
+   (le front lit <base>/views/<feuille>_AS.json avec base = zs/periods/<AAAA-MM> pour une archive). */
+const iP = process.argv.indexOf("--periode");
+const PERIODE = iP >= 0 ? process.argv[iP + 1] : null;
+if (iP >= 0 && !/^\d{4}-\d{2}$/.test(PERIODE || "")) { console.error("--periode attend AAAA-MM"); process.exit(2); }
+const PFX = PERIODE ? `zs/periods/${PERIODE}/` : "zs/";
 const REPO = "repos/MBOMBOmamu1993/snis-vaccination-api";
 const BRANCHE = "mashako-data";
 const log = (m) => console.log(`[${new Date().toISOString()}] ${m}`);
@@ -60,7 +66,7 @@ log(`${fichiers.length} feuille(s), ${lignes} lignes, ${zones.size} zone(s) de s
 const ref = JSON.parse(gh([`${REPO}/git/refs/heads/${BRANCHE}`]));
 const treeSha = JSON.parse(gh([`${REPO}/git/commits/${ref.object.sha}`])).tree.sha;
 
-const tmp = path.join(HERE, "out-zs", "_payload_as.json");
+const tmp = path.join(OUTDIR, "_payload_as.json");
 const blob = (buf) => {
   writeFileSync(tmp, JSON.stringify({ encoding: "base64", content: buf.toString("base64") }));
   return JSON.parse(gh([`${REPO}/git/blobs`, "-X", "POST"], tmp)).sha;
@@ -70,12 +76,12 @@ const tree = fichiers.map((f) => ({
   sha: blob(readFileSync(path.join(VUES, f))),
 }));
 
-const tp = path.join(HERE, "out-zs", "_tree_as.json");
+const tp = path.join(OUTDIR, "_tree_as.json");
 writeFileSync(tp, JSON.stringify({ base_tree: treeSha, tree }));
 const nouvelArbre = JSON.parse(gh([`${REPO}/git/trees`, "-X", "POST"], tp)).sha;
-const cp = path.join(HERE, "out-zs", "_commit_as.json");
+const cp = path.join(OUTDIR, "_commit_as.json");
 writeFileSync(cp, JSON.stringify({
-  message: `detail aire de sante : ${fichiers.length} feuilles, ${zones.size} zones, ${lignes} lignes (${new Date().toISOString().slice(0, 10)})`,
+  message: `detail aire de sante${PERIODE ? " " + PERIODE : ""} : ${fichiers.length} feuilles, ${zones.size} zones, ${lignes} lignes (${new Date().toISOString().slice(0, 10)})`,
   tree: nouvelArbre, parents: [],
 }));
 const commit = JSON.parse(gh([`${REPO}/git/commits`, "-X", "POST"], cp)).sha;

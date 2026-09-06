@@ -40,7 +40,7 @@ import { surveiller, bailAutre } from "./cloud/lease.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PROFILE = process.env.MASHAKO_PROFILE || path.join(HERE, "browser-profile");
-const OUT = path.join(HERE, "out-zs");
+const OUT = process.env.MASHAKO_AS_OUT || path.join(HERE, "out-zs"); // MASHAKO_AS_OUT : backfill d'un mois passé dans son propre dossier
 const DIAG = path.join(HERE, "diag-sheets");
 const SERVER = "https://eu-west-1a.online.tableau.com";
 const SITE = "axdata";
@@ -91,7 +91,7 @@ if (SHARD) {
    fait ensuite (fusion-zs-as.mjs). */
 const SUF = SHARD ? `_s${SHARD[1]}` : "";
 /* Journal de reprise : « <urlName>|<zone> » → horodatage. */
-const LEDGER = path.join(HERE, `zs_as_ledger${SUF}.json`);
+const LEDGER = path.join(process.env.MASHAKO_AS_OUT ? OUT : HERE, `zs_as_ledger${SUF}.json`); // journal dans le dossier du mois en backfill
 let fait = {};
 if (REPRISE && existsSync(LEDGER)) { try { fait = JSON.parse(readFileSync(LEDGER, "utf8")); } catch (e) { } }
 const cle = (u, z) => `${u}|${z}|${MONTH}-${YEAR}`;
@@ -122,6 +122,23 @@ for (let essai = 1; essai <= 3 && !ctx; essai++) {
     if (essai === 3) throw e;
     log(`⟳ Chrome n'a pas démarré (essai ${essai}/3) — nouvel essai dans 20 s`);
     await new Promise((r) => setTimeout(r, 20000));
+  }
+}
+/* Session Tableau : les profils d'export (browser-profile-as*) perdent leur session
+   Google/Tableau bien avant le profil principal. On injecte la session vivante
+   entretenue par reconnecter.mjs (cookies-tableau.json, format Playwright) —
+   MASHAKO_INJECT_COOKIES=0 pour s'en passer. Ajouté le 06/09/2026 après
+   « session non capturée » sur les 3 profils d'export. */
+if (process.env.MASHAKO_INJECT_COOKIES !== "0") {
+  const cf = path.join(HERE, "cookies-tableau.json");
+  if (existsSync(cf)) {
+    try {
+      const ck = JSON.parse(readFileSync(cf, "utf8")).filter((c) => c.name && c.value && c.domain)
+        .map((c) => ({ name: c.name, value: c.value, domain: c.domain, path: c.path || "/", secure: !!c.secure, httpOnly: !!c.httpOnly,
+          sameSite: ["Strict", "Lax", "None"].includes(c.sameSite) ? c.sameSite : "Lax", ...(c.expires && c.expires > 0 ? { expires: c.expires } : {}) }));
+      await ctx.addCookies(ck);
+      log(`Session Tableau injectée depuis cookies-tableau.json (${ck.length} cookies).`);
+    } catch (e) { log(`⚠ Injection des cookies impossible (${String(e.message).slice(0, 80)}) — on continue avec la session du profil.`); }
   }
 }
 const page = ctx.pages()[0] || await ctx.newPage();

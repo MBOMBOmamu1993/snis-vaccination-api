@@ -14,7 +14,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const VUES = path.join(HERE, "out-zs", "views");
+const VUES = path.join(process.env.MASHAKO_AS_OUT || path.join(HERE, "out-zs"), "views");
 const log = (m) => console.log(m);
 
 const parVue = {};

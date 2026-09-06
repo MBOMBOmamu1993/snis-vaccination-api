@@ -472,7 +472,7 @@ async function main() {
        ces feuilles gardent toutes leurs lignes en export groupé ; les autres
        (pivots « Noms de mesures », classements, cartes) collapsent → unitaire. */
     const BATCH_OK = IS_ZS
-      ? /^(Supervision_HZ_P\d|CDF_HZ_P\d|CDF_HZ_NF|S.+ances_HZ_P\d|Taux d.abandon_HZ_P\d|Infirmier_HZ_P\d|Vaccine_expiration_HZ_P\d)$/i
+      ? /^(Supervision_HZ_P\d|CDF_HZ_P\d|CDF_HZ_NF|Taux d.abandon_HZ_P\d|Infirmier_HZ_P\d|Vaccine_expiration_HZ_P\d)$/i /* Séances_HZ_P* retirées le 06/09/2026 : l'export groupé les tronque à ~118 zones (411 en unitaire) */
       : /^(HZ Scores_ANT|Supervision_Quality_ANT|Supervision_ANT_P1|R.+union_ANT|CDF_ANT|S.+ances_ANT|Taux d.abandon_ANT|Infirmier_ANT|Livraison_ANT_P2)$/i;
     const ZS_PACK = Number(process.env.MASHAKO_ZS_PACK || 100);
     if (PHASE === "groupe") { dataLabels = dataLabels.filter((l) => BATCH_OK.test(l)); imgLabels = imgLabels.filter((l) => BATCH_OK.test(l)); }
