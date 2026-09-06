@@ -199,6 +199,13 @@ const bail = surveiller("as", { note: `export AS sessions ${KEY}`, tache: "sync"
 if (!bail) log("⚠ Bail « as » non posé (GitHub muet) — on continue (fail-open).");
 
 let nOk = 0, nVide = 0, nEchec = 0, nSaut = 0, coupe = false;
+/* Bridage Tableau (06/09 15:40 : cloud 6 sessions + synchro ZS locale + AS → tous les
+   tableaux de bord répondent avec un dialogue vide et un bootstrap muet, y compris sur des
+   zones qui passaient 10 min avant). Au lieu de brûler les zones 3 essais chacune, on
+   marque une pause globale de MASHAKO_PAUSE_MIN (déf. 10) après 6 « dialogue vide »
+   consécutifs, et la zone est remise dans la file. */
+let videsConsecutifs = 0, pauseJusqua = 0;
+const PAUSE_MIN = Number(process.env.MASHAKO_PAUSE_MIN || 10);
 const budgetEpuise = () => (Date.now() - t0) / 60000 > MAX_MINUTES;
 try {
   for (const [label, urlName] of VUES) {
@@ -268,14 +275,28 @@ try {
           if (!rows.length) { log(`✗ ${zone} · ${label} : ${w.cibles.length} feuille(s) annoncée(s), 0 ligne — sera repris`); nEchec++; zone = prochaine(); essais = 0; continue; }
           a.rows = a.rows.filter((r) => r._ZS !== zone); a.rows.push(...rows);
           for (const c of cols) if (!a.columns.includes(c)) a.columns.push(c);
-          faitIci[cle(urlName, zone)] = new Date().toISOString(); nOk++; essais = 0;
+          faitIci[cle(urlName, zone)] = new Date().toISOString(); nOk++; essais = 0; videsConsecutifs = 0;
           log(`✓ ${zone} · ${label} : ${w.cibles.length} feuille(s), ${rows.length} lignes (${Math.round((Date.now() - tz) / 1000)} s) [${nOk} ok / ${nVide} vides / ${nEchec} échecs]`);
           if (nOk % 5 === 0) sauver();
           zone = prochaine();
         } catch (e) {
-          essais++;
-          log(`  ⟳ ${zone} · ${label} : ${String(e.message || e).slice(0, 120)} (essai ${essais})`);
+          const msg = String(e.message || e);
           if (w) { await w.s.close(); w = null; }
+          if (/dialogue croisé vide|session VizQL non capturée|bootstrap muet/i.test(msg)) {
+            videsConsecutifs++;
+            if (videsConsecutifs >= 6) {
+              if (Date.now() >= pauseJusqua) {
+                pauseJusqua = Date.now() + PAUSE_MIN * 60000;
+                log(`  ⏸ Tableau ne rend plus les tableaux de bord (${videsConsecutifs} dialogues vides d'affilée — bridage probable) : pause ${PAUSE_MIN} min, zones remises en file.`);
+              }
+              todo.push(zone); zone = null; // remise en file, ce travailleur attend la fin de la pause
+              while (Date.now() < pauseJusqua && !budgetEpuise()) await sleep(5000);
+              videsConsecutifs = 0; essais = 0; zone = prochaine();
+              continue;
+            }
+          } else videsConsecutifs = 0;
+          essais++;
+          log(`  ⟳ ${zone} · ${label} : ${msg.slice(0, 120)} (essai ${essais})`);
           if (essais >= 3) { nEchec++; essais = 0; zone = prochaine(); }
           await sleep(3000 * Math.min(essais + 1, 4));
         }
