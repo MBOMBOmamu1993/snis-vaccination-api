@@ -39,7 +39,7 @@ const YEAR = process.argv[3] || process.env.MASHAKO_YEAR || String(now.getFullYe
 const PER = `_PARAM_month=${encodeURIComponent(MONTH)}&_PARAM_year=${encodeURIComponent(YEAR)}`;
 const KEY = `${YEAR}-${String(MOIS_FR.indexOf(MONTH) + 1).padStart(2, "0")}`;
 const MAX_MINUTES = Number(process.env.MASHAKO_MINUTES || 600);
-const P = Math.max(1, Math.min(Number(process.env.MASHAKO_SESSIONS || 6), 12));
+const P = Math.max(1, Math.min(Number(process.env.MASHAKO_SESSIONS || 6), 12)); // 8 → trop d'erreurs 400 sous charge (06/09)
 const ONLY = (process.env.MASHAKO_ONLY || "").split(",").map((s) => s.trim()).filter(Boolean);
 const ZS_ONLY = (process.env.MASHAKO_ZS || "").split(",").map((s) => s.trim()).filter(Boolean);
 const SUF = process.env.MASHAKO_SUF || "_s0";
@@ -94,21 +94,26 @@ const airesDe = (u, zone) => new Set([...(acc[u]?.rows || []), ...(autresRows[u]
 
 /* Référence anti attribution croisée : aires par zone d'après l'archive de synthèse publiée. */
 const court = (z) => String(z).replace(/^[a-z]{2}\s+/, "").replace(/\s+Zone de Sant[ée]$/i, "").trim().toLowerCase();
-const attendues = {};
+let attendues = {}; // zone courte → Set(aires) — référence GLOBALE (union des familles)
+const attenduesFam = {}; // famille (CDF_HZ, Vaccine_dispo_HZ…) → zone → Set(aires)
+const famille = (u) => u.replace(/_P\d$|_NF$/i, "");
 try {
   const RAW = `https://raw.githubusercontent.com/MBOMBOmamu1993/snis-vaccination-api/mashako-data/zs/periods/${KEY}/views`;
-  for (const f of ["Vaccine_expiration_HZ_P1.json", "CDF_HZ_NF.json"]) {
-    const r = await fetch(`${RAW}/${f}?_r=${Date.now()}`); if (!r.ok) continue;
+  for (const f of ["Vaccine_expiration_HZ_P1", "Vaccine_dispo_HZ_P1", "CDF_HZ_NF", "CDF_HZ_P1", "Infirmier_HZ_P1", "Livraison_HZ_P1", "Supervision_HZ_P3"]) {
+    const r = await fetch(`${RAW}/${f}.json?_r=${Date.now()}`); if (!r.ok) continue;
     const d = await r.json();
     const rows = d.format === "compact" ? d.data.map((a) => Object.fromEntries(d.columns.map((c, i) => [c, a[i]]))) : d.rows;
+    const fam = attenduesFam[famille(f)] ||= {};
     for (const row of rows) {
-      const z = court(row["Zone de santé"] || row["Zone de Santé"] || row.Antenne); const a = row["Aire de Santé"] || row["Aire de santé"];
-      if (z && a) (attendues[z] ||= new Set()).add(String(a).trim().toLowerCase());
+      const z = court(row["Zone de santé"] || row["Zone de Santé"] || row.Antenne);
+      const a = row["Aire de Santé"] || row["Aire de santé"] || row["Aire de santé supervisée"];
+      if (z && a) { (fam[z] ||= new Set()).add(String(a).trim().toLowerCase()); (attendues[z] ||= new Set()).add(String(a).trim().toLowerCase()); }
     }
-    if (Object.keys(attendues).length) break;
   }
-  log(`Référence d'aires : ${Object.keys(attendues).length} zone(s) (archive ${KEY}).`);
+  log(`Référence d'aires : ${Object.keys(attendues).length} zone(s), familles ${Object.keys(attenduesFam).join(", ")} (archive ${KEY}).`);
 } catch (e) { log(`⚠ référence d'aires indisponible (${String(e.message).slice(0, 80)}) — contrôle de cohérence désactivé.`); }
+/* référence de la feuille courante : sa famille si connue, sinon la globale */
+let attenduesCour = attendues;
 
 function consolider(v) {
   const groupes = new Map(); const ordre = [];
@@ -138,8 +143,15 @@ const sauver = () => {
 
 /* Export croisé XLSX d'une feuille de la session (même commande que export-zs-as.mjs). */
 async function crosstabXlsx(s, sheetdocId) {
-  const x = await s.post("tabsrv/export-crosstab-to-excel-server", { sheetdocId, useTabs: "true", sendNotifications: "true" });
-  const key = (/"resultKey"\s*:\s*"?([^",}]+)/.exec(x.txt || "") || [])[1];
+  let x = null, key = null;
+  /* HTTP 400 (TableauException) juste après un changement de zone = feuille pas encore
+     recalculée : on réessaie dans la MÊME session avant de la rouvrir (06/09 : 11 zones
+     perdues en 5 min faute de ce délai). */
+  for (let e = 1; e <= 4 && !key; e++) {
+    x = await s.post("tabsrv/export-crosstab-to-excel-server", { sheetdocId, useTabs: "true", sendNotifications: "true" });
+    key = (/"resultKey"\s*:\s*"?([^",}]+)/.exec(x.txt || "") || [])[1];
+    if (!key) { if (x.st === 410 || x.st === 503) break; await sleep(4000 * e); }
+  }
   if (!key) throw new Error(`export-crosstab HTTP ${x.st} : ${(x.txt || x.err || "").replace(/\s+/g, " ").slice(0, 140)}`);
   for (let e = 0; e < 8; e++) {
     const g = await s.getB64(`${s.VZ}/tempfile/sessions/${s.SID}?key=${key}&keepfile=yes&attachment=yes`);
@@ -172,7 +184,7 @@ async function exporterZone(s, zone, cibles) {
   return { rows, cols };
 }
 const coherent = (zone, rows) => {
-  const ref = attendues[court(zone)]; if (!ref || !ref.size) return true;
+  const ref = attenduesCour[court(zone)] || attendues[court(zone)]; if (!ref || !ref.size) return true;
   const vues = new Set(rows.filter((r) => r._ROLE === "AS").map(nomAire).filter(Boolean));
   if (!vues.size) return true; // rien exporté : pas un désaccord
   for (const a of vues) if (ref.has(a)) return true;
@@ -197,6 +209,7 @@ try {
       if (p1 && (fait[cle(p1, z)] || faitIci[cle(p1, z)]) && airesDe(p1, z).size < 20) { faitIci[cle(urlName, z)] = "page1-suffit"; nSaut++; return false; }
       return true;
     });
+    attenduesCour = attenduesFam[famille(urlName)] || attendues;
     if (!todo.length) { log(`= ${label} : rien à faire`); continue; }
     log(`▶ ${label} (${urlName}) : ${todo.length} zone(s), ${Math.min(P, todo.length)} session(s)`);
     const a = acc[urlName] || (acc[urlName] = { name: label, columns: [], rows: [] });
@@ -206,7 +219,13 @@ try {
       const s = await openSession(ctx, WB, urlName, `${PER}&_SELECTED_location_level=${encodeURIComponent(FILTRES[zone])}`);
       try {
         let sh = [];
-        for (let e = 1; e <= 6 && !sh.length; e++) { sh = await crosstabSheets(s, THUMBS); if (!sh.length) await sleep(3000); }
+        const attendDetail = (attenduesCour[court(zone)] || new Set()).size > 0;
+        for (let e = 1; e <= 15; e++) {
+          sh = await crosstabSheets(s, THUMBS);
+          const complet = sh.some((x) => x.id && EST_CIBLE(x.name));
+          if (complet || (sh.length && !attendDetail && e >= 3)) break;
+          await sleep(4000);
+        }
         if (!sh.length) throw new Error("dialogue croisé vide");
         return { s, courante: zone, cibles: sh.filter((x) => x.id && EST_CIBLE(x.name)), toutes: sh.map((x) => x.name) };
       } catch (e) { await s.close(); throw e; }
@@ -222,7 +241,7 @@ try {
             if (reouverture) { await w.s.close(); w = await ouvrir(zone); }
             else { await setZone(w.s, FILTRES[zone]); w.courante = zone; }
           }
-          if (!w.cibles.length && (attendues[court(zone)] || new Set()).size && essais < 3) {
+          if (!w.cibles.length && (attenduesCour[court(zone)] || new Set()).size && essais < 3) {
             /* dialogue partiel (feuilles pas encore chargées) alors que l'archive connaît des
                aires pour cette zone : on relit la liste avant de conclure « pas de détail ». */
             essais++; await sleep(4000);
