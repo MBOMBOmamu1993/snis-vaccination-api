@@ -1,0 +1,2864 @@
+{
+  "generated_at": "2026-09-06T17:21:15.562Z",
+  "server": "eu-west-1a.online.tableau.com",
+  "site": "axdata",
+  "workbook": {
+    "name": "Mashako 3.0 — Rapport de la Zone de Santé",
+    "contentUrl": "Mashako3_0RapportdelaZone"
+  },
+  "main_view": "PerformanceRsum_HZ",
+  "original_url": "https://eu-west-1a.online.tableau.com/#/site/axdata/views/Mashako3_0RapportdelaZone/PerformanceRsum_HZ",
+  "sync_mode": "local-browser-v3",
+  "period": {
+    "month": "Septembre",
+    "year": "2026"
+  },
+  "antennes": {
+    "field": "_SELECTED_location_level",
+    "level": "zs",
+    "values": [
+      "Aba",
+      "Abuzi",
+      "Adi",
+      "Adja",
+      "Aketi",
+      "Alimbongo",
+      "Alunguli",
+      "Ango",
+      "Angumu",
+      "Ankoro",
+      "Ariwara",
+      "Aru",
+      "Aungba",
+      "Bafwagbogbo",
+      "Bafwasende",
+      "Bagata",
+      "Bagira",
+      "Baka",
+      "Bambo",
+      "Bambu",
+      "Banalia",
+      "Bandalungwa",
+      "Bandundu",
+      "Banga Lubaka",
+      "Bangabola",
+      "Banzow Moke",
+      "Barumbu",
+      "Basali",
+      "Basankusu",
+      "Basoko",
+      "Befale",
+      "Bena Dibele",
+      "Bena Leka",
+      "Bena Tshadi",
+      "Bengamisa",
+      "Beni",
+      "Bibanga",
+      "Biena",
+      "Bikoro",
+      "Bili",
+      "Bili",
+      "Bilomba",
+      "Binga",
+      "Binza",
+      "Binza Meteo",
+      "Binza Ozone",
+      "Bipemba",
+      "Birambizo",
+      "Biringi",
+      "Biyela",
+      "Bobozo",
+      "Boende",
+      "Boga",
+      "Bogosenubea",
+      "Boko",
+      "Boko Kivulu",
+      "Bokonzi",
+      "Bokoro",
+      "Bokungu",
+      "Bolenge",
+      "Bolobo",
+      "Bolomba",
+      "Boma",
+      "Boma Bungu",
+      "Boma Mangbetu",
+      "Bominenge",
+      "Bomongo",
+      "Bondo",
+      "Bongandanga",
+      "Bonzola",
+      "Boso Manzi",
+      "Boso Mondanda",
+      "Bosobe",
+      "Bosobolo",
+      "Bosondjo",
+      "Boto",
+      "Budjala",
+      "Bukama",
+      "Bulape",
+      "Bulu",
+      "Bulungu",
+      "Bumba",
+      "Bumbu",
+      "Bunia",
+      "Bunkeya",
+      "Bunkonde",
+      "Bunyakiri",
+      "Busanga",
+      "Businga",
+      "Buta",
+      "Butembo",
+      "Butumba",
+      "Bwamanda",
+      "Cilundu",
+      "Citenge",
+      "Damas",
+      "Dekese",
+      "Demba",
+      "Dibaya",
+      "Dibindi",
+      "Dikungu",
+      "Dilala",
+      "Dilolo",
+      "Diulu",
+      "Djalo Ndjeka",
+      "Djolu",
+      "Djombo",
+      "Djuma",
+      "Doruma",
+      "Drodro",
+      "Dungu",
+      "Faradje",
+      "Fataki",
+      "Ferekeni",
+      "Feshi",
+      "Fizi",
+      "Fungurume",
+      "Ganga",
+      "Gbadolite",
+      "Gemena",
+      "Gety",
+      "Goma",
+      "Gombari",
+      "Gombe",
+      "Gombe Matadi",
+      "Gungu",
+      "Haut Plateau",
+      "Ibanda",
+      "Iboko",
+      "Idiofa",
+      "Idjwi",
+      "Ikela",
+      "Ilebo",
+      "Inga",
+      "Ingende",
+      "Inongo",
+      "Ipamu",
+      "Irebu",
+      "Isangi",
+      "Isiro",
+      "Itebero",
+      "Itombwe",
+      "Jiba",
+      "Kabalo",
+      "Kabambare",
+      "Kabare",
+      "Kabeya Kamwanga",
+      "Kabinda",
+      "Kabondo",
+      "Kabondo Dianda",
+      "Kabongo",
+      "Kadutu",
+      "Kafakumba",
+      "Kafubu",
+      "Kahemba",
+      "Kailo",
+      "Kajiji",
+      "Kakenge",
+      "Kalamba",
+      "Kalambayi Kabanga",
+      "Kalamu 1",
+      "Kalamu 2",
+      "Kalehe",
+      "Kalemie",
+      "Kalenda",
+      "Kalima",
+      "Kalole",
+      "Kalomba",
+      "Kalonda Est",
+      "Kalonda Ouest",
+      "Kalonge",
+      "Kalunguta",
+      "Kamalondo",
+      "Kamana",
+      "Kamango",
+      "Kambala",
+      "Kambove",
+      "Kamiji",
+      "Kamina",
+      "Kamituga",
+      "Kamonia",
+      "Kampemba",
+      "Kampene",
+      "Kamwesha",
+      "Kananga",
+      "Kanda Kanda",
+      "Kangu",
+      "Kaniama",
+      "Kaniola",
+      "Kansele",
+      "Kansimba",
+      "Kanzala",
+      "Kanzenze",
+      "Kapanga",
+      "Kapolowe",
+      "Karawa",
+      "Karisimbi",
+      "Kasa Vubu",
+      "Kasaji",
+      "Kasansa",
+      "Kasenga",
+      "Kashobwe",
+      "Kasongo",
+      "Kasongo Lunda",
+      "Katako Kombe",
+      "Katana",
+      "Katende",
+      "Katoka",
+      "Katoyi",
+      "Katuba",
+      "Katwa",
+      "Kayamba",
+      "Kayna",
+      "Kaziba",
+      "Kenge",
+      "Kenya",
+      "Kiambi",
+      "Kibirizi",
+      "Kibombo",
+      "Kibua",
+      "Kibunzi",
+      "Kikimi",
+      "Kikongo",
+      "Kikula",
+      "Kikwit Nord",
+      "Kikwit Sud",
+      "Kilela Balanda",
+      "Kilo",
+      "Kilwa",
+      "Kimbanseke",
+      "Kimbao",
+      "Kimbi Lulenge",
+      "Kimpangu",
+      "Kimpese",
+      "Kimputu",
+      "Kimvula",
+      "Kinda",
+      "Kindu",
+      "Kingabwa",
+      "Kingandu",
+      "Kingasani",
+      "Kinkondja",
+      "Kinkonzi",
+      "Kinshasa",
+      "Kintambo",
+      "Kipushi",
+      "Kiri",
+      "Kirotshe",
+      "Kisanga",
+      "Kisanji",
+      "Kisantu",
+      "Kisenso",
+      "Kitangwa",
+      "Kitenda",
+      "Kitenge",
+      "Kitona",
+      "Kitutu",
+      "Kizu",
+      "Kokolo",
+      "Kole",
+      "Komanda",
+      "Kongolo",
+      "Koshibanda",
+      "Kowe",
+      "Kuimba",
+      "Kunda",
+      "Kungu",
+      "Kwamouth",
+      "Kwilu Ngongo",
+      "Kyondo",
+      "Laybo",
+      "Lemba",
+      "Lemera",
+      "Libenge",
+      "Likasi",
+      "Likati",
+      "Lilanga Bobangi",
+      "Limete",
+      "Linga",
+      "Lingomo",
+      "Lingwala",
+      "Lisala",
+      "Lita",
+      "Lodja",
+      "Logo",
+      "Loko",
+      "Lolo",
+      "Lolwa",
+      "Lomela",
+      "Lotumbe",
+      "Lowa",
+      "Lualaba",
+      "Luambo",
+      "Lubao",
+      "Lubero",
+      "Lubilanji",
+      "Lubondaie",
+      "Lubudi",
+      "Lubumbashi",
+      "Lubunga",
+      "Lubunga",
+      "Lubutu",
+      "Ludimbi Lukula",
+      "Luebo",
+      "Luiza",
+      "Lukafu",
+      "Lukelenge",
+      "Lukolela",
+      "Lukonga",
+      "Lukula",
+      "Lulingu",
+      "Luozi",
+      "Luputa",
+      "Lusambo",
+      "Lusanga",
+      "Lusangi",
+      "Lwamba",
+      "Mabalako",
+      "Mahagi",
+      "Makala",
+      "Makanza",
+      "Makiso Kisangani",
+      "Makoro",
+      "Makota",
+      "Malemba Nkulu",
+      "Maluku 1",
+      "Maluku 2",
+      "Mambasa",
+      "Mampoko",
+      "Mandima",
+      "Mangala",
+      "Mangembo",
+      "Mangobo",
+      "Manguredjipa",
+      "Manika",
+      "Manono",
+      "Masereka",
+      "Masi Manimba",
+      "Masina 1",
+      "Masina 2",
+      "Masisi",
+      "Massa",
+      "Masuika",
+      "Matadi",
+      "Matete",
+      "Mawuya",
+      "Mbandaka",
+      "Mbanza Ngungu",
+      "Mbaya",
+      "Mbulula",
+      "Miabi",
+      "Mikalayi",
+      "Mikope",
+      "Mimia",
+      "Minembwe",
+      "Minga",
+      "Minova",
+      "Miti Murhesa",
+      "Mitwaba",
+      "Moanza",
+      "Moba",
+      "Mobayi Mbongo",
+      "Mokala",
+      "Mompono",
+      "Mondombe",
+      "Monga",
+      "Mongbwalu",
+      "Monieka",
+      "Monkoto",
+      "Mont Ngafula 1",
+      "Mont Ngafula 2",
+      "Mosango",
+      "Mpokolo",
+      "Muanda",
+      "Mubumbano",
+      "Muetshi",
+      "Mufunga Sampwe",
+      "Mukanga",
+      "Mukedi",
+      "Mukumbi",
+      "Mulongo",
+      "Mulumba",
+      "Mulungu",
+      "Mumbunda",
+      "Mungindu",
+      "Mushenge",
+      "Mushie",
+      "Musienene",
+      "Mutena",
+      "Mutoto",
+      "Mutshatsha",
+      "Mutwanga",
+      "Muya",
+      "Mwana",
+      "Mweka",
+      "Mwela Lembwa",
+      "Mweneditu",
+      "Mwenga",
+      "Mweso",
+      "Ndage",
+      "Ndekesha",
+      "Ndesha",
+      "Ndjili",
+      "Ndjoko Mpunda",
+      "Ngaba",
+      "Ngandajika",
+      "Ngidinga",
+      "Ngiri Ngiri",
+      "Nia Nia",
+      "Niangara",
+      "Nioki",
+      "Nizi",
+      "Nsele",
+      "Nselo",
+      "Nsona Mpangu",
+      "Ntandembelo",
+      "Ntondo",
+      "Nundu",
+      "Nyanga",
+      "Nyangezi",
+      "Nyankunde",
+      "Nyantende",
+      "Nyarambe",
+      "Nyemba",
+      "Nyiragongo",
+      "Nyunzu",
+      "Nzaba",
+      "Nzanza",
+      "Obokote",
+      "Oicha",
+      "Omendjadi",
+      "Opala",
+      "Opienge",
+      "Oshwe",
+      "Ototo",
+      "Panda",
+      "Pangi",
+      "Pania Mutombo",
+      "Panzi",
+      "Pawa",
+      "Pay Kongila",
+      "Pendjwa",
+      "Pimu",
+      "Pinga",
+      "Poko",
+      "Police",
+      "Popokabaka",
+      "Punia",
+      "Pweto",
+      "Rethy",
+      "Rimba",
+      "Ruashi",
+      "Rungu",
+      "Rutshuru",
+      "Ruzizi",
+      "Rwampara",
+      "Rwanguba",
+      "Sakania",
+      "Samba",
+      "Sandoa",
+      "Saramabila",
+      "Seke Banza",
+      "Selembao",
+      "Shabunda",
+      "Sia",
+      "Sona Bata",
+      "Songa",
+      "Tandala",
+      "Tchomia",
+      "Tembo",
+      "Titule",
+      "Tshamilemba",
+      "Tshela",
+      "Tshibala",
+      "Tshikaji",
+      "Tshikapa",
+      "Tshikula",
+      "Tshilenge",
+      "Tshishimbi",
+      "Tshofa",
+      "Tshopo",
+      "Tshudi Loto",
+      "Tshumbe",
+      "Tunda",
+      "Ubundu",
+      "Uvira",
+      "Vaku",
+      "Vanga",
+      "Vanga Kete",
+      "Vangu",
+      "Viadana",
+      "Vuhovi",
+      "Walikale",
+      "Walungu",
+      "Wamba",
+      "Wamba Lwadi",
+      "Wangata",
+      "Wanierukula",
+      "Wapinda",
+      "Wasolo",
+      "Watsa",
+      "Wema",
+      "Wembo Nyama",
+      "Wikong",
+      "Yabaondo",
+      "Yahisuli",
+      "Yahuma",
+      "Yakoma",
+      "Yakusu",
+      "Yaleko",
+      "Yalifafu",
+      "Yalimbongo",
+      "Yamaluka",
+      "Yambuku",
+      "Yamongili",
+      "Yangala",
+      "Yasa Bonga",
+      "Yumbi",
+      "Zongo"
+    ],
+    "total": 519,
+    "groups": {
+      "Aba": {
+        "province": "Haut Uele",
+        "antenne": "Watsa"
+      },
+      "Abuzi": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Adi": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Adja": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Aketi": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Alimbongo": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Alunguli": {
+        "province": "Maniema",
+        "antenne": "Kindu"
+      },
+      "Ango": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Angumu": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Ankoro": {
+        "province": "Tanganyika",
+        "antenne": "Kabalo"
+      },
+      "Ariwara": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Aru": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Aungba": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Bafwagbogbo": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Bafwasende": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Bagata": {
+        "province": "Kwilu",
+        "antenne": "Bandundu"
+      },
+      "Bagira": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Baka": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Bambo": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Bambu": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Banalia": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Bandalungwa": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Bandundu": {
+        "province": "Kwilu",
+        "antenne": "Bandundu"
+      },
+      "Banga Lubaka": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Bangabola": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Banzow Moke": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Barumbu": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Basali": {
+        "province": "Tshopo",
+        "antenne": "Lokutu"
+      },
+      "Basankusu": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Basoko": {
+        "province": "Tshopo",
+        "antenne": "Lokutu"
+      },
+      "Befale": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Bena Dibele": {
+        "province": "Sankuru",
+        "antenne": "Lusambo"
+      },
+      "Bena Leka": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Bena Tshadi": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Bengamisa": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Beni": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Bibanga": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Biena": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Bikoro": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Bili": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Bilomba": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Binga": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Binza": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Binza Meteo": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Binza Ozone": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Bipemba": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Birambizo": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Biringi": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Biyela": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Bobozo": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Boende": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Boga": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Bogosenubea": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Boko": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Boko Kivulu": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Bokonzi": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Bokoro": {
+        "province": "Maindombe",
+        "antenne": "Nioki"
+      },
+      "Bokungu": {
+        "province": "Tshuapa",
+        "antenne": "Bokungu"
+      },
+      "Bolenge": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Bolobo": {
+        "province": "Maindombe",
+        "antenne": "Nioki"
+      },
+      "Bolomba": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Boma": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Boma Bungu": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Boma Mangbetu": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Bominenge": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Bomongo": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Bondo": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Bongandanga": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Bonzola": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Boso Manzi": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Boso Mondanda": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Bosobe": {
+        "province": "Maindombe",
+        "antenne": "Nioki"
+      },
+      "Bosobolo": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Bosondjo": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Boto": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Budjala": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Bukama": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Bulape": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Bulu": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Bulungu": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Bumba": {
+        "province": "Mongala",
+        "antenne": "Bumba"
+      },
+      "Bumbu": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Bunia": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Bunkeya": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Bunkonde": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Bunyakiri": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Busanga": {
+        "province": "Tshuapa",
+        "antenne": "Bokungu"
+      },
+      "Businga": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Buta": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Butembo": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Butumba": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Bwamanda": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Cilundu": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Citenge": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Damas": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Dekese": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Demba": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Dibaya": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Dibindi": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Dikungu": {
+        "province": "Sankuru",
+        "antenne": "Tshumbe"
+      },
+      "Dilala": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Dilolo": {
+        "province": "Lualaba",
+        "antenne": "Kisenge"
+      },
+      "Diulu": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Djalo Ndjeka": {
+        "province": "Sankuru",
+        "antenne": "Tshumbe"
+      },
+      "Djolu": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Djombo": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Djuma": {
+        "province": "Kwilu",
+        "antenne": "Bandundu"
+      },
+      "Doruma": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Drodro": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Dungu": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Faradje": {
+        "province": "Haut Uele",
+        "antenne": "Watsa"
+      },
+      "Fataki": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Ferekeni": {
+        "province": "Maniema",
+        "antenne": "Lubutu"
+      },
+      "Feshi": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Fizi": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Fungurume": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Ganga": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Gbadolite": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Gemena": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Gety": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Goma": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Gombari": {
+        "province": "Haut Uele",
+        "antenne": "Watsa"
+      },
+      "Gombe": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Gombe Matadi": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Gungu": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Haut Plateau": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Ibanda": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Iboko": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Idiofa": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Idjwi": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Ikela": {
+        "province": "Tshuapa",
+        "antenne": "Bokungu"
+      },
+      "Ilebo": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Inga": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Ingende": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Inongo": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Ipamu": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Irebu": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Isangi": {
+        "province": "Tshopo",
+        "antenne": "Lokutu"
+      },
+      "Isiro": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Itebero": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Itombwe": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Jiba": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Kabalo": {
+        "province": "Tanganyika",
+        "antenne": "Kabalo"
+      },
+      "Kabambare": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Kabare": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kabeya Kamwanga": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Kabinda": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Kabondo": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Kabondo Dianda": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Kabongo": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Kadutu": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kafakumba": {
+        "province": "Lualaba",
+        "antenne": "Kisenge"
+      },
+      "Kafubu": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kahemba": {
+        "province": "Kwango",
+        "antenne": "Kahemba"
+      },
+      "Kailo": {
+        "province": "Maniema",
+        "antenne": "Kindu"
+      },
+      "Kajiji": {
+        "province": "Kwango",
+        "antenne": "Kahemba"
+      },
+      "Kakenge": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Kalamba": {
+        "province": "Lualaba",
+        "antenne": "Kisenge"
+      },
+      "Kalambayi Kabanga": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Kalamu 1": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Kalamu 2": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Kalehe": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kalemie": {
+        "province": "Tanganyika",
+        "antenne": "Kalemie"
+      },
+      "Kalenda": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Kalima": {
+        "province": "Maniema",
+        "antenne": "Kindu"
+      },
+      "Kalole": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kalomba": {
+        "province": "Kasai Central",
+        "antenne": "Luiza"
+      },
+      "Kalonda Est": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Kalonda Ouest": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Kalonge": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kalunguta": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Kamalondo": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kamana": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Kamango": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Kambala": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Kambove": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Kamiji": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Kamina": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Kamituga": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kamonia": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Kampemba": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kampene": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Kamwesha": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Kananga": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Kanda Kanda": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Kangu": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Kaniama": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Kaniola": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kansele": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Kansimba": {
+        "province": "Tanganyika",
+        "antenne": "Kalemie"
+      },
+      "Kanzala": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Kanzenze": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Kapanga": {
+        "province": "Lualaba",
+        "antenne": "Kisenge"
+      },
+      "Kapolowe": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Karawa": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Karisimbi": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Kasa Vubu": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Kasaji": {
+        "province": "Lualaba",
+        "antenne": "Kisenge"
+      },
+      "Kasansa": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Kasenga": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kashobwe": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kasongo": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Kasongo Lunda": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Katako Kombe": {
+        "province": "Sankuru",
+        "antenne": "Tshumbe"
+      },
+      "Katana": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Katende": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Katoka": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Katoyi": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Katuba": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Katwa": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Kayamba": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Kayna": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Kaziba": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kenge": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Kenya": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kiambi": {
+        "province": "Tanganyika",
+        "antenne": "Kabalo"
+      },
+      "Kibirizi": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Kibombo": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Kibua": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Kibunzi": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Kikimi": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Kikongo": {
+        "province": "Kwilu",
+        "antenne": "Bandundu"
+      },
+      "Kikula": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Kikwit Nord": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Kikwit Sud": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Kilela Balanda": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Kilo": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Kilwa": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kimbanseke": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Kimbao": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Kimbi Lulenge": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Kimpangu": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Kimpese": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Kimputu": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Kimvula": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Kinda": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Kindu": {
+        "province": "Maniema",
+        "antenne": "Kindu"
+      },
+      "Kingabwa": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Kingandu": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Kingasani": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Kinkondja": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Kinkonzi": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Kinshasa": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Kintambo": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Kipushi": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kiri": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Kirotshe": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Kisanga": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kisanji": {
+        "province": "Kwango",
+        "antenne": "Kahemba"
+      },
+      "Kisantu": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Kisenso": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Kitangwa": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Kitenda": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Kitenge": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Kitona": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Kitutu": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Kizu": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Kokolo": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Kole": {
+        "province": "Sankuru",
+        "antenne": "Lusambo"
+      },
+      "Komanda": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Kongolo": {
+        "province": "Tanganyika",
+        "antenne": "Kabalo"
+      },
+      "Koshibanda": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Kowe": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Kuimba": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Kunda": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Kungu": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Kwamouth": {
+        "province": "Maindombe",
+        "antenne": "Nioki"
+      },
+      "Kwilu Ngongo": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Kyondo": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Laybo": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Lemba": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Lemera": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Libenge": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Likasi": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Likati": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Lilanga Bobangi": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Limete": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Linga": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Lingomo": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Lingwala": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Lisala": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Lita": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Lodja": {
+        "province": "Sankuru",
+        "antenne": "Lodja"
+      },
+      "Logo": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Loko": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Lolo": {
+        "province": "Mongala",
+        "antenne": "Bumba"
+      },
+      "Lolwa": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Lomela": {
+        "province": "Sankuru",
+        "antenne": "Lodja"
+      },
+      "Lotumbe": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Lowa": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Lualaba": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Luambo": {
+        "province": "Kasai Central",
+        "antenne": "Luiza"
+      },
+      "Lubao": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Lubero": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Lubilanji": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Lubondaie": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Lubudi": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Lubumbashi": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Lubunga": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Lubutu": {
+        "province": "Maniema",
+        "antenne": "Lubutu"
+      },
+      "Ludimbi Lukula": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Luebo": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Luiza": {
+        "province": "Kasai Central",
+        "antenne": "Luiza"
+      },
+      "Lukafu": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Lukelenge": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Lukolela": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Lukonga": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Lukula": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Lulingu": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Luozi": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Luputa": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Lusambo": {
+        "province": "Sankuru",
+        "antenne": "Lusambo"
+      },
+      "Lusanga": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Lusangi": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Lwamba": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Mabalako": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Mahagi": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Makala": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Makanza": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Makiso Kisangani": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Makoro": {
+        "province": "Haut Uele",
+        "antenne": "Watsa"
+      },
+      "Makota": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Malemba Nkulu": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Maluku 1": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Maluku 2": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Mambasa": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Mampoko": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Mandima": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Mangala": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Mangembo": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Mangobo": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Manguredjipa": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Manika": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Manono": {
+        "province": "Tanganyika",
+        "antenne": "Kabalo"
+      },
+      "Masereka": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Masi Manimba": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Masina 1": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Masina 2": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Masisi": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Massa": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Masuika": {
+        "province": "Kasai Central",
+        "antenne": "Luiza"
+      },
+      "Matadi": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Matete": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Mawuya": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Mbandaka": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Mbanza Ngungu": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Mbaya": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Mbulula": {
+        "province": "Tanganyika",
+        "antenne": "Kabalo"
+      },
+      "Miabi": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Mikalayi": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Mikope": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Mimia": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Minembwe": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Minga": {
+        "province": "Sankuru",
+        "antenne": "Lusambo"
+      },
+      "Minova": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Miti Murhesa": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Mitwaba": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Moanza": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Moba": {
+        "province": "Tanganyika",
+        "antenne": "Kalemie"
+      },
+      "Mobayi Mbongo": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Mokala": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Mompono": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Mondombe": {
+        "province": "Tshuapa",
+        "antenne": "Bokungu"
+      },
+      "Monga": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Mongbwalu": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Monieka": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Monkoto": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Mont Ngafula 1": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Mont Ngafula 2": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Mosango": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Mpokolo": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Muanda": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Mubumbano": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Muetshi": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Mufunga Sampwe": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Mukanga": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Mukedi": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Mukumbi": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Mulongo": {
+        "province": "Haut Lomami",
+        "antenne": "Kabondo-Dianda"
+      },
+      "Mulumba": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Mulungu": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Mumbunda": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Mungindu": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Mushenge": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Mushie": {
+        "province": "Maindombe",
+        "antenne": "Nioki"
+      },
+      "Musienene": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Mutena": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Mutoto": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Mutshatsha": {
+        "province": "Lualaba",
+        "antenne": "Kolwezi"
+      },
+      "Mutwanga": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Muya": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Mwana": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Mweka": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Mwela Lembwa": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Mweneditu": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Mwenga": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Mweso": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Ndage": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Ndekesha": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Ndesha": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Ndjili": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Ndjoko Mpunda": {
+        "province": "Kasai",
+        "antenne": "Mweka"
+      },
+      "Ngaba": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Ngandajika": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Ngidinga": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Ngiri Ngiri": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Centre"
+      },
+      "Nia Nia": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Niangara": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Nioki": {
+        "province": "Maindombe",
+        "antenne": "Nioki"
+      },
+      "Nizi": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Nsele": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Est"
+      },
+      "Nselo": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Nsona Mpangu": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Ntandembelo": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Ntondo": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Nundu": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Nyanga": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Nyangezi": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Nyankunde": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Nyantende": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Nyarambe": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Nyemba": {
+        "province": "Tanganyika",
+        "antenne": "Kalemie"
+      },
+      "Nyiragongo": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Nyunzu": {
+        "province": "Tanganyika",
+        "antenne": "Kalemie"
+      },
+      "Nzaba": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Nzanza": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Obokote": {
+        "province": "Maniema",
+        "antenne": "Lubutu"
+      },
+      "Oicha": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Omendjadi": {
+        "province": "Sankuru",
+        "antenne": "Lodja"
+      },
+      "Opala": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Opienge": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Oshwe": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Ototo": {
+        "province": "Sankuru",
+        "antenne": "Lodja"
+      },
+      "Panda": {
+        "province": "Haut Katanga",
+        "antenne": "Likasi"
+      },
+      "Pangi": {
+        "province": "Maniema",
+        "antenne": "Kindu"
+      },
+      "Pania Mutombo": {
+        "province": "Sankuru",
+        "antenne": "Lusambo"
+      },
+      "Panzi": {
+        "province": "Kwango",
+        "antenne": "Kahemba"
+      },
+      "Pawa": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Pay Kongila": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Pendjwa": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Pimu": {
+        "province": "Mongala",
+        "antenne": "Lisala"
+      },
+      "Pinga": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Poko": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Police": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Popokabaka": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Punia": {
+        "province": "Maniema",
+        "antenne": "Lubutu"
+      },
+      "Pweto": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Rethy": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Rimba": {
+        "province": "Ituri",
+        "antenne": "Aru"
+      },
+      "Ruashi": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Rungu": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Rutshuru": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Ruzizi": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Rwampara": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Rwanguba": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Sakania": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Samba": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Sandoa": {
+        "province": "Lualaba",
+        "antenne": "Kisenge"
+      },
+      "Saramabila": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Seke Banza": {
+        "province": "Kongo Central",
+        "antenne": "Matadi"
+      },
+      "Selembao": {
+        "province": "Kinshasa",
+        "antenne": "Kinshasa-Ouest"
+      },
+      "Shabunda": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Sia": {
+        "province": "Kwilu",
+        "antenne": "Bandundu"
+      },
+      "Sona Bata": {
+        "province": "Kongo Central",
+        "antenne": "Mbanza Ngungu"
+      },
+      "Songa": {
+        "province": "Haut Lomami",
+        "antenne": "Kamina"
+      },
+      "Tandala": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      },
+      "Tchomia": {
+        "province": "Ituri",
+        "antenne": "Bunia"
+      },
+      "Tembo": {
+        "province": "Kwango",
+        "antenne": "Kahemba"
+      },
+      "Titule": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Tshamilemba": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Tshela": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Tshibala": {
+        "province": "Kasai Central",
+        "antenne": "Luiza"
+      },
+      "Tshikaji": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Tshikapa": {
+        "province": "Kasai",
+        "antenne": "Tshikapa"
+      },
+      "Tshikula": {
+        "province": "Kasai Central",
+        "antenne": "Kananga"
+      },
+      "Tshilenge": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Tshishimbi": {
+        "province": "Kasai Oriental",
+        "antenne": "Mbuji-Mayi"
+      },
+      "Tshofa": {
+        "province": "Lomami",
+        "antenne": "Kabinda"
+      },
+      "Tshopo": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Tshudi Loto": {
+        "province": "Sankuru",
+        "antenne": "Lodja"
+      },
+      "Tshumbe": {
+        "province": "Sankuru",
+        "antenne": "Tshumbe"
+      },
+      "Tunda": {
+        "province": "Maniema",
+        "antenne": "Kasongo"
+      },
+      "Ubundu": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Uvira": {
+        "province": "Sud Kivu",
+        "antenne": "Uvira"
+      },
+      "Vaku": {
+        "province": "Kongo Central",
+        "antenne": "Boma"
+      },
+      "Vanga": {
+        "province": "Kwilu",
+        "antenne": "Bandundu"
+      },
+      "Vanga Kete": {
+        "province": "Sankuru",
+        "antenne": "Lodja"
+      },
+      "Vangu": {
+        "province": "Haut Katanga",
+        "antenne": "Lubumbashi"
+      },
+      "Viadana": {
+        "province": "Bas Uele",
+        "antenne": "Buta"
+      },
+      "Vuhovi": {
+        "province": "Nord Kivu",
+        "antenne": "Butembo"
+      },
+      "Walikale": {
+        "province": "Nord Kivu",
+        "antenne": "Goma"
+      },
+      "Walungu": {
+        "province": "Sud Kivu",
+        "antenne": "Bukavu"
+      },
+      "Wamba": {
+        "province": "Haut Uele",
+        "antenne": "Isiro"
+      },
+      "Wamba Lwadi": {
+        "province": "Kwango",
+        "antenne": "Kenge"
+      },
+      "Wangata": {
+        "province": "Equateur",
+        "antenne": "Mbandaka"
+      },
+      "Wanierukula": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Wapinda": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Wasolo": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Watsa": {
+        "province": "Haut Uele",
+        "antenne": "Watsa"
+      },
+      "Wema": {
+        "province": "Tshuapa",
+        "antenne": "Boende"
+      },
+      "Wembo Nyama": {
+        "province": "Sankuru",
+        "antenne": "Tshumbe"
+      },
+      "Wikong": {
+        "province": "Lomami",
+        "antenne": "Mweneditu"
+      },
+      "Yabaondo": {
+        "province": "Tshopo",
+        "antenne": "Lokutu"
+      },
+      "Yahisuli": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Yahuma": {
+        "province": "Tshopo",
+        "antenne": "Lokutu"
+      },
+      "Yakoma": {
+        "province": "Nord Ubangi",
+        "antenne": "Gbadolite"
+      },
+      "Yakusu": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Yaleko": {
+        "province": "Tshopo",
+        "antenne": "Kisangani"
+      },
+      "Yalifafu": {
+        "province": "Tshuapa",
+        "antenne": "Bokungu"
+      },
+      "Yalimbongo": {
+        "province": "Tshopo",
+        "antenne": "Lokutu"
+      },
+      "Yamaluka": {
+        "province": "Mongala",
+        "antenne": "Bumba"
+      },
+      "Yambuku": {
+        "province": "Mongala",
+        "antenne": "Bumba"
+      },
+      "Yamongili": {
+        "province": "Mongala",
+        "antenne": "Bumba"
+      },
+      "Yangala": {
+        "province": "Kasai Central",
+        "antenne": "Luiza"
+      },
+      "Yasa Bonga": {
+        "province": "Kwilu",
+        "antenne": "Kikwit"
+      },
+      "Yumbi": {
+        "province": "Maindombe",
+        "antenne": "Inongo"
+      },
+      "Zongo": {
+        "province": "Sud Ubangi",
+        "antenne": "Gemena"
+      }
+    }
+  },
+  "views": [
+    {
+      "name": "Cover Page",
+      "urlName": "Cover_Page",
+      "rows": 0,
+      "file": null,
+      "image": "views/Cover_Page.png",
+      "antImages": null
+    },
+    {
+      "name": "KPI Manuel_HZ_P1",
+      "urlName": "KPI_Manuel_HZ_P1",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_HZ_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "KPI Manuel_HZ_P2",
+      "urlName": "KPI_Manuel_HZ_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_HZ_P2.png",
+      "antImages": null
+    },
+    {
+      "name": "KPI Manuel_HZ_P3",
+      "urlName": "KPI_Manuel_HZ_P3",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_HZ_P3.png",
+      "antImages": null
+    },
+    {
+      "name": "Configuration_Z",
+      "urlName": "Configuration_Z",
+      "rows": 0,
+      "file": null,
+      "image": "views/Configuration_Z.png",
+      "antImages": null
+    },
+    {
+      "name": "Performance Résumé_HZ",
+      "urlName": "Performance_Resume_HZ",
+      "rows": 4671,
+      "file": "views/Performance_Resume_HZ.json",
+      "image": "views/Performance_Resume_HZ.png",
+      "antImages": null
+    },
+    {
+      "name": "Performance Heatmap_HZ",
+      "urlName": "Performance_Heatmap_HZ",
+      "rows": 7785,
+      "file": "views/Performance_Heatmap_HZ.json",
+      "image": "views/Performance_Heatmap_HZ.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte de Supervision_HZ",
+      "urlName": "Carte_de_Supervision_HZ",
+      "rows": 519,
+      "file": "views/Carte_de_Supervision_HZ.json",
+      "image": "views/Carte_de_Supervision_HZ.png",
+      "antImages": null
+    },
+    {
+      "name": "Supervision_HZ_P1",
+      "urlName": "Supervision_HZ_P1",
+      "rows": 519,
+      "file": "views/Supervision_HZ_P1.json",
+      "image": "views/Supervision_HZ_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Supervision_HZ_P2",
+      "urlName": "Supervision_HZ_P2",
+      "rows": 519,
+      "file": "views/Supervision_HZ_P2.json",
+      "image": "views/Supervision_HZ_P2.png",
+      "antImages": null
+    },
+    {
+      "name": "Supervision_HZ_P3",
+      "urlName": "Supervision_HZ_P3",
+      "rows": 3455,
+      "file": "views/Supervision_HZ_P3.json",
+      "image": "views/Supervision_HZ_P3.png",
+      "antImages": null,
+      "stale_at": "2026-08-04T15:14:04.370Z"
+    },
+    {
+      "name": "Vaccine_dispo_HZ_P1",
+      "urlName": "Vaccine_dispo_HZ_P1",
+      "rows": 6304,
+      "file": "views/Vaccine_dispo_HZ_P1.json",
+      "image": "views/Vaccine_dispo_HZ_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Vaccine_dispo_HZ_P2",
+      "urlName": "Vaccine_dispo_HZ_P2",
+      "rows": 2896,
+      "file": "views/Vaccine_dispo_HZ_P2.json",
+      "image": "views/Vaccine_dispo_HZ_P2.png",
+      "antImages": null,
+      "stale_at": "2026-07-30T15:38:06.350Z"
+    },
+    {
+      "name": "Vaccine_expiration_HZ_P1",
+      "urlName": "Vaccine_expiration_HZ_P1",
+      "rows": 520,
+      "file": "views/Vaccine_expiration_HZ_P1.json",
+      "image": "views/Vaccine_expiration_HZ_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Vaccine_expiration_HZ_P2",
+      "urlName": "Vaccine_expiration_HZ_P2",
+      "rows": 520,
+      "file": "views/Vaccine_expiration_HZ_P2.json",
+      "image": "views/Vaccine_expiration_HZ_P2.png",
+      "antImages": null
+    },
+    {
+      "name": "CDF_HZ_P1",
+      "urlName": "CDF_HZ_P1",
+      "rows": 1086,
+      "file": "views/CDF_HZ_P1.json",
+      "image": "views/CDF_HZ_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "CDF_HZ_P2",
+      "urlName": "CDF_HZ_P2",
+      "rows": 12,
+      "file": "views/CDF_HZ_P2.json",
+      "image": "views/CDF_HZ_P2.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "CDF_HZ_NF",
+      "urlName": "CDF_HZ_NF",
+      "rows": 225,
+      "file": "views/CDF_HZ_NF.json",
+      "image": "views/CDF_HZ_NF.png",
+      "antImages": null
+    },
+    {
+      "name": "Livraison_HZ_P1",
+      "urlName": "Livraison_HZ_P1",
+      "rows": 262,
+      "file": "views/Livraison_HZ_P1.json",
+      "image": "views/Livraison_HZ_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Livraison_HZ_P2",
+      "urlName": "Livraison_HZ_P2",
+      "rows": 8,
+      "file": "views/Livraison_HZ_P2.json",
+      "image": "views/Livraison_HZ_P2.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Séances_HZ_P1",
+      "urlName": "Seances_HZ_P1",
+      "rows": 11,
+      "file": "views/Seances_HZ_P1.json",
+      "image": "views/Seances_HZ_P1.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Séances_HZ_P2",
+      "urlName": "Seances_HZ_P2",
+      "rows": 11,
+      "file": "views/Seances_HZ_P2.json",
+      "image": "views/Seances_HZ_P2.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Taux d'abandon_HZ_P1",
+      "urlName": "Taux_d_abandon_HZ_P1",
+      "rows": 11,
+      "file": "views/Taux_d_abandon_HZ_P1.json",
+      "image": "views/Taux_d_abandon_HZ_P1.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Taux d'abandon_HZ_P2",
+      "urlName": "Taux_d_abandon_HZ_P2",
+      "rows": 11,
+      "file": "views/Taux_d_abandon_HZ_P2.json",
+      "image": "views/Taux_d_abandon_HZ_P2.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Infirmier_HZ_P1",
+      "urlName": "Infirmier_HZ_P1",
+      "rows": 92,
+      "file": "views/Infirmier_HZ_P1.json",
+      "image": "views/Infirmier_HZ_P1.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Infirmier_HZ_P2",
+      "urlName": "Infirmier_HZ_P2",
+      "rows": 4,
+      "file": "views/Infirmier_HZ_P2.json",
+      "image": "views/Infirmier_HZ_P2.png",
+      "antImages": null,
+      "stale_at": "2026-07-26T00:49:26.107Z"
+    },
+    {
+      "name": "Contacts Page",
+      "urlName": "Contacts_Page",
+      "rows": 0,
+      "file": null,
+      "image": "views/Contacts_Page.png",
+      "antImages": null
+    },
+    {
+      "name": "FILTER_VALUES",
+      "urlName": "FILTER_VALUES",
+      "rows": 0,
+      "file": null,
+      "image": "views/FILTER_VALUES.png",
+      "antImages": null
+    },
+    {
+      "name": "FILTER_VALUES_2",
+      "urlName": "FILTER_VALUES_2",
+      "rows": 0,
+      "file": null,
+      "image": "views/FILTER_VALUES_2.png",
+      "antImages": null
+    },
+    {
+      "name": "FILTER_VALUES_3",
+      "urlName": "FILTER_VALUES_3",
+      "rows": 0,
+      "file": null,
+      "image": "views/FILTER_VALUES_3.png",
+      "antImages": null
+    }
+  ]
+}
