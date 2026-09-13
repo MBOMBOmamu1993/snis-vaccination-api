@@ -1,0 +1,3107 @@
+{
+ "generated_at": "2026-07-26T08:32:06.195Z",
+ "zones": {
+  "kizu": {
+   "zs": "kc Kizu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 8,
+   "file": "kizu.json"
+  },
+  "kisantu": {
+   "zs": "kc Kisantu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 19,
+   "file": "kisantu.json"
+  },
+  "kahemba": {
+   "zs": "kg Kahemba Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 31,
+   "file": "kahemba.json"
+  },
+  "mukedi": {
+   "zs": "kl Mukedi Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 33,
+   "file": "mukedi.json"
+  },
+  "masuika": {
+   "zs": "kr Masuika Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 22,
+   "file": "masuika.json"
+  },
+  "kalomba": {
+   "zs": "kr Kalomba Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 18,
+   "file": "kalomba.json"
+  },
+  "lubunga": {
+   "zs": "kr Lubunga Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 26,
+   "file": "lubunga.json"
+  },
+  "bena_tshadi": {
+   "zs": "kr Bena Tshadi Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 11,
+   "file": "bena_tshadi.json"
+  },
+  "luebo": {
+   "zs": "ks Luebo Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 26,
+   "file": "luebo.json"
+  },
+  "kamwesha": {
+   "zs": "ks Kamwesha Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 26,
+   "file": "kamwesha.json"
+  },
+  "mweka": {
+   "zs": "ks Mweka Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 27,
+   "file": "mweka.json"
+  },
+  "tandala": {
+   "zs": "su Tandala Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 22,
+   "file": "tandala.json"
+  },
+  "aketi": {
+   "zs": "bu Aketi Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 21,
+   "file": "aketi.json"
+  },
+  "titule": {
+   "zs": "bu Titule Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 11,
+   "file": "titule.json"
+  },
+  "ganga": {
+   "zs": "bu Ganga Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 22,
+   "file": "ganga.json"
+  },
+  "viadana": {
+   "zs": "bu Viadana Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 15,
+   "file": "viadana.json"
+  },
+  "poko": {
+   "zs": "bu Poko Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 24,
+   "file": "poko.json"
+  },
+  "bili": {
+   "zs": "bu Bili Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 34,
+   "file": "bili.json"
+  },
+  "ango": {
+   "zs": "bu Ango Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 27,
+   "file": "ango.json"
+  },
+  "likati": {
+   "zs": "bu Likati Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 12,
+   "file": "likati.json"
+  },
+  "buta": {
+   "zs": "bu Buta Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 27,
+   "file": "buta.json"
+  },
+  "bondo": {
+   "zs": "bu Bondo Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 23,
+   "file": "bondo.json"
+  },
+  "monga": {
+   "zs": "bu Monga Zone de Santé",
+   "province": "bu Bas Uele Province",
+   "n": 16,
+   "file": "monga.json"
+  },
+  "wangata": {
+   "zs": "eq Wangata Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 12,
+   "file": "wangata.json"
+  },
+  "basankusu": {
+   "zs": "eq Basankusu Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 32,
+   "file": "basankusu.json"
+  },
+  "ingende": {
+   "zs": "eq Ingende Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 21,
+   "file": "ingende.json"
+  },
+  "mbandaka": {
+   "zs": "eq Mbandaka Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 19,
+   "file": "mbandaka.json"
+  },
+  "lotumbe": {
+   "zs": "eq Lotumbe Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 19,
+   "file": "lotumbe.json"
+  },
+  "monieka": {
+   "zs": "eq Monieka Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 18,
+   "file": "monieka.json"
+  },
+  "bolomba": {
+   "zs": "eq Bolomba Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 35,
+   "file": "bolomba.json"
+  },
+  "bomongo": {
+   "zs": "eq Bomongo Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 19,
+   "file": "bomongo.json"
+  },
+  "bikoro": {
+   "zs": "eq Bikoro Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 29,
+   "file": "bikoro.json"
+  },
+  "djombo": {
+   "zs": "eq Djombo Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 20,
+   "file": "djombo.json"
+  },
+  "lilanga_bobangi": {
+   "zs": "eq Lilanga Bobangi Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 12,
+   "file": "lilanga_bobangi.json"
+  },
+  "makanza": {
+   "zs": "eq Makanza Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 24,
+   "file": "makanza.json"
+  },
+  "lukolela": {
+   "zs": "eq Lukolela Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 17,
+   "file": "lukolela.json"
+  },
+  "mampoko": {
+   "zs": "eq Mampoko Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 13,
+   "file": "mampoko.json"
+  },
+  "iboko": {
+   "zs": "eq Iboko Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 16,
+   "file": "iboko.json"
+  },
+  "bolenge": {
+   "zs": "eq Bolenge Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 15,
+   "file": "bolenge.json"
+  },
+  "irebu": {
+   "zs": "eq Irebu Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 18,
+   "file": "irebu.json"
+  },
+  "ntondo": {
+   "zs": "eq Ntondo Zone de Santé",
+   "province": "eq Equateur Province",
+   "n": 14,
+   "file": "ntondo.json"
+  },
+  "kimbanseke": {
+   "zs": "kn Kimbanseke Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 20,
+   "file": "kimbanseke.json"
+  },
+  "kafubu": {
+   "zs": "hk Kafubu Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 21,
+   "file": "kafubu.json"
+  },
+  "tshamilemba": {
+   "zs": "hk Tshamilemba Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 19,
+   "file": "tshamilemba.json"
+  },
+  "mumbunda": {
+   "zs": "hk Mumbunda Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 39,
+   "file": "mumbunda.json"
+  },
+  "katuba": {
+   "zs": "hk Katuba Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 13,
+   "file": "katuba.json"
+  },
+  "ruashi": {
+   "zs": "hk Ruashi Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 33,
+   "file": "ruashi.json"
+  },
+  "kipushi": {
+   "zs": "hk Kipushi Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 23,
+   "file": "kipushi.json"
+  },
+  "pweto": {
+   "zs": "hk Pweto Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 25,
+   "file": "pweto.json"
+  },
+  "kenya": {
+   "zs": "hk Kenya Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 32,
+   "file": "kenya.json"
+  },
+  "panda": {
+   "zs": "hk Panda Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 15,
+   "file": "panda.json"
+  },
+  "kamalondo": {
+   "zs": "hk Kamalondo Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 3,
+   "file": "kamalondo.json"
+  },
+  "manika": {
+   "zs": "ll Manika Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 32,
+   "file": "manika.json"
+  },
+  "lubumbashi": {
+   "zs": "hk Lubumbashi Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 33,
+   "file": "lubumbashi.json"
+  },
+  "likasi": {
+   "zs": "hk Likasi Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 15,
+   "file": "likasi.json"
+  },
+  "kasenga": {
+   "zs": "hk Kasenga Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 22,
+   "file": "kasenga.json"
+  },
+  "kampemba": {
+   "zs": "hk Kampemba Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 33,
+   "file": "kampemba.json"
+  },
+  "kowe": {
+   "zs": "hk Kowe Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 9,
+   "file": "kowe.json"
+  },
+  "kambove": {
+   "zs": "hk Kambove Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 13,
+   "file": "kambove.json"
+  },
+  "kilwa": {
+   "zs": "hk Kilwa Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 27,
+   "file": "kilwa.json"
+  },
+  "mufunga_sampwe": {
+   "zs": "hk Mufunga Sampwe Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 25,
+   "file": "mufunga_sampwe.json"
+  },
+  "mitwaba": {
+   "zs": "hk Mitwaba Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 32,
+   "file": "mitwaba.json"
+  },
+  "kilela_balanda": {
+   "zs": "hk Kilela Balanda Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 11,
+   "file": "kilela_balanda.json"
+  },
+  "kisanga": {
+   "zs": "hk Kisanga Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 28,
+   "file": "kisanga.json"
+  },
+  "sakania": {
+   "zs": "hk Sakania Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 29,
+   "file": "sakania.json"
+  },
+  "vangu": {
+   "zs": "hk Vangu Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 9,
+   "file": "vangu.json"
+  },
+  "dilala": {
+   "zs": "ll Dilala Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 22,
+   "file": "dilala.json"
+  },
+  "kashobwe": {
+   "zs": "hk Kashobwe Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 12,
+   "file": "kashobwe.json"
+  },
+  "kikula": {
+   "zs": "hk Kikula Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 14,
+   "file": "kikula.json"
+  },
+  "kapolowe": {
+   "zs": "hk Kapolowe Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 27,
+   "file": "kapolowe.json"
+  },
+  "kamana": {
+   "zs": "lm Kamana Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 25,
+   "file": "kamana.json"
+  },
+  "lukafu": {
+   "zs": "hk Lukafu Zone de Santé",
+   "province": "hk Haut Katanga Province",
+   "n": 13,
+   "file": "lukafu.json"
+  },
+  "kitenge": {
+   "zs": "hl Kitenge Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 43,
+   "file": "kitenge.json"
+  },
+  "butumba": {
+   "zs": "hl Butumba Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 23,
+   "file": "butumba.json"
+  },
+  "mukanga": {
+   "zs": "hl Mukanga Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 25,
+   "file": "mukanga.json"
+  },
+  "lwamba": {
+   "zs": "hl Lwamba Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 26,
+   "file": "lwamba.json"
+  },
+  "kaniama": {
+   "zs": "hl Kaniama Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 34,
+   "file": "kaniama.json"
+  },
+  "bukama": {
+   "zs": "hl Bukama Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 30,
+   "file": "bukama.json"
+  },
+  "mulongo": {
+   "zs": "hl Mulongo Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 39,
+   "file": "mulongo.json"
+  },
+  "kabongo": {
+   "zs": "hl Kabongo Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 44,
+   "file": "kabongo.json"
+  },
+  "songa": {
+   "zs": "hl Songa Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 35,
+   "file": "songa.json"
+  },
+  "kamina": {
+   "zs": "hl Kamina Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 30,
+   "file": "kamina.json"
+  },
+  "malemba_nkulu": {
+   "zs": "hl Malemba Nkulu Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 27,
+   "file": "malemba_nkulu.json"
+  },
+  "kabondo_dianda": {
+   "zs": "hl Kabondo Dianda Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 27,
+   "file": "kabondo_dianda.json"
+  },
+  "kinkondja": {
+   "zs": "hl Kinkondja Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 29,
+   "file": "kinkondja.json"
+  },
+  "kayamba": {
+   "zs": "hl Kayamba Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 15,
+   "file": "kayamba.json"
+  },
+  "kinda": {
+   "zs": "hl Kinda Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 13,
+   "file": "kinda.json"
+  },
+  "baka": {
+   "zs": "hl Baka Zone de Santé",
+   "province": "hl Haut Lomami Province",
+   "n": 9,
+   "file": "baka.json"
+  },
+  "djuma": {
+   "zs": "kl Djuma Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 38,
+   "file": "djuma.json"
+  },
+  "ndekesha": {
+   "zs": "kr Ndekesha Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 19,
+   "file": "ndekesha.json"
+  },
+  "aba": {
+   "zs": "hu Aba Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 17,
+   "file": "aba.json"
+  },
+  "gombari": {
+   "zs": "hu Gombari Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 16,
+   "file": "gombari.json"
+  },
+  "wamba": {
+   "zs": "hu Wamba Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 18,
+   "file": "wamba.json"
+  },
+  "pawa": {
+   "zs": "hu Pawa Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 18,
+   "file": "pawa.json"
+  },
+  "makoro": {
+   "zs": "hu Makoro Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 13,
+   "file": "makoro.json"
+  },
+  "boma_mangbetu": {
+   "zs": "hu Boma Mangbetu Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 15,
+   "file": "boma_mangbetu.json"
+  },
+  "dungu": {
+   "zs": "hu Dungu Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 21,
+   "file": "dungu.json"
+  },
+  "faradje": {
+   "zs": "hu Faradje Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 17,
+   "file": "faradje.json"
+  },
+  "niangara": {
+   "zs": "hu Niangara Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 14,
+   "file": "niangara.json"
+  },
+  "isiro": {
+   "zs": "hu Isiro Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 22,
+   "file": "isiro.json"
+  },
+  "watsa": {
+   "zs": "hu Watsa Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 18,
+   "file": "watsa.json"
+  },
+  "rungu": {
+   "zs": "hu Rungu Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 15,
+   "file": "rungu.json"
+  },
+  "doruma": {
+   "zs": "hu Doruma Zone de Santé",
+   "province": "hu Haut Uele Province",
+   "n": 11,
+   "file": "doruma.json"
+  },
+  "ariwara": {
+   "zs": "it Ariwara Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 22,
+   "file": "ariwara.json"
+  },
+  "mongbwalu": {
+   "zs": "it Mongbwalu Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 10,
+   "file": "mongbwalu.json"
+  },
+  "adja": {
+   "zs": "it Adja Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 18,
+   "file": "adja.json"
+  },
+  "nyarambe": {
+   "zs": "it Nyarambe Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 23,
+   "file": "nyarambe.json"
+  },
+  "aru": {
+   "zs": "it Aru Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 23,
+   "file": "aru.json"
+  },
+  "rethy": {
+   "zs": "it Rethy Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 20,
+   "file": "rethy.json"
+  },
+  "adi": {
+   "zs": "it Adi Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 21,
+   "file": "adi.json"
+  },
+  "rimba": {
+   "zs": "it Rimba Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 21,
+   "file": "rimba.json"
+  },
+  "biringi": {
+   "zs": "it Biringi Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 16,
+   "file": "biringi.json"
+  },
+  "bunia": {
+   "zs": "it Bunia Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 21,
+   "file": "bunia.json"
+  },
+  "nia_nia": {
+   "zs": "it Nia Nia Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 8,
+   "file": "nia_nia.json"
+  },
+  "aungba": {
+   "zs": "it Aungba Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 23,
+   "file": "aungba.json"
+  },
+  "logo": {
+   "zs": "it Logo Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 24,
+   "file": "logo.json"
+  },
+  "mambasa": {
+   "zs": "it Mambasa Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 16,
+   "file": "mambasa.json"
+  },
+  "mahagi": {
+   "zs": "it Mahagi Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 18,
+   "file": "mahagi.json"
+  },
+  "damas": {
+   "zs": "it Damas Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 9,
+   "file": "damas.json"
+  },
+  "mandima": {
+   "zs": "it Mandima Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 17,
+   "file": "mandima.json"
+  },
+  "laybo": {
+   "zs": "it Laybo Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 19,
+   "file": "laybo.json"
+  },
+  "kilo": {
+   "zs": "it Kilo Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 11,
+   "file": "kilo.json"
+  },
+  "angumu": {
+   "zs": "it Angumu Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 20,
+   "file": "angumu.json"
+  },
+  "gety": {
+   "zs": "it Gety Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 18,
+   "file": "gety.json"
+  },
+  "nyankunde": {
+   "zs": "it Nyankunde Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 11,
+   "file": "nyankunde.json"
+  },
+  "lolwa": {
+   "zs": "it Lolwa Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 9,
+   "file": "lolwa.json"
+  },
+  "lita": {
+   "zs": "it Lita Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 14,
+   "file": "lita.json"
+  },
+  "nizi": {
+   "zs": "it Nizi Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 11,
+   "file": "nizi.json"
+  },
+  "rwampara": {
+   "zs": "it Rwampara Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 16,
+   "file": "rwampara.json"
+  },
+  "komanda": {
+   "zs": "it Komanda Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 19,
+   "file": "komanda.json"
+  },
+  "bambu": {
+   "zs": "it Bambu Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 18,
+   "file": "bambu.json"
+  },
+  "jiba": {
+   "zs": "it Jiba Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 14,
+   "file": "jiba.json"
+  },
+  "mangala": {
+   "zs": "it Mangala Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 11,
+   "file": "mangala.json"
+  },
+  "kambala": {
+   "zs": "it Kambala Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 17,
+   "file": "kambala.json"
+  },
+  "boga": {
+   "zs": "it Boga Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 10,
+   "file": "boga.json"
+  },
+  "drodro": {
+   "zs": "it Drodro Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 16,
+   "file": "drodro.json"
+  },
+  "linga": {
+   "zs": "it Linga Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 19,
+   "file": "linga.json"
+  },
+  "fataki": {
+   "zs": "it Fataki Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 16,
+   "file": "fataki.json"
+  },
+  "tchomia": {
+   "zs": "it Tchomia Zone de Santé",
+   "province": "it Ituri Province",
+   "n": 13,
+   "file": "tchomia.json"
+  },
+  "mbanza_ngungu": {
+   "zs": "kc Mbanza Ngungu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 16,
+   "file": "mbanza_ngungu.json"
+  },
+  "kitona": {
+   "zs": "kc Kitona Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 5,
+   "file": "kitona.json"
+  },
+  "massa": {
+   "zs": "kc Massa Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 15,
+   "file": "massa.json"
+  },
+  "luozi": {
+   "zs": "kc Luozi Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 12,
+   "file": "luozi.json"
+  },
+  "lukula": {
+   "zs": "kc Lukula Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 21,
+   "file": "lukula.json"
+  },
+  "nzanza": {
+   "zs": "kc Nzanza Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 11,
+   "file": "nzanza.json"
+  },
+  "kimpese": {
+   "zs": "kc Kimpese Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 21,
+   "file": "kimpese.json"
+  },
+  "kwilu_ngongo": {
+   "zs": "kc Kwilu Ngongo Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 25,
+   "file": "kwilu_ngongo.json"
+  },
+  "mangembo": {
+   "zs": "kc Mangembo Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 10,
+   "file": "mangembo.json"
+  },
+  "sona_bata": {
+   "zs": "kc Sona Bata Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 16,
+   "file": "sona_bata.json"
+  },
+  "boko_kivulu": {
+   "zs": "kc Boko Kivulu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 24,
+   "file": "boko_kivulu.json"
+  },
+  "boma": {
+   "zs": "kc Boma Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 11,
+   "file": "boma.json"
+  },
+  "kuimba": {
+   "zs": "kc Kuimba Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 11,
+   "file": "kuimba.json"
+  },
+  "vaku": {
+   "zs": "kc Vaku Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 9,
+   "file": "vaku.json"
+  },
+  "kimpangu": {
+   "zs": "kc Kimpangu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 15,
+   "file": "kimpangu.json"
+  },
+  "tshela": {
+   "zs": "kc Tshela Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 10,
+   "file": "tshela.json"
+  },
+  "gombe_matadi": {
+   "zs": "kc Gombe Matadi Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 20,
+   "file": "gombe_matadi.json"
+  },
+  "matadi": {
+   "zs": "kc Matadi Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 11,
+   "file": "matadi.json"
+  },
+  "inga": {
+   "zs": "kc Inga Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 13,
+   "file": "inga.json"
+  },
+  "muanda": {
+   "zs": "kc Muanda Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 12,
+   "file": "muanda.json"
+  },
+  "kinkonzi": {
+   "zs": "kc Kinkonzi Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 11,
+   "file": "kinkonzi.json"
+  },
+  "kangu": {
+   "zs": "kc Kangu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 12,
+   "file": "kangu.json"
+  },
+  "boma_bungu": {
+   "zs": "kc Boma Bungu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 15,
+   "file": "boma_bungu.json"
+  },
+  "nselo": {
+   "zs": "kc Nselo Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 10,
+   "file": "nselo.json"
+  },
+  "kibunzi": {
+   "zs": "kc Kibunzi Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 11,
+   "file": "kibunzi.json"
+  },
+  "seke_banza": {
+   "zs": "kc Seke Banza Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 18,
+   "file": "seke_banza.json"
+  },
+  "kimvula": {
+   "zs": "kc Kimvula Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 13,
+   "file": "kimvula.json"
+  },
+  "ngidinga": {
+   "zs": "kc Ngidinga Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 19,
+   "file": "ngidinga.json"
+  },
+  "nsona_mpangu": {
+   "zs": "kc Nsona Mpangu Zone de Santé",
+   "province": "kc Kongo Central Province",
+   "n": 22,
+   "file": "nsona_mpangu.json"
+  },
+  "lukelenge": {
+   "zs": "ke Lukelenge Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 17,
+   "file": "lukelenge.json"
+  },
+  "nzaba": {
+   "zs": "ke Nzaba Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 17,
+   "file": "nzaba.json"
+  },
+  "tshilenge": {
+   "zs": "ke Tshilenge Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 24,
+   "file": "tshilenge.json"
+  },
+  "kabeya_kamwanga": {
+   "zs": "ke Kabeya Kamwanga Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 13,
+   "file": "kabeya_kamwanga.json"
+  },
+  "mukumbi": {
+   "zs": "ke Mukumbi Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 16,
+   "file": "mukumbi.json"
+  },
+  "miabi": {
+   "zs": "ke Miabi Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 19,
+   "file": "miabi.json"
+  },
+  "tshishimbi": {
+   "zs": "ke Tshishimbi Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 15,
+   "file": "tshishimbi.json"
+  },
+  "cilundu": {
+   "zs": "ke Cilundu Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 21,
+   "file": "cilundu.json"
+  },
+  "diulu": {
+   "zs": "ke Diulu Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 24,
+   "file": "diulu.json"
+  },
+  "kasansa": {
+   "zs": "ke Kasansa Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 20,
+   "file": "kasansa.json"
+  },
+  "bibanga": {
+   "zs": "ke Bibanga Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 17,
+   "file": "bibanga.json"
+  },
+  "kansele": {
+   "zs": "ke Kansele Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 20,
+   "file": "kansele.json"
+  },
+  "bonzola": {
+   "zs": "ke Bonzola Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 19,
+   "file": "bonzola.json"
+  },
+  "muya": {
+   "zs": "ke Muya Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 22,
+   "file": "muya.json"
+  },
+  "dibindi": {
+   "zs": "ke Dibindi Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 15,
+   "file": "dibindi.json"
+  },
+  "lubilanji": {
+   "zs": "ke Lubilanji Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 18,
+   "file": "lubilanji.json"
+  },
+  "citenge": {
+   "zs": "ke Citenge Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 18,
+   "file": "citenge.json"
+  },
+  "mpokolo": {
+   "zs": "ke Mpokolo Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 17,
+   "file": "mpokolo.json"
+  },
+  "bipemba": {
+   "zs": "ke Bipemba Zone de Santé",
+   "province": "ke Kasai Oriental Province",
+   "n": 18,
+   "file": "bipemba.json"
+  },
+  "kitenda": {
+   "zs": "kg Kitenda Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 28,
+   "file": "kitenda.json"
+  },
+  "kasongo_lunda": {
+   "zs": "kg Kasongo Lunda Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 24,
+   "file": "kasongo_lunda.json"
+  },
+  "kenge": {
+   "zs": "kg Kenge Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 30,
+   "file": "kenge.json"
+  },
+  "boko": {
+   "zs": "kg Boko Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 25,
+   "file": "boko.json"
+  },
+  "wamba_lwadi": {
+   "zs": "kg Wamba Lwadi Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 25,
+   "file": "wamba_lwadi.json"
+  },
+  "panzi": {
+   "zs": "kg Panzi Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 26,
+   "file": "panzi.json"
+  },
+  "kajiji": {
+   "zs": "kg Kajiji Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 23,
+   "file": "kajiji.json"
+  },
+  "popokabaka": {
+   "zs": "kg Popokabaka Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 30,
+   "file": "popokabaka.json"
+  },
+  "feshi": {
+   "zs": "kg Feshi Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 22,
+   "file": "feshi.json"
+  },
+  "mwela_lembwa": {
+   "zs": "kg Mwela Lembwa Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 16,
+   "file": "mwela_lembwa.json"
+  },
+  "kimbao": {
+   "zs": "kg Kimbao Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 27,
+   "file": "kimbao.json"
+  },
+  "kisanji": {
+   "zs": "kg Kisanji Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 23,
+   "file": "kisanji.json"
+  },
+  "tembo": {
+   "zs": "kg Tembo Zone de Santé",
+   "province": "kg Kwango Province",
+   "n": 17,
+   "file": "tembo.json"
+  },
+  "kikwit_nord": {
+   "zs": "kl Kikwit Nord Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 29,
+   "file": "kikwit_nord.json"
+  },
+  "kikwit_sud": {
+   "zs": "kl Kikwit Sud Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 33,
+   "file": "kikwit_sud.json"
+  },
+  "mungindu": {
+   "zs": "kl Mungindu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 25,
+   "file": "mungindu.json"
+  },
+  "kimputu": {
+   "zs": "kl Kimputu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 29,
+   "file": "kimputu.json"
+  },
+  "vanga": {
+   "zs": "kl Vanga Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 36,
+   "file": "vanga.json"
+  },
+  "bagata": {
+   "zs": "kl Bagata Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 22,
+   "file": "bagata.json"
+  },
+  "koshibanda": {
+   "zs": "kl Koshibanda Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 26,
+   "file": "koshibanda.json"
+  },
+  "idiofa": {
+   "zs": "kl Idiofa Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 46,
+   "file": "idiofa.json"
+  },
+  "ipamu": {
+   "zs": "kl Ipamu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 34,
+   "file": "ipamu.json"
+  },
+  "bandundu": {
+   "zs": "kl Bandundu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 20,
+   "file": "bandundu.json"
+  },
+  "yasa_bonga": {
+   "zs": "kl Yasa Bonga Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 30,
+   "file": "yasa_bonga.json"
+  },
+  "masi_manimba": {
+   "zs": "kl Masi Manimba Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 21,
+   "file": "masi_manimba.json"
+  },
+  "mokala": {
+   "zs": "kl Mokala Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 33,
+   "file": "mokala.json"
+  },
+  "bulungu": {
+   "zs": "kl Bulungu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 36,
+   "file": "bulungu.json"
+  },
+  "moanza": {
+   "zs": "kl Moanza Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 21,
+   "file": "moanza.json"
+  },
+  "lusanga": {
+   "zs": "kl Lusanga Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 32,
+   "file": "lusanga.json"
+  },
+  "gungu": {
+   "zs": "kl Gungu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 27,
+   "file": "gungu.json"
+  },
+  "sia": {
+   "zs": "kl Sia Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 23,
+   "file": "sia.json"
+  },
+  "kikongo": {
+   "zs": "kl Kikongo Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 21,
+   "file": "kikongo.json"
+  },
+  "kingandu": {
+   "zs": "kl Kingandu Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 17,
+   "file": "kingandu.json"
+  },
+  "mosango": {
+   "zs": "kl Mosango Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 16,
+   "file": "mosango.json"
+  },
+  "pay_kongila": {
+   "zs": "kl Pay Kongila Zone de Santé",
+   "province": "kl Kwilu Province",
+   "n": 18,
+   "file": "pay_kongila.json"
+  },
+  "kisenso": {
+   "zs": "kn Kisenso Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 18,
+   "file": "kisenso.json"
+  },
+  "ngiri_ngiri": {
+   "zs": "kn Ngiri Ngiri Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 9,
+   "file": "ngiri_ngiri.json"
+  },
+  "masina_1": {
+   "zs": "kn Masina 1 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 11,
+   "file": "masina_1.json"
+  },
+  "bandalungwa": {
+   "zs": "kn Bandalungwa Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 8,
+   "file": "bandalungwa.json"
+  },
+  "limete": {
+   "zs": "kn Limete Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 10,
+   "file": "limete.json"
+  },
+  "kinshasa": {
+   "zs": "kn Kinshasa Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 8,
+   "file": "kinshasa.json"
+  },
+  "kingasani": {
+   "zs": "kn Kingasani Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 9,
+   "file": "kingasani.json"
+  },
+  "nsele": {
+   "zs": "kn Nsele Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 17,
+   "file": "nsele.json"
+  },
+  "kokolo": {
+   "zs": "kn Kokolo Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 15,
+   "file": "kokolo.json"
+  },
+  "makala": {
+   "zs": "kn Makala Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 10,
+   "file": "makala.json"
+  },
+  "ngaba": {
+   "zs": "kn Ngaba Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 7,
+   "file": "ngaba.json"
+  },
+  "gombe": {
+   "zs": "kn Gombe Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 15,
+   "file": "gombe.json"
+  },
+  "biyela": {
+   "zs": "kn Biyela Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 12,
+   "file": "biyela.json"
+  },
+  "binza_meteo": {
+   "zs": "kn Binza Meteo Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 8,
+   "file": "binza_meteo.json"
+  },
+  "kikimi": {
+   "zs": "kn Kikimi Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 9,
+   "file": "kikimi.json"
+  },
+  "maluku_1": {
+   "zs": "kn Maluku 1 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 15,
+   "file": "maluku_1.json"
+  },
+  "barumbu": {
+   "zs": "kn Barumbu Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 12,
+   "file": "barumbu.json"
+  },
+  "maluku_2": {
+   "zs": "kn Maluku 2 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 13,
+   "file": "maluku_2.json"
+  },
+  "lingwala": {
+   "zs": "kn Lingwala Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 6,
+   "file": "lingwala.json"
+  },
+  "selembao": {
+   "zs": "kn Selembao Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 12,
+   "file": "selembao.json"
+  },
+  "lemba": {
+   "zs": "kn Lemba Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 11,
+   "file": "lemba.json"
+  },
+  "bumbu": {
+   "zs": "kn Bumbu Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 22,
+   "file": "bumbu.json"
+  },
+  "matete": {
+   "zs": "kn Matete Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 12,
+   "file": "matete.json"
+  },
+  "mont_ngafula_2": {
+   "zs": "kn Mont Ngafula 2 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 9,
+   "file": "mont_ngafula_2.json"
+  },
+  "mont_ngafula_1": {
+   "zs": "kn Mont Ngafula 1 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 19,
+   "file": "mont_ngafula_1.json"
+  },
+  "fungurume": {
+   "zs": "ll Fungurume Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 29,
+   "file": "fungurume.json"
+  },
+  "kalamu_1": {
+   "zs": "kn Kalamu 1 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 10,
+   "file": "kalamu_1.json"
+  },
+  "binza_ozone": {
+   "zs": "kn Binza Ozone Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 13,
+   "file": "binza_ozone.json"
+  },
+  "police": {
+   "zs": "kn Police Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 8,
+   "file": "police.json"
+  },
+  "kintambo": {
+   "zs": "kn Kintambo Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 4,
+   "file": "kintambo.json"
+  },
+  "kingabwa": {
+   "zs": "kn Kingabwa Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 10,
+   "file": "kingabwa.json"
+  },
+  "masina_2": {
+   "zs": "kn Masina 2 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 8,
+   "file": "masina_2.json"
+  },
+  "kasa_vubu": {
+   "zs": "kn Kasa Vubu Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 2,
+   "file": "kasa_vubu.json"
+  },
+  "kalamu_2": {
+   "zs": "kn Kalamu 2 Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 8,
+   "file": "kalamu_2.json"
+  },
+  "ndjili": {
+   "zs": "kn Ndjili Zone de Santé",
+   "province": "kn Kinshasa Province",
+   "n": 14,
+   "file": "ndjili.json"
+  },
+  "kananga": {
+   "zs": "kr Kananga Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 27,
+   "file": "kananga.json"
+  },
+  "demba": {
+   "zs": "kr Demba Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 25,
+   "file": "demba.json"
+  },
+  "katende": {
+   "zs": "kr Katende Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 11,
+   "file": "katende.json"
+  },
+  "bena_leka": {
+   "zs": "kr Bena Leka Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 22,
+   "file": "bena_leka.json"
+  },
+  "mikalayi": {
+   "zs": "kr Mikalayi Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 17,
+   "file": "mikalayi.json"
+  },
+  "luiza": {
+   "zs": "kr Luiza Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 19,
+   "file": "luiza.json"
+  },
+  "tshibala": {
+   "zs": "kr Tshibala Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 21,
+   "file": "tshibala.json"
+  },
+  "dibaya": {
+   "zs": "kr Dibaya Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 15,
+   "file": "dibaya.json"
+  },
+  "muetshi": {
+   "zs": "kr Muetshi Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 12,
+   "file": "muetshi.json"
+  },
+  "katoka": {
+   "zs": "kr Katoka Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 10,
+   "file": "katoka.json"
+  },
+  "luambo": {
+   "zs": "kr Luambo Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 21,
+   "file": "luambo.json"
+  },
+  "mutoto": {
+   "zs": "kr Mutoto Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 14,
+   "file": "mutoto.json"
+  },
+  "bilomba": {
+   "zs": "kr Bilomba Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 14,
+   "file": "bilomba.json"
+  },
+  "tshikula": {
+   "zs": "kr Tshikula Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 20,
+   "file": "tshikula.json"
+  },
+  "bobozo": {
+   "zs": "kr Bobozo Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 11,
+   "file": "bobozo.json"
+  },
+  "lubondaie": {
+   "zs": "kr Lubondaie Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 25,
+   "file": "lubondaie.json"
+  },
+  "yangala": {
+   "zs": "kr Yangala Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 28,
+   "file": "yangala.json"
+  },
+  "ndesha": {
+   "zs": "kr Ndesha Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 8,
+   "file": "ndesha.json"
+  },
+  "bunkonde": {
+   "zs": "kr Bunkonde Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 11,
+   "file": "bunkonde.json"
+  },
+  "lukonga": {
+   "zs": "kr Lukonga Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 19,
+   "file": "lukonga.json"
+  },
+  "tshikaji": {
+   "zs": "kr Tshikaji Zone de Santé",
+   "province": "kr Kasai Central Province",
+   "n": 14,
+   "file": "tshikaji.json"
+  },
+  "tshikapa": {
+   "zs": "ks Tshikapa Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 19,
+   "file": "tshikapa.json"
+  },
+  "dekese": {
+   "zs": "ks Dekese Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 20,
+   "file": "dekese.json"
+  },
+  "kalonda_ouest": {
+   "zs": "ks Kalonda Ouest Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 23,
+   "file": "kalonda_ouest.json"
+  },
+  "kakenge": {
+   "zs": "ks Kakenge Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 26,
+   "file": "kakenge.json"
+  },
+  "bulape": {
+   "zs": "ks Bulape Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 19,
+   "file": "bulape.json"
+  },
+  "ilebo": {
+   "zs": "ks Ilebo Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 10,
+   "file": "ilebo.json"
+  },
+  "banga_lubaka": {
+   "zs": "ks Banga Lubaka Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 16,
+   "file": "banga_lubaka.json"
+  },
+  "ndjoko_mpunda": {
+   "zs": "ks Ndjoko Mpunda Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 15,
+   "file": "ndjoko_mpunda.json"
+  },
+  "mikope": {
+   "zs": "ks Mikope Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 23,
+   "file": "mikope.json"
+  },
+  "mushenge": {
+   "zs": "ks Mushenge Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 27,
+   "file": "mushenge.json"
+  },
+  "kamonia": {
+   "zs": "ks Kamonia Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 24,
+   "file": "kamonia.json"
+  },
+  "nyanga": {
+   "zs": "ks Nyanga Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 10,
+   "file": "nyanga.json"
+  },
+  "kitangwa": {
+   "zs": "ks Kitangwa Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 23,
+   "file": "kitangwa.json"
+  },
+  "mutena": {
+   "zs": "ks Mutena Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 14,
+   "file": "mutena.json"
+  },
+  "kanzala": {
+   "zs": "ks Kanzala Zone de Santé",
+   "province": "ks Kasai Province",
+   "n": 12,
+   "file": "kanzala.json"
+  },
+  "lubudi": {
+   "zs": "ll Lubudi Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 16,
+   "file": "lubudi.json"
+  },
+  "bunkeya": {
+   "zs": "ll Bunkeya Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 8,
+   "file": "bunkeya.json"
+  },
+  "kapanga": {
+   "zs": "ll Kapanga Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 21,
+   "file": "kapanga.json"
+  },
+  "kalamba": {
+   "zs": "ll Kalamba Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 17,
+   "file": "kalamba.json"
+  },
+  "dilolo": {
+   "zs": "ll Dilolo Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 22,
+   "file": "dilolo.json"
+  },
+  "kasaji": {
+   "zs": "ll Kasaji Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 25,
+   "file": "kasaji.json"
+  },
+  "kafakumba": {
+   "zs": "ll Kafakumba Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 13,
+   "file": "kafakumba.json"
+  },
+  "sandoa": {
+   "zs": "ll Sandoa Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 23,
+   "file": "sandoa.json"
+  },
+  "lualaba": {
+   "zs": "ll Lualaba Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 17,
+   "file": "lualaba.json"
+  },
+  "mutshatsha": {
+   "zs": "ll Mutshatsha Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 13,
+   "file": "mutshatsha.json"
+  },
+  "kanzenze": {
+   "zs": "ll Kanzenze Zone de Santé",
+   "province": "ll Lualaba Province",
+   "n": 17,
+   "file": "kanzenze.json"
+  },
+  "kabinda": {
+   "zs": "lm Kabinda Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 25,
+   "file": "kabinda.json"
+  },
+  "luputa": {
+   "zs": "lm Luputa Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 27,
+   "file": "luputa.json"
+  },
+  "kalambayi_kabanga": {
+   "zs": "lm Kalambayi Kabanga Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 13,
+   "file": "kalambayi_kabanga.json"
+  },
+  "ludimbi_lukula": {
+   "zs": "lm Ludimbi Lukula Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 13,
+   "file": "ludimbi_lukula.json"
+  },
+  "kalonda_est": {
+   "zs": "lm Kalonda Est Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 22,
+   "file": "kalonda_est.json"
+  },
+  "kanda_kanda": {
+   "zs": "lm Kanda Kanda Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 14,
+   "file": "kanda_kanda.json"
+  },
+  "tshofa": {
+   "zs": "lm Tshofa Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 17,
+   "file": "tshofa.json"
+  },
+  "mweneditu": {
+   "zs": "lm Mweneditu Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 24,
+   "file": "mweneditu.json"
+  },
+  "kalenda": {
+   "zs": "lm Kalenda Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 26,
+   "file": "kalenda.json"
+  },
+  "wikong": {
+   "zs": "lm Wikong Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 16,
+   "file": "wikong.json"
+  },
+  "ngandajika": {
+   "zs": "lm Ngandajika Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 15,
+   "file": "ngandajika.json"
+  },
+  "kamiji": {
+   "zs": "lm Kamiji Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 7,
+   "file": "kamiji.json"
+  },
+  "lubao": {
+   "zs": "lm Lubao Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 10,
+   "file": "lubao.json"
+  },
+  "makota": {
+   "zs": "lm Makota Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 14,
+   "file": "makota.json"
+  },
+  "mulumba": {
+   "zs": "lm Mulumba Zone de Santé",
+   "province": "lm Lomami Province",
+   "n": 16,
+   "file": "mulumba.json"
+  },
+  "kiri": {
+   "zs": "md Kiri Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 26,
+   "file": "kiri.json"
+  },
+  "inongo": {
+   "zs": "md Inongo Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 33,
+   "file": "inongo.json"
+  },
+  "bosobe": {
+   "zs": "md Bosobe Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 18,
+   "file": "bosobe.json"
+  },
+  "banzow_moke": {
+   "zs": "md Banzow Moke Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 16,
+   "file": "banzow_moke.json"
+  },
+  "oshwe": {
+   "zs": "md Oshwe Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 29,
+   "file": "oshwe.json"
+  },
+  "nioki": {
+   "zs": "md Nioki Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 24,
+   "file": "nioki.json"
+  },
+  "pendjwa": {
+   "zs": "md Pendjwa Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 18,
+   "file": "pendjwa.json"
+  },
+  "bolobo": {
+   "zs": "md Bolobo Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 23,
+   "file": "bolobo.json"
+  },
+  "bokoro": {
+   "zs": "md Bokoro Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 25,
+   "file": "bokoro.json"
+  },
+  "mimia": {
+   "zs": "md Mimia Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 16,
+   "file": "mimia.json"
+  },
+  "yumbi": {
+   "zs": "md Yumbi Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 16,
+   "file": "yumbi.json"
+  },
+  "kwamouth": {
+   "zs": "md Kwamouth Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 19,
+   "file": "kwamouth.json"
+  },
+  "mushie": {
+   "zs": "md Mushie Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 18,
+   "file": "mushie.json"
+  },
+  "ntandembelo": {
+   "zs": "md Ntandembelo Zone de Santé",
+   "province": "md Maindombe Province",
+   "n": 19,
+   "file": "ntandembelo.json"
+  },
+  "binga": {
+   "zs": "mg Binga Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 31,
+   "file": "binga.json"
+  },
+  "yambuku": {
+   "zs": "mg Yambuku Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 37,
+   "file": "yambuku.json"
+  },
+  "lisala": {
+   "zs": "mg Lisala Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 32,
+   "file": "lisala.json"
+  },
+  "bosondjo": {
+   "zs": "mg Bosondjo Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 26,
+   "file": "bosondjo.json"
+  },
+  "yamaluka": {
+   "zs": "mg Yamaluka Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 19,
+   "file": "yamaluka.json"
+  },
+  "bongandanga": {
+   "zs": "mg Bongandanga Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 25,
+   "file": "bongandanga.json"
+  },
+  "pimu": {
+   "zs": "mg Pimu Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 26,
+   "file": "pimu.json"
+  },
+  "boso_manzi": {
+   "zs": "mg Boso Manzi Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 18,
+   "file": "boso_manzi.json"
+  },
+  "lolo": {
+   "zs": "mg Lolo Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 22,
+   "file": "lolo.json"
+  },
+  "boso_mondanda": {
+   "zs": "mg Boso Mondanda Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 17,
+   "file": "boso_mondanda.json"
+  },
+  "yamongili": {
+   "zs": "mg Yamongili Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 25,
+   "file": "yamongili.json"
+  },
+  "bumba": {
+   "zs": "mg Bumba Zone de Santé",
+   "province": "mg Mongala Province",
+   "n": 10,
+   "file": "bumba.json"
+  },
+  "alunguli": {
+   "zs": "mn Alunguli Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 8,
+   "file": "alunguli.json"
+  },
+  "lubutu": {
+   "zs": "mn Lubutu Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 20,
+   "file": "lubutu.json"
+  },
+  "saramabila": {
+   "zs": "mn Saramabila Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 15,
+   "file": "saramabila.json"
+  },
+  "lusangi": {
+   "zs": "mn Lusangi Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 17,
+   "file": "lusangi.json"
+  },
+  "kunda": {
+   "zs": "mn Kunda Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 22,
+   "file": "kunda.json"
+  },
+  "punia": {
+   "zs": "mn Punia Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 15,
+   "file": "punia.json"
+  },
+  "kibombo": {
+   "zs": "mn Kibombo Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 11,
+   "file": "kibombo.json"
+  },
+  "kampene": {
+   "zs": "mn Kampene Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 16,
+   "file": "kampene.json"
+  },
+  "kabambare": {
+   "zs": "mn Kabambare Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 10,
+   "file": "kabambare.json"
+  },
+  "kalima": {
+   "zs": "mn Kalima Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 18,
+   "file": "kalima.json"
+  },
+  "samba": {
+   "zs": "mn Samba Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 11,
+   "file": "samba.json"
+  },
+  "tunda": {
+   "zs": "mn Tunda Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 10,
+   "file": "tunda.json"
+  },
+  "kailo": {
+   "zs": "mn Kailo Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 16,
+   "file": "kailo.json"
+  },
+  "obokote": {
+   "zs": "mn Obokote Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 10,
+   "file": "obokote.json"
+  },
+  "ferekeni": {
+   "zs": "mn Ferekeni Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 10,
+   "file": "ferekeni.json"
+  },
+  "pangi": {
+   "zs": "mn Pangi Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 17,
+   "file": "pangi.json"
+  },
+  "kasongo": {
+   "zs": "mn Kasongo Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 22,
+   "file": "kasongo.json"
+  },
+  "kindu": {
+   "zs": "mn Kindu Zone de Santé",
+   "province": "mn Maniema Province",
+   "n": 8,
+   "file": "kindu.json"
+  },
+  "walikale": {
+   "zs": "nk Walikale Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 19,
+   "file": "walikale.json"
+  },
+  "manguredjipa": {
+   "zs": "nk Manguredjipa Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 11,
+   "file": "manguredjipa.json"
+  },
+  "karisimbi": {
+   "zs": "nk Karisimbi Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 20,
+   "file": "karisimbi.json"
+  },
+  "alimbongo": {
+   "zs": "nk Alimbongo Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 23,
+   "file": "alimbongo.json"
+  },
+  "mabalako": {
+   "zs": "nk Mabalako Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 15,
+   "file": "mabalako.json"
+  },
+  "kalunguta": {
+   "zs": "nk Kalunguta Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 19,
+   "file": "kalunguta.json"
+  },
+  "oicha": {
+   "zs": "nk Oicha Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 24,
+   "file": "oicha.json"
+  },
+  "beni": {
+   "zs": "nk Beni Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 23,
+   "file": "beni.json"
+  },
+  "pinga": {
+   "zs": "nk Pinga Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 15,
+   "file": "pinga.json"
+  },
+  "biena": {
+   "zs": "nk Biena Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 12,
+   "file": "biena.json"
+  },
+  "mweso": {
+   "zs": "nk Mweso Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 23,
+   "file": "mweso.json"
+  },
+  "katoyi": {
+   "zs": "nk Katoyi Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 21,
+   "file": "katoyi.json"
+  },
+  "musienene": {
+   "zs": "nk Musienene Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 21,
+   "file": "musienene.json"
+  },
+  "birambizo": {
+   "zs": "nk Birambizo Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 15,
+   "file": "birambizo.json"
+  },
+  "itebero": {
+   "zs": "nk Itebero Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 24,
+   "file": "itebero.json"
+  },
+  "rutshuru": {
+   "zs": "nk Rutshuru Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 16,
+   "file": "rutshuru.json"
+  },
+  "kibirizi": {
+   "zs": "nk Kibirizi Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 19,
+   "file": "kibirizi.json"
+  },
+  "kirotshe": {
+   "zs": "nk Kirotshe Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 26,
+   "file": "kirotshe.json"
+  },
+  "masisi": {
+   "zs": "nk Masisi Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 25,
+   "file": "masisi.json"
+  },
+  "kamango": {
+   "zs": "nk Kamango Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 14,
+   "file": "kamango.json"
+  },
+  "rwanguba": {
+   "zs": "nk Rwanguba Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 23,
+   "file": "rwanguba.json"
+  },
+  "vuhovi": {
+   "zs": "nk Vuhovi Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 11,
+   "file": "vuhovi.json"
+  },
+  "goma": {
+   "zs": "nk Goma Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 10,
+   "file": "goma.json"
+  },
+  "nyiragongo": {
+   "zs": "nk Nyiragongo Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 12,
+   "file": "nyiragongo.json"
+  },
+  "masereka": {
+   "zs": "nk Masereka Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 16,
+   "file": "masereka.json"
+  },
+  "lubero": {
+   "zs": "nk Lubero Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 18,
+   "file": "lubero.json"
+  },
+  "kayna": {
+   "zs": "nk Kayna Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 23,
+   "file": "kayna.json"
+  },
+  "binza": {
+   "zs": "nk Binza Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 13,
+   "file": "binza.json"
+  },
+  "kyondo": {
+   "zs": "nk Kyondo Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 22,
+   "file": "kyondo.json"
+  },
+  "bambo": {
+   "zs": "nk Bambo Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 13,
+   "file": "bambo.json"
+  },
+  "kibua": {
+   "zs": "nk Kibua Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 19,
+   "file": "kibua.json"
+  },
+  "mutwanga": {
+   "zs": "nk Mutwanga Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 20,
+   "file": "mutwanga.json"
+  },
+  "katwa": {
+   "zs": "nk Katwa Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 22,
+   "file": "katwa.json"
+  },
+  "butembo": {
+   "zs": "nk Butembo Zone de Santé",
+   "province": "nk Nord Kivu Province",
+   "n": 16,
+   "file": "butembo.json"
+  },
+  "wapinda": {
+   "zs": "nu Wapinda Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 11,
+   "file": "wapinda.json"
+  },
+  "mobayi_mbongo": {
+   "zs": "nu Mobayi Mbongo Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 18,
+   "file": "mobayi_mbongo.json"
+  },
+  "wasolo": {
+   "zs": "nu Wasolo Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 14,
+   "file": "wasolo.json"
+  },
+  "karawa": {
+   "zs": "nu Karawa Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 24,
+   "file": "karawa.json"
+  },
+  "businga": {
+   "zs": "nu Businga Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 11,
+   "file": "businga.json"
+  },
+  "loko": {
+   "zs": "nu Loko Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 15,
+   "file": "loko.json"
+  },
+  "abuzi": {
+   "zs": "nu Abuzi Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 14,
+   "file": "abuzi.json"
+  },
+  "bosobolo": {
+   "zs": "nu Bosobolo Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 18,
+   "file": "bosobolo.json"
+  },
+  "gbadolite": {
+   "zs": "nu Gbadolite Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 12,
+   "file": "gbadolite.json"
+  },
+  "yakoma": {
+   "zs": "nu Yakoma Zone de Santé",
+   "province": "nu Nord Ubangi Province",
+   "n": 14,
+   "file": "yakoma.json"
+  },
+  "nundu": {
+   "zs": "sk Nundu Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 19,
+   "file": "nundu.json"
+  },
+  "itombwe": {
+   "zs": "sk Itombwe Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 17,
+   "file": "itombwe.json"
+  },
+  "kamituga": {
+   "zs": "sk Kamituga Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 23,
+   "file": "kamituga.json"
+  },
+  "bunyakiri": {
+   "zs": "sk Bunyakiri Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 24,
+   "file": "bunyakiri.json"
+  },
+  "bagira": {
+   "zs": "sk Bagira Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 8,
+   "file": "bagira.json"
+  },
+  "kitutu": {
+   "zs": "sk Kitutu Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 23,
+   "file": "kitutu.json"
+  },
+  "haut_plateau": {
+   "zs": "sk Haut Plateau Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 18,
+   "file": "haut_plateau.json"
+  },
+  "kimbi_lulenge": {
+   "zs": "sk Kimbi Lulenge Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 20,
+   "file": "kimbi_lulenge.json"
+  },
+  "fizi": {
+   "zs": "sk Fizi Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 22,
+   "file": "fizi.json"
+  },
+  "walungu": {
+   "zs": "sk Walungu Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 26,
+   "file": "walungu.json"
+  },
+  "minembwe": {
+   "zs": "sk Minembwe Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 17,
+   "file": "minembwe.json"
+  },
+  "kadutu": {
+   "zs": "sk Kadutu Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 13,
+   "file": "kadutu.json"
+  },
+  "katana": {
+   "zs": "sk Katana Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 18,
+   "file": "katana.json"
+  },
+  "ruzizi": {
+   "zs": "sk Ruzizi Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 24,
+   "file": "ruzizi.json"
+  },
+  "mwenga": {
+   "zs": "sk Mwenga Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 15,
+   "file": "mwenga.json"
+  },
+  "kalonge": {
+   "zs": "sk Kalonge Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 18,
+   "file": "kalonge.json"
+  },
+  "minova": {
+   "zs": "sk Minova Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 19,
+   "file": "minova.json"
+  },
+  "lulingu": {
+   "zs": "sk Lulingu Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 19,
+   "file": "lulingu.json"
+  },
+  "shabunda": {
+   "zs": "sk Shabunda Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 21,
+   "file": "shabunda.json"
+  },
+  "kaniola": {
+   "zs": "sk Kaniola Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 15,
+   "file": "kaniola.json"
+  },
+  "idjwi": {
+   "zs": "sk Idjwi Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 22,
+   "file": "idjwi.json"
+  },
+  "kabare": {
+   "zs": "sk Kabare Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 16,
+   "file": "kabare.json"
+  },
+  "mwana": {
+   "zs": "sk Mwana Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 13,
+   "file": "mwana.json"
+  },
+  "miti_murhesa": {
+   "zs": "sk Miti Murhesa Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 18,
+   "file": "miti_murhesa.json"
+  },
+  "lemera": {
+   "zs": "sk Lemera Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 23,
+   "file": "lemera.json"
+  },
+  "nyantende": {
+   "zs": "sk Nyantende Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 11,
+   "file": "nyantende.json"
+  },
+  "kalehe": {
+   "zs": "sk Kalehe Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 17,
+   "file": "kalehe.json"
+  },
+  "mubumbano": {
+   "zs": "sk Mubumbano Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 16,
+   "file": "mubumbano.json"
+  },
+  "nyangezi": {
+   "zs": "sk Nyangezi Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 9,
+   "file": "nyangezi.json"
+  },
+  "kaziba": {
+   "zs": "sk Kaziba Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 12,
+   "file": "kaziba.json"
+  },
+  "ibanda": {
+   "zs": "sk Ibanda Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 18,
+   "file": "ibanda.json"
+  },
+  "mulungu": {
+   "zs": "sk Mulungu Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 18,
+   "file": "mulungu.json"
+  },
+  "kalole": {
+   "zs": "sk Kalole Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 21,
+   "file": "kalole.json"
+  },
+  "uvira": {
+   "zs": "sk Uvira Zone de Santé",
+   "province": "sk Sud Kivu Province",
+   "n": 21,
+   "file": "uvira.json"
+  },
+  "wembo_nyama": {
+   "zs": "sn Wembo Nyama Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 15,
+   "file": "wembo_nyama.json"
+  },
+  "omendjadi": {
+   "zs": "sn Omendjadi Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 17,
+   "file": "omendjadi.json"
+  },
+  "lomela": {
+   "zs": "sn Lomela Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 20,
+   "file": "lomela.json"
+  },
+  "lodja": {
+   "zs": "sn Lodja Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 22,
+   "file": "lodja.json"
+  },
+  "katako_kombe": {
+   "zs": "sn Katako Kombe Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 18,
+   "file": "katako_kombe.json"
+  },
+  "pania_mutombo": {
+   "zs": "sn Pania Mutombo Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 10,
+   "file": "pania_mutombo.json"
+  },
+  "lusambo": {
+   "zs": "sn Lusambo Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 13,
+   "file": "lusambo.json"
+  },
+  "minga": {
+   "zs": "sn Minga Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 17,
+   "file": "minga.json"
+  },
+  "tshudi_loto": {
+   "zs": "sn Tshudi Loto Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 9,
+   "file": "tshudi_loto.json"
+  },
+  "vanga_kete": {
+   "zs": "sn Vanga Kete Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 14,
+   "file": "vanga_kete.json"
+  },
+  "dikungu": {
+   "zs": "sn Dikungu Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 18,
+   "file": "dikungu.json"
+  },
+  "tshumbe": {
+   "zs": "sn Tshumbe Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 12,
+   "file": "tshumbe.json"
+  },
+  "ototo": {
+   "zs": "sn Ototo Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 14,
+   "file": "ototo.json"
+  },
+  "djalo_ndjeka": {
+   "zs": "sn Djalo Ndjeka Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 12,
+   "file": "djalo_ndjeka.json"
+  },
+  "kole": {
+   "zs": "sn Kole Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 11,
+   "file": "kole.json"
+  },
+  "bena_dibele": {
+   "zs": "sn Bena Dibele Zone de Santé",
+   "province": "sn Sankuru Province",
+   "n": 13,
+   "file": "bena_dibele.json"
+  },
+  "ndage": {
+   "zs": "su Ndage Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 18,
+   "file": "ndage.json"
+  },
+  "kungu": {
+   "zs": "su Kungu Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 27,
+   "file": "kungu.json"
+  },
+  "budjala": {
+   "zs": "su Budjala Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 16,
+   "file": "budjala.json"
+  },
+  "zongo": {
+   "zs": "su Zongo Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 10,
+   "file": "zongo.json"
+  },
+  "bangabola": {
+   "zs": "su Bangabola Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 13,
+   "file": "bangabola.json"
+  },
+  "bominenge": {
+   "zs": "su Bominenge Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 16,
+   "file": "bominenge.json"
+  },
+  "libenge": {
+   "zs": "su Libenge Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 22,
+   "file": "libenge.json"
+  },
+  "bwamanda": {
+   "zs": "su Bwamanda Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 19,
+   "file": "bwamanda.json"
+  },
+  "boto": {
+   "zs": "su Boto Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 21,
+   "file": "boto.json"
+  },
+  "bogosenubea": {
+   "zs": "su Bogosenubea Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 20,
+   "file": "bogosenubea.json"
+  },
+  "gemena": {
+   "zs": "su Gemena Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 28,
+   "file": "gemena.json"
+  },
+  "bokonzi": {
+   "zs": "su Bokonzi Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 22,
+   "file": "bokonzi.json"
+  },
+  "bulu": {
+   "zs": "su Bulu Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 14,
+   "file": "bulu.json"
+  },
+  "mbaya": {
+   "zs": "su Mbaya Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 10,
+   "file": "mbaya.json"
+  },
+  "mawuya": {
+   "zs": "su Mawuya Zone de Santé",
+   "province": "su Sud Ubangi Province",
+   "n": 14,
+   "file": "mawuya.json"
+  },
+  "kongolo": {
+   "zs": "tn Kongolo Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 21,
+   "file": "kongolo.json"
+  },
+  "mbulula": {
+   "zs": "tn Mbulula Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 13,
+   "file": "mbulula.json"
+  },
+  "manono": {
+   "zs": "tn Manono Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 18,
+   "file": "manono.json"
+  },
+  "nyunzu": {
+   "zs": "tn Nyunzu Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 20,
+   "file": "nyunzu.json"
+  },
+  "kalemie": {
+   "zs": "tn Kalemie Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 21,
+   "file": "kalemie.json"
+  },
+  "moba": {
+   "zs": "tn Moba Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 23,
+   "file": "moba.json"
+  },
+  "kiambi": {
+   "zs": "tn Kiambi Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 18,
+   "file": "kiambi.json"
+  },
+  "kansimba": {
+   "zs": "tn Kansimba Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 17,
+   "file": "kansimba.json"
+  },
+  "kabalo": {
+   "zs": "tn Kabalo Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 20,
+   "file": "kabalo.json"
+  },
+  "ankoro": {
+   "zs": "tn Ankoro Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 14,
+   "file": "ankoro.json"
+  },
+  "nyemba": {
+   "zs": "tn Nyemba Zone de Santé",
+   "province": "tn Tanganyika Province",
+   "n": 16,
+   "file": "nyemba.json"
+  },
+  "bengamisa": {
+   "zs": "tp Bengamisa Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 16,
+   "file": "bengamisa.json"
+  },
+  "banalia": {
+   "zs": "tp Banalia Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 15,
+   "file": "banalia.json"
+  },
+  "makiso_kisangani": {
+   "zs": "tp Makiso Kisangani Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 17,
+   "file": "makiso_kisangani.json"
+  },
+  "basoko": {
+   "zs": "tp Basoko Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 20,
+   "file": "basoko.json"
+  },
+  "opienge": {
+   "zs": "tp Opienge Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 13,
+   "file": "opienge.json"
+  },
+  "mangobo": {
+   "zs": "tp Mangobo Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 12,
+   "file": "mangobo.json"
+  },
+  "wanierukula": {
+   "zs": "tp Wanierukula Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 13,
+   "file": "wanierukula.json"
+  },
+  "ubundu": {
+   "zs": "tp Ubundu Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 16,
+   "file": "ubundu.json"
+  },
+  "bafwasende": {
+   "zs": "tp Bafwasende Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 13,
+   "file": "bafwasende.json"
+  },
+  "bafwagbogbo": {
+   "zs": "tp Bafwagbogbo Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 18,
+   "file": "bafwagbogbo.json"
+  },
+  "basali": {
+   "zs": "tp Basali Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 16,
+   "file": "basali.json"
+  },
+  "yabaondo": {
+   "zs": "tp Yabaondo Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 22,
+   "file": "yabaondo.json"
+  },
+  "lowa": {
+   "zs": "tp Lowa Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 17,
+   "file": "lowa.json"
+  },
+  "isangi": {
+   "zs": "tp Isangi Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 25,
+   "file": "isangi.json"
+  },
+  "tshopo": {
+   "zs": "tp Tshopo Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 11,
+   "file": "tshopo.json"
+  },
+  "yahuma": {
+   "zs": "tp Yahuma Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 25,
+   "file": "yahuma.json"
+  },
+  "yalimbongo": {
+   "zs": "tp Yalimbongo Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 16,
+   "file": "yalimbongo.json"
+  },
+  "yakusu": {
+   "zs": "tp Yakusu Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 19,
+   "file": "yakusu.json"
+  },
+  "yahisuli": {
+   "zs": "tp Yahisuli Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 17,
+   "file": "yahisuli.json"
+  },
+  "kabondo": {
+   "zs": "tp Kabondo Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 13,
+   "file": "kabondo.json"
+  },
+  "opala": {
+   "zs": "tp Opala Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 21,
+   "file": "opala.json"
+  },
+  "yaleko": {
+   "zs": "tp Yaleko Zone de Santé",
+   "province": "tp Tshopo Province",
+   "n": 21,
+   "file": "yaleko.json"
+  },
+  "ikela": {
+   "zs": "tu Ikela Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 22,
+   "file": "ikela.json"
+  },
+  "bokungu": {
+   "zs": "tu Bokungu Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 22,
+   "file": "bokungu.json"
+  },
+  "befale": {
+   "zs": "tu Befale Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 16,
+   "file": "befale.json"
+  },
+  "djolu": {
+   "zs": "tu Djolu Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 24,
+   "file": "djolu.json"
+  },
+  "wema": {
+   "zs": "tu Wema Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 16,
+   "file": "wema.json"
+  },
+  "boende": {
+   "zs": "tu Boende Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 35,
+   "file": "boende.json"
+  },
+  "busanga": {
+   "zs": "tu Busanga Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 15,
+   "file": "busanga.json"
+  },
+  "mondombe": {
+   "zs": "tu Mondombe Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 21,
+   "file": "mondombe.json"
+  },
+  "yalifafu": {
+   "zs": "tu Yalifafu Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 19,
+   "file": "yalifafu.json"
+  },
+  "mompono": {
+   "zs": "tu Mompono Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 13,
+   "file": "mompono.json"
+  },
+  "monkoto": {
+   "zs": "tu Monkoto Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 20,
+   "file": "monkoto.json"
+  },
+  "lingomo": {
+   "zs": "tu Lingomo Zone de Santé",
+   "province": "tu Tshuapa Province",
+   "n": 16,
+   "file": "lingomo.json"
+  }
+ }
+}
