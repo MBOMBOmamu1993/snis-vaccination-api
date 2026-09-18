@@ -1,0 +1,376 @@
+{
+  "generated_at": "2026-07-27T11:04:07.752Z",
+  "server": "eu-west-1a.online.tableau.com",
+  "site": "axdata",
+  "workbook": {
+    "name": "Mashako 3.0 — Rapport de l'Antenne",
+    "contentUrl": "Mashako3_0RapportdelAntenne"
+  },
+  "main_view": "HZScores_ANT",
+  "original_url": "https://eu-west-1a.online.tableau.com/#/site/axdata/views/Mashako3_0RapportdelAntenne/HZScores_ANT",
+  "sync_mode": "local-browser-v3",
+  "antennes": {
+    "field": "_SELECTED_location_level",
+    "values": [
+      "Buta",
+      "Mbandaka",
+      "Likasi",
+      "Lubumbashi",
+      "Kabondo-Dianda",
+      "Kamina",
+      "Isiro",
+      "Watsa",
+      "Aru",
+      "Bunia",
+      "Kananga",
+      "Luiza",
+      "Mbuji-Mayi",
+      "Mweka",
+      "Tshikapa",
+      "Kinshasa-Centre",
+      "Kinshasa-Est",
+      "Kinshasa-Ouest",
+      "Boma",
+      "Matadi",
+      "Mbanza Ngungu",
+      "Kahemba",
+      "Kenge",
+      "Bandundu",
+      "Kikwit",
+      "Kabinda",
+      "Mweneditu",
+      "Kisenge",
+      "Kolwezi",
+      "Inongo",
+      "Nioki",
+      "Kasongo",
+      "Kindu",
+      "Lubutu",
+      "Bumba",
+      "Lisala",
+      "Butembo",
+      "Goma",
+      "Gbadolite",
+      "Lodja",
+      "Lusambo",
+      "Tshumbe",
+      "Bukavu",
+      "Uvira",
+      "Gemena",
+      "Kabalo",
+      "Kalemie",
+      "Kisangani",
+      "Lokutu",
+      "Boende",
+      "Bokungu"
+    ]
+  },
+  "views": [
+    {
+      "name": "Cover Page",
+      "urlName": "Cover_Page",
+      "rows": 0,
+      "file": null,
+      "image": "views/Cover_Page.png",
+      "antImages": null
+    },
+    {
+      "name": "KPI Manuel_ANT_P1",
+      "urlName": "KPI_Manuel_ANT_P1",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_ANT_P1.png",
+      "antImages": {
+        "Buta": "views/KPI_Manuel_ANT_P1__Buta.png",
+        "Mbandaka": "views/KPI_Manuel_ANT_P1__Mbandaka.png",
+        "Likasi": "views/KPI_Manuel_ANT_P1__Likasi.png",
+        "Lubumbashi": "views/KPI_Manuel_ANT_P1__Lubumbashi.png",
+        "Kabondo-Dianda": "views/KPI_Manuel_ANT_P1__Kabondo-Dianda.png",
+        "Kamina": "views/KPI_Manuel_ANT_P1__Kamina.png",
+        "Watsa": "views/KPI_Manuel_ANT_P1__Watsa.png",
+        "Aru": "views/KPI_Manuel_ANT_P1__Aru.png",
+        "Bunia": "views/KPI_Manuel_ANT_P1__Bunia.png",
+        "Kananga": "views/KPI_Manuel_ANT_P1__Kananga.png",
+        "Luiza": "views/KPI_Manuel_ANT_P1__Luiza.png",
+        "Mbuji-Mayi": "views/KPI_Manuel_ANT_P1__Mbuji-Mayi.png",
+        "Mweka": "views/KPI_Manuel_ANT_P1__Mweka.png",
+        "Tshikapa": "views/KPI_Manuel_ANT_P1__Tshikapa.png",
+        "Kinshasa-Centre": "views/KPI_Manuel_ANT_P1__Kinshasa-Centre.png",
+        "Kinshasa-Est": "views/KPI_Manuel_ANT_P1__Kinshasa-Est.png",
+        "Kinshasa-Ouest": "views/KPI_Manuel_ANT_P1__Kinshasa-Ouest.png",
+        "Boma": "views/KPI_Manuel_ANT_P1__Boma.png",
+        "Matadi": "views/KPI_Manuel_ANT_P1__Matadi.png",
+        "Mbanza Ngungu": "views/KPI_Manuel_ANT_P1__Mbanza_Ngungu.png",
+        "Kahemba": "views/KPI_Manuel_ANT_P1__Kahemba.png",
+        "Kenge": "views/KPI_Manuel_ANT_P1__Kenge.png",
+        "Bandundu": "views/KPI_Manuel_ANT_P1__Bandundu.png",
+        "Kikwit": "views/KPI_Manuel_ANT_P1__Kikwit.png",
+        "Kabinda": "views/KPI_Manuel_ANT_P1__Kabinda.png",
+        "Mweneditu": "views/KPI_Manuel_ANT_P1__Mweneditu.png",
+        "Kisenge": "views/KPI_Manuel_ANT_P1__Kisenge.png",
+        "Kolwezi": "views/KPI_Manuel_ANT_P1__Kolwezi.png",
+        "Inongo": "views/KPI_Manuel_ANT_P1__Inongo.png",
+        "Nioki": "views/KPI_Manuel_ANT_P1__Nioki.png",
+        "Kasongo": "views/KPI_Manuel_ANT_P1__Kasongo.png",
+        "Kindu": "views/KPI_Manuel_ANT_P1__Kindu.png",
+        "Lubutu": "views/KPI_Manuel_ANT_P1__Lubutu.png",
+        "Bumba": "views/KPI_Manuel_ANT_P1__Bumba.png",
+        "Lisala": "views/KPI_Manuel_ANT_P1__Lisala.png",
+        "Butembo": "views/KPI_Manuel_ANT_P1__Butembo.png",
+        "Goma": "views/KPI_Manuel_ANT_P1__Goma.png",
+        "Gbadolite": "views/KPI_Manuel_ANT_P1__Gbadolite.png",
+        "Lodja": "views/KPI_Manuel_ANT_P1__Lodja.png",
+        "Lusambo": "views/KPI_Manuel_ANT_P1__Lusambo.png",
+        "Tshumbe": "views/KPI_Manuel_ANT_P1__Tshumbe.png",
+        "Bukavu": "views/KPI_Manuel_ANT_P1__Bukavu.png"
+      }
+    },
+    {
+      "name": "KPI Manuel_ANT_P2",
+      "urlName": "KPI_Manuel_ANT_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_ANT_P2.png",
+      "antImages": null
+    },
+    {
+      "name": "KPI Manuel_ANT_P3",
+      "urlName": "KPI_Manuel_ANT_P3",
+      "rows": 0,
+      "file": null,
+      "image": "views/KPI_Manuel_ANT_P3.png",
+      "antImages": null
+    },
+    {
+      "name": "Configuration_ANT",
+      "urlName": "Configuration_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/Configuration_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Performance Résumé_ANT",
+      "urlName": "Performance_Resume_ANT",
+      "rows": 51,
+      "file": "views/Performance_Resume_ANT.json",
+      "image": "views/Performance_Resume_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Performance Heatmap_ANT",
+      "urlName": "Performance_Heatmap_ANT",
+      "rows": 612,
+      "file": "views/Performance_Heatmap_ANT.json",
+      "image": "views/Performance_Heatmap_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "HZ Scores_ANT",
+      "urlName": "HZ_Scores_ANT",
+      "rows": 519,
+      "file": "views/HZ_Scores_ANT.json",
+      "image": "views/HZ_Scores_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Supervision_Quality_ANT",
+      "urlName": "Supervision_Quality_ANT",
+      "rows": 519,
+      "file": "views/Supervision_Quality_ANT.json",
+      "image": "views/Supervision_Quality_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte Qualité Supervision_ANT",
+      "urlName": "Carte_Qualite_Supervision_ANT",
+      "rows": 51,
+      "file": "views/Carte_Qualite_Supervision_ANT.json",
+      "image": "views/Carte_Qualite_Supervision_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Supervision_ANT_P1",
+      "urlName": "Supervision_ANT_P1",
+      "rows": 1038,
+      "file": "views/Supervision_ANT_P1.json",
+      "image": "views/Supervision_ANT_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Supervision_ANT_P2",
+      "urlName": "Supervision_ANT_P2",
+      "rows": 51,
+      "file": "views/Supervision_ANT_P2.json",
+      "image": "views/Supervision_ANT_P2.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte Réunion_ANT",
+      "urlName": "Carte_Reunion_ANT",
+      "rows": 50,
+      "file": "views/Carte_Reunion_ANT.json",
+      "image": "views/Carte_Reunion_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Réunion_ANT",
+      "urlName": "Reunion_ANT",
+      "rows": 511,
+      "file": "views/Reunion_ANT.json",
+      "image": "views/Reunion_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte CDF_ANT",
+      "urlName": "Carte_CDF_ANT",
+      "rows": 356,
+      "file": "views/Carte_CDF_ANT.json",
+      "image": "views/Carte_CDF_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "CDF_ANT",
+      "urlName": "CDF_ANT",
+      "rows": 519,
+      "file": "views/CDF_ANT.json",
+      "image": "views/CDF_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "CDF_Problèmes_ANT",
+      "urlName": "CDF_Problemes_ANT",
+      "rows": 511,
+      "file": "views/CDF_Problemes_ANT.json",
+      "image": "views/CDF_Problemes_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Dispo_vaccins_ANT",
+      "urlName": "Dispo_vaccins_ANT",
+      "rows": 686,
+      "file": "views/Dispo_vaccins_ANT.json",
+      "image": "views/Dispo_vaccins_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Vaccine_expiration_ANT_P1",
+      "urlName": "Vaccine_expiration_ANT_P1",
+      "rows": 51,
+      "file": "views/Vaccine_expiration_ANT_P1.json",
+      "image": "views/Vaccine_expiration_ANT_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Livraison_ANT_P1",
+      "urlName": "Livraison_ANT_P1",
+      "rows": 950,
+      "file": "views/Livraison_ANT_P1.json",
+      "image": "views/Livraison_ANT_P1.png",
+      "antImages": null
+    },
+    {
+      "name": "Livraison_ANT_P2",
+      "urlName": "Livraison_ANT_P2",
+      "rows": 88,
+      "file": "views/Livraison_ANT_P2.json",
+      "image": "views/Livraison_ANT_P2.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte Séances_ANT",
+      "urlName": "Carte_Seances_ANT",
+      "rows": 51,
+      "file": "views/Carte_Seances_ANT.json",
+      "image": "views/Carte_Seances_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Séances_ANT",
+      "urlName": "Seances_ANT",
+      "rows": 519,
+      "file": "views/Seances_ANT.json",
+      "image": "views/Seances_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte Taux d'abandon_ANT",
+      "urlName": "Carte_Taux_d_abandon_ANT",
+      "rows": 51,
+      "file": "views/Carte_Taux_d_abandon_ANT.json",
+      "image": "views/Carte_Taux_d_abandon_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Taux d'abandon_ANT",
+      "urlName": "Taux_d_abandon_ANT",
+      "rows": 519,
+      "file": "views/Taux_d_abandon_ANT.json",
+      "image": "views/Taux_d_abandon_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Carte_Infirmier_ANT",
+      "urlName": "Carte_Infirmier_ANT",
+      "rows": 51,
+      "file": "views/Carte_Infirmier_ANT.json",
+      "image": "views/Carte_Infirmier_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Infirmier_ANT",
+      "urlName": "Infirmier_ANT",
+      "rows": 519,
+      "file": "views/Infirmier_ANT.json",
+      "image": "views/Infirmier_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Contacts Page",
+      "urlName": "Contacts_Page",
+      "rows": 0,
+      "file": null,
+      "image": "views/Contacts_Page.png",
+      "antImages": null
+    },
+    {
+      "name": "FILTER_VALUES_ANT",
+      "urlName": "FILTER_VALUES_ANT",
+      "rows": 0,
+      "file": null,
+      "image": "views/FILTER_VALUES_ANT.png",
+      "antImages": null
+    },
+    {
+      "name": "Disponibilité des vaccins des zones de santé",
+      "urlName": "Dispo_vaccins_ZS",
+      "rows": 517,
+      "file": "views/Dispo_vaccins_ZS.json",
+      "image": null,
+      "antImages": null
+    },
+    {
+      "name": "Expiration des vaccins — détail par zone de santé",
+      "urlName": "Vaccine_expiration_ZS",
+      "rows": 435,
+      "file": "views/Vaccine_expiration_ZS.json",
+      "image": null,
+      "antImages": null
+    },
+    {
+      "name": "Vaccine_expiration_ANT_P2",
+      "urlName": "Vaccine_expiration_ANT_P2",
+      "rows": 0,
+      "file": null,
+      "image": "views/Vaccine_expiration_ANT_P2.png",
+      "antImages": null,
+      "empty": true,
+      "mode": "unitaire",
+      "checked_at": "2026-09-02T17:38:27.037Z"
+    }
+  ],
+  "repaired_at": "2026-09-02T17:39:18.885Z",
+  "repaired_views": [
+    "Vaccine_expiration_ANT_P2"
+  ]
+}
