@@ -9933,11 +9933,12 @@
                     "2. Résultats via afficher_resultat (table / graphique / carte Plotly, téléchargeables). INTERDIT d'écrire un tableau ou un graphique en markdown dans ta réponse texte : tout tableau → afficher_resultat type 'table' ; tout graphique → afficher_resultat type 'graphique' avec figure={data:[{x:[...],y:[...],type:'scatter',mode:'lines+markers'}],layout:{}}. RECETTE CARTE choroplèthe : const gj = await ctx.geo(2) (provinces) ou await ctx.geo(3, uidProvince) (ZS) ; récupère les valeurs analytics avec dimension=ou:LEVEL-2/LEVEL-3 (les lignes portent l'UID) ; puis afficher_resultat type 'carte' avec figure={data:[{type:'choropleth', geojson:gj, locations:[UID…], z:[valeurs…], featureidkey:'properties.id', zauto:true, colorscale:'Blues', marker:{line:{color:'#fff',width:0.5}}}], layout:{margin:{t:30,r:0,b:0,l:0}}} — N'affiche JAMAIS le GeoJSON dans ta réponse, passe-le directement dans la figure. Échelle raisonnable : provinces pour une vue nationale, ZS d'UNE province à la fois. Sans GeoJSON disponible → barres classées par zone.",
                     "3. Formules HORS CV/ZD/SV PEV : préfère l'indicateur officiel DHIS2 ; sinon taux/proportion = numérateur/dénominateur×100, abandon DTC1-DTC3% = (DTC1−DTC3)/DTC1×100, complétude = reçus/attendus×100, taux d'attaque = cas/population×100 000, létalité = décès/cas×100. Pour CV/ZD/SV PEV, calculer_pev_direct reste prioritaire et exclusif.",
                     "4. Réponds en français : conclusion d'abord, puis détail ; mentionne source (DHIS2/SNIS) et période.",
-                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX/CARTE) : calcule les valeurs avant de les écrire, mais pour un CANEVAS JOINT volumineux travaille PAR LOTS : dès qu'une section est calculée et vérifiée, écris-la avec modifier_document/modifier_presentation et telecharger:false ; n'attends jamais d'avoir extrait toutes les rubriques avant la première écriture. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). PRÉSENTATION .pptx jointe à actualiser → modifier_presentation (modification sur place, design préservé). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif ; format 'carte' = page HTML INTERACTIVE autonome — cartes choroplèthes et graphiques Plotly navigables, zoom/survol, GeoJSON et données embarqués : idéal pour une carte à partager) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations. Pour le format 'carte', construis les figures choroplèthes via ctx.geo (recette carte ci-dessus) : les figures y restent interactives, jamais figées en image.",
+                    "5. RAPPORTS & DOCUMENTS (PDF/Word/PPTX/CARTE) : calcule les valeurs avant de les écrire, mais pour un CANEVAS JOINT volumineux travaille PAR LOTS : dès qu'une section est calculée et vérifiée, écris-la avec modifier_document/modifier_presentation et telecharger:false (les appels sont CUMULATIFS : chaque lot s'ajoute au même fichier de travail ; le dernier appel, telecharger:true, livre UN seul fichier complet) ; n'attends jamais d'avoir extrait toutes les rubriques avant la première écriture. Document modèle .docx joint à actualiser → modifier_document (modification sur place, mise en forme préservée). PRÉSENTATION .pptx jointe à actualiser → modifier_presentation (modification sur place, design préservé). Sinon generer_rapport (défaut PDF ; format word = vrai fichier .docx natif ; format 'carte' = page HTML INTERACTIVE autonome — cartes choroplèthes et graphiques Plotly navigables, zoom/survol, GeoJSON et données embarqués : idéal pour une carte à partager) avec sections complètes — contexte, méthodologie brève, analyses (texte concis + tableau/figure), conclusions, recommandations. Pour le format 'carte', construis les figures choroplèthes via ctx.geo (recette carte ci-dessus) : les figures y restent interactives, jamais figées en image.",
                     "6. EXCEL, VISUELS & E-MAIL : fichier Excel/tableur demandé → generer_excel (multi-feuilles, cellules colorées {t,bg}, en-têtes stylés, vrais nombres) ; logo, affiche, infographie ou schéma demandé → generer_image (SVG complet et soigné, affiché dans le chat et téléchargeable en SVG + PNG HD — design vectoriel par code, JAMAIS de photo : si une photo est demandée, explique la limite et propose un visuel vectoriel) ; envoi par e-mail demandé → envoyer_email (DEMANDE d'abord l'adresse du destinataire si elle est absente ; les fichiers ne sont PAS joignables → mets l'essentiel dans le corps HTML et signale que les fichiers restent téléchargeables dans la conversation).",
                     "",
                     "## Documents Word/PDF/PPTX — règles de reproduction (STRICTES)",
                     "- Modèle .docx joint + demande d'actualisation/complétion → modifier_document UNIQUEMENT (jamais generer_rapport) : remplace les chiffres, commentaires et analyses à actualiser via les adresses [P#] et [T#:L#:C#] de l'extraction ; ne touche à RIEN d'autre — textes, titres, en-têtes, mise en page et tableaux vides sont préservés d'office. Relis l'extraction pour cibler précisément chaque passage.",
+                    "- ⭐ CANEVAS WORD À REMPLIR (tableaux d'indicateurs : Code ¦ Indicateur ¦ … ¦ 2023 ¦ 2024 ¦ 2025 ¦ Tendance ¦ Appréciation) : écris chaque tableau en UNE opération remplir_tableau {t, colonne:<1re colonne à remplir>, par_cle:{'M01':[…], 'M02':[…]}} (clé = code de la colonne 1). Des centaines de remplacer_cellule dépassent la limite de sortie : l'appel est COUPÉ et rien n'est écrit. Au-delà d'environ 40 lignes, fais plusieurs appels avec telecharger:false (ils s'ACCUMULENT dans le même fichier), puis un dernier appel telecharger:true (operations:[] suffit) pour livrer UN seul fichier. Le plus sûr pour un gros canevas : calculer ET écrire dans le même executer_js via await ctx.modifierDocument({fichier, operations:[{op:'remplir_tableau', …}], telecharger:false}).",
                     "- GRAPHIQUES d'un .docx joint — DEUX cas, tous deux traités SUR PLACE (jamais de régénération, jamais d'annexe) : (a) GRAPHIQUE NATIF Word [GRAPH#] (objet graphique éditable — le cas le PLUS fréquent dans les rapports PEV/DHIS2) → op remplacer_graphique {graphique:n, figure:{data,layout}} ; (b) IMAGE incorporée [IMG#] → op remplacer_image {image:n, figure}. Les deux sont listés dans l'extraction. Méthode : calcule d'abord les valeurs par ZS (executer_js), construis chaque figure Plotly (ou vega), puis UN remplacer_graphique (ou remplacer_image) par figure — dans le MÊME appel modifier_document que les textes/tableaux, pour livrer UN seul fichier final. Pour « 1 graphique agrandi par page », ajoute pleine_page:true. Si l'utilisateur veut PLUS de figures qu'il n'y a de cadres, utilise inserer_image {p, figure, saut_de_page:true}.",
                     "- COULEURS de tableaux (tableaux de suivi/logistique/score colorés selon une légende) : op colorer_cellule {t, ligne, colonne, couleur} applique un fond de cellule SUR PLACE (jeton vert/jaune/orange/rouge/bleu/gris ou hex) sans reconstruire le document ni changer le design. C'est POSSIBLE et attendu. Ex. légende logistique dashboard : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge (colonnes TX SATISFACTION/DISPONIBILITÉ). Émets un colorer_cellule par cellule à colorer.",
                     "- INTERDICTIONS ABSOLUES quand un .docx ou un .pptx est joint : ne JAMAIS régénérer avec generer_rapport ; ne JAMAIS livrer une annexe, un fichier partiel ou plusieurs fichiers complémentaires. Dans un PPTX à structure stricte, modifier uniquement les objets existants et utiliser remplacer_forme_par_tableau pour une zone d'instruction ; l'ajout de diapositives reste interdit sauf demande explicite de changement d'architecture.",
@@ -9987,7 +9988,7 @@
                     type: 'function',
                     function: {
                         name: 'executer_js',
-                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data, flt, AG, load, dhis2, geo, loadUrl, uidSearch, pevDirect, programIndicatorDirect, rvvCorrectionDirect, mL. ⭐ Commence par await ctx.uidSearch({recherche,programme}) pour retrouver les UID vérifiés de tous les programmes du canevas. ⭐ ctx.programIndicatorDirect({uid|nom,entite,niveau,periodes}) est la voie correcte pour les programIndicators EVENT. ⭐ ctx.rvvCorrectionDirect({entite,niveau,periode}) détermine le critère 5 DPS. ctx.dhis2, ctx.geo, ctx.load, ctx.loadUrl, ctx.uidSearch, ctx.programIndicatorDirect et ctx.rvvCorrectionDirect sont ASYNCHRONES : toujours await. Termine par return d'une valeur compacte ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
+                        description: "Exécute du code JavaScript async dans le navigateur. ctx : data, flt, AG, load, dhis2, geo, loadUrl, uidSearch, pevDirect, programIndicatorDirect, rvvCorrectionDirect, mL, modifierDocument. ⭐ ctx.modifierDocument({fichier, operations, telecharger}) écrit DIRECTEMENT dans le .docx joint (mêmes opérations que modifier_document, appels cumulatifs, asynchrone : await) — la voie la plus sûre pour remplir un gros canevas Word. ⭐ Commence par await ctx.uidSearch({recherche,programme}) pour retrouver les UID vérifiés de tous les programmes du canevas. ⭐ ctx.programIndicatorDirect({uid|nom,entite,niveau,periodes}) est la voie correcte pour les programIndicators EVENT. ⭐ ctx.rvvCorrectionDirect({entite,niveau,periode}) détermine le critère 5 DPS. ctx.dhis2, ctx.geo, ctx.load, ctx.loadUrl, ctx.uidSearch, ctx.programIndicatorDirect et ctx.rvvCorrectionDirect sont ASYNCHRONES : toujours await. Termine par return d'une valeur compacte ; résultat tronqué à " + IA_TOOL_RESULT_MAX + " caractères.",
                         parameters: { type: 'object', properties: { code: { type: 'string', description: 'Corps de fonction JavaScript async. Doit se terminer par return.' } }, required: ['code'] }
                     }
                 },
@@ -10145,16 +10146,18 @@
                     type: 'function',
                     function: {
                         name: 'modifier_document',
-                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1), [IMG#]=image incorporée (dans l'ordre d'apparition = figures 1..N). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut) ; remplacer_image {image, figure|vega|image_b64} — REMPLACE une image incorporée [IMG#] dans son cadre existant (même taille/position) ; remplacer_graphique {graphique, figure|vega, pleine_page?} — ACTUALISE un GRAPHIQUE NATIF Word [GRAPH#] (objet graphique éditable, celui utilisé dans la plupart des rapports PEV/DHIS2 — ce N'EST PAS une image) en le remplaçant par ta figure à jour dans le même emplacement ; ajoute pleine_page:true pour l'agrandir seul sur sa page ; colorer_cellule {t, ligne, colonne, couleur} — applique une COULEUR DE FOND à une cellule de tableau SUR PLACE (jeton légende vert/jaune/orange/rouge/bleu/gris ou hex), sans toucher au reste ; inserer_image {p, figure|vega|image_b64, pleine_page?, saut_de_page?} — insère une NOUVELLE image (nouveau paragraphe, pleine largeur) après [P#], option nouvelle page. Ainsi on peut : actualiser les graphiques d'un rapport (remplacer_graphique/remplacer_image), colorer des tableaux de suivi selon une légende (colorer_cellule), ajouter des figures pleine page (inserer_image) — TOUJOURS sur place, mise en page d'origine conservée. Le document modifié est téléchargé automatiquement chez l'utilisateur.",
+                        description: "Modifie SUR PLACE un document Word (.docx) joint par l'utilisateur, en préservant intégralement sa mise en forme, ses styles, images, en-têtes et tableaux — seuls les contenus ciblés changent. À privilégier ABSOLUMENT quand l'utilisateur demande d'actualiser, compléter ou corriger un document existant. Les adresses sont fournies dans l'extraction du fichier : [P#]=paragraphe hors tableau, [T#:L#:C#]=cellule (tableau, ligne, colonne, base 1), [IMG#]=image incorporée (dans l'ordre d'apparition = figures 1..N). Opérations : remplacer_texte {cherche, remplace} (partout dans le document, le paragraphe touché adopte la mise en forme de son premier segment) ; remplacer_paragraphe {p, texte} ; remplacer_cellule {t, ligne, colonne, texte} ; inserer_apres {p, texte} (nouveau paragraphe héritant du style ; les adresses suivantes sont décalées : pour plusieurs insertions, procède de bas en haut) ; remplacer_image {image, figure|vega|image_b64} — REMPLACE une image incorporée [IMG#] dans son cadre existant (même taille/position) ; remplacer_graphique {graphique, figure|vega, pleine_page?} — ACTUALISE un GRAPHIQUE NATIF Word [GRAPH#] (objet graphique éditable, celui utilisé dans la plupart des rapports PEV/DHIS2 — ce N'EST PAS une image) en le remplaçant par ta figure à jour dans le même emplacement ; ajoute pleine_page:true pour l'agrandir seul sur sa page ; colorer_cellule {t, ligne, colonne, couleur} — applique une COULEUR DE FOND à une cellule de tableau SUR PLACE (jeton légende vert/jaune/orange/rouge/bleu/gris ou hex), sans toucher au reste ; inserer_image {p, figure|vega|image_b64, pleine_page?, saut_de_page?} — insère une NOUVELLE image (nouveau paragraphe, pleine largeur) après [P#], option nouvelle page ; remplir_tableau {t, colonne, par_cle:{code:[valeurs…]}, colonne_cle?} ou {t, ligne, colonne, valeurs:[[…],[…]]} — REMPLIT tout un bloc de cellules en UNE opération (canevas d'indicateurs × années : une opération par tableau, jamais des centaines de remplacer_cellule, qui dépassent la limite de sortie et font COUPER l'appel). Ainsi on peut : actualiser les graphiques d'un rapport (remplacer_graphique/remplacer_image), colorer des tableaux de suivi selon une légende (colorer_cellule), ajouter des figures pleine page (inserer_image) — TOUJOURS sur place, mise en page d'origine conservée. Appels CUMULATIFS : chaque appel repart du fichier déjà modifié — pour un gros canevas, lots avec telecharger:false puis un dernier appel telecharger:true, qui livre UN seul fichier complet. Le document modifié est téléchargé automatiquement chez l'utilisateur.",
                         parameters: {
                             type: 'object',
                             properties: {
                                 fichier: { type: 'string', description: 'Nom EXACT du fichier .docx joint dans la conversation' },
                                 nom_sortie: { type: 'string', description: "Nom du fichier téléchargé, sans extension (défaut : nom d'origine + _MAJ)" },
+                                telecharger: { type: 'boolean', description: "false = appliquer et CONSERVER dans le fichier de travail sans télécharger (lots intermédiaires d'un gros canevas). Les appels sont CUMULATIFS. Défaut true : livre le fichier complet (operations:[] suffit pour livrer après des lots)." },
+                                reinitialiser: { type: 'boolean', description: "true = repartir du fichier JOINT d'origine au lieu du fichier de travail (uniquement pour tout recommencer)." },
                                 operations: {
                                     type: 'array', items: {
                                         type: 'object', properties: {
-                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'inserer_apres', 'remplacer_image', 'remplacer_graphique', 'colorer_cellule', 'inserer_image'] },
+                                            op: { type: 'string', enum: ['remplacer_texte', 'remplacer_paragraphe', 'remplacer_cellule', 'remplir_tableau', 'inserer_apres', 'remplacer_image', 'remplacer_graphique', 'colorer_cellule', 'inserer_image'] },
                                             cherche: { type: 'string' },
                                             remplace: { type: 'string' },
                                             p: { type: 'integer', description: 'Numéro de paragraphe [P#]' },
@@ -10170,7 +10173,10 @@
                                             image_fichier: { type: 'string', description: 'nom exact d\'une image jointe dans la conversation à utiliser comme figure' },
                                             couleur: { type: 'string', description: "colorer_cellule : couleur de fond de la cellule — jeton légende (vert/jaune/orange/rouge/bleu/gris) ou hex RRGGBB. Ex. légende logistique : ≥95% vert, 80–94% jaune, 50–79% orange, <50% rouge." },
                                             pleine_page: { type: 'boolean', description: 'remplacer_graphique/inserer_image : true = agrandir à la pleine largeur (1 figure par page avec saut de page pour remplacer_graphique)' },
-                                            saut_de_page: { type: 'boolean', description: 'inserer_image : true = commencer la nouvelle image sur une nouvelle page' }
+                                            saut_de_page: { type: 'boolean', description: 'inserer_image : true = commencer la nouvelle image sur une nouvelle page' },
+                                            valeurs: { type: 'array', description: "remplir_tableau : tableau 2D, une sous-liste par rangée, écrite à partir de [T t : L ligne : C colonne] (vers la droite, puis rangée suivante). null = cellule laissée telle quelle. Une cellule peut aussi être {t:'texte', bg:'vert'} pour la colorer.", items: { type: 'array', items: { type: 'string' } } },
+                                            par_cle: { type: 'object', description: "remplir_tableau, alternative à valeurs (recommandée pour un canevas à codes) : {\"M01\": [\"2023\", \"2024\", \"2025\", \"tendance\", \"appréciation\"], …} — chaque rangée est retrouvée par le texte de sa colonne_cle (défaut 1), puis ses valeurs sont écrites à partir de colonne. Aucune numérotation de ligne à calculer.", additionalProperties: { type: 'array', items: { type: 'string' } } },
+                                            colonne_cle: { type: 'integer', description: 'remplir_tableau + par_cle : colonne contenant les codes/libellés servant de clé (défaut 1)' }
                                         }, required: ['op']
                                     }
                                 }
@@ -10686,9 +10692,28 @@
                 }
                 return v;
             }
+            /* Arguments d'un appel d'outil reçus en flux. Un JSON illisible signifie
+               presque toujours que la sortie du modèle a été COUPÉE (plafond
+               max_tokens atteint au milieu d'un gros appel, typiquement
+               modifier_document avec des centaines de cellules d'un canevas).
+               Le convertir en {} faisait échouer l'outil avec un message trompeur
+               (« fichier introuvable : «  » ») : le modèle relançait le même appel
+               géant, de nouveau coupé, et aucun fichier ne sortait. On marque
+               l'appel comme coupé ; iaRunTool l'explique au modèle. */
+            function iaParseToolArgs(s) {
+                if (s == null || s === '') return {};
+                if (typeof s !== 'string') return s;
+                try { return JSON.parse(s); } catch (e) { return { _appel_coupe: true, _caracteres_recus: s.length }; }
+            }
+            function iaMsgAppelCoupe(name, n) {
+                var base = 'APPEL COUPÉ — rien n\'a été exécuté : ta sortie a atteint la limite de longueur au milieu des arguments de ' + name + ' (' + (n || 0) + ' caractères reçus, JSON incomplet). Ne renvoie PAS le même appel : il serait coupé de nouveau. ';
+                if (name === 'modifier_document') return base + 'Pour remplir un canevas Word : (1) utilise l\'opération compacte remplir_tableau — UNE opération par tableau, par_cle sur la colonne des codes (ou valeurs en tableau 2D) — au lieu d\'une remplacer_cellule par cellule ; (2) au-delà d\'environ 40 lignes, découpe en plusieurs appels avec telecharger:false : ils sont CUMULATIFS, chaque lot s\'ajoute au même fichier ; (3) termine par un appel telecharger:true. Plus sûr encore : calcule les valeurs ET écris-les depuis executer_js avec await ctx.modifierDocument({fichier, operations, telecharger:false}) — rien ne transite alors par ta sortie.';
+                if (name === 'modifier_presentation') return base + 'Découpe en lots plus petits avec telecharger:false (appels cumulatifs), puis un dernier appel telecharger:true.';
+                return base + 'Découpe le travail en plusieurs appels plus courts (moins de sections par appel, textes plus concis, données agrégées en code).';
+            }
             function iaToolArgs(tc) {
                 var a = (tc && tc.function) ? tc.function.arguments : null;
-                if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { a = {}; } }
+                if (typeof a === 'string') a = iaParseToolArgs(a);
                 return iaUnwrapArrays(a || {});
             }
 
@@ -10696,7 +10721,7 @@
                qui renvoie une Promise vide (résultats à 0) et fait boucler le modèle.
                On prévient le modèle dans le résultat pour qu'il corrige au tour suivant. */
             function iaMissingAwait(code) {
-                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo|uidSearch|pevDirect|programIndicatorDirect|rvvCorrectionDirect)\s*\(/g, m, hits = [];
+                var re = /ctx\s*\.\s*(dhis2|load|loadUrl|geo|uidSearch|pevDirect|programIndicatorDirect|rvvCorrectionDirect|modifierDocument)\s*\(/g, m, hits = [];
                 while ((m = re.exec(code))) {
                     var before = code.slice(Math.max(0, m.index - 40), m.index);
                     if (!/await\s*(\(\s*)?$/.test(before) && !/(Promise\s*\.\s*all|\.then|return)\s*[([]?\s*$/.test(before)) hits.push(m[1]);
@@ -10740,6 +10765,7 @@
             }
 
             async function iaRunTool(name, input, msgsEl) {
+                if (input && input._appel_coupe) throw new Error(iaMsgAppelCoupe(name, input._caracteres_recus));
                 if (name === 'executer_js') {
                     if (iaPevManualQuery(input.code)) throw new Error('REFUSÉ : calcul PEV manuel détecté. Utilise calculer_pev_direct avec les antigènes, l’entité et la période demandés ; les UID nus/Analytics libres produisent des CV incohérentes avec le dashboard.');
                     if (!IA.reg) IA.reg = {};
@@ -10756,7 +10782,12 @@
                            résolue au rendu. Évite de faire transiter des Mo par l'IA. */
                         keep: function (v) { var k = '@ref:' + (++IA._regN || (IA._regN = 1)); IA.reg[k] = v; return k; },
                         /* Fond de carte statique des 519 ZS RDC (TopoJSON par URL, join UID). */
-                        topoZS: IA_TOPO_ZS
+                        topoZS: IA_TOPO_ZS,
+                        /* Écriture DIRECTE dans le .docx joint depuis le code (mêmes
+                           opérations que modifier_document, appels cumulatifs) : un
+                           canevas de centaines de cellules se remplit sans repasser par
+                           la sortie du modèle, qui est plafonnée. */
+                        modifierDocument: function (o) { return iaDocxModify(iaUnwrapArrays(iaParseMaybe(o) || {}), msgsEl); }
                     };
                     var fn = new Function('ctx', '"use strict";return (async function(){' + input.code + '\n})();');
                     var out = await fn(ctx);
@@ -11417,7 +11448,7 @@
                 blocks.filter(Boolean).forEach(function (b) {
                     if (b.type === 'text') text += (b.text || '');
                     else if (b.type === 'tool_use') {
-                        var inp = {}; try { inp = b._json ? JSON.parse(b._json) : {}; } catch (e) { }
+                        var inp = iaParseToolArgs(b._json);
                         var tu = { function: { name: b.name, arguments: inp } };
                         if (b.id) tu.id = b.id; /* id natif Anthropic (toolu_…) conservé */
                         toolCalls.push(tu);
@@ -11473,7 +11504,7 @@
                 var toolCalls = [];
                 output.forEach(function (item) {
                     if (item && item.type === 'function_call') {
-                        var args = {}; try { args = JSON.parse(item.arguments || '{}'); } catch (e) { }
+                        var args = iaParseToolArgs(item.arguments);
                         toolCalls.push({ id: item.call_id, function: { name: item.name, arguments: args } });
                     }
                 });
@@ -11519,7 +11550,7 @@
                     }
                 }
                 var toolCalls = Object.keys(tcs).sort(function (a, b) { return a - b; }).map(function (ix) {
-                    var args = {}; try { args = JSON.parse(tcs[ix].args || '{}'); } catch (e) { }
+                    var args = iaParseToolArgs(tcs[ix].args);
                     var o = { function: { name: tcs[ix].name, arguments: args } };
                     if (tcs[ix].id) o.id = tcs[ix].id;
                     return o;
@@ -11563,8 +11594,10 @@
                         msgsEl.appendChild(w2); iaScroll(msgsEl);
                         try {
                             var out = await iaRunTool(name, args, msgsEl);
+                            iaSuiviDoc(name, out, null);
                             IA.msgs.push({ role: 'tool', tool_name: name, tool_call_id: resp.tool_calls[i].id || null, content: out });
                         } catch (e) {
+                            iaSuiviDoc(name, null, e);
                             IA.msgs.push({ role: 'tool', tool_name: name, tool_call_id: resp.tool_calls[i].id || null, content: 'Erreur : ' + (e && e.message || e) });
                         } finally { w2.remove(); }
                     }
@@ -11638,7 +11671,7 @@
                                         var doc = zip.file('word/document.xml');
                                         if (!doc) throw new Error('Fichier Word invalide (document.xml absent)');
                                         return doc.async('string').then(function (xml) {
-                                            IA.docs[f.name] = r5.result; /* fichier brut conservé pour modifier_document */
+                                            IA.docs[f.name] = r5.result; /* fichier brut conservé pour modifier_document */ if (IA.docMeta) delete IA.docMeta[f.name]; /* nouvelle pièce jointe = nouveau point de départ */
                                             var txt;
                                             try { txt = iaDocxOutline(xml); }
                                             catch (e) { txt = iaXmlText(xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab[^>]*\/>/g, '\t').replace(/<[^>]+>/g, '')).replace(/\n{3,}/g, '\n\n').trim(); }
@@ -12018,10 +12051,94 @@
                 return 5943600; /* ~16,5 cm par défaut */
             }
 
+            /* Nom du document joint visé : exact, sinon tolérant (casse, espaces,
+               extension oubliée), sinon l'unique document du bon type. */
+            function iaDocPick(name, re) {
+                if (IA.docs[name] && re.test(name)) return name;
+                var keys = Object.keys(IA.docs || {}).filter(function (k) { return re.test(k); });
+                var norm = function (s) { return String(s || '').toLowerCase().replace(/\.(docx|pptx)$/i, '').replace(/[\s_]+/g, ' ').trim(); };
+                for (var i = 0; i < keys.length; i++) if (norm(keys[i]) === norm(name)) return keys[i];
+                return keys.length === 1 ? keys[0] : name;
+            }
+            /* Clé de rangée pour remplir_tableau/par_cle : « M01 », « m01 », « M01 » avec espace insécable… */
+            function iaDocxCle(s) { return String(s == null ? '' : s).replace(/[\s\u00a0\u202f]+/g, ' ').trim().toLowerCase(); }
+            /* Journal compact : au-delà de 40 lignes, les réussites sont résumées (le
+               détail ligne à ligne gonflait l'historique renvoyé au modèle à chaque
+               tour) ; échecs et avertissements restent détaillés. */
+            function iaDocxLog(log) {
+                if (log.length <= 40) return log.join('\n');
+                var ok = 0, autres = [];
+                log.forEach(function (l) { if (l.charAt(0) === '✔' && l.indexOf('⚠') < 0) ok++; else autres.push(l); });
+                return '✔ ' + ok + ' opération(s) réussie(s) (détail résumé).' + (autres.length ? '\n' + autres.slice(0, 60).join('\n') + (autres.length > 60 ? '\n… et ' + (autres.length - 60) + ' autre(s).' : '') : '');
+            }
+            /* Livraison du .docx : téléchargement automatique + carte « Télécharger à
+               nouveau » (clic manuel si le navigateur a bloqué le téléchargement
+               automatique, ce qu'il fait après un premier fichier). */
+            function iaDocxDeliver(name, ab, msgsEl, note) {
+                var meta = (IA.docMeta || {})[name] || {};
+                var outName = (meta.sortie ? String(meta.sortie).replace(/\.docx$/i, '') : name.replace(/\.docx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.docx';
+                var mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                var blob = new Blob([ab], { type: mime });
+                iaDlBlob(outName, mime, blob);
+                meta.enAttente = false;
+                if (IA.tour) IA.tour.docLivre = true;
+                if (msgsEl) {
+                    var card = E('div', 'ia-card');
+                    card.appendChild(E('h4', '', '📝 Document actualisé — ' + esc(outName)));
+                    card.appendChild(E('div', 'ia-note', esc(note) + ' · le téléchargement a démarré automatiquement — s\'il n\'apparaît pas, cliquez ci-dessous.'));
+                    var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
+                    b.onclick = function () { iaDlBlob(outName, mime, blob); };
+                    dl.appendChild(b); card.appendChild(dl);
+                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                }
+                return outName;
+            }
+            /* Suivi des livrables d'un tour : un outil de document en échec sans
+               aucun fichier livré ensuite est SIGNALÉ au client — sinon il attend un
+               fichier qui ne viendra jamais. */
+            var IA_DOC_TOOLS = { modifier_document: 1, modifier_presentation: 1, generer_rapport: 1, generer_excel: 1 };
+            function iaSuiviDoc(name, out, err) {
+                if (!IA_DOC_TOOLS[name]) return;
+                var t = IA.tour || (IA.tour = { docEchec: '', docLivre: false });
+                if (err) { t.docEchec = name + ' : ' + String(err && err.message || err); return; }
+                var s = String(out || '');
+                if (/^OK\b/.test(s) && s.indexOf('chez l\'utilisateur') >= 0) t.docLivre = true;
+                else if (!/^OK\b/.test(s)) t.docEchec = name + ' : ' + s.split('\n')[0];
+            }
+            /* Fin de tour : un .docx rempli par lots (telecharger:false) mais jamais
+               livré — réponse finale prématurée, coupure réseau, limite de débit —
+               est livré tel quel : le travail fait ne reste pas bloqué dans le
+               navigateur. Puis message explicite si aucun fichier n'est sorti. */
+            async function iaDocFinTour(msgsEl) {
+                var t = IA.tour || { docEchec: '', docLivre: false };
+                var metas = IA.docMeta || {};
+                for (var n in metas) {
+                    if (!metas[n].enAttente || !IA.docs[n]) continue;
+                    try { iaDocxDeliver(n, IA.docs[n], msgsEl, 'Livré automatiquement à la fin de l\'analyse (' + metas[n].lots + ' lot(s) enregistré(s)) — relisez-le : des rubriques peuvent rester à compléter'); }
+                    catch (e) { t.docEchec = t.docEchec || ('livraison : ' + (e && e.message || e)); }
+                }
+                if (t.docEchec && !t.docLivre && msgsEl) {
+                    var raison = /APPEL COUPÉ/.test(t.docEchec) ? 'la réponse de l\'IA était trop longue et a été coupée avant l\'écriture du document' : t.docEchec.slice(0, 220);
+                    msgsEl.appendChild(E('div', 'ia-err', '⚠ Le fichier demandé n\'a pas été livré : ' + esc(raison) + '. Écrivez « continue et livre le fichier » : l\'assistant reprendra là où il s\'est arrêté.'));
+                }
+                IA.tour = null;
+            }
+
             /* Outil modifier_document : applique les opérations puis télécharge le
-               .docx modifié — la mise en forme d'origine est intégralement préservée. */
+               .docx modifié — la mise en forme d'origine est intégralement préservée.
+               Les appels successifs sont CUMULATIFS (chaque appel repart du fichier
+               déjà modifié) et telecharger:false conserve un lot sans le livrer : un
+               gros canevas se remplit en plusieurs lots et sort en UN seul fichier.
+               Avant, chaque appel repartait du fichier d'ORIGINE et téléchargeait
+               aussitôt : 3 lots = 3 fichiers partiels (le navigateur bloquant en
+               plus les téléchargements automatiques suivants), seul le dernier lot
+               survivait. */
             async function iaDocxModify(inp, msgsEl) {
-                var name = String(inp.fichier || '');
+                var name = iaDocPick(String(inp.fichier || ''), /\.docx$/i);
+                IA.docMeta = IA.docMeta || {};
+                if (IA.docs[name] && !IA.docMeta[name]) IA.docMeta[name] = { orig: IA.docs[name], lots: 0, enAttente: false, sortie: '' };
+                var meta = IA.docMeta[name] || {};
+                if (inp.reinitialiser && meta.orig) { IA.docs[name] = meta.orig; meta.lots = 0; meta.enAttente = false; }
                 var buf = IA.docs[name];
                 if (!buf) {
                     var known = Object.keys(IA.docs);
@@ -12095,6 +12212,37 @@
                             var tc2 = row2[(o.colonne | 0) - 1];
                             if (!tc2) throw new Error('[T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] inexistant (' + row2.length + ' colonne(s))');
                             iaSetCellText(xmlDoc, tc2, o.texte); log.push('✔ [T' + o.t + ':L' + o.ligne + ':C' + o.colonne + '] remplacée'); nOK++;
+                        } else if (o.op === 'remplir_tableau') {
+                            var tbR = w.tables[(o.t | 0) - 1]; if (!tbR) throw new Error('[T' + o.t + '] inexistant (T1–T' + w.tables.length + ')');
+                            var rowsR = iaTblRows(tbR), c0 = Math.max(1, (o.colonne | 0) || 1), ecrites = 0, horsT = [], clesManq = [], plan = [];
+                            var parCle = iaParseMaybe(o.par_cle);
+                            if (parCle && typeof parCle === 'object' && !Array.isArray(parCle)) {
+                                var ccle = Math.max(1, (o.colonne_cle | 0) || 1), idxCle = {};
+                                rowsR.forEach(function (r, ri) { if (r[ccle - 1]) { var kc = iaDocxCle(iaDocxCellText(r[ccle - 1])); if (kc && !(kc in idxCle)) idxCle[kc] = ri + 1; } });
+                                Object.keys(parCle).forEach(function (k) { var li = idxCle[iaDocxCle(k)]; if (li) plan.push([li, parCle[k]]); else clesManq.push(k); });
+                            } else {
+                                var valsR = iaParseMaybe(o.valeurs);
+                                if (!Array.isArray(valsR) || !valsR.length) throw new Error('remplir_tableau : fournis par_cle {code: [valeurs…]} ou valeurs (tableau 2D, une sous-liste par rangée)');
+                                var l0 = Math.max(1, (o.ligne | 0) || 1);
+                                valsR.forEach(function (rv, k) { plan.push([l0 + k, rv]); });
+                            }
+                            plan.forEach(function (pl) {
+                                var rowR = rowsR[pl[0] - 1], rv = iaParseMaybe(pl[1]);
+                                if (!Array.isArray(rv)) rv = [rv];
+                                if (!rowR) { horsT.push('L' + pl[0]); return; }
+                                rv.forEach(function (v, j) {
+                                    if (v === null || v === undefined) return; /* null = cellule laissée telle quelle */
+                                    var tcR = rowR[c0 - 1 + j];
+                                    if (!tcR) { horsT.push('L' + pl[0] + ':C' + (c0 + j)); return; }
+                                    var txtR = v, bgR = null;
+                                    if (typeof v === 'object') { txtR = v.t != null ? v.t : (v.texte != null ? v.texte : ''); bgR = v.bg || v.couleur || null; }
+                                    iaSetCellText(xmlDoc, tcR, String(txtR));
+                                    if (bgR) { var hxR = iaShdHex(bgR); if (hxR) iaDocxSetShd(xmlDoc, tcR, hxR); }
+                                    ecrites++;
+                                });
+                            });
+                            if (!ecrites) throw new Error('remplir_tableau [T' + o.t + '] : aucune cellule écrite' + (clesManq.length ? ' — code(s) introuvable(s) en colonne ' + ((o.colonne_cle | 0) || 1) + ' : ' + clesManq.slice(0, 12).join(', ') : '') + (horsT.length ? ' — hors tableau : ' + horsT.slice(0, 12).join(', ') : ''));
+                            log.push('✔ [T' + o.t + '] remplir_tableau : ' + ecrites + ' cellule(s) écrite(s)' + (clesManq.length ? ' · ⚠ code(s) introuvable(s) en colonne ' + ((o.colonne_cle | 0) || 1) + ' : ' + clesManq.slice(0, 20).join(', ') : '') + (horsT.length ? ' · ⚠ hors tableau (ignoré) : ' + horsT.slice(0, 20).join(', ') : '')); nOK++;
                         } else if (o.op === 'inserer_apres') {
                             var p4 = w.paras[(o.p | 0) - 1]; if (!p4) throw new Error('[P' + o.p + '] inexistant (P1–P' + w.paras.length + ')');
                             var np = p4.cloneNode(true);
@@ -12153,22 +12301,23 @@
                         } else throw new Error('opération inconnue : ' + o.op);
                     } catch (e) { log.push('✘ op ' + (i + 1) + ' (' + (o.op || '?') + ') : ' + (e && e.message || e)); }
                 }
-                if (!nOK) return 'AUCUNE opération appliquée — document non téléchargé.\n' + log.join('\n');
-                zip.file('word/document.xml', new XMLSerializer().serializeToString(xmlDoc));
-                if (relsChanged) zip.file(relsPath, new XMLSerializer().serializeToString(relsDoc));
-                var outName = (inp.nom_sortie ? String(inp.nom_sortie).replace(/\.docx$/i, '') : name.replace(/\.docx$/i, '') + '_MAJ').replace(/[\\/:*?"<>|]/g, '_') + '.docx';
-                var blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
-                iaDlBlob(outName, blob.type, blob);
-                if (msgsEl) {
-                    var card = E('div', 'ia-card');
-                    card.appendChild(E('h4', '', '📝 Document actualisé — ' + esc(outName)));
-                    card.appendChild(E('div', 'ia-note', nOK + '/' + ops.length + ' modification(s) appliquée(s) · mise en forme d\'origine préservée · le téléchargement a démarré automatiquement.'));
-                    var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
-                    b.onclick = function () { iaDlBlob(outName, blob.type, blob); };
-                    dl.appendChild(b); card.appendChild(dl);
-                    msgsEl.appendChild(card); iaScroll(msgsEl);
+                var livrerSeul = !ops.length && meta.lots > 0 && inp.telecharger !== false; /* livraison après des lots */
+                if (!nOK && !livrerSeul) return 'AUCUNE opération appliquée — document non téléchargé' + (meta.lots ? ' (le fichier de travail conserve les ' + meta.lots + ' lot(s) déjà enregistrés)' : '') + '.\n' + iaDocxLog(log);
+                var ab = buf;
+                if (nOK) {
+                    zip.file('word/document.xml', new XMLSerializer().serializeToString(xmlDoc));
+                    if (relsChanged) zip.file(relsPath, new XMLSerializer().serializeToString(relsDoc));
+                    ab = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+                    IA.docs[name] = ab; meta.lots = (meta.lots || 0) + 1; /* fichier de TRAVAIL : les appels suivants repartent d'ici */
                 }
-                return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s), document « ' + outName + ' » téléchargé chez l\'utilisateur (mise en forme d\'origine préservée).\n' + log.join('\n');
+                if (inp.nom_sortie) meta.sortie = String(inp.nom_sortie);
+                var restant = ops.length - nOK;
+                if (inp.telecharger === false) {
+                    meta.enAttente = true;
+                    return 'OK : ' + nOK + '/' + ops.length + ' opération(s) appliquée(s) et ENREGISTRÉE(S) dans le fichier de travail (lot ' + meta.lots + ', pas encore téléchargé, comme demandé). Le prochain appel repart de cet état : n\'y mets QUE les opérations restantes. Termine par un appel telecharger:true (operations:[] suffit) pour livrer UN seul fichier complet.' + (restant ? ' ⚠ ' + restant + ' opération(s) en échec, voir le détail.' : '') + '\n' + iaDocxLog(log);
+                }
+                var outName = iaDocxDeliver(name, ab, msgsEl, (livrerSeul ? meta.lots + ' lot(s) réunis en un seul fichier' : nOK + '/' + ops.length + ' modification(s) appliquée(s)' + (meta.lots > 1 ? ' · ' + meta.lots + ' lot(s) réunis' : '')) + ' · mise en forme d\'origine préservée');
+                return 'OK : ' + (livrerSeul ? 'fichier de travail (' + meta.lots + ' lot(s))' : nOK + '/' + ops.length + ' opération(s) appliquée(s)') + ', document « ' + outName + ' » téléchargé chez l\'utilisateur (mise en forme d\'origine préservée).' + (restant ? ' ⚠ ' + restant + ' opération(s) en échec, voir le détail.' : '') + ' Le fichier de travail est à jour : pour une correction, rappelle modifier_document avec les seules opérations à changer (cumulatif).\n' + iaDocxLog(log);
             }
 
             /* ══════ PRÉSENTATIONS PowerPoint (.pptx) — ÉDITION SUR PLACE ══════
@@ -14030,9 +14179,13 @@
                 try { ta.dispatchEvent(new Event('input')); } catch (e) { }
 
                 IA.busy = true; sendBtn.disabled = true;
+                IA.tour = { docEchec: '', docLivre: false };
                 try { await iaAgentLoop(msgsEl); }
                 catch (e) { msgsEl.appendChild(E('div', 'ia-err', '⚠ ' + esc(e.message || e))); }
-                finally { IA.busy = false; sendBtn.disabled = false; iaScroll(msgsEl); }
+                finally {
+                    try { await iaDocFinTour(msgsEl); } catch (e) { }
+                    IA.busy = false; sendBtn.disabled = false; iaScroll(msgsEl);
+                }
             }
 
             /* ── Modal réglages accès (modèle + mode d'accès) ──
@@ -14310,7 +14463,7 @@
                 mic.onclick = toggleSpeech;
                 voice.onclick = toggleSpeech;
                 bSet.onclick = function () { iaSettings(); };
-                bNew.onclick = function () { if (IA.busy) return; if (speechActive && speech) speech.stop(); IA.msgs = []; IA.files = []; IA.docs = {}; IA.imgs = {}; ta.value = ''; msgsEl.innerHTML = ''; iaRenderAtts(); hero(); syncComposer(); };
+                bNew.onclick = function () { if (IA.busy) return; if (speechActive && speech) speech.stop(); IA.msgs = []; IA.files = []; IA.docs = {}; IA.docMeta = {}; IA.imgs = {}; ta.value = ''; msgsEl.innerHTML = ''; iaRenderAtts(); hero(); syncComposer(); };
                 iaRenderAtts();
                 syncComposer();
             };
