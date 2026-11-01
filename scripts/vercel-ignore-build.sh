@@ -4,7 +4,7 @@
 # on ne reconstruit que si un fichier réellement copié dans dist/ par build-static.mjs a changé.
 # Toute situation douteuse => on construit (jamais d'erreur qui bloque la production).
 
-PATHS="docs/index.html docs/pev-logo.svg docs/pev-logo-officiel.png docs/canevas_revue_formative_pev.pptx docs/data/ia docs/mashako-assets docs/.nojekyll scripts/build-static.mjs scripts/vercel-ignore-build.sh vercel.json"
+PATHS="docs/index.html docs/pev-logo.svg docs/pev-logo-officiel.png docs/pev-rdc-officiel.png docs/canevas_revue_formative_pev.pptx docs/data/ia docs/mashako-assets docs/.nojekyll scripts/build-static.mjs scripts/vercel-ignore-build.sh vercel.json"
 BASE="${VERCEL_GIT_PREVIOUS_SHA:-}"
 
 if [ -z "$BASE" ]; then

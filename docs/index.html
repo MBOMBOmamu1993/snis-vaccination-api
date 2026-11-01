@@ -1163,66 +1163,424 @@
         .fs .fg select:focus,.fs .fbtn:hover,.fs .fg:has(.fd.sh) .fbtn,.fs .fbtn:focus{border-color:#0d47a1!important;
             box-shadow:0 0 0 3px rgba(13,71,161,.13)!important}
         </style>
+    <style id="pev-charte-v3">
+        /* ════════════════════════════════════════════════════════════════════
+         * CHARTE v3 — design IDENTIQUE au Shiny « Plateforme intégrée du PEV RDC »
+         * (pevrdc.shinyapps.io) et au dashboard Continuité des services de
+         * vaccination : barre d'onglets indigo, bandeau en dégradé à liseré doré
+         * avec le logo PEV blanc, sous-onglets soulignés de rouge, filtres dans un
+         * panneau latéral, cartes à en-tête en dégradé, tuiles pleines, tableaux à
+         * en-tête indigo. Aplats nets : aucun flou, halo ni motif.
+         * PRÉSENTATION UNIQUEMENT : calculs, données et analyses inchangés.
+         * ════════════════════════════════════════════════════════════════════ */
+        :root {
+            --primary-color: #1a237e; --secondary-color: #0d47a1; --indigo-light: #3949ab; --accent-color: #ffd700;
+            --measles-red: #d62728; --measles-orange: #ff7f0e; --measles-blue: #1f77b4; --measles-green: #2ca02c;
+            --pev-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+            --pev-ease: cubic-bezier(.22, 1, .36, 1);
+        }
+        body { background: linear-gradient(135deg, #f8f9fa, #e9ecef) fixed !important; font-family: var(--pev-font) !important; color: #444; }
+        ::selection { background: #bbdefb; color: #1a237e; }
+        * { scrollbar-width: thin; scrollbar-color: #b0b7c3 transparent; }
+        ::-webkit-scrollbar { width: 9px !important; height: 9px !important; }
+        ::-webkit-scrollbar-thumb { background: #b0b7c3 !important; border-radius: 999px !important; border: 2px solid transparent; background-clip: padding-box; }
+        ::-webkit-scrollbar-thumb:hover { background: #1a237e !important; background-clip: padding-box; }
+        @keyframes pevFadeUp { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+        @keyframes pevScaleIn { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.98); } to { opacity: 1; transform: none; } }
+
+        /* ── Écran de chargement : aplat indigo, logo PEV blanc, points blancs ── */
+        #pevLoad { background: #1a237e !important; gap: 20px !important; padding: 16px; text-align: center; }
+        #pevLoad .pl-logos img { height: 72px !important; width: auto; filter: brightness(0) invert(1); }
+        #pevLoad h2 { font-size: 28px !important; font-weight: 600 !important; color: #fff !important; }
+        #pevLoad .pl-dots i { width: 10px !important; height: 10px !important; background: #fff !important; }
+        #pevLoad .pl-sub { color: #fff !important; font-size: 15px !important; }
+
+        /* ── Fenêtre de bienvenue (modale du Shiny) : voile sombre SANS flou ── */
+        #pevWelcome { background: rgba(0, 0, 0, .5) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 40px 16px !important; }
+        #pevWelcome .pw-card { max-width: 800px !important; border-radius: 15px !important; border: 1px solid rgba(0, 0, 0, .18); box-shadow: 0 10px 30px rgba(0, 0, 0, .1) !important; animation: pevScaleIn .45s var(--pev-ease) backwards; }
+        #pevWelcome .pw-head { display: block !important; padding: 20px 30px !important; color: #fff; background: linear-gradient(135deg, #1a237e, #0d47a1) !important; border-bottom: 5px solid #ffd700 !important; }
+        #pevWelcome .pw-head h1 { display: flex; align-items: flex-start; gap: 12px; margin: 0; font-size: 24px !important; font-weight: 500 !important; line-height: 1.25; color: #fff; text-shadow: 2px 2px 4px rgba(0, 0, 0, .3); }
+        #pevWelcome .pw-head h1 svg { width: 26px; height: 26px; flex: none; margin-top: 2px; }
+        #pevWelcome .pw-head p { margin: 6px 0 0 38px !important; font-size: 16px !important; color: rgba(255, 255, 255, .9) !important; }
+        #pevWelcome .pw-body { padding: 30px !important; }
+        #pevWelcome .pw-intro { background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important; border-left: 5px solid #1976d2 !important; border-radius: 10px !important; padding: 18px !important; font-size: 16px !important; font-weight: 500; line-height: 1.6 !important; color: #1a237e !important; box-shadow: 0 2px 8px rgba(25, 118, 210, .12); }
+        #pevWelcome .pw-intro p { display: flex; align-items: flex-start; gap: 10px; margin: 0; }
+        #pevWelcome .pw-intro svg { width: 20px; height: 20px; flex: none; margin-top: 3px; }
+        #pevWelcome .pw-grid { gap: 24px !important; margin-top: 24px !important; }
+        #pevWelcome .pw-col { min-width: 0; }
+        #pevWelcome .pw-col h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 16.7px; font-weight: 600; color: #1a237e; }
+        #pevWelcome .pw-col h4.warn { color: #e65100; }
+        #pevWelcome .pw-col h4 svg { width: 18px; height: 18px; flex: none; }
+        #pevWelcome .pw-box { background: #f8f9fa !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; padding: 14px 16px !important; }
+        #pevWelcome .pw-box.warn { background: #fff3e0 !important; border-color: #ffe0b2 !important; color: #555; font-size: 14px; line-height: 1.6; }
+        #pevWelcome .pw-box.warn p { margin: 0 0 12px; }
+        #pevWelcome .pw-box.warn p:last-child { margin: 0; }
+        #pevWelcome .pw-box.warn b { color: #333; }
+        #pevWelcome .pw-li { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 9px !important; font-size: 14px !important; line-height: 1.45 !important; color: #444 !important; }
+        #pevWelcome .pw-li:last-child { margin-bottom: 0 !important; }
+        #pevWelcome .pw-li b { color: #212529; }
+        #pevWelcome .pw-ok { width: 18px; height: 18px; flex: none; margin-top: 1px; color: #28a745; }
+        #pevWelcome .pw-foot { margin-top: 24px; padding: 16px 20px; text-align: center; font-size: 14px; color: #444; border: 1px solid #e0e0e0; border-radius: 10px; background: linear-gradient(135deg, #f5f5f5, #eeeeee); }
+        #pevWelcome .pw-foot p { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 0; }
+        #pevWelcome .pw-foot p + p { margin-top: 6px; font-size: 13.5px; }
+        #pevWelcome .pw-foot b { color: #1a237e; }
+        #pevWelcome .pw-foot svg { width: 17px; height: 17px; flex: none; color: #1a237e; }
+        #pevWelcome .pw-upd { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #d6d6d6; font-size: 12.5px; font-style: italic; color: #888; }
+        #pevWelcome .pw-upd svg { width: 14px; height: 14px; color: #888; }
+        #pevWelcome .pw-cta { margin-top: 24px; text-align: center; }
+        #pevWelcome .pw-start { display: inline-flex !important; align-items: center; gap: 10px; margin: 0 !important; padding: 12px 40px !important; border-radius: 999px !important; font-size: 16px !important; font-weight: 600 !important; letter-spacing: .5px !important; background: linear-gradient(135deg, #1a237e, #0d47a1) !important; box-shadow: 0 6px 12px rgba(26, 35, 126, .25) !important; transition: transform .3s, box-shadow .3s !important; }
+        #pevWelcome .pw-start:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(26, 35, 126, .3) !important; }
+        #pevWelcome .pw-start svg { width: 19px; height: 19px; }
+        @media (max-width: 760px) {
+            #pevWelcome { padding: 20px 10px !important; }
+            #pevWelcome .pw-head { padding: 18px 20px !important; }
+            #pevWelcome .pw-head h1 { font-size: 20px !important; }
+            #pevWelcome .pw-head p { margin-left: 0 !important; font-size: 14px !important; }
+            #pevWelcome .pw-body { padding: 20px !important; }
+            #pevWelcome .pw-intro { font-size: 15px !important; }
+            #pevWelcome .pw-start { padding: 12px 28px !important; font-size: 15px !important; }
+        }
+
+        /* ── Barre d'onglets (navbar du Shiny) : indigo, capitales, onglet actif doré ── */
+        #pevTopNav { position: sticky; top: 0; z-index: 1400; background: #1a237e; box-shadow: 0 2px 4px rgba(0, 0, 0, .12); }
+        #pevTopNav .tn-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; padding: 8px 16px; }
+        #pevTopNav .tn-i { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: none; border-radius: 4px; background: transparent; color: #fff; font: 500 12.9px/1.2 var(--pev-font); text-transform: uppercase; letter-spacing: .1px; white-space: nowrap; cursor: pointer; transition: background-color .3s, color .3s; }
+        #pevTopNav .tn-i:hover { background: rgba(255, 255, 255, .1); color: #ffd700; }
+        #pevTopNav .tn-i.act { background: rgba(255, 255, 255, .2); color: #ffd700; font-weight: 700; box-shadow: inset 0 -2px 0 #d62728; }
+        #pevTopNav .tn-i svg { width: 14px !important; height: 14px !important; flex: none; color: inherit !important; vertical-align: 0 !important; }
+        #pevTopNav .tn-mob { display: none; }
+        @media (max-width: 1023px) {
+            #pevTopNav .tn-mob { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; }
+            #pevTopNav .tn-cur { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #ffd700; font: 700 12.9px var(--pev-font); text-transform: uppercase; }
+            #pevTopNav .tn-burger { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid rgba(255, 255, 255, .4); border-radius: 4px; background: transparent; color: #fff; cursor: pointer; }
+            #pevTopNav .tn-burger:hover { background: rgba(255, 255, 255, .1); }
+            #pevTopNav .tn-burger svg { width: 18px; height: 18px; }
+            #pevTopNav .tn-row { display: none; flex-direction: column; align-items: stretch; padding: 0 12px 12px; }
+            #pevTopNav.open .tn-row { display: flex; }
+            #pevTopNav .tn-i { justify-content: flex-start; white-space: normal; text-align: left; }
+        }
+
+        /* ── Bandeau PEV (custom-header du Shiny) : dégradé, liseré doré, logo blanc ── */
+        .hdr { position: relative !important; top: auto !important; z-index: 30 !important; height: auto !important; display: flex !important; align-items: center !important; justify-content: space-between; gap: 20px; padding: .6rem 1rem !important; color: #fff; background: linear-gradient(135deg, #1a237e, #0d47a1) !important; border-bottom: 3px solid #ffd700 !important; box-shadow: 0 2px 4px rgba(0, 0, 0, .1) !important; }
+        .hdr .logo { flex: 0 0 170px; display: flex; align-items: center; gap: 0; }
+        .hdr .logo:last-child { justify-content: flex-end; }
+        .hdr .logo img, .hdr .logo.oms img { height: 50px !important; width: auto !important; max-width: none !important; filter: brightness(0) invert(1); }
+        .hdr .hdr-t { flex: 1; min-width: 0; text-align: center; text-shadow: 1px 1px 2px rgba(0, 0, 0, .3); }
+        .hdr h1 { flex: none !important; margin: 0; font-size: 19px !important; font-weight: 700 !important; line-height: 1.25; text-transform: uppercase; letter-spacing: .5px !important; text-shadow: none !important; }
+        .hdr .hdr-s { margin-top: 2px; font-size: 12px; text-transform: uppercase; opacity: .9; }
+        @media (max-width: 767px) {
+            .hdr { flex-wrap: wrap; gap: 6px 12px; padding: 10px 12px !important; }
+            .hdr .logo { flex: 0 0 auto; }
+            .hdr .logo img, .hdr .logo.oms img { height: 38px !important; }
+            .hdr .logo:last-child { display: none; }
+            .hdr .hdr-t { order: 3; flex: 0 0 100%; }
+            .hdr h1 { font-size: 13.5px !important; }
+            .hdr .hdr-s { display: none; }
+        }
+
+        /* ── Accueil (landing page du Shiny) ── */
+        #pevHome { position: static !important; inset: auto !important; z-index: auto !important; overflow: visible !important; background: transparent !important; flex-direction: column; }
+        #pevHome .ph-top, #pevHome .ph-sep { display: none !important; }
+        #pevHome .ph-wrap { max-width: 1240px !important; margin: 0 auto; padding: 32px 24px 48px !important; }
+        #pevHome .ph-hero { padding: 52px 40px !important; border-radius: 20px !important; border-top: 5px solid #ffd700 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .1) !important; animation: pevFadeUp .45s var(--pev-ease) backwards; }
+        #pevHome .ph-hero h2 { font-size: 38px !important; font-weight: 700 !important; line-height: 1.2; color: #1a237e !important; }
+        #pevHome .ph-hero p { max-width: 920px !important; margin: 16px auto 0 !important; font-size: 17px !important; line-height: 1.65 !important; color: #666 !important; }
+        #pevHome .ph-grid { grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)) !important; gap: 30px !important; max-width: 1200px; margin: 36px auto 0; }
+        #pevHome .ph-card { --mc: #1a237e; min-height: 0 !important; padding: 30px !important; border: 2px solid #1a237e !important; border-radius: 15px !important; box-shadow: 0 4px 15px rgba(0, 0, 0, .1) !important; transition: transform .3s, box-shadow .3s, border-color .3s !important; animation: pevFadeUp .45s var(--pev-ease) backwards; }
+        #pevHome .ph-card:nth-child(2) { animation-delay: 60ms; } #pevHome .ph-card:nth-child(3) { animation-delay: 120ms; }
+        #pevHome .ph-card:nth-child(4) { animation-delay: 180ms; } #pevHome .ph-card:nth-child(5) { animation-delay: 240ms; }
+        #pevHome .ph-card:hover { transform: translateY(-8px) !important; border-color: #0d47a1 !important; box-shadow: 0 8px 25px rgba(26, 35, 126, .2) !important; }
+        #pevHome .ph-card .ph-ic { width: auto !important; height: auto !important; margin: 0 0 16px !important; background: none !important; border-radius: 0 !important; box-shadow: none !important; transition: transform .3s !important; color: var(--mc) !important; }
+        #pevHome .ph-card:hover .ph-ic { transform: scale(1.1); background: none !important; box-shadow: none !important; }
+        #pevHome .ph-card .ph-ic svg { width: 46px !important; height: 46px !important; color: var(--mc) !important; }
+        #pevHome .ph-card h3 { margin-bottom: 10px; font-size: 20px !important; font-weight: 700 !important; color: var(--mc) !important; }
+        #pevHome .ph-card p { margin-top: 0 !important; font-size: 15px !important; line-height: 1.45 !important; color: #666 !important; }
+        #pevHome .ph-card[data-tab="oqd"] { --mc: #2ca02c; }
+        #pevHome .ph-card[data-tab="vacc"] { --mc: #1a237e; }
+        #pevHome .ph-card[data-tab="log"] { --mc: #6d4c41; }
+        #pevHome .ph-card[data-tab="dl"] { --mc: #ff7f0e; }
+        #pevHome .ph-card[data-tab="ia"] { --mc: #0d47a1; }
+        #pevHome .ph-card[data-tab="ia"] .ph-ic svg { color: #d97757 !important; }
+        #pevHome .ph-foot { margin-top: 48px; padding: 30px; text-align: center; background: #fff; border-radius: 15px; border-top: 4px solid #1a237e; box-shadow: 0 4px 15px rgba(0, 0, 0, .1); animation: pevFadeUp .45s var(--pev-ease) backwards; animation-delay: 300ms; }
+        #pevHome .ph-foot h4 { margin: 0 0 12px; font-size: 20px; font-weight: 700; color: #1a237e; }
+        #pevHome .ph-foot p { margin: 0; font-size: 15px; color: #666; }
+        @media (max-width: 767px) {
+            #pevHome .ph-wrap { padding: 20px 12px 32px !important; }
+            #pevHome .ph-hero { padding: 32px 20px !important; }
+            #pevHome .ph-hero h2 { font-size: 24px !important; }
+            #pevHome .ph-hero p { font-size: 15px !important; }
+            #pevHome .ph-grid { gap: 20px !important; margin-top: 24px; }
+            #pevHome .ph-card { padding: 24px !important; }
+            #pevHome .ph-foot { margin-top: 32px; padding: 22px 18px; }
+            #pevHome .ph-foot h4 { font-size: 17px; }
+        }
+
+        /* ── Page d'onglet : retour, sous-onglets, panneau filtres + contenu ── */
+        body:not(.tabmode) #pevMod { display: none !important; }
+        #pevSide, #NAV, .nav { display: none !important; }
+        body.tabmode .lb, body.tabmode .fs, body.tabmode .ct { margin-left: 0 !important; }
+        #pevMod { max-width: 1520px; margin: 0 auto; padding: 18px 20px 28px; }
+        .pev-back { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 2px solid #1a237e; border-radius: 999px; background: #fff; color: #1a237e; font: 500 12.5px var(--pev-font); text-transform: uppercase; letter-spacing: .5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 0, 0, .1); transition: background-color .3s, color .3s, transform .3s, box-shadow .3s; }
+        .pev-back:hover { background: #1a237e; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26, 35, 126, .3); }
+        .pev-back svg { width: 14px; height: 14px; }
+        .pev-subtabs { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px; margin: 16px 0; border-bottom: 1px solid #dee2e6; }
+        .pev-subtabs .st-i { margin-bottom: -1px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: none; border-bottom: 3px solid transparent; background: none; color: #1a237e; font: 400 14.5px var(--pev-font); text-align: left; cursor: pointer; transition: border-color .3s; }
+        .pev-subtabs .st-i:hover { border-bottom-color: #ff7f0e; }
+        .pev-subtabs .st-i.act { border-bottom-color: #d62728; font-weight: 700; }
+        .pev-subtabs .st-i svg { width: 16px !important; height: 16px !important; flex: none; vertical-align: 0 !important; }
+        .pev-panel { display: flex; align-items: stretch; min-height: 60vh; background: #fff; border: 1px solid #dee2e6; border-radius: 4px; }
+        .pev-aside { flex: 0 0 270px; width: 270px; position: relative; z-index: 5; background: linear-gradient(#f8f9fa, #e9ecef); border-right: 3px solid #1a237e; }
+        .pev-aside:has(#FS:empty) { display: none; }
+        .pev-main { flex: 1; min-width: 0; padding: 20px; }
+        .pev-ftoggle { display: none; }
+        @media (max-width: 1023px) {
+            #pevMod { padding: 12px; }
+            .pev-panel { flex-direction: column; }
+            .pev-aside { flex: none; width: auto; border-right: none; border-bottom: 3px solid #1a237e; }
+            .pev-ftoggle { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 12px 16px; border: none; background: none; color: #1a237e; font: 700 14px var(--pev-font); cursor: pointer; }
+            .pev-ftoggle svg { width: 16px; height: 16px; transition: transform .3s; }
+            .pev-aside.open .pev-ftoggle svg.pev-chev { transform: rotate(180deg); }
+            .pev-aside:not(.open) #FS { display: none !important; }
+            .pev-main { padding: 12px; }
+            .pev-subtabs .st-i { font-size: 13.5px; padding: 8px 10px; }
+        }
+
+        /* ── Filtres dans le panneau latéral (sidebar du Shiny) ── */
+        .pev-aside .fs { display: block !important; margin: 0 !important; padding: 16px 18px 18px !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; position: relative; z-index: 20; }
+        .pev-aside .fs .pev-fhead { display: none !important; }
+        .pev-aside .fs .fg { margin: 0 0 14px; }
+        .pev-aside .fs .fg label { display: flex !important; align-items: center; justify-content: space-between; margin: 0 0 6px !important; font-size: 14px !important; font-weight: 400 !important; color: #444 !important; text-transform: none !important; letter-spacing: 0 !important; }
+        .pev-aside .fs .frst { margin-left: 8px; font-size: 13px; color: #6c757d; }
+        .pev-aside .fs .frst:hover { color: #1a237e; }
+        .pev-aside .fs .fg select, .pev-aside .fs .fbtn { width: 100% !important; min-width: 0 !important; min-height: 38px; padding: 6px 12px !important; font-size: 14px !important; font-weight: 400 !important; color: #212529 !important; background: #fff !important; border: 2px solid #dee2e6 !important; border-radius: 6px !important; box-shadow: none !important; }
+        .pev-aside .fs .fbtn { overflow: hidden; }
+        .pev-aside .fs .fg select:focus, .pev-aside .fs .fbtn:hover, .pev-aside .fs .fbtn:focus, .pev-aside .fs .fg:has(.fd.sh) .fbtn { border-color: #1a237e !important; box-shadow: 0 0 0 .2rem rgba(26, 35, 126, .25) !important; }
+        .pev-aside .fs .fbtn .cn { background: #1a237e !important; }
+        .pev-aside .fs .fd { min-width: 100% !important; border: 1px solid #dee2e6 !important; border-radius: 6px !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .15) !important; }
+        .pev-aside .fs .fd.pcal { min-width: 280px !important; }
+        .pev-aside .fs > div[title^="Réinitialiser tous"] { display: flex !important; align-items: center; justify-content: center; width: 100%; margin: 6px 0 0 !important; padding: 8px 14px !important; font-size: 0 !important; color: transparent !important; border: 2px solid #1a237e; border-radius: 999px; background: #fff; transform: none !important; cursor: pointer; transition: background-color .3s !important; }
+        .pev-aside .fs > div[title^="Réinitialiser tous"]::after { content: "\21BA\00a0\00a0Réinitialiser"; font: 600 12.5px var(--pev-font); letter-spacing: .4px; text-transform: uppercase; color: #1a237e; }
+        .pev-aside .fs > div[title^="Réinitialiser tous"]:hover { background: #1a237e; }
+        .pev-aside .fs > div[title^="Réinitialiser tous"]:hover::after { color: #fff; }
+
+        /* ── Ligne d'état (chargement / nombre d'enregistrements) ── */
+        .pev-main .lb { position: static !important; display: flex !important; align-items: center; gap: 10px; margin: 0 0 14px !important; padding: 0 !important; background: none !important; border: none !important; font-size: 11.5px !important; color: #6c757d; }
+        .pev-main #LS.st { min-width: 0 !important; margin: 0 !important; padding: 0 !important; background: none !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; color: #1a237e !important; font-size: 11.5px !important; font-weight: 600 !important; text-transform: none !important; letter-spacing: 0 !important; }
+        .pev-main #LS.st .pev-ic-svg { color: #1a237e !important; }
+        .pev-main .lb .pw { flex: 1; height: 3px !important; min-width: 80px; background: #e9ecef !important; border-radius: 2px !important; }
+        .pev-main .lb .pf { background: #1a237e !important; }
+        .pev-main .lb .pt { min-width: 0 !important; font-size: 11.5px !important; color: #6c757d !important; }
+
+        /* ── Contenu : plus de carte dans la carte ── */
+        .ct { padding: 0 !important; background: transparent !important; }
+        .db, #DB, #DB.ia-mode { min-height: 0 !important; padding: 0 !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
+
+        /* ── Bandeau de page (en-tête de section du Shiny) ── */
+        #DB > .st { display: flex !important; flex-wrap: wrap; align-items: center; gap: 4px 10px !important; margin: 0 0 18px !important; padding: 12px 20px !important; font-size: 17px !important; font-weight: 700 !important; color: #fff !important; text-transform: none !important; letter-spacing: 0 !important; background: linear-gradient(135deg, #1a237e, #3949ab) !important; border: none !important; border-radius: 8px !important; box-shadow: 0 4px 6px rgba(0, 0, 0, .1) !important; }
+        #DB > .st > span:last-child { font-size: 12.5px !important; opacity: .9 !important; }
+        #DB.ia-mode > .st { display: none !important; }
+
+        /* ── Cartes (card du Shiny) et leurs en-têtes en dégradé ── */
+        .cb { margin-bottom: 24px !important; padding: 18px !important; background: #fff !important; border: none !important; border-radius: 8px !important; box-shadow: 0 4px 6px rgba(0, 0, 0, .1) !important; transition: box-shadow .3s !important; }
+        .cb:hover { box-shadow: 0 6px 12px rgba(0, 0, 0, .15) !important; }
+        .cb h4 { color: #1a237e; border-bottom-color: #e9ecef; }
+        .pev-banner { padding: 14px 22px !important; font-size: 16px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-shadow: none !important; background: linear-gradient(to right, #1a237e, #0d47a1) !important; border: none !important; border-bottom: none !important; border-radius: 8px !important; box-shadow: 0 4px 6px rgba(0, 0, 0, .1) !important; }
+        .cb > h4.pev-banner:first-child { margin: -18px -18px 16px !important; border-radius: 8px 8px 0 0 !important; box-shadow: none !important; }
+        .pev-banner.pev-banner-tbl { margin-bottom: 0 !important; border-radius: 8px 8px 0 0 !important; }
+        .pev-banner.pev-banner-tbl + .tw { border-top: none !important; border-radius: 0 0 8px 8px !important; }
+        .pev-banner .pev-ic-svg, #DB > .st .pev-ic-svg { color: #ffd700 !important; }
+        .pev-banner .pev-tbtn { padding: 6px 12px !important; font-size: 11.5px !important; font-weight: 500 !important; color: #fff !important; background: transparent !important; border: 2px solid rgba(255, 255, 255, .8) !important; border-radius: 4px !important; }
+        .pev-banner .pev-tbtn:hover { background: rgba(255, 255, 255, .2) !important; border-color: #fff !important; transform: translateY(-1px) !important; box-shadow: 0 4px 8px rgba(0, 0, 0, .2) !important; }
+
+        /* ── Tuiles KPI = boîtes de valeur du Shiny : aplat de couleur, texte blanc ── */
+        .kr { gap: 14px !important; margin-bottom: 22px !important; }
+        .kc { min-width: 150px; }
+        .kc { --kc1: #1a237e; --kc2: #0d47a1; display: flex !important; flex-direction: column; align-items: flex-start !important; justify-content: flex-start; min-height: 112px; padding: 18px 20px !important; text-align: left !important; color: #fff !important; background: linear-gradient(135deg, var(--kc1), var(--kc2)) !important; border: none !important; border-top: none !important; border-left: none !important; border-radius: 15px !important; box-shadow: 0 4px 6px rgba(0, 0, 0, .1) !important; transition: transform .2s, box-shadow .2s !important; }
+        .kc:hover { transform: translateY(-3px) !important; box-shadow: 0 6px 12px rgba(0, 0, 0, .15) !important; }
+        .kc.gn { --kc1: #28a745; --kc2: #2ca02c; }
+        .kc.rd { --kc1: #c62828; --kc2: #e53935; }
+        .kc.or { --kc1: #ef6c00; --kc2: #fb8c00; }
+        .kc.cy { --kc1: #ffc107; --kc2: #ffca2c; }
+        .kc.bl { --kc1: #1a237e; --kc2: #0d47a1; }
+        .kc.pu { --kc1: #6a1b9a; --kc2: #8e24aa; }
+        .kc .kl { order: 0; margin: 0 !important; font-size: 12.5px !important; font-weight: 700 !important; line-height: 1.3; color: inherit !important; text-transform: uppercase; letter-spacing: .3px !important; }
+        .kc .kv { order: 1; align-self: stretch; margin-top: auto !important; padding-top: 12px; font-size: 30px; font-weight: 700 !important; line-height: 1.1; white-space: nowrap; color: inherit !important; text-shadow: none !important; }
+        .kc > :not(.kv):not(.kl) { order: 2; margin-top: 6px; opacity: .92; }
+        .kc *, .kc [style*="rgba(255,255,255"] { color: inherit !important; }
+        .kc.pev-kc-dark { color: #212529 !important; }
+
+        /* ── Tableaux (DataTables du Shiny) : en-tête indigo, zébrage, survol bleu ciel ── */
+        .tw { background: #fff; border: 1px solid #dee2e6 !important; border-radius: 8px !important; box-shadow: none !important; }
+        .dt { font-size: 12px !important; color: #444; }
+        .dt thead { background: linear-gradient(135deg, #1a237e, #3949ab) !important; }
+        .dt th { padding: 8px 6px !important; font-size: 11px !important; font-weight: 700 !important; color: #fff !important; text-align: center !important; text-transform: uppercase !important; letter-spacing: .3px !important; background: transparent; border: 1px solid #fff !important; }
+        .dt td { padding: 6px 8px !important; text-align: center; color: #444; border: 1px solid #dee2e6 !important; font-variant-numeric: tabular-nums; }
+        .dt tbody tr:nth-child(even) { background: #f8f9fa !important; }
+        .dt tbody tr:hover { background: #e3f2fd !important; }
+        .dt tbody td:first-child { font-weight: 700; text-align: left; color: #212529; }
+        .dt td.pev-rowlbl { background: #0d47a1 !important; color: #fff !important; border-color: #fff !important; }
+        .dt td.pev-rowlbl.pev-rowlbl-prov { background: #1a237e !important; }
+        .dt td.pev-hm { font-weight: 700 !important; text-shadow: none !important; }
+        .dt td.pev-hm.pev-hm-r { background: #dc3545 !important; color: #fff !important; }
+        .dt td.pev-hm.pev-hm-y { background: #ffc107 !important; color: #212529 !important; }
+        .dt td.pev-hm.pev-hm-g2 { background: #90ee90 !important; color: #212529 !important; }
+        .dt td.pev-hm.pev-hm-g { background: #28a745 !important; color: #fff !important; }
+        .dt td.pev-hm.pev-hm-b { background: #007bff !important; color: #fff !important; }
+        td.cg { background: #28a745 !important; color: #fff !important; font-weight: 700; }
+        td.cy { background: #ffc107 !important; color: #212529 !important; font-weight: 700; }
+        td.crd { background: #dc3545 !important; color: #fff !important; font-weight: 700; }
+        td.co { background: #ff7f0e !important; color: #fff !important; font-weight: 700; }
+        /* Cartes thermiques (heatmap-table du Shiny) : en-têtes blancs à texte indigo,
+           1re colonne d'entité en aplat indigo, cellules en gras, sans zébrage */
+        table.dt:has(td.pev-hm) thead { background: #fff !important; }
+        table.dt:has(td.pev-hm) thead th { color: #1a237e !important; background: #fff !important; border: 1px solid #ddd !important; font-size: 11px !important; text-transform: none !important; letter-spacing: 0 !important; }
+        table.dt:has(td.pev-hm) thead tr:last-child th:first-child, table.dt:has(td.pev-hm) thead tr:first-child th:first-child { color: #fff !important; background: #1a237e !important; text-align: left !important; }
+        table.dt:has(td.pev-hm) td { font-weight: 700; border-color: #ddd !important; }
+        table.dt:has(td.pev-hm) tbody tr:nth-child(even) { background: #fff !important; }
+        table.dt:has(td.pev-hm) tbody tr:hover { background: #e3f2fd !important; }
+        .pev-tbtn { display: inline-flex !important; align-items: center; gap: 5px; }
+        .pev-tbtn svg { width: 13px; height: 13px; flex: none; }
+        .pev-banner .pev-tbar { flex: none; margin: 0 0 0 auto !important; gap: 8px !important; }
+        .pev-hm-leg { color: #1a237e; }
+        .pev-hm-leg .pev-hm-chip { border-radius: 4px !important; font-weight: 700 !important; }
+        .pev-tbtn { padding: 6px 12px !important; font: 600 11.5px var(--pev-font) !important; color: #1a237e !important; background: #fff !important; border: 1px solid #ced4da !important; border-radius: 6px !important; box-shadow: 0 1px 2px rgba(0, 0, 0, .06) !important; }
+        .pev-tbtn:hover { color: #fff !important; background: #1a237e !important; border-color: #1a237e !important; transform: none !important; box-shadow: 0 4px 12px rgba(26, 35, 126, .3) !important; }
+        .pev-tblpg button, .pev-pgnav button { border: 1px solid #e9ecef !important; border-radius: 8px !important; color: #1a237e !important; background: #fff !important; }
+        .pev-tblpg button:hover:not(:disabled), .pev-pgnav button:hover:not(:disabled) { color: #fff !important; background: #1a237e !important; border-color: #1a237e !important; }
+
+        /* ── Onglets internes aux pages (nav-underline du Shiny) ── */
+        .stt { margin-bottom: 18px !important; background: transparent !important; border-bottom: 1px solid #dee2e6 !important; border-radius: 0 !important; }
+        .stb { margin-bottom: -1px; padding: 8px 14px !important; font-size: 14px !important; font-weight: 400 !important; color: #1a237e !important; background: none !important; border-bottom: 3px solid transparent !important; transition: border-color .3s !important; }
+        .stb:hover { background: none !important; border-bottom-color: #ff7f0e !important; }
+        .stb.act { font-weight: 700 !important; background: none !important; border-bottom-color: #d62728 !important; }
+        /* ── Filtres internes aux cartes : même style que le panneau latéral ── */
+        .cb .fg label { font-size: 13px !important; font-weight: 400 !important; color: #444 !important; text-transform: none !important; letter-spacing: 0 !important; }
+        .cb .fbtn, .cb .fg select { color: #212529 !important; font-weight: 400 !important; background: #fff !important; border: 2px solid #dee2e6 !important; border-radius: 6px !important; box-shadow: none !important; }
+        .cb .fbtn:hover, .cb .fbtn:focus, .cb .fg select:focus, .cb .fg:has(.fd.sh) .fbtn { border-color: #1a237e !important; box-shadow: 0 0 0 .2rem rgba(26, 35, 126, .25) !important; }
+        /* ── Bouton du canevas : pilule du Shiny ── */
+        #dlBtn { border-radius: 999px !important; font-weight: 600 !important; background: linear-gradient(135deg, #1a237e, #0d47a1) !important; box-shadow: 0 6px 12px rgba(26, 35, 126, .25) !important; transition: transform .3s, box-shadow .3s !important; }
+        #dlBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(26, 35, 126, .3) !important; }
+
+        /* ── Menu des graphiques (≡ façon Highcharts du Shiny) ── */
+        .pev-dl { width: 28px !important; height: 24px !important; font-size: 20px !important; font-weight: 700 !important; line-height: 22px !important; color: #666 !important; background: #fff !important; border: none !important; border-radius: 2px !important; box-shadow: none !important; }
+        .pev-dl:hover { color: #666 !important; background: #e6e6e6 !important; }
+        .pev-dlmenu { border: 1px solid #e0e0e0 !important; border-radius: 6px !important; box-shadow: 0 4px 6px rgba(0, 0, 0, .1) !important; }
+        .pev-dlmenu button:hover { color: #1a237e !important; background: #e3f2fd !important; }
+
+        /* ── Titres des petits graphiques = titres Highcharts du Shiny ── */
+        .cb h5 { margin: 4px 0 8px !important; padding: 0 34px; font: 400 18px/1.3 "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif !important; color: #333333 !important; text-align: center; }
+        .cb h5 + div > .pev-dl { top: -33px !important; right: 0 !important; }
+
+        /* ── Infobulle des cartes (style Highcharts du Shiny) ── */
+        #vg-tooltip-element { font: 12px "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif !important; color: #333 !important; background: rgba(247, 247, 247, .95) !important; border: 1px solid #999 !important; border-radius: 3px !important; box-shadow: 1px 1px 3px rgba(0, 0, 0, .25) !important; }
+
+        /* ── Pagination des pages (boutons en pilule du Shiny) ── */
+        .pg { gap: 12px !important; padding: 20px 0 4px !important; margin-top: 4px !important; }
+        .pg button { padding: 8px 18px !important; font: 500 12.5px var(--pev-font) !important; color: #1a237e !important; text-transform: uppercase; letter-spacing: .5px; background: #fff !important; border: 2px solid #1a237e !important; border-radius: 999px !important; box-shadow: 0 2px 4px rgba(0, 0, 0, .1) !important; transition: background-color .3s, color .3s, transform .3s, box-shadow .3s !important; }
+        .pg button:not(:disabled):hover { color: #fff !important; background: #1a237e !important; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26, 35, 126, .3) !important; }
+        .pg button:disabled { opacity: .4 !important; }
+        .pg span { padding: 0 6px !important; font-size: 13px !important; font-weight: 700 !important; color: #1a237e !important; background: none !important; }
+
+        /* ── Assistant IA : mêmes couleurs que le reste du dashboard ── */
+        .ia-comp { border-color: #dee2e6 !important; box-shadow: 0 4px 18px rgba(26, 35, 126, .08), 0 0 0 16px #fff !important; }
+        .ia-comp:focus-within { border-color: #1a237e !important; box-shadow: 0 0 0 .2rem rgba(26, 35, 126, .2), 0 0 0 16px #fff !important; }
+        .ia-hero h2 { font-family: var(--pev-font) !important; font-weight: 700 !important; font-size: clamp(28px, 3.2vw, 40px) !important; letter-spacing: -.3px !important; color: #1a237e !important; }
+        .ia-hero p { color: #666 !important; }
+        .ia-mu { color: #1a237e !important; background: #e8eaf6 !important; }
+        .ia-ma-txt { color: #333 !important; }
+        .ia-ma-txt h1, .ia-ma-txt h2, .ia-ma-txt h3 { font-family: var(--pev-font) !important; color: #1a237e !important; }
+        .ia-ma-txt code, .ia-attchip { color: #1a237e !important; background: #e8eaf6 !important; }
+        .ia-btn:hover, .ia-iconbtn:hover, .ia-plus:hover { color: #1a237e !important; background: #e8eaf6 !important; border-color: #c5cae9 !important; }
+        .ia-send { background: linear-gradient(135deg, #1a237e, #0d47a1) !important; }
+        .ia-send:hover { background: #0d47a1 !important; }
+        .ia-send:disabled { background: #c5cae9 !important; }
+        .ia-mic.recording { color: #d62728 !important; background: #ffebee !important; }
+        .ia-work i { background: #1a237e !important; }
+        .ia-card { border-color: #dee2e6 !important; }
+        .ia-modal #iaSave { background: linear-gradient(135deg, #1a237e, #0d47a1) !important; border-color: #1a237e !important; }
+        .ia-radio label.on { color: #1a237e !important; background: #e8eaf6 !important; border-color: #1a237e !important; }
+        .ia-modal-bg { background: rgba(0, 0, 0, .5) !important; }
+
+        @media print {
+            #pevTopNav, .pev-modtop, .pev-aside, .pg, .pev-ftoggle { display: none !important; }
+            .pev-panel { border: none !important; }
+            body { background: #fff !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #pevHome .ph-hero, #pevHome .ph-card, #pevHome .ph-foot, #pevWelcome .pw-card { animation: none !important; }
+        }
+    </style>
 </head>
 
 <body>
     <!-- ÉCRAN DE CHARGEMENT (design Tshuapa) -->
     <div id="pevLoad">
         <div class="pl-logos">
-            <img src="pev-logo-officiel.png" alt="PEV">
+            <img src="pev-rdc-officiel.png" alt="PEV — Programme Élargi de Vaccination, RD Congo">
         </div>
         <h2>Téléchargement Dashboard PEV de routine en cours</h2>
         <div class="pl-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="pl-sub">Préparation des données de vaccination de routine (DHIS2)…</div>
     </div>
 
-    <!-- PAGE DE BIENVENUE (contexte PEV de routine, source DHIS2) -->
+    <!-- PAGE DE BIENVENUE (modale de la charte Shiny PEV RDC, source DHIS2) -->
     <div id="pevWelcome">
         <div class="pw-card">
             <div class="pw-head">
-                <img src="pev-logo-officiel.png" alt="PEV">
-                <div>
-                    <h1>Dashboard PEV de routine</h1>
-                    <p>Vaccination de routine — Programme Élargi de Vaccination · RD Congo</p>
-                </div>
+                <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>Dashboard PEV de routine</h1>
+                <p>Vaccination de routine — Programme Élargi de Vaccination · RD Congo</p>
             </div>
             <div class="pw-body">
                 <div class="pw-intro">
-                    <b>Plateforme intégrée</b> de suivi de la <b>vaccination de routine</b> : contrôle de la qualité
+                    <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span><b>Plateforme intégrée</b> de suivi de la <b>vaccination de routine</b> : contrôle de la qualité
                     des données, données de vaccination et logistique. <b>Affichage par province et par période</b> —
-                    conçu pour exploiter des milliers d'enregistrements sans surcharge.
+                    conçu pour exploiter des milliers d'enregistrements sans surcharge.</span></p>
                 </div>
                 <div class="pw-grid">
-                    <div class="pw-box">
-                        <h3>📊 Source des données</h3>
-                        <div class="pw-li">✅ <b>Données de vaccination</b> : DHIS2 (SNIS)</div>
-                        <div class="pw-li">✅ <b>Complétude &amp; promptitude</b> : DHIS2 (SNIS)</div>
-                        <div class="pw-li">✅ <b>Doses, séances &amp; taux d'abandon</b> : DHIS2 (SNIS)</div>
-                        <div class="pw-li">✅ <b>Logistique des intrants</b> : DHIS2 (SNIS)</div>
+                    <div class="pw-col">
+                        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg> Source des données</h4>
+                        <div class="pw-box">
+                            <div class="pw-li"><svg class="pw-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span><b>Données de vaccination</b> : DHIS2 (SNIS)</span></div>
+                            <div class="pw-li"><svg class="pw-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span><b>Complétude &amp; promptitude</b> : DHIS2 (SNIS)</span></div>
+                            <div class="pw-li"><svg class="pw-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span><b>Doses, séances &amp; taux d'abandon</b> : DHIS2 (SNIS)</span></div>
+                            <div class="pw-li"><svg class="pw-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span><b>Logistique des intrants</b> : DHIS2 (SNIS)</span></div>
+                        </div>
                     </div>
-                    <div class="pw-box warn">
-                        <h3>⚠️ Avertissement</h3>
-                        <div class="pw-li">Les données proviennent du <b>DHIS2</b> et sont <b>sujettes à validation</b>
-                            et à des <b>modifications rétroactives</b>.</div>
-                        <div class="pw-li">L'interprétation doit tenir compte du <b>contexte local</b>, de la
-                            <b>complétude</b> et de la <b>qualité des rapportages</b>.</div>
+                    <div class="pw-col">
+                        <h4 class="warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg> Avertissement</h4>
+                        <div class="pw-box warn">
+                            <p>Les données proviennent du <b>DHIS2</b> et sont <b>sujettes à validation</b>
+                                et à des <b>modifications rétroactives</b>.</p>
+                            <p>L'interprétation doit tenir compte du <b>contexte local</b>, de la
+                                <b>complétude</b> et de la <b>qualité des rapportages</b>.</p>
+                        </div>
                     </div>
                 </div>
-                <button class="pw-start" onclick="pevStart()">🚀 Commencer l'exploration</button>
+                <div class="pw-foot">
+                    <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg><span>Dashboard du <b>Programme Élargi de Vaccination (PEV) de la RDC</b></span></p>
+                    <p>Données issues du DHIS2 (SNIS), synchronisées chaque jour</p>
+                    <div class="pw-upd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Dernière mise à jour des données : <span id="pevUpd">—</span></span></div>
+                </div>
+                <div class="pw-cta"><button class="pw-start" onclick="pevStart()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg> Commencer l'exploration</button></div>
             </div>
         </div>
     </div>
 
-    <!-- ACCUEIL : onglets en cards plein écran (style Tshuapa) -->
-    <div id="pevHome">
-        <div class="ph-top">
-            <img src="pev-logo-officiel.png" alt="PEV">
-            <div class="ph-mid">
-                <div class="ph-k">Programme Élargi de Vaccination · RD Congo</div>
-                <h1>Dashboard PEV de routine</h1>
-            </div>
-            <span class="pev" aria-hidden="true"></span>
+    <!-- BARRE D'ONGLETS (navbar de la charte Shiny PEV RDC), construite depuis TABS -->
+    <nav id="pevTopNav" aria-label="Onglets du dashboard"></nav>
+    <!-- BANDEAU PEV (custom-header du Shiny) -->
+    <div class="hdr">
+        <div class="logo oms">
+            <img src="pev-rdc-officiel.png" alt="PEV — Programme Élargi de Vaccination, RD Congo">
         </div>
+        <div class="hdr-t">
+            <h1>Dashboard PEV de routine – RDC</h1>
+            <div class="hdr-s">Programme Élargi de Vaccination · République Démocratique du Congo</div>
+        </div>
+        <div class="logo" aria-hidden="true"></div>
+    </div>
+    <!-- ACCUEIL : cartes des onglets (landing page de la charte Shiny PEV RDC) -->
+    <div id="pevHome">
         <div class="ph-wrap">
             <div class="ph-hero">
                 <h2>Bienvenue sur le Dashboard PEV de routine</h2>
@@ -1230,38 +1588,48 @@
                     données de vaccination, logistique et canevas de revue formative. Données issues exclusivement du
                     <b>DHIS2</b>. Sélectionnez un onglet pour commencer.</p>
             </div>
-            <div class="ph-sep">Onglets disponibles</div>
             <div class="ph-grid" id="pevHomeGrid"></div>
+            <div class="ph-foot">
+                <h4>Dashboard du Programme Élargi de Vaccination (PEV) — Ministère de la Santé Publique, Hygiène et Prévoyance Sociale, RDC</h4>
+                <p>Données issues du DHIS2 (SNIS), synchronisées chaque jour</p>
+            </div>
         </div>
     </div>
 
-    <div class="hdr">
-        <div class="logo oms">
-            <img src="pev-logo-officiel.png" alt="PEV">
-        </div>
-        <h1>Dashboard PEV de routine – RDC</h1>
-        <div class="logo" aria-hidden="true"></div>
-    </div>
-    <!-- BARRE LATÉRALE des pages de l'onglet actif (style Tshuapa) -->
+    <!-- Anciens conteneurs gardés pour compatibilité (masqués par la charte v3) -->
     <div id="pevSide"></div>
     <div class="nav" id="NAV"></div>
-    <div class="lb" id="LB">
-        <div class="st" id="LS">⏳ Initialisation...</div>
-        <div class="pw">
-            <div class="pf" id="PF" style="width:0%"></div>
+    <!-- PAGE D'ONGLET : retour à l'accueil, sous-onglets, filtres à gauche, contenu -->
+    <div id="pevMod">
+        <div class="pev-modtop">
+            <button type="button" class="pev-back" onclick="pevShowHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> ← Retour à l'accueil</button>
+            <nav class="pev-subtabs" id="pevSubtabs" aria-label="Pages de l'onglet"></nav>
         </div>
-        <div class="pt" id="PT"></div>
-    </div>
-    <div class="fs" id="FS"></div>
-    <div class="ct">
-        <div class="db" id="DB">
-            <div style="text-align:center;padding:70px;color:#888">
-                <div style="font-size:48px;margin-bottom:14px">📊</div>
-                <h3>Chargement...</h3>
+        <div class="pev-panel">
+            <aside class="pev-aside" id="pevAside">
+                <button type="button" class="pev-ftoggle" aria-expanded="false"><span style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.63L15 12.4V19a1 1 0 0 1-1.45.9l-4-2A1 1 0 0 1 9 17v-4.6L3.22 5.63A1 1 0 0 1 3 5z"/></svg> Filtres</span><svg class="pev-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                <div class="fs" id="FS"></div>
+            </aside>
+            <div class="pev-main">
+                <div class="lb" id="LB">
+                    <div class="st" id="LS">⏳ Initialisation...</div>
+                    <div class="pw">
+                        <div class="pf" id="PF" style="width:0%"></div>
+                    </div>
+                    <div class="pt" id="PT"></div>
+                </div>
+                <div class="ct">
+                    <div class="db" id="DB">
+                        <div style="text-align:center;padding:70px;color:#888">
+                            <div style="font-size:48px;margin-bottom:14px">📊</div>
+                            <h3>Chargement...</h3>
+                        </div>
+                    </div>
+                    <div class="pg" id="PG" style="display:none"><button id="BP" onclick="chPg(-1)" disabled>◀
+                            Précédent</button><span id="PI">Page 1/5</span><button id="BN" onclick="chPg(1)">Suivant ▶</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="pg" id="PG" style="display:none"><button id="BP" onclick="chPg(-1)" disabled>◀
-                Précédent</button><span id="PI">Page 1/5</span><button id="BN" onclick="chPg(1)">Suivant ▶</button>
         </div>
     </div>
 
@@ -1275,8 +1643,8 @@
             try {
                 if (window.Chart && Chart.defaults) {
                     var D = Chart.defaults;
-                    D.font.family = "'Segoe UI', system-ui, Tahoma, sans-serif";
-                    D.color = '#475569';
+                    D.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+                    D.color = '#666';
                     D.animation.duration = 650;
                     D.animation.easing = 'easeOutCubic';
                     /* Aucune grille d'arrière-plan sur les graphiques (demande design) */
@@ -1392,7 +1760,7 @@
                                     var _ax = chart.options.scales[_catAxis] = chart.options.scales[_catAxis] || {};
                                     _ax.ticks = _ax.ticks || {};
                                     _ax.ticks.autoSkip = false;
-                                    _ax.ticks.font = Object.assign({}, _ax.ticks.font, { size: 16 });
+                                    _ax.ticks.font = Object.assign({}, _ax.ticks.font, { size: 11 });
                                     if (!_horiz) { _ax.ticks.maxRotation = 60; _ax.ticks.minRotation = 0; }
                                 } catch (_) { }
                                 function apply() {
@@ -1459,8 +1827,8 @@
                                 var area = chart.chartArea; if (!area) return;
                                 var ctx = chart.ctx;
                                 ctx.save();
-                                ctx.font = "600 10px 'Segoe UI', system-ui, sans-serif";
-                                ctx.fillStyle = '#334155';
+                                ctx.font = 'bold 11px "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif';
+                                ctx.fillStyle = '#000000'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
                                 chart.data.datasets.forEach(function (ds, di) {
                                     var meta = chart.getDatasetMeta(di);
                                     if (!meta || meta.hidden || meta.type !== 'bar') return;
@@ -1476,11 +1844,11 @@
                                         if (horiz) {
                                             ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                                             var xx = Math.min(el.x + 4, area.right - ctx.measureText(txt).width - 2);
-                                            ctx.fillText(txt, xx, el.y);
+                                            ctx.strokeText(txt, xx, el.y); ctx.fillText(txt, xx, el.y);
                                         } else {
                                             ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                                             var yy = v < 0 ? Math.min(el.y + 13, area.bottom - 2) : Math.max(el.y - 3, area.top + 10);
-                                            ctx.fillText(txt, el.x, yy);
+                                            ctx.strokeText(txt, el.x, yy); ctx.fillText(txt, el.x, yy);
                                         }
                                     }
                                 });
@@ -3520,7 +3888,7 @@
                     var fp = fosas.slice(s, e3);
                     var z = fp.map(function (f) { return mos.map(function (m) { var v = _hmIdx[f + '|' + m]; return v === undefined ? null : v; }); });
                     el2.style.height = Math.max(300, fp.length * 30 + 100) + 'px';
-                    Plotly.react(el2, [{ z: z, x: mos.map(mL), y: fp.map(function (f) { return tr(f, 32); }), type: 'heatmap', colorscale: [[0, '#d62728'], [1, '#2ca02c']], zmin: 0, zmax: 1, showscale: false, connectgaps: false }], { margin: { l: 230, r: 25, t: 8, b: 55 }, yaxis: { autorange: 'reversed', dtick: 1, automargin: true, tickfont: { size: 13 } }, xaxis: { dtick: 1, automargin: true }, plot_bgcolor: '#fafbfc' }, { responsive: true });
+                    Plotly.react(el2, [{ z: z, x: mos.map(mL), y: fp.map(function (f) { return tr(f, 32); }), type: 'heatmap', colorscale: [[0, '#dc3545'], [1, '#28a745']], zmin: 0, zmax: 1, showscale: false, connectgaps: false }], { margin: { l: 230, r: 25, t: 8, b: 55 }, yaxis: { autorange: 'reversed', dtick: 1, automargin: true, tickfont: { size: 13 } }, xaxis: { dtick: 1, automargin: true }, plot_bgcolor: '#fafbfc' }, { responsive: true });
                     lblPg.textContent = (s + 1) + '–' + e3 + ' sur ' + fosas.length;
                     bPrev.disabled = (hmPg === 0); bNext.disabled = (hmPg >= hmN - 1);
                 }
@@ -5909,14 +6277,14 @@
                     'Jours de disponibilité (graphiques empilés) : jours de rupture rapportés par DHIS2, classés via MSD (&lt;0,5 mois sous réserve, &gt;Smaxi surstock, sinon adéquat).</em></p>' +
                     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px">' +
                     /* ═══ Taux de disponibilité ═══ */
-                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">📊 Taux de disponibilité des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">📊 Taux de disponibilité des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Taux de disponibilité des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Taux de disponibilité des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDispoCon"></canvas></div></div>' +
                     /* ═══ Taux de perte ═══ */
-                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">📊 Taux de perte des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">📊 Taux de perte des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Taux de perte des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Taux de perte des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klLossCon"></canvas></div></div>' +
                     /* ═══ Taux de satisfaction ═══ */
-                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">📊 Taux de satisfaction des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfVac"></canvas></div></div>' +
-                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">📊 Taux de satisfaction des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfCon"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Taux de satisfaction des vaccins (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfVac"></canvas></div></div>' +
+                    '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Taux de satisfaction des intrants secs (%) — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klSatisfCon"></canvas></div></div>' +
                     /* ═══ Nombre de jours de disponibilité ═══ */
                     '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Nbre de jours de disponibilité des vaccins — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayVac"></canvas></div></div>' +
                     '<div style="background:#fff;border:1px solid #e4e7f2;border-radius:8px;padding:12px"><h5 style="margin:0 0 6px;color:#1a237e;text-align:center">Nbre de jours de disponibilité du matériel d\'injection — ' + perLblKL + '</h5><div style="height:280px;position:relative"><canvas id="klDayCon"></canvas></div></div>' +
@@ -5935,16 +6303,17 @@
                                 if (v === null || v === undefined || !isFinite(v)) return;
                                 var lbl = opts.fmt ? opts.fmt(v) : String(v);
                                 ctx.save();
-                                ctx.fillStyle = '#1a237e';
-                                ctx.font = 'bold 10px sans-serif';
+                                ctx.fillStyle = '#000000';
+                                ctx.font = 'bold 11px "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif';
+                                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
                                 if (chart.options.indexAxis === 'y') {
                                     ctx.textAlign = 'left';
                                     ctx.textBaseline = 'middle';
-                                    ctx.fillText(lbl, bar.x + 3, bar.y);
+                                    ctx.strokeText(lbl, bar.x + 3, bar.y); ctx.fillText(lbl, bar.x + 3, bar.y);
                                 } else {
                                     ctx.textAlign = 'center';
                                     ctx.textBaseline = 'bottom';
-                                    ctx.fillText(lbl, bar.x, bar.y - 2);
+                                    ctx.strokeText(lbl, bar.x, bar.y - 2); ctx.fillText(lbl, bar.x, bar.y - 2);
                                 }
                                 ctx.restore();
                             });
@@ -7189,14 +7558,14 @@
                             var meta = chart.getDatasetMeta(0);
                             var data = chart.data.datasets[0].data;
                             ctx.save();
-                            ctx.font = '600 ' + (opts.labelFontSize || 10) + 'px sans-serif';
-                            ctx.fillStyle = opts.labelColor || '#1a237e';
+                            ctx.font = 'bold 11px "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif';
+                            ctx.fillStyle = '#000000'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
                             ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                             meta.data.forEach(function (bar, i) {
                                 var v = data[i]; if (v === null || v === undefined) return;
                                 var yTxt = bar.y - 4;
                                 if (yTxt < area.top + 10) yTxt = bar.y + 12; // si trop près du haut, on bascule en intérieur
-                                ctx.fillText(Math.round(v) + '%', bar.x, yTxt);
+                                ctx.strokeText(Math.round(v) + '%', bar.x, yTxt); ctx.fillText(Math.round(v) + '%', bar.x, yTxt);
                             });
                             ctx.restore();
                         }
@@ -8721,7 +9090,7 @@
                     var TOPO_URL = 'https://gist.githubusercontent.com/MBOMBOmamu1993/1297c206c046ee018d5ed6c392d6c20f/raw/24ce95b2935d2b4cc4ef71701138218ca870ff01/rdc_zs.topojson';
                     var colorScale = {
                         domain: ['<50%', '50–79%', '80–89%', '90–100%', '>100%', 'NA'],
-                        range:  ['#d62728', '#e2a33b', '#74c476', '#2ca02c', '#1a237e', '#e4e7f2']
+                        range:  ['#dc3545', '#ffc107', '#90ee90', '#28a745', '#007bff', '#e9ecef']
                     };
 
                     /* Dimensions plus grandes lorsque le scope est restreint (zoom visuel) */
@@ -8737,7 +9106,8 @@
                                 format: { type: 'topojson', feature: 'Zone de SantéRDC' }
                             },
                             projection: { type: 'mercator' },
-                            title: { text: title, fontSize: 13, dy: 8, color: '#1f2545', fontWeight: 700, font: 'Segoe UI' },
+                            view: { fill: '#dddddd', stroke: null },
+                            title: { text: title, fontSize: 16, offset: 10, color: '#333333', fontWeight: 400, font: '"Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif' },
                             transform: [
                                 /* Filtre par scope : ne garder que les ZS du scope actuel.
                                    Vega-Lite auto-ajuste la projection à l'étendue des features restantes. */
@@ -8757,17 +9127,20 @@
                                 }
                             ],
                             layer: [
-                                { mark: { type: 'geoshape', fill: '#f4f6fb', stroke: '#c7cde0', strokeWidth: 0.4 } },
+                                { mark: { type: 'geoshape', fill: '#e9ecef', stroke: '#777777', strokeWidth: 0.8 } },
                                 {
-                                    mark: { type: 'geoshape', stroke: '#fff', strokeWidth: 0.8 },
+                                    mark: { type: 'geoshape', stroke: '#777777', strokeWidth: 0.8, fillOpacity: 0.82 },
                                     encoding: {
                                         color: {
                                             field: 'tranche', type: 'nominal',
                                             scale: colorScale,
                                             legend: {
                                                 title: legendTitle,
-                                                orient: 'bottom', direction: 'horizontal',
-                                                columns: 3, labelFontSize: 9, titleFontSize: 10
+                                                orient: 'bottom-right', direction: 'vertical', offset: 10,
+                                                fillColor: 'rgba(255,255,255,0.8)', cornerRadius: 5, padding: 8,
+                                                titleFont: 'Arial', titleFontSize: 14, titleFontWeight: 'bold', titleColor: '#555555',
+                                                labelFont: 'Arial', labelFontSize: 13, labelColor: '#555555',
+                                                symbolType: 'square', symbolSize: 300, symbolOpacity: 0.85, symbolStrokeWidth: 0, rowPadding: 3
                                             }
                                         },
                                         tooltip: [
@@ -8790,8 +9163,8 @@
                         ],
                         resolve: { scale: { color: 'independent' } },
                         config: {
-                            view: { stroke: null }, font: 'Segoe UI',
-                            legend: { labelColor: '#1f2545', titleColor: '#1a237e', labelFont: 'Segoe UI', titleFont: 'Segoe UI' }
+                            view: { stroke: null, fill: '#dddddd' }, font: 'Arial, Helvetica, sans-serif',
+                            legend: { labelColor: '#555555', titleColor: '#555555', labelFont: 'Arial', titleFont: 'Arial' }
                         }
                     };
 
@@ -9241,11 +9614,11 @@
                     leg.className = 'pev-hm-leg';
                     /* Chips = exactement les seuils/couleurs appliqués par hmClass() (échelle Supervision conjointe). */
                     leg.innerHTML = '<span>Légende :</span>' +
-                        '<span class="pev-hm-chip" style="background:#d62728">&lt; 50 %</span>' +
-                        '<span class="pev-hm-chip" style="background:#f2c200;color:#5a4500">50 – 80 %</span>' +
-                        '<span class="pev-hm-chip" style="background:#8fd18f;color:#14532d">80 – 90 %</span>' +
-                        '<span class="pev-hm-chip" style="background:#2ca02c">90 – 100 %</span>' +
-                        '<span class="pev-hm-chip" style="background:#0d47a1">&gt; 100 %</span>';
+                        '<span class="pev-hm-chip" style="background:#dc3545">&lt; 50 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#ffc107;color:#212529">50 – 80 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#90ee90;color:#212529">80 – 90 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#28a745">90 – 100 %</span>' +
+                        '<span class="pev-hm-chip" style="background:#007bff">&gt; 100 %</span>';
                     anchor.parentNode.insertBefore(leg, anchor);
                 } catch (e) { }
             }
@@ -17680,6 +18053,328 @@
                 box._mkRebuildChart = rebuildChart;
                 if (numCols.length && rows.length > 1) rebuildChart();
             }
+        })();
+    </script>
+    <script>
+        /* ═══ CHARTE v3 (Shiny PEV RDC / Continuité) — navigation et finitions ═══
+           Barre d'onglets construite depuis TABS, sous-onglets des pages, accueil
+           visible derrière la fenêtre de bienvenue, filtres repliables sur mobile,
+           texte sombre sur les tuiles claires, finitions des graphiques Chart.js.
+           Présentation uniquement : aucun calcul ni donnée touché. Les canvases
+           crb_* (Courbe de suivi des CV) restent exemptés, comme avant. */
+        (function () {
+            'use strict';
+            function svg(paths, sw) {
+                return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2.2) +
+                    '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
+            }
+            var HOUSE = svg('<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>');
+            var BURGER = svg('<path d="M4 7h16M4 12h16M4 17h16"/>');
+            var TAB_EMO = { oqd: '📋', vacc: '💉', log: '📦', dl: '📥' };
+            function hasTabs() { return typeof TABS !== 'undefined' && window.S; }
+            function inTab() { return document.body.classList.contains('tabmode'); }
+            function tabIcon(t) {
+                if (t.id === 'ia') return (t.pp[0] && t.pp[0].ic) || '';
+                return (window.PEV_ICO && window.PEV_ICO(TAB_EMO[t.id] || '📊', t.id)) || '';
+            }
+            function pageIcon(p) {
+                var ic = p.ic || '';
+                if (/^\s*</.test(ic)) return ic;
+                return (window.PEV_ICO && window.PEV_ICO(ic)) || '';
+            }
+
+            /* ---- Barre d'onglets ---- */
+            var nav = document.getElementById('pevTopNav');
+            function buildTopNav() {
+                if (!nav || !hasTabs()) return;
+                var cur = inTab() ? S.tab : -1;
+                var items = [{ k: -1, lb: 'Accueil', ic: HOUSE }].concat(TABS.map(function (t, i) { return { k: i, lb: t.lb, ic: tabIcon(t) }; }));
+                var row = items.map(function (it) {
+                    var on = it.k === cur;
+                    return '<button type="button" class="tn-i' + (on ? ' act' : '') + '" data-k="' + it.k + '"' + (on ? ' aria-current="page"' : '') + '>' + it.ic + '<span>' + it.lb + '</span></button>';
+                }).join('');
+                var curLb = cur < 0 ? 'Accueil' : TABS[cur].lb;
+                nav.innerHTML = '<div class="tn-mob"><span class="tn-cur">' + curLb + '</span>' +
+                    '<button type="button" class="tn-burger" aria-label="Afficher les onglets" aria-expanded="false">' + BURGER + '</button></div>' +
+                    '<div class="tn-row">' + row + '</div>';
+                nav.classList.remove('open');
+            }
+            if (nav) nav.addEventListener('click', function (e) {
+                var b = e.target.closest('.tn-burger');
+                if (b) { var o = nav.classList.toggle('open'); b.setAttribute('aria-expanded', o ? 'true' : 'false'); return; }
+                var it = e.target.closest('.tn-i'); if (!it) return;
+                nav.classList.remove('open');
+                var k = +it.dataset.k;
+                if (k < 0) window.pevShowHome(); else window.pevOpenTab(k);
+            });
+
+            /* ---- Sous-onglets (pages de l'onglet actif) ---- */
+            var subs = document.getElementById('pevSubtabs');
+            function buildSubtabs() {
+                if (!subs || !hasTabs()) return;
+                var tab = TABS[S.tab]; if (!tab) return;
+                subs.innerHTML = tab.pp.map(function (p, i) {
+                    var on = i === S.pg;
+                    return '<button type="button" class="st-i' + (on ? ' act' : '') + '" data-p="' + i + '"' + (on ? ' aria-current="page"' : '') + '>' + pageIcon(p) + '<span>' + p.t + '</span></button>';
+                }).join('');
+            }
+            if (subs) subs.addEventListener('click', function (e) {
+                var b = e.target.closest('.st-i'); if (!b || typeof navTo !== 'function') return;
+                var p = +b.dataset.p; if (p === S.pg) return;
+                navTo(S.tab, p);
+            });
+
+            /* ---- Filtres repliables sur petit écran ---- */
+            var aside = document.getElementById('pevAside');
+            var ftog = aside && aside.querySelector('.pev-ftoggle');
+            if (ftog) ftog.addEventListener('click', function () {
+                var o = aside.classList.toggle('open');
+                ftog.setAttribute('aria-expanded', o ? 'true' : 'false');
+            });
+
+            /* ---- Branchements sur la navigation existante (sans la modifier) ---- */
+            if (typeof render === 'function' && !render.__pevV3) {
+                var _render = render;
+                render = function () {
+                    var r = _render.apply(this, arguments);
+                    try { if (inTab()) { buildSubtabs(); buildTopNav(); } } catch (_) { }
+                    return r;
+                };
+                render.__pevV3 = true;
+            }
+            if (typeof window.pevOpenTab === 'function') {
+                var _open = window.pevOpenTab;
+                window.pevOpenTab = function () {
+                    var r = _open.apply(this, arguments);
+                    try { buildTopNav(); buildSubtabs(); } catch (_) { }
+                    return r;
+                };
+            }
+            if (typeof window.pevShowHome === 'function') {
+                var _home = window.pevShowHome;
+                window.pevShowHome = function () {
+                    var r = _home.apply(this, arguments);
+                    try { buildTopNav(); window.scrollTo({ top: 0 }); } catch (_) { }
+                    return r;
+                };
+            }
+
+            /* ---- Texte sombre sur les tuiles claires (jaune, vert clair…) ---- */
+            function lum(c) {
+                c = String(c || '').trim();
+                var r, g, b, m;
+                if ((m = c.match(/^#([0-9a-f]{3})$/i))) { r = parseInt(m[1][0] + m[1][0], 16); g = parseInt(m[1][1] + m[1][1], 16); b = parseInt(m[1][2] + m[1][2], 16); }
+                else if ((m = c.match(/^#([0-9a-f]{6})/i))) { r = parseInt(m[1].slice(0, 2), 16); g = parseInt(m[1].slice(2, 4), 16); b = parseInt(m[1].slice(4, 6), 16); }
+                else if ((m = c.match(/rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/i))) { r = +m[1]; g = +m[2]; b = +m[3]; }
+                else return null;
+                function ch(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+                return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+            }
+            function sweepKpi() {
+                document.querySelectorAll('.kc:not([data-pevkc])').forEach(function (k) {
+                    k.setAttribute('data-pevkc', '1');
+                    var L = lum(getComputedStyle(k).getPropertyValue('--kc1'));
+                    if (L !== null && L > 0.4) k.classList.add('pev-kc-dark');
+                });
+            }
+            /* Valeur trop longue pour sa tuile (ex. « 1 939 967 ») : police réduite
+               jusqu'à ce qu'elle tienne, sans jamais déborder. */
+            function fitKv(k) {
+                var v = k.querySelector('.kv'); if (!v) return;
+                var key = v.textContent + '|' + k.clientWidth;
+                if (v.getAttribute('data-pevfit') === key) return;
+                v.style.removeProperty('font-size');
+                var fs = parseFloat(getComputedStyle(v).fontSize) || 30, g = 0;
+                while (v.scrollWidth > v.clientWidth + 1 && fs > 15 && g++ < 30) { fs -= 1; v.style.setProperty('font-size', fs + 'px', 'important'); }
+                v.setAttribute('data-pevfit', key);
+            }
+            function fitAll() { document.querySelectorAll('.kc').forEach(function (k) { if (k.offsetParent !== null) fitKv(k); }); }
+            var tick = null;
+            var mo = new MutationObserver(function () {
+                if (tick) return;
+                tick = requestAnimationFrame(function () { tick = null; try { sweepKpi(); fitAll(); relocTbars(); } catch (_) { } });
+            });
+            var rz = null;
+            window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(function () { try { fitAll(); } catch (_) { } }, 150); });
+
+            /* ---- Graphiques Chart.js : police système, orange du Shiny ---- */
+            try {
+                if (window.Chart && Chart.register) {
+                    var ORANGE = { '#e2a33b': '#ff7f0e', '#edbe6b': '#ffa35c', 'rgba(226,163,59,.9)': 'rgba(255,127,14,.9)', 'rgba(226,163,59,.85)': 'rgba(255,127,14,.85)' };
+                    var mapCol = function (c) {
+                        if (typeof c === 'string') return ORANGE[c.toLowerCase().replace(/\s+/g, '')] || c;
+                        if (Array.isArray(c)) return c.map(mapCol);
+                        return c;
+                    };
+                    /* Réglages relevés sur les graphiques Highcharts 9 du Shiny : police
+                       « Lucida Grande » 12 px, axes 11 px #666, titres d'axe 12 px #666,
+                       grille horizontale #e6e6e6, ligne d'axe #ccd6eb, légende en bas
+                       au centre (12 px gras #333), infobulle gris clair translucide à
+                       bord de la couleur de la série, points de 4 px. */
+                    var HC_FONT = '"Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif';
+                    var D = Chart.defaults;
+                    D.font.family = HC_FONT; D.font.size = 12; D.color = '#666666';
+                    try { D.scale.ticks.font = { size: 11 }; D.scale.ticks.color = '#666666'; D.scale.title.font = { size: 12, weight: 'normal' }; D.scale.title.color = '#666666'; } catch (_) { }
+                    try {
+                        var L = D.scales.linear;
+                        L.grid = L.grid || {}; L.grid.display = true; L.grid.color = '#e6e6e6'; L.grid.lineWidth = 1; L.grid.drawTicks = false;
+                        L.border = L.border || {}; L.border.display = false;
+                        var K = D.scales.category;
+                        K.grid = K.grid || {}; K.grid.display = false;
+                        K.border = K.border || {}; K.border.display = true; K.border.color = '#ccd6eb'; K.border.width = 1;
+                    } catch (_) { }
+                    try {
+                        var LG = D.plugins.legend;
+                        LG.position = 'bottom'; LG.align = 'center';
+                        LG.labels.font = { family: HC_FONT, size: 12, weight: 'bold' };
+                        LG.labels.color = '#333333'; LG.labels.usePointStyle = true;
+                        LG.labels.boxWidth = 12; LG.labels.boxHeight = 12; LG.labels.padding = 16;
+                        var TI = D.plugins.title;
+                        TI.font = { family: HC_FONT, size: 18, weight: 'normal' }; TI.color = '#333333';
+                        var TT = D.plugins.tooltip;
+                        TT.backgroundColor = 'rgba(247,247,247,0.85)';
+                        TT.titleColor = '#333333'; TT.bodyColor = '#333333';
+                        TT.titleFont = { family: HC_FONT, size: 10, weight: 'normal' };
+                        TT.bodyFont = { family: HC_FONT, size: 12 };
+                        TT.borderWidth = 1; TT.cornerRadius = 3; TT.padding = 8; TT.boxPadding = 4;
+                        TT.borderColor = function (ctx) {
+                            try {
+                                var it = ctx.tooltipItems && ctx.tooltipItems[0]; if (!it) return '#cccccc';
+                                var o = it.element && it.element.options; if (!o) return '#7cb5ec';
+                                var isLine = (it.dataset && (it.dataset.type || (it.chart && it.chart.config.type))) === 'line';
+                                var col = isLine ? o.borderColor : (o.backgroundColor || o.borderColor);
+                                return typeof col === 'string' ? col : '#7cb5ec';
+                            } catch (_) { return '#7cb5ec'; }
+                        };
+                    } catch (_) { }
+                    Chart.register({
+                        id: 'pevCharteV3',
+                        beforeInit: function (chart) {
+                            try {
+                                var cv = chart.canvas; if (!cv) return;
+                                var cfg = chart.config, opts = cfg.options = cfg.options || {};
+                                if (cv.id && cv.id.indexOf('crb_') === 0) {
+                                    /* Courbe de suivi des CV : présentation d'origine conservée
+                                       (légende en haut, sans grille). */
+                                    opts.plugins = opts.plugins || {};
+                                    var lg = opts.plugins.legend = opts.plugins.legend || {};
+                                    if (lg.position === undefined) lg.position = 'top';
+                                    opts.scales = opts.scales || {};
+                                    ['x', 'y'].forEach(function (k) {
+                                        var sc = opts.scales[k] = opts.scales[k] || {};
+                                        sc.grid = sc.grid || {}; if (sc.grid.display === undefined) sc.grid.display = false;
+                                    });
+                                    return;
+                                }
+                                /* Polices et positions fixées graphique par graphique : alignées
+                                   sur Highcharts (légende 12 px gras en bas, axes 11 px #666). */
+                                opts.plugins = opts.plugins || {};
+                                var lg2 = opts.plugins.legend = opts.plugins.legend || {};
+                                if (lg2.position === undefined || lg2.position === 'top') lg2.position = 'bottom';
+                                lg2.labels = lg2.labels || {};
+                                if (typeof lg2.labels.font !== 'function') lg2.labels.font = { family: HC_FONT, size: 12, weight: 'bold' };
+                                if (typeof lg2.labels.color !== 'function') lg2.labels.color = '#333333';
+                                var ti2 = opts.plugins.title;
+                                if (ti2 && ti2.display) { if (typeof ti2.font !== 'function') ti2.font = { family: HC_FONT, size: 18, weight: 'normal' }; ti2.color = '#333333'; }
+                                if (opts.scales && typeof opts.scales === 'object') {
+                                    Object.keys(opts.scales).forEach(function (k) {
+                                        var sc = opts.scales[k]; if (!sc || typeof sc !== 'object') return;
+                                        sc.ticks = sc.ticks || {};
+                                        if (typeof sc.ticks.font !== 'function') sc.ticks.font = Object.assign({}, sc.ticks.font, { family: HC_FONT, size: 11, weight: 'normal' });
+                                        if (typeof sc.ticks.color !== 'function') sc.ticks.color = '#666666';
+                                        if (sc.title && typeof sc.title === 'object') {
+                                            if (typeof sc.title.font !== 'function') sc.title.font = { family: HC_FONT, size: 12, weight: 'normal' };
+                                            if (typeof sc.title.color !== 'function') sc.title.color = '#666666';
+                                        }
+                                    });
+                                }
+                                ((cfg.data && cfg.data.datasets) || []).forEach(function (ds) {
+                                    if (ds.backgroundColor !== undefined) ds.backgroundColor = mapCol(ds.backgroundColor);
+                                    if (ds.borderColor !== undefined) ds.borderColor = mapCol(ds.borderColor);
+                                    var ty = ds.type || cfg.type;
+                                    if (ty === 'line') {
+                                        if (ds.pointRadius === undefined || (typeof ds.pointRadius === 'number' && ds.pointRadius > 4)) ds.pointRadius = 4;
+                                        if (ds.pointBorderWidth === undefined) ds.pointBorderWidth = 0;
+                                        if (ds.pointHoverRadius === undefined) ds.pointHoverRadius = 6;
+                                    } else if (ty === 'bar' && ds.pointStyle === undefined) {
+                                        ds.pointStyle = 'rectRounded';
+                                    }
+                                });
+                            } catch (_) { }
+                        }
+                    });
+                }
+            } catch (_) { }
+
+            /* ---- Graphiques Plotly : police système de la charte si aucune n'est fixée ---- */
+            try {
+                if (window.Plotly) {
+                    ['newPlot', 'react'].forEach(function (fn) {
+                        var orig = Plotly[fn];
+                        if (typeof orig !== 'function' || orig.__pevV3) return;
+                        var wrapped = function (gd, data, layout) {
+                            try {
+                                if (layout && typeof layout === 'object' && !Array.isArray(layout)) {
+                                    layout.font = layout.font || {};
+                                    if (!layout.font.family) layout.font.family = '"Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif';
+                                    if (!layout.font.color) layout.font.color = '#666666';
+                                    if (!layout.font.size) layout.font.size = 11;
+                                }
+                            } catch (_) { }
+                            return orig.apply(this, arguments);
+                        };
+                        wrapped.__pevV3 = true;
+                        Plotly[fn] = wrapped;
+                    });
+                }
+            } catch (_) { }
+
+            /* ---- Boutons d'export des tableaux : dans l'en-tête de la carte, à droite ---- */
+            var I_DL = svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>', 2.4);
+            var I_XLS = svg('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>', 2.2);
+            function relocTbars() {
+                document.querySelectorAll('.pev-tbar').forEach(function (bar) {
+                    bar.querySelectorAll('.pev-tbtn:not([data-pevlbl])').forEach(function (b) {
+                        var tx = (b.textContent || '').trim();
+                        if (/csv/i.test(tx)) { b.innerHTML = I_DL + '<span>CSV</span>'; b.setAttribute('data-pevlbl', '1'); }
+                        else if (/excel|xls/i.test(tx)) { b.innerHTML = I_XLS + '<span>Excel</span>'; b.setAttribute('data-pevlbl', '1'); }
+                    });
+                    if (bar.closest('.pev-banner')) return;
+                    var head = null;
+                    var card = bar.closest('.cb');
+                    if (card) {
+                        var h = card.firstElementChild;
+                        if (h && h.matches('h4.pev-banner') && !h.querySelector('.pev-tbar') && card.querySelectorAll('.pev-tbar').length === 1) head = h;
+                    }
+                    if (!head) {
+                        var p = bar.previousElementSibling, steps = 0;
+                        while (p && steps < 4) {
+                            if (p.matches && p.matches('h3.pev-banner, h4.pev-banner')) { if (!p.querySelector('.pev-tbar')) head = p; break; }
+                            if (p.querySelector && p.querySelector('table.dt, canvas, .js-plotly-plot, .pev-tbar')) break;
+                            p = p.previousElementSibling; steps++;
+                        }
+                    }
+                    if (head) head.appendChild(bar);
+                });
+            }
+
+            /* ---- Date de la dernière mise à jour des données (fenêtre de bienvenue) ---- */
+            function fillUpd() {
+                var el = document.getElementById('pevUpd'); if (!el) return true;
+                var g = window.S && S.meta && S.meta.generated_at; if (!g) return false;
+                try { el.textContent = new Date(g).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (_) { el.textContent = String(g); }
+                return true;
+            }
+
+            function start() {
+                try { buildTopNav(); } catch (_) { }
+                /* L'accueil est affiché d'emblée : il apparaît derrière la fenêtre de
+                   bienvenue, comme sur le Shiny. */
+                try { if (!inTab() && window.pevShowHome) window.pevShowHome(); } catch (_) { }
+                try { sweepKpi(); fitAll(); relocTbars(); mo.observe(document.body, { childList: true, subtree: true }); } catch (_) { }
+                var n = 0, iv = setInterval(function () { if (fillUpd() || ++n > 600) clearInterval(iv); }, 1000);
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
         })();
     </script>
 

@@ -15,6 +15,7 @@ const FILES = [
   ["docs/index.html", "dist/index.html"],
   ["docs/pev-logo.svg", "dist/pev-logo.svg"],
   ["docs/pev-logo-officiel.png", "dist/pev-logo-officiel.png"],
+  ["docs/pev-rdc-officiel.png", "dist/pev-rdc-officiel.png"],
   ["docs/canevas_revue_formative_pev.pptx", "dist/canevas_revue_formative_pev.pptx"],
   ["docs/data/ia/uid_catalogue_kasavubu_2026.json", "dist/data/ia/uid_catalogue_kasavubu_2026.json"],
   ["docs/.nojekyll", "dist/.nojekyll"],
