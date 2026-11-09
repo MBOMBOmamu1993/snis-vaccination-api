@@ -1,5 +1,11 @@
 # État actuel du projet
 
+État actuel (09/11/2026 — Assistant IA : Kimi K3.1 Pro, Ollama retiré) :
+- Modèle de l’Assistant IA DHIS2 : **Kimi K3.1 Pro** (`kimi-k3.1-pro`, doc officielle platform.kimi.ai), servi directement par l’API Kimi (`api.moonshot.ai`) via la route proxy `/kimi/v1/chat/completions`, `reasoning_effort:'high'` (valeurs low|high|max, défaut Kimi max), `max_tokens` 16000 accepté. Seul modèle client, défaut admin ; les anciens réglages navigateur (`kimi:kimi-k3`, modèles Ollama) basculent automatiquement sur K3.1 Pro. L’admin garde OpenAI GPT-5.6 et Claude.
+- Ollama retiré partout : dashboard (liste, clé, `/api/tags`, route `/api/chat`, lecteur NDJSON, relance « think ») et Worker (routes `/api/chat` et `/api/tags`, en-tête CORS `x-ollama-key`, repli OCR, `DEFAULT_KIMI_MODEL` = `kimi-k3.1-pro`). Côté serveur, les routes disparaissent au prochain `npx wrangler deploy` (depuis `cloudflare-worker/`).
+- La lecture OCR des captures de paiement garde `kimi-k3` : réponse plafonnée à 150 jetons, alors que K3.1 Pro raisonne toujours avant de répondre.
+- Test de régression : `scripts/test_ia_kimi.mjs` (remplace `test_ia_ollama.mjs`) exécute les vraies fonctions du dashboard (iaProvKey/iaProv, iaCallAPI, iaMsgsToOpenAI, iaReadOpenAIStream, outils, calculer_pev_direct). Avant fusion : routage PASS ; analyse réelle « ZS par province + graphique » PASS (519 ZS / 26 provinces, graphique valide, 3 tours, 57 s). La CV VAR1 nationale a enchaîné 7 tours sans erreur de protocole, mais l’analytique DHIS2 était saturée cette nuit-là (requête minimale 43 s, calculs en 524 Cloudflare) : à rejouer quand DHIS2 répond normalement.
+
 État actuel (02/08/2026 — Assistant IA, UID canevas et vente de codes) :
 - Boucle agentique sans aucune limite globale de durée ou d’étapes : le plafond commun de 30 tours et le message d’interruption ont été supprimés ; l’IA continue tant qu’elle appelle des outils.
 - Catalogue `docs/data/ia/uid_catalogue_kasavubu_2026.json` généré depuis l’audit Kasa-Vubu : 481 indicateurs du canevas, 393 UID vérifiés, 76 programIndicators EVENT dans 4 programmes et 83 lignes à configurer. `rechercher_uid_canevas` / `ctx.uidSearch` est la recherche obligatoire avant les métadonnées DHIS2 libres ; une valeur partielle doit être affichée avec sa couverture au lieu de N/D.

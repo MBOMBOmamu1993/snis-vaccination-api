@@ -5,7 +5,7 @@ Ce dossier contient le **proxy Cloudflare Worker** qui alimente l'onglet
 
 Il remplit 4 fonctions :
 
-1. **Proxy IA (OpenAI, Claude, Kimi et Ollama Cloud)** — vos clés API restent secrètes côté serveur ;
+1. **Proxy IA (Kimi K3.1 Pro — API Kimi officielle, OpenAI et Claude)** — vos clés API restent secrètes côté serveur ;
    les utilisateurs consomment avec un **code d'accès** à quota.
 2. **Proxy DHIS2 (lecture seule)** — l'IA peut interroger l'API Web du SNIS RDC
    (n'importe quel élément de données/indicateur) sans jamais exposer vos

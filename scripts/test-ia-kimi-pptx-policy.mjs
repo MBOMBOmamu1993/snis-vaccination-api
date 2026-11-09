@@ -36,7 +36,7 @@ const fixture={source:'PRETEST_FIXTURE_DHIS2',zone:'Maluku I',periodes:['2025S1'
 ],note:'Fixture compacte du prétest de politique. Les 5 critères ont déjà été calculés avec ctx.scoreQualiteDps.'};
 
 for(let turn=1;turn<=6;turn++){
- const r=await fetch(PROXY+'/kimi/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({model:'kimi-k3',stream:false,temperature:1,reasoning_effort:'low',max_tokens:6000,messages,tools:sandbox.IA_TOOLS})});
+ const r=await fetch(PROXY+'/kimi/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({model:'kimi-k3.1-pro',stream:false,reasoning_effort:'low',max_tokens:6000,messages,tools:sandbox.IA_TOOLS})});
  if(!r.ok)throw new Error('Kimi HTTP '+r.status+' : '+(await r.text()).slice(0,500));
  const d=await r.json(); const m=d.choices?.[0]?.message||d.message||{}; const tcs=m.tool_calls||[];
  const assistant={role:'assistant',content:m.content||''}; if(m.reasoning_content)assistant.reasoning_content=m.reasoning_content;if(tcs.length)assistant.tool_calls=tcs;messages.push(assistant);
@@ -60,5 +60,5 @@ for(let turn=1;turn<=6;turn++){
  if(sawModify&&sawCorrectTable&&sawControls)break;
 }
 if(!sawModify||!sawCorrectTable||!sawControls||sawForbidden)throw new Error('FAIL politique Kimi : '+JSON.stringify({sawModify,sawCorrectTable,sawControls,sawForbidden,calls}));
-console.log('PASS — Kimi K3 choisit modifier_presentation, conserve 49 diapositives et insère le tableau score qualité dans D35:F5 avec contrôles bloquants.');
+console.log('PASS — Kimi K3.1 Pro choisit modifier_presentation, conserve 49 diapositives et insère le tableau score qualité dans D35:F5 avec contrôles bloquants.');
 console.log('tool_calls='+calls.join(' -> '));

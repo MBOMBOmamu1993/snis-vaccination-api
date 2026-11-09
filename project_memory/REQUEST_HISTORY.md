@@ -328,3 +328,10 @@ Retour production du 02/08/2026 : la génération a ensuite atteint le plafond c
 
 Nouvelle demande du 02/08/2026 : offres client limitées à 20/30/40/50/100 USD avec montant libre minimum 10 USD ; intégration de tous les UID de l’audit Kasa-Vubu dans les skills IA ; contrôle des N/D du canevas PPTX ; ECV = `M2JQW0H44dI` / nourrissons survivants de la période ; CODESA = `N3HHnz0Waos` ; réunion de validation/hebdomadaire ECZ = `zLIRMEWlQXy`. Action : catalogue local complet + recherche obligatoire `rechercher_uid_canevas`, 76 EVENT avec leurs 4 UID programmes, affichage obligatoire des données partielles, ECV ajouté au calcul déterministe, offres Worker harmonisées dans les trois modes et tests de non-régression ajoutés.
 Déploiement : correctif fusionné avec cinq synchronisations automatiques concurrentes dans `4bcfcf39`; GitHub Pages et Vercel vérifiés en HTTP 200 avec le catalogue ; Worker Cloudflare version `969c7008-f60c-412d-9f75-0593a7c4bac3`.
+---
+
+Date : 09/11/2026 (Assistant IA — Kimi K3.1 Pro)
+Demande : remplacer l’API Kimi K3 par Kimi K3.1 Pro au niveau de l’Assistant DHIS2, directement via l’API Kimi (pas la route Ollama) ; retirer Ollama ; pousser, fusionner, déployer en production et vérifier que les analyses sortent correctement.
+Fichiers concernés : `docs/index.html`, `cloudflare-worker/worker.js`, `cloudflare-worker/README.md`, `cloudflare-worker/JOUR-J-COMMANDES.md`, `scripts/test_ia_kimi.mjs` (remplace `scripts/test_ia_ollama.mjs`), `scripts/test-ia-kimi-pptx-policy.mjs`.
+Action faite : identifiant vérifié dans la doc officielle (`kimi-k3.1-pro`) ; modèle client et admin → `kimi:kimi-k3.1-pro` avec migration des anciens réglages ; tout le code Ollama retiré du dashboard et du Worker ; OCR des captures laissé sur `kimi-k3`.
+Résultat : appel réel via le proxy (HTTP 200, SSE, `model: kimi-k3.1-pro`, raisonnement présent) ; 6/6 blocs script compilés, `node --check` du Worker OK ; harnais Kimi : routage PASS, analyse « ZS par province + graphique » PASS (519 ZS, 26 provinces). CV nationale bloquée par la lenteur de l’analytique DHIS2 (524), indépendante du modèle.
