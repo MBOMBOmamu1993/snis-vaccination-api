@@ -10653,6 +10653,7 @@
             /* Accès DHIS2 via le proxy sécurisé — partagé entre l'outil requete_dhis2
                (réponse renvoyée à l'IA) et ctx.dhis2 dans executer_js (réponse
                traitée en code, sans limite de taille). */
+            var iaDhis2CodeRefuse = null; /* code enregistré refusé par le proxy DHIS2 (session en cours) */
             async function iaDhis2(endpoint, params, corps) {
                 if (!IA_PROXY_URL) throw new Error("L'accès DHIS2 en direct nécessite le proxy sécurisé (non configuré).");
                 /* Tolérance : endpoint peut contenir déjà sa query string ; params peut
@@ -10672,7 +10673,9 @@
                 } else qs = String(params || '').replace(/^\?/, '');
                 qs = [inline, qs].filter(Boolean).join('&');
                 var hdrs = {};
-                var codeV = cfg('code') || IA_DHIS2_CODE; if (codeV) hdrs['x-access-code'] = codeV;
+                var codeV = cfg('code') || IA_DHIS2_CODE;
+                if (codeV && codeV === iaDhis2CodeRefuse) codeV = IA_DHIS2_CODE; /* déjà refusé : code intégré directement */
+                if (codeV) hdrs['x-access-code'] = codeV;
                 /* Analyses de qualité des données : DHIS2 ne les expose qu'en POST
                    (règles de validation violées, valeurs aberrantes). Le proxy
                    n'autorise que celles-là en POST et y force persist=false :
@@ -10692,6 +10695,7 @@
                 if ((rr.status === 401 || rr.status === 402 || rr.status === 403) && IA_DHIS2_CODE && codeV !== IA_DHIS2_CODE) {
                     hdrs['x-access-code'] = IA_DHIS2_CODE;
                     rr = await fetch(dhisUrl, opts);
+                    if (rr.ok) iaDhis2CodeRefuse = codeV;
                 }
                 var tt = await rr.text();
                 if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 400));
@@ -11182,7 +11186,9 @@
                         if (joints.length) throw new Error('REFUSÉ : la présentation « ' + joints[0] + ' » est jointe à cette conversation. La régénérer avec generer_rapport détruirait sa structure, son plan, sa mise en page et ses couleurs — c\'est exactement ce que le client refuse. Utilise modifier_presentation pour l\'actualiser SUR PLACE (adresses [D#], [D#:F#], [D#:T#:L#:C#] de l\'extraction), par lots successifs et cumulatifs. Si — et seulement si — l\'utilisateur demande une présentation entièrement NOUVELLE sans rapport avec le fichier joint, rappelle generer_rapport avec ignorer_modele:true.');
                     }
                     var fmtDone = await iaGenReport(input, msgsEl);
-                    return 'OK : rapport ' + fmtDone.toUpperCase() + ' (' + ((input.sections || []).length) + ' sections) généré et téléchargé chez l\'utilisateur.';
+                    return 'OK : rapport ' + fmtDone.toUpperCase() + ' (' + ((input.sections || []).length) + ' sections'
+                        + (input._nb_diapos ? ', ' + input._nb_diapos + ' diapositives au total, titre compris : annonce CE nombre au client ; un texte et son tableau, ou un long tableau, peuvent occuper plusieurs diapositives' : '')
+                        + ') généré et téléchargé chez l\'utilisateur.';
                 }
                 if (name === 'modifier_document') return await iaDocxModify(input, msgsEl);
                 if (name === 'modifier_presentation') return await iaPptxModify(input, msgsEl);
@@ -14129,6 +14135,11 @@
                 var pied = st.pied_de_page || '';
                 var logo = iaLogoData(st.logo);
                 var p = new PptxGenJS(); p.layout = 'LAYOUT_16x9';
+                /* Compte les diapositives réellement produites (un texte et son
+                   tableau, ou un long tableau, peuvent occuper plusieurs diapositives)
+                   pour que l'assistant annonce le bon nombre au client. */
+                var nbDiapos = 0, addSlide0 = p.addSlide.bind(p);
+                p.addSlide = function (o) { nbDiapos++; return addSlide0(o); };
                 var s = p.addSlide(); s.background = { color: C };
                 if (logo) s.addImage({ data: logo, x: 4.35, y: 0.25, w: 1.3, h: 1.3, sizing: { type: 'contain', w: 1.3, h: 1.3 } });
                 s.addText(entete.toUpperCase(), { x: 0.5, y: logo ? 1.75 : 0.7, w: 9, h: 0.4, fontSize: 12, color: 'E8E6DC', charSpacing: 3, align: 'center' });
@@ -14233,6 +14244,7 @@
                     });
                 });
                 await p.writeFile({ fileName: safe + '.pptx' });
+                return nbDiapos;
             }
 
             async function iaGenReport(inp, msgsEl) {
@@ -14273,14 +14285,14 @@
                     if (secs[i].vega && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaVegaPng(secs[i].vega, (inp.style || {}).couleur_principale); } catch (e) { } }
                 }
                 var fmt = String(inp.format || 'pdf').toLowerCase();
-                if (fmt.indexOf('ppt') === 0) { await iaRepPptx(inp, safe); fmt = 'pptx'; }
+                if (fmt.indexOf('ppt') === 0) { inp._nb_diapos = await iaRepPptx(inp, safe); fmt = 'pptx'; }
                 else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { await iaRepDocx(inp, safe); fmt = 'word'; }
                 else if (isCarte) { iaRepCarte(inp, safe); fmt = 'carte'; }
                 else { await iaRepPdf(inp, safe); fmt = 'pdf'; }
                 if (msgsEl) {
                     var card = E('div', 'ia-card');
                     card.appendChild(E('h4', '', '📄 Rapport généré — ' + esc(inp.titre || '')));
-                    card.appendChild(E('div', 'ia-note', 'Format ' + fmt.toUpperCase() + ' · ' + secs.length + ' section(s) · le téléchargement a démarré automatiquement.'));
+                    card.appendChild(E('div', 'ia-note', 'Format ' + fmt.toUpperCase() + ' · ' + secs.length + ' section(s)' + (inp._nb_diapos ? ' · ' + inp._nb_diapos + ' diapositive(s)' : '') + ' · le téléchargement a démarré automatiquement.'));
                     var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
                     b.onclick = function () { iaGenReport(inp, null); };
                     dl.appendChild(b); card.appendChild(dl);
