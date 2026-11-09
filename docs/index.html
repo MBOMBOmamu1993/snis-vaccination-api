@@ -10687,7 +10687,15 @@
                     hdrs['Content-Type'] = 'application/json';
                     opts.body = typeof bd === 'string' ? bd : JSON.stringify(bd);
                 }
-                var rr = await fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : ''), opts);
+                var dhisUrl = IA_PROXY_URL.replace(/\/+$/, '') + '/dhis2/api/' + ep + (qs ? '?' + qs : '');
+                var rr = await fetch(dhisUrl, opts);
+                /* Code enregistré refusé (essai expiré, code épuisé ou invalide) : la
+                   lecture DHIS2 repasse par le code DHIS2 intégré (lecture seule)
+                   au lieu de priver l'assistant des données DHIS2 en direct. */
+                if ((rr.status === 401 || rr.status === 402 || rr.status === 403) && IA_DHIS2_CODE && codeV !== IA_DHIS2_CODE) {
+                    hdrs['x-access-code'] = IA_DHIS2_CODE;
+                    rr = await fetch(dhisUrl, opts);
+                }
                 var tt = await rr.text();
                 if (!rr.ok) throw new Error('DHIS2 HTTP ' + rr.status + ' : ' + tt.slice(0, 400));
                 try { return JSON.parse(tt); } catch (e) { return tt; }
@@ -14538,6 +14546,10 @@
                     if (rk) rk.classList.toggle('on', mo === 'key'); if (rc) rc.classList.toggle('on', mo === 'code');
                 }
                 renderModelOptions();
+                /* Le 1er setProv() mémorise d'abord la saisie du champ (encore vide)
+                   pour le fournisseur courant : sans cette ligne, la clé enregistrée
+                   s'affichait vide et « Enregistrer » l'effaçait. */
+                kEl.value = keys[keySlot(pk)] || '';
                 setProv(pk);
                 selEl.onchange = function () { setProv(selEl.value); };
                 if (hasProxy) {
