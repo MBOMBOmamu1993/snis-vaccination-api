@@ -33,10 +33,8 @@
  *                            capture, livraison) + création manuelle de codes.
  *                            /admin/codes → API JSON.
  *   5. /verifier?code=     → solde restant d'un code
- *   6. /essai              → code d'essai gratuit : 7 jours à raison d'1
- *                            analyse/jour, 1 par appareil (empreinte IP+UA),
- *                            puis paiement (2e analyse du jour ou 7 jours
- *                            expirés → redirection vers l'achat)
+ *   6. /essai              → fermé (410) : l'accès à l'assistant est PAYANT,
+ *                            plus d'essai gratuit (anciens codes d'essai refusés)
  *   7. /envoyer            → e-mail à la demande du client (outil envoyer_email
  *                            du dashboard) : code d'accès requis, 1 unité
  *                            décomptée à l'envoi réussi, corps HTML plafonné,
@@ -92,9 +90,9 @@ const OFFERS = [
 
 const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-5', 'claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const ALLOWED_OPENAI_MODELS = ['gpt-5.6-terra', 'gpt-5.6-sol'];
-/* Le modèle client (Kimi K3.1 Pro, API Kimi) est PAYANT — les codes d'ESSAI y
-   ont accès à raison d'1 analyse par jour pendant 7 jours (cf. resolveIaAuth) ;
-   au-delà → achat. */
+/* Accès PAYANT uniquement (codes achetés) au modèle client Kimi K3.1 Pro :
+   l'essai gratuit est supprimé et les anciens codes d'essai sont refusés
+   (cf. requireCode). */
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 /* Moonshot : plateforme internationale api.moonshot.ai (platform.kimi.ai).
@@ -103,20 +101,8 @@ const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const KIMI_DEFAULT_BASE = 'https://api.moonshot.ai';
 const DEFAULT_KIMI_MODEL = 'kimi-k3.1-pro';
 const MAX_TOKENS_CAP = 16000;
-
-/* ── Essai gratuit : TRIAL_DAYS jours, à raison d'1 analyse IA PAR JOUR
-   (minuit Kinshasa), PAR APPAREIL. Empreinte = hash(IP + User-Agent) ;
-   un nouvel appui sur « Essai gratuit » rend le même code. ── */
-const TRIAL_DAYS = 7;
-/* Fenêtre d'enchaînement : une « analyse » = toute la chaîne d'appels de la
-   boucle d'outils (DHIS2, graphiques, rapport…) — jusqu'à ~30 requêtes. Le
-   jour est marqué à la 1re requête réussie ; les requêtes SUIVANTES restent
-   autorisées pendant TRIAL_CHAIN_MIN minutes pour finir l'analyse en cours,
-   puis toute nouvelle analyse est renvoyée vers l'achat jusqu'au lendemain. */
-const TRIAL_CHAIN_MIN = 30;
-/* Jour calendaire à Kinshasa (UTC+1, pas d'heure d'été) — sert à la limite
-   d'1 analyse par jour des codes d'essai. */
-function kinshasaToday() { return new Date(Date.now() + 3600e3).toISOString().slice(0, 10); }
+/* Accès payant uniquement : message renvoyé à la place de l'ancien essai gratuit. */
+const MSG_ACCES_PAYANT = "L'essai gratuit n'est plus proposé : l'accès à l'assistant est payant. Achetez un code d'accès (⚙ Accès → « Obtenir un code »).";
 
 export default {
   async fetch(request, env) {
@@ -133,7 +119,7 @@ export default {
       if (url.pathname === '/envoyer' && request.method === 'POST') return await clientMail(request, env, cors);
       if (url.pathname.startsWith('/dhis2/api/')) return await proxyDhis2(request, env, cors, url);
       if (url.pathname === '/verifier') return await checkCode(env, url, cors);
-      if (url.pathname === '/essai') return await trialGrant(request, env, cors);
+      if (url.pathname === '/essai') return json({ error: MSG_ACCES_PAYANT }, 410, cors);
       if (url.pathname === '/commander') return await orderPage(request, env, url);
       if (url.pathname === '/suivre') return trackPage(env, url);
       if (url.pathname === '/api/commande') return await apiOrder(request, env, url, cors);
@@ -217,56 +203,19 @@ async function requireCode(request, env) {
   const code = (request.headers.get('x-access-code') || '').trim().toUpperCase();
   const rec = await getCode(env, code);
   if (!rec) throw Object.assign(new Error("Code d'accès invalide. Achetez un code sur la page « Obtenir un code »."), { status: 401 });
-  if (rec.expires && Date.now() > Date.parse(rec.expires)) {
-    throw Object.assign(new Error(rec.trial
-      ? "Votre semaine d'essai gratuit est terminée. Achetez un code (⚙ Accès → « Obtenir un code ») pour continuer à utiliser l'assistant."
-      : 'Code expiré. Achetez un nouveau code.'), { status: 402 });
-  }
-  if (!rec.trial && rec.remaining <= 0) throw Object.assign(new Error('Code épuisé (' + rec.total + ' requêtes consommées). Achetez un nouveau code.'), { status: 402 });
+  /* Accès payant uniquement : les anciens codes d'essai gratuit sont refusés. */
+  if (rec.trial) throw Object.assign(new Error(MSG_ACCES_PAYANT), { status: 402 });
+  if (rec.expires && Date.now() > Date.parse(rec.expires)) throw Object.assign(new Error('Code expiré. Achetez un nouveau code.'), { status: 402 });
+  if (rec.remaining <= 0) throw Object.assign(new Error('Code épuisé (' + rec.total + ' requêtes consommées). Achetez un nouveau code.'), { status: 402 });
   return { code, rec };
 }
 
-/* Empreinte d'appareil : hash SHA-256(IP + User-Agent) — anti-abus essai
-   gratuit et anti-spam commandes. */
+/* Empreinte d'appareil : hash SHA-256(IP + User-Agent) — anti-spam commandes. */
 async function fpHash(request) {
   const ip = request.headers.get('cf-connecting-ip') || 'x';
   const ua = request.headers.get('user-agent') || '';
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip + '|' + ua));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
-}
-
-/* ═══ Essai gratuit : 7 jours, à raison d'1 analyse IA PAR JOUR (minuit
-   Kinshasa), par appareil ═══
-   Idempotent : un nouvel appel depuis le même appareil rend le même code
-   (pratique si l'utilisateur l'a perdu), sans jamais créer de second essai.
-   Le code d'essai donne accès au modèle client (Kimi K3.1 Pro, API Kimi)
-   et au proxy DHIS2 ; au-delà d'1 analyse par
-   jour, ou une fois les 7 jours expirés → redirection vers l'achat. */
-async function trialGrant(request, env, cors) {
-  if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
-  const fp = await fpHash(request);
-  /* Identifiant d'appareil persistant envoyé par le navigateur (localStorage) :
-     bloque le renouvellement même si l'IP ou le User-Agent change. On vérifie
-     DEUX clés (empreinte IP+UA ET deviceId) — si l'UNE existe déjà, on rend le
-     code d'essai existant, JAMAIS un nouveau. */
-  let devId = '';
-  if (request.method === 'POST') { try { const b = await request.json(); devId = (b && typeof b.deviceId === 'string') ? b.deviceId.replace(/[^\w-]/g, '').slice(0, 64) : ''; } catch (e) { } }
-  const keys = ['trial:' + fp].concat(devId ? ['trial:dev:' + devId] : []);
-  for (const k of keys) {
-    const prev = await env.CODES.get(k);
-    if (prev) {
-      const t = JSON.parse(prev);
-      /* rattache l'autre clé au même code (si l'une manquait) pour verrouiller les 2 voies */
-      for (const k2 of keys) { if (k2 !== k) await env.CODES.put(k2, JSON.stringify({ code: t.code, expires: t.expires })); }
-      const jours = t.expires ? Math.max(0, Math.ceil((Date.parse(t.expires) - Date.now()) / 864e5)) : 0;
-      return json({ code: t.code, essai: true, deja: true, restant: jours, expire: t.expires }, 200, cors);
-    }
-  }
-  const code = genCode();
-  const expires = new Date(Date.now() + TRIAL_DAYS * 864e5).toISOString();
-  await putCode(env, code, { total: TRIAL_DAYS, remaining: TRIAL_DAYS, created: new Date().toISOString(), tx: 'essai', trial: true, expires, lastDay: null });
-  for (const k of keys) await env.CODES.put(k, JSON.stringify({ code, expires }));
-  return json({ code, essai: true, restant: TRIAL_DAYS, expire: expires }, 200, cors);
 }
 
 /* ═══ 1. Proxys IA (Kimi, OpenAI, Anthropic) ═══
@@ -284,15 +233,6 @@ async function resolveIaAuth(request, env, ownKeyHeader, serviceKeyName) {
   const auth = await requireCode(request, env); /* lève une erreur si invalide */
   /* Les codes marqués dhis2_only n'ouvrent PAS l'accès à l'IA (quota) */
   if (auth.rec.dhis2_only) throw Object.assign(new Error('Ce code ne donne accès qu\'au DHIS2. Achetez un code d\'accès pour l\'assistant IA.'), { status: 403 });
-  /* Code d'ESSAI : 1 analyse IA par jour (minuit Kinshasa). Le jour est marqué
-     à la 1re requête réussie ; les requêtes enchaînées de la MÊME analyse
-     (boucle d'outils) passent pendant TRIAL_CHAIN_MIN min. Au-delà → achat. */
-  if (auth.rec.trial && auth.rec.lastDay === kinshasaToday()) {
-    const t0 = Date.parse(auth.rec.lastTs || '');
-    if (!(t0 && Date.now() - t0 < TRIAL_CHAIN_MIN * 60e3)) {
-      throw Object.assign(new Error("🎁 Essai gratuit : 1 analyse par jour — vous avez déjà utilisé celle d'aujourd'hui. Achetez un code d'accès (⚙ Accès → « Obtenir un code ») pour un usage illimité, ou réessayez demain."), { status: 402 });
-    }
-  }
   if (!env[serviceKeyName]) throw Object.assign(new Error('Ce fournisseur n\'est pas configuré sur le proxy (' + serviceKeyName + ' absent). Choisissez l\'autre fournisseur dans ⚙ Accès, ou utilisez votre propre clé.'), { status: 503 });
   return { key: env[serviceKeyName], auth: auth };
 }
@@ -303,16 +243,8 @@ async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
   const headers = { 'content-type': upstream.headers.get('content-type') || defaultCt, ...cors };
   if (resolved.auth) {
     if (upstream.ok) {
-      /* Code d'essai : pas de quota décompté — on marque le JOUR à la 1re
-         requête réussie seulement (les suivantes de la chaîne ne prolongent
-         pas la fenêtre TRIAL_CHAIN_MIN). Code payant : 1 requête = 1 unité. */
-      if (resolved.auth.rec.trial) {
-        const today = kinshasaToday();
-        if (resolved.auth.rec.lastDay !== today) {
-          resolved.auth.rec.lastDay = today;
-          resolved.auth.rec.lastTs = new Date().toISOString();
-        }
-      } else resolved.auth.rec.remaining -= 1;
+      /* Code payant : 1 requête réussie = 1 unité. */
+      resolved.auth.rec.remaining -= 1;
       await putCode(env, resolved.auth.code, resolved.auth.rec);
     }
     headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
