@@ -14306,7 +14306,7 @@
                 if (msgsEl) {
                     var card = E('div', 'ia-card');
                     card.appendChild(E('h4', '', '📄 Rapport généré — ' + esc(inp.titre || '')));
-                    card.appendChild(E('div', 'ia-note', 'Format ' + fmt.toUpperCase() + ' · ' + secs.length + ' section(s)' + (inp._nb_diapos ? ' · ' + inp._nb_diapos + ' diapositive(s)' : '') + ' · le téléchargement a démarré automatiquement.'));
+                    card.appendChild(E('div', 'ia-note', 'Format ' + fmt.toUpperCase() + ' · ' + secs.length + ' section(s)' + (inp._nb_diapos ? ' · ' + inp._nb_diapos + ' diapositive(s)' : '') + ' · le téléchargement a démarré automatiquement. Si le fichier n’apparaît pas, autorisez les téléchargements pour ce site (icône à droite de la barre d’adresse), puis cliquez ci-dessous.'));
                     var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
                     b.onclick = function () { if (fichier) iaDlBlob(nomFichier, fichier.type || 'application/octet-stream', fichier); else iaGenReport(inp, null); };
                     dl.appendChild(b); card.appendChild(dl);
@@ -14385,7 +14385,7 @@
                 if (msgsEl) {
                     var card = E('div', 'ia-card');
                     card.appendChild(E('h4', '', '📊 Classeur Excel généré — ' + esc(titre)));
-                    card.appendChild(E('div', 'ia-note', feuilles.length + ' feuille(s) · le téléchargement a démarré automatiquement.'));
+                    card.appendChild(E('div', 'ia-note', feuilles.length + ' feuille(s) · le téléchargement a démarré automatiquement. Si le fichier n’apparaît pas, autorisez les téléchargements pour ce site (icône à droite de la barre d’adresse), puis cliquez ci-dessous.'));
                     var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
                     b.onclick = function () { iaDlBlob(safe + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buf); };
                     dl.appendChild(b); card.appendChild(dl);
