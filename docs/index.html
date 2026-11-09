@@ -11207,6 +11207,17 @@
                 a.href = URL.createObjectURL(new Blob([content], { type: mime }));
                 a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
             }
+            /* Capture le fichier produit par une génération (rapport Word / PDF /
+               PPTX / carte) pour que « Télécharger à nouveau » le resserve
+               DIRECTEMENT au clic : un téléchargement lancé par un clic est toujours
+               autorisé, alors qu'un 2e téléchargement automatique après un calcul
+               peut être bloqué par le navigateur (« téléchargements multiples »). */
+            async function iaCaptureFichier(gen) {
+                var oc = URL.createObjectURL, cap = null;
+                URL.createObjectURL = function (o) { if (o instanceof Blob && o.size > 512) cap = o; return oc.apply(URL, arguments); };
+                try { await gen(); } finally { URL.createObjectURL = oc; }
+                return { blob: cap };
+            }
             /* ── Normalisation des résultats d'affichage ──
                Les modèles envoient parfois : des champs JSON en
                chaîne, une figure sans enveloppe {data:[...]}, une trace unique nue,
@@ -14285,16 +14296,19 @@
                     if (secs[i].vega && !secs[i]._png && !isCarte) { try { secs[i]._png = await iaVegaPng(secs[i].vega, (inp.style || {}).couleur_principale); } catch (e) { } }
                 }
                 var fmt = String(inp.format || 'pdf').toLowerCase();
-                if (fmt.indexOf('ppt') === 0) { inp._nb_diapos = await iaRepPptx(inp, safe); fmt = 'pptx'; }
-                else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { await iaRepDocx(inp, safe); fmt = 'word'; }
-                else if (isCarte) { iaRepCarte(inp, safe); fmt = 'carte'; }
-                else { await iaRepPdf(inp, safe); fmt = 'pdf'; }
+                var fichier = (await iaCaptureFichier(async function () {
+                    if (fmt.indexOf('ppt') === 0) { inp._nb_diapos = await iaRepPptx(inp, safe); fmt = 'pptx'; }
+                    else if (fmt.indexOf('word') === 0 || fmt.indexOf('doc') === 0) { await iaRepDocx(inp, safe); fmt = 'word'; }
+                    else if (isCarte) { iaRepCarte(inp, safe); fmt = 'carte'; }
+                    else { await iaRepPdf(inp, safe); fmt = 'pdf'; }
+                })).blob;
+                var nomFichier = safe + ({ pptx: '.pptx', word: '.docx', carte: '.html', pdf: '.pdf' }[fmt] || '');
                 if (msgsEl) {
                     var card = E('div', 'ia-card');
                     card.appendChild(E('h4', '', '📄 Rapport généré — ' + esc(inp.titre || '')));
                     card.appendChild(E('div', 'ia-note', 'Format ' + fmt.toUpperCase() + ' · ' + secs.length + ' section(s)' + (inp._nb_diapos ? ' · ' + inp._nb_diapos + ' diapositive(s)' : '') + ' · le téléchargement a démarré automatiquement.'));
                     var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
-                    b.onclick = function () { iaGenReport(inp, null); };
+                    b.onclick = function () { if (fichier) iaDlBlob(nomFichier, fichier.type || 'application/octet-stream', fichier); else iaGenReport(inp, null); };
                     dl.appendChild(b); card.appendChild(dl);
                     msgsEl.appendChild(card); iaScroll(msgsEl);
                 }
@@ -14373,7 +14387,7 @@
                     card.appendChild(E('h4', '', '📊 Classeur Excel généré — ' + esc(titre)));
                     card.appendChild(E('div', 'ia-note', feuilles.length + ' feuille(s) · le téléchargement a démarré automatiquement.'));
                     var dl = E('div', 'ia-dl'); var b = E('button', 'ia-btn', '⬇ Télécharger à nouveau');
-                    b.onclick = function () { iaGenExcel(inp, null); };
+                    b.onclick = function () { iaDlBlob(safe + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buf); };
                     dl.appendChild(b); card.appendChild(dl);
                     msgsEl.appendChild(card); iaScroll(msgsEl);
                 }
