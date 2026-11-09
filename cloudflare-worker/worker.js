@@ -3,15 +3,16 @@
  *  PROXY IA — Dashboard PEV de routine (snis-vaccination-api)
  * ═══════════════════════════════════════════════════════════════════════
  *  Rôles :
- *   1. Fournisseurs d'IA, au choix du client (bascule en cas d'indisponibilité) :
- *        /api/chat        → Ollama Cloud (MiniMax M3)   — clé OLLAMA_API_KEY
+ *   1. Fournisseurs d'IA de l'assistant (aucune route Ollama) :
+ *        /kimi/v1/chat/completions → API Kimi officielle — Kimi K3.1 Pro, modèle
+ *                                    du dashboard          — clé KIMI_API_KEY
  *        /v1/messages     → Anthropic (Claude)          — clé ANTHROPIC_API_KEY
  *        /openai/v1/responses → OpenAI (GPT-5.6)        — clé OPENAI_API_KEY
  *      Dans tous les cas : soit un code d'accès valide (quota décompté, clé du
- *      service utilisée), soit la PROPRE clé de l'appelant via x-ollama-key /
+ *      service utilisée), soit la PROPRE clé de l'appelant via x-kimi-key /
  *      x-anthropic-key / x-openai-key (relais pur, aucun quota consommé).
- *      Le relais Ollama est indispensable : ollama.com ne renvoie aucun en-tête
- *      CORS, un appel direct depuis le navigateur est donc impossible.
+ *      Le relais est indispensable : ces API ne s'appellent pas directement
+ *      depuis un navigateur et la clé du service doit rester ici.
  *   2. /dhis2/api/*        → proxy lecture seule vers le DHIS2 (SNIS RDC),
  *                            identifiants cachés ici, codes d'accès requis.
  *                            GET pour tout ; POST uniquement pour les analyses
@@ -43,12 +44,11 @@
  *                            (via EMAILJS, BREVO en secours — cf. sendMail)
  *
  *  Secrets à configurer (wrangler secret put NOM ou dashboard Cloudflare) :
- *   OLLAMA_API_KEY      — clé API ollama.com (Settings → API keys)
  *   ANTHROPIC_API_KEY   — clé API console.anthropic.com
  *   OPENAI_API_KEY      — clé API platform.openai.com (facturation API séparée
  *                         de l'abonnement ChatGPT Plus)
  *   KIMI_API_KEY        — clé API platform.kimi.ai (Moonshot) : assistant de
- *                         lecture des captures + fournisseur Kimi K3 du dashboard
+ *                         lecture des captures + fournisseur Kimi K3.1 Pro du dashboard
  *                         (les trois sont facultatives : un fournisseur sans clé
  *                          reste utilisable par les clients ayant leur propre clé)
  *   DHIS2_BASE_URL      — ex. https://snisrdc.com (sans /api)
@@ -77,9 +77,8 @@
 /* ── Offres de vente (à ajuster librement) ──
    requests = nombre de requêtes IA incluses. Une analyse complète consomme
    en moyenne 3 à 6 requêtes (l'IA lit les données puis répond).
-   Tarif : 0,10 $/requête. Le modèle tourne sur l'abonnement Ollama Cloud
-   (forfait mensuel, pas de facturation à la requête) : la marge dépend donc
-   du volume mensuel, pas d'un coût unitaire à l'appel. */
+   Tarif : 0,10 $/requête. Le modèle (Kimi K3.1 Pro) est facturé à l'usage
+   par l'API Kimi : la marge dépend des jetons consommés par requête. */
 const REQUESTS_PER_USD = 10;
 const CUSTOM_MIN_USD = 10;
 const CUSTOM_MAX_USD = 500;
@@ -91,26 +90,18 @@ const OFFERS = [
   { id: '100', label: 'Premium', analyses: '±250 analyses', requests: 1000, amount: 100, currency: 'USD' },
 ];
 
-/* Modèles Ollama Cloud : la liste vit chez Ollama (route /api/tags relayée au
-   dashboard) — on ne fige donc PAS d'allowlist ici, seulement une validation de
-   forme + un défaut. L'API distante peut renvoyer des identifiants sans suffixe
-   :cloud ; le proxy transmet donc exactement l'identifiant sélectionné. */
-const DEFAULT_OLLAMA_MODEL = 'minimax-m3:cloud';
 const ALLOWED_ANTHROPIC_MODELS = ['claude-opus-5', 'claude-opus-4-8', 'claude-fable-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
 const ALLOWED_OPENAI_MODELS = ['gpt-5.6-terra', 'gpt-5.6-sol'];
-/* Les modèles clients (Kimi K3, DeepSeek V4 Pro et V4 Flash via Ollama Cloud)
-   sont PAYANTS — les codes d'ESSAI y ont accès à raison d'1 analyse
-   par jour pendant 7 jours (cf. resolveIaAuth) ; au-delà → achat. */
-const OLLAMA_CHAT_URL = 'https://ollama.com/api/chat';
-const OLLAMA_TAGS_URL = 'https://ollama.com/api/tags';
+/* Le modèle client (Kimi K3.1 Pro, API Kimi) est PAYANT — les codes d'ESSAI y
+   ont accès à raison d'1 analyse par jour pendant 7 jours (cf. resolveIaAuth) ;
+   au-delà → achat. */
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 /* Moonshot : plateforme internationale api.moonshot.ai (platform.kimi.ai).
    Si la clé vient de la plateforme chinoise : poser KIMI_API_BASE =
    https://api.moonshot.cn dans les vars. */
 const KIMI_DEFAULT_BASE = 'https://api.moonshot.ai';
-const DEFAULT_KIMI_MODEL = 'kimi-k3';
-const NUM_PREDICT_CAP = 16000; /* plafond de tokens générés (équiv. max_tokens) */
+const DEFAULT_KIMI_MODEL = 'kimi-k3.1-pro';
 const MAX_TOKENS_CAP = 16000;
 
 /* ── Essai gratuit : TRIAL_DAYS jours, à raison d'1 analyse IA PAR JOUR
@@ -136,8 +127,6 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     try {
-      if (url.pathname === '/api/chat' && request.method === 'POST') return await proxyOllama(request, env, cors);
-      if (url.pathname === '/api/tags' && request.method === 'GET') return await ollamaTags(request, env, cors);
       if (url.pathname === '/kimi/v1/chat/completions' && request.method === 'POST') return await proxyKimi(request, env, cors);
       if (url.pathname === '/openai/v1/responses' && request.method === 'POST') return await proxyOpenAI(request, env, cors);
       if (url.pathname === '/v1/messages' && request.method === 'POST') return await proxyAnthropic(request, env, cors);
@@ -200,7 +189,7 @@ function corsHeaders(env, origin) {
   return {
     'Access-Control-Allow-Origin': ok ? (origin || '*') : allowed[0],
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code,x-ollama-key,x-anthropic-key,x-kimi-key,x-openai-key',
+    'Access-Control-Allow-Headers': 'content-type,anthropic-version,x-access-code,x-anthropic-key,x-kimi-key,x-openai-key',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -250,8 +239,8 @@ async function fpHash(request) {
    Kinshasa), par appareil ═══
    Idempotent : un nouvel appel depuis le même appareil rend le même code
    (pratique si l'utilisateur l'a perdu), sans jamais créer de second essai.
-   Le code d'essai donne accès à TOUS les modèles clients (Kimi K3,
-   DeepSeek V4 Pro et V4 Flash via Ollama Cloud) et au proxy DHIS2 ; au-delà d'1 analyse par
+   Le code d'essai donne accès au modèle client (Kimi K3.1 Pro, API Kimi)
+   et au proxy DHIS2 ; au-delà d'1 analyse par
    jour, ou une fois les 7 jours expirés → redirection vers l'achat. */
 async function trialGrant(request, env, cors) {
   if (request.method !== 'GET' && request.method !== 'POST') return json({ error: 'GET/POST uniquement' }, 405, cors);
@@ -280,9 +269,10 @@ async function trialGrant(request, env, cors) {
   return json({ code, essai: true, restant: TRIAL_DAYS, expire: expires }, 200, cors);
 }
 
-/* ═══ 1. Proxys IA (Ollama Cloud + Anthropic) ═══
-   Deux modes d'authentification, communs aux deux fournisseurs :
-     • clé personnelle de l'appelant (x-ollama-key / x-anthropic-key) → relais
+/* ═══ 1. Proxys IA (Kimi, OpenAI, Anthropic) ═══
+   Deux modes d'authentification, communs à tous les fournisseurs :
+     • clé personnelle de l'appelant (x-kimi-key / x-openai-key /
+       x-anthropic-key) → relais
        pur, aucun quota consommé (il paie son propre usage) ;
      • x-access-code : code d'accès acheté → la clé du service est utilisée et
        1 requête est décomptée du solde.
@@ -328,55 +318,6 @@ async function finishIaResponse(env, upstream, resolved, cors, defaultCt) {
     headers['x-quota-restant'] = String(resolved.auth.rec.remaining);
   }
   return new Response(upstream.body, { status: upstream.status, headers });
-}
-
-async function proxyOllama(request, env, cors) {
-  let resolved;
-  try { resolved = await resolveIaAuth(request, env, 'x-ollama-key', 'OLLAMA_API_KEY'); }
-  catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
-
-  let body;
-  try { body = await request.json(); }
-  catch (e) { return json({ error: { type: 'invalid_request', message: 'Corps JSON invalide' } }, 400, cors); }
-
-  /* N'importe quel modèle Cloud du compte : validation de forme seulement.
-     Un modèle inconnu produit un « model not found » propre côté Ollama. */
-  if (typeof body.model !== 'string' || !/^[\w.\/:-]{1,80}$/.test(body.model)) body.model = DEFAULT_OLLAMA_MODEL;
-  body.options = body.options || {};
-  if (!body.options.num_predict || body.options.num_predict > NUM_PREDICT_CAP) body.options.num_predict = NUM_PREDICT_CAP;
-
-  const upstream = await fetch(OLLAMA_CHAT_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/x-ndjson',
-      authorization: 'Bearer ' + resolved.key,
-    },
-    body: JSON.stringify(body),
-  });
-  return await finishIaResponse(env, upstream, resolved, cors, 'application/x-ndjson');
-}
-
-/* Liste des modèles Ollama Cloud du compte — permet au dashboard d'afficher
-   automatiquement les modèles ajoutés/mis à jour chez Ollama, sans redéployer.
-   Métadonnées non sensibles : tout code d'accès valide suffit (y compris les
-   codes dhis2_only), aucune requête n'est décomptée ; une clé personnelle
-   x-ollama-key liste les modèles de SON compte. */
-async function ollamaTags(request, env, cors) {
-  const ownKey = (request.headers.get('x-ollama-key') || '').trim();
-  let key = ownKey;
-  if (!key) {
-    try { await requireCode(request, env); }
-    catch (e) { return json({ error: { type: 'auth', message: e.message } }, e.status || 401, cors); }
-    if (!env.OLLAMA_API_KEY) return json({ error: { type: 'config', message: 'OLLAMA_API_KEY absent du proxy.' } }, 503, cors);
-    key = env.OLLAMA_API_KEY;
-  }
-  const upstream = await fetch(OLLAMA_TAGS_URL, { headers: { authorization: 'Bearer ' + key, accept: 'application/json' } });
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=600', ...cors },
-  });
 }
 
 /* Proxy Kimi (Moonshot AI) — API compatible OpenAI (SSE). Même logique que les
@@ -776,7 +717,7 @@ function buyPage(env, url) {
     return htmlPage('Paiement bientôt disponible',
       `<h1>💳 Codes d'accès — bientôt disponibles</h1>
        <p>La vente de codes d'accès (paiement mobile money : M-Pesa, Orange Money, Airtel Money) est en cours d'activation.
-       Revenez bientôt, ou utilisez votre propre clé API (Ollama Cloud ou Anthropic) dans ⚙ Accès en attendant.</p>`);
+       Revenez bientôt, ou utilisez votre propre clé API (Kimi, OpenAI ou Anthropic) dans ⚙ Accès en attendant.</p>`);
   }
   const offers = OFFERS.map(o =>
     `<form method="POST" action="/acheter" style="margin:0"><input type="hidden" name="offer" value="${o.id}">
@@ -1149,9 +1090,8 @@ async function clientMail(request, env, cors) {
 
 /* ═══ Assistant IA de gestion des paiements ═══
    Lit la capture mobile money et résume : montant, opérateur, référence, date.
-   Prestataire : AI_HELPER_PROVIDER = kimi (défaut, KIMI_API_KEY) | claude | ollama.
-   Modèle      : AI_HELPER_MODEL (défauts : kimi-k3 · claude-opus-4-8
-                 · minimax-m3:cloud).
+   Prestataire : AI_HELPER_PROVIDER = kimi (défaut, KIMI_API_KEY) | claude.
+   Modèle      : AI_HELPER_MODEL (défauts : kimi-k3 · claude-opus-4-8).
    ⚠️ Ne VALIDE jamais un paiement : aide à la lecture seulement — le vendeur
    garde le clic « Livrer » (une capture peut toujours être falsifiée). */
 async function aiProofSummary(env, b64, ct) {
@@ -1192,20 +1132,6 @@ async function aiProofSummary(env, b64, ct) {
       });
       const d = await r.json();
       return clean(d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
-    }
-    /* défaut : Ollama Cloud — MiniMax M3 (vision), modifiable via AI_HELPER_MODEL */
-    if (env.OLLAMA_API_KEY) {
-      const r = await fetch(OLLAMA_CHAT_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', accept: 'application/json', authorization: 'Bearer ' + env.OLLAMA_API_KEY },
-        body: JSON.stringify({
-          model: env.AI_HELPER_MODEL || 'minimax-m3:cloud', stream: false,
-          options: { num_predict: 150 },
-          messages: [{ role: 'user', content: prompt, images: [b64] }],
-        }),
-      });
-      const d = await r.json();
-      return clean(d && d.message && d.message.content);
     }
   } catch (e) { return null; }
   return null;

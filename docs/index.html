@@ -9859,10 +9859,11 @@
     </script>
 
     <!-- ═══════════════ ONGLET IA : GÉNÉRATION DES ANALYSES ═══════════════
-         Chat IA (MiniMax M3 sur Ollama Cloud) avec compétences d'analyse des
-         données DHIS2 du dashboard. Deux modes d'accès, tous deux via le proxy
-         Cloudflare (ollama.com n'envoie pas d'en-têtes CORS) : code d'accès
-         (quota prépayé) ou clé API Ollama personnelle (simplement relayée).
+         Chat IA (Kimi K3.1 Pro, API Kimi officielle) avec compétences d'analyse
+         des données DHIS2 du dashboard. Deux modes d'accès, tous deux via le
+         proxy Cloudflare (l'API Kimi n'autorise pas les appels directs depuis un
+         navigateur) : code d'accès (quota prépayé) ou clé API personnelle
+         (simplement relayée).
          Design only ailleurs : ce module n'altère aucun calcul existant. -->
     <style>
         .ia-wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; min-height: 62vh; }
@@ -10002,24 +10003,24 @@
             'use strict';
             /* ── Configuration ──
                IA_PROXY_URL : URL du proxy Cloudflare Worker. Il est INDISPENSABLE
-               dans les deux modes (code d'accès ET clé personnelle) : ollama.com ne
-               renvoie aucun en-tête CORS, un appel direct depuis le navigateur est
-               donc bloqué. En mode « clé personnelle », le proxy ne fait que relayer
-               la clé de l'utilisateur (aucun quota consommé). */
+               dans les deux modes (code d'accès ET clé personnelle) : l'API Kimi
+               n'autorise pas les appels directs depuis un navigateur. En mode « clé
+               personnelle », le proxy ne fait que relayer la clé de l'utilisateur
+               (aucun quota consommé). */
             var IA_PROXY_URL = 'https://pev-ia-proxy.pev-rdc.workers.dev';
             /* Code intégré donnant à l'IA l'accès DHIS2 via le proxy, sans configuration.
                Marqué dhis2_only côté Worker : il est REFUSÉ sur la route IA
                (aucun accès au quota). Révocable en supprimant la clé KV. */
             var IA_DHIS2_CODE = 'PEV-DHIS-7QK4XZ';
-            /* ── Fournisseurs d'IA (bascule libre selon la disponibilité/les crédits) ──
-               Côté Ollama Cloud, la liste des modèles est DYNAMIQUE : récupérée via le
-               proxy (/api/tags) à l'ouverture des réglages — tout modèle ajouté ou mis à
-               jour chez Ollama apparaît automatiquement, sans redéployer le dashboard.
-               Tous les modèles partagent les mêmes compétences (prompt système DHIS2 +
-               outils d'analyse, graphiques, rapports PDF/Word/PPTX, classeurs Excel,
-               visuels logo/affiche et envoi d'e-mail) et la même clé
-               Ollama. L'historique est stocké au format Ollama et converti à la volée
-               pour Anthropic : on peut changer de modèle en cours de conversation. */
+            /* ── Fournisseurs d'IA ──
+               Modèle par défaut (et seul modèle client) : Kimi K3.1 Pro, servi
+               directement par l'API Kimi officielle (Moonshot) via la route
+               /kimi/v1/chat/completions du proxy. L'admin dispose en plus d'OpenAI et
+               d'Anthropic. Tous les modèles partagent les mêmes compétences (prompt
+               système DHIS2 + outils d'analyse, graphiques, rapports PDF/Word/PPTX,
+               classeurs Excel, visuels logo/affiche et envoi d'e-mail). L'historique
+               interne ({role, content, tool_calls}) est converti à la volée pour chaque
+               fournisseur : on peut changer de modèle en cours de conversation. */
             var IA_CLAUDE_KEYHINT = 'Créez une clé sur <b>console.anthropic.com</b> (Settings → API keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Anthropic sans la stocker.';
             var IA_CLAUDE = {
                 label: 'Claude Opus 4.8', model: 'claude-opus-4-8', kind: 'anthropic',
@@ -10041,20 +10042,15 @@
                 keyLabel: 'Clé API Anthropic', keyPlaceholder: 'sk-ant-...',
                 keyHint: IA_CLAUDE_KEYHINT
             };
-            var IA_OLLAMA_KEYMETA = {
-                keyLabel: 'Clé API Ollama Cloud (commune à tous les modèles Ollama)', keyPlaceholder: 'votre clé ollama.com',
-                keyHint: 'Créez une clé sur <b>ollama.com</b> (Settings → API keys) — l\'assistant utilise alors <b>votre abonnement Ollama Cloud</b>, sans consommer de code d\'accès. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Ollama sans la stocker : Ollama Cloud n\'autorise pas les appels directs depuis un navigateur.'
-            };
             /* Kimi (Moonshot AI) — API OpenAI-compatible, relais via /kimi/v1/chat/completions
                du proxy (même logique : code d'accès OU clé personnelle x-kimi-key).
-               Les valeurs d'option sont préfixées « kimi: » pour éviter toute collision
-               avec les modèles Ollama de même nom (ex. kimi-k2.7-code). */
+               Les valeurs d'option sont préfixées « kimi: » (ex. « kimi:kimi-k3.1-pro »). */
             var IA_KIMI_KEYMETA = {
                 keyLabel: 'Clé API Moonshot AI — Kimi (commune à tous les modèles Kimi)', keyPlaceholder: 'sk-...',
                 keyHint: 'Créez une clé sur <b>platform.kimi.ai</b> (API Keys) après avoir ajouté des crédits. La clé est conservée <b>uniquement dans votre navigateur</b> (localStorage) et transite par le proxy sécurisé de ce dashboard, qui la relaie à Moonshot sans la stocker : l\'API Kimi n\'autorise pas les appels directs depuis un navigateur.'
             };
             var IA_KIMI_MODELS = [
-                { id: 'kimi-k3', label: 'Kimi K3 (vedette — raisonnement high)' },
+                { id: 'kimi-k3.1-pro', label: 'Kimi K3.1 Pro (vedette — raisonnement high)' },
                 { id: 'kimi-k2.7-code', label: 'Kimi K2.7 Code' },
                 { id: 'kimi-k2.6', label: 'Kimi K2.6' }
             ];
@@ -10069,48 +10065,38 @@
                 { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra — meilleur équilibre intelligence/coût', effort: 'medium' },
                 { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol — puissance maximale', effort: 'high' }
             ];
-            /* Liste de secours si /api/tags est momentanément injoignable */
-            var IA_OLLAMA_MODELS = ['kimi-k3', 'deepseek-v4-pro', 'deepseek-v4-flash', 'minimax-m3', 'glm-5.2', 'kimi-k2.7-code', 'gemma4:31b', 'qwen3.5:397b'];
-            var IA_DEFAULT_PROVIDER = 'kimi:kimi-k3';
-            var IA_CLIENT_DEFAULT_PROVIDER = 'kimi:kimi-k3';
-            /* Liste FIXE proposée aux clients : UN SEUL modèle — Kimi K3 servi par
-               l'API Kimi officielle (Moonshot / platform.kimi.ai), via la route proxy
-               /kimi/v1/chat/completions. Aucun modèle Ollama Cloud, OpenAI ni Claude
-               n'est proposé côté client. L'essai gratuit (7 jours, à raison d'1 analyse
-               par jour) donne accès à CE modèle ; au-delà du rythme ou après les 7 jours,
-               le proxy renvoie vers l'achat. (L'admin, lui, garde la liste complète
-               dynamique Ollama + OpenAI + Kimi + Claude.) */
+            var IA_DEFAULT_PROVIDER = 'kimi:kimi-k3.1-pro';
+            var IA_CLIENT_DEFAULT_PROVIDER = 'kimi:kimi-k3.1-pro';
+            /* Liste FIXE proposée aux clients : UN SEUL modèle — Kimi K3.1 Pro servi
+               par l'API Kimi officielle (Moonshot / platform.kimi.ai), via la route
+               proxy /kimi/v1/chat/completions. Aucun modèle OpenAI ni Claude n'est
+               proposé côté client. L'essai gratuit (7 jours, à raison d'1 analyse par
+               jour) donne accès à CE modèle ; au-delà du rythme ou après les 7 jours,
+               le proxy renvoie vers l'achat. (L'admin, lui, garde Kimi + OpenAI +
+               Claude.) */
             var IA_CLIENT_MODELS = [
-                { v: 'kimi:kimi-k3', label: 'Kimi K3 — API Kimi (Moonshot) — raisonnement étendu HIGH' }
+                { v: 'kimi:kimi-k3.1-pro', label: 'Kimi K3.1 Pro — API Kimi (Moonshot) — raisonnement étendu HIGH' }
             ];
             /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
             function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
-            var iaThinkOff = {}; /* modèles ayant refusé le raisonnement (mémorisé pour la session) */
-
-            /* Libellé lisible : 'kimi-k2.7-code' → 'Kimi K2.7 Code' ; 'gemma4:31b' → 'Gemma4 (31B)' */
-            function iaModelLabel(id) {
-                var base = String(id).replace(/:cloud$/, ''), tag = '';
-                var c = base.indexOf(':');
-                if (c >= 0) { tag = base.slice(c + 1); base = base.slice(0, c); }
-                var SP = { deepseek: 'DeepSeek', glm: 'GLM', minimax: 'MiniMax', qwen: 'Qwen', kimi: 'Kimi', gpt: 'GPT', oss: 'OSS', nemotron: 'Nemotron', mistral: 'Mistral' };
-                var lbl = base.split('-').map(function (w) { return SP[w] || (w.charAt(0).toUpperCase() + w.slice(1)); }).join(' ');
-                return lbl + (tag ? ' (' + tag.toUpperCase() + ')' : '');
-            }
             function iaProvKey() {
                 var p = cfg('provider') || '';
                 /* Liste blanche client stricte : tout ancien réglage (Claude, OpenAI,
-                   Ollama Cloud — y compris l'ancien « kimi-k3 » d'Ollama) bascule
-                   automatiquement sur Kimi K3 de l'API Kimi. */
+                   ancien modèle Ollama, Kimi K3) bascule automatiquement sur Kimi
+                   K3.1 Pro de l'API Kimi. */
                 if (!iaIsAdmin()) {
                     for (var ci = 0; ci < IA_CLIENT_MODELS.length; ci++) if (IA_CLIENT_MODELS[ci].v === p) return p;
                     cfg('provider', IA_CLIENT_DEFAULT_PROVIDER);
                     return IA_CLIENT_DEFAULT_PROVIDER;
                 }
                 if (p.indexOf('claude') === 0) return p; /* Anthropic : claude, claude-fable, claude-opus5 */
-                if (p.indexOf('kimi:') === 0) return p; /* Moonshot : 'kimi:kimi-k3' */
                 if (p.indexOf('gpt:') === 0) return p;
-                if (p === 'minimax' || !p) return IA_DEFAULT_PROVIDER; /* migration ancien réglage */
-                return p.replace(/:cloud$/, '');
+                for (var ki = 0; ki < IA_KIMI_MODELS.length; ki++) if (p === 'kimi:' + IA_KIMI_MODELS[ki].id) return p;
+                /* Ollama retiré et Kimi K3 remplacé par K3.1 Pro : tout autre réglage
+                   (ancien modèle Ollama, « kimi:kimi-k3 », vide) passe sur Kimi K3.1
+                   Pro de l'API Kimi. */
+                cfg('provider', IA_DEFAULT_PROVIDER);
+                return IA_DEFAULT_PROVIDER;
             }
             function iaProv(pk) {
                 pk = pk || iaProvKey();
@@ -10127,47 +10113,24 @@
                         keyLabel: IA_OPENAI_KEYMETA.keyLabel, keyPlaceholder: IA_OPENAI_KEYMETA.keyPlaceholder, keyHint: IA_OPENAI_KEYMETA.keyHint
                     };
                 }
-                if (pk.indexOf('kimi:') === 0) {
-                    var km = pk.slice(5) || 'kimi-k3';
-                    var kmMeta = null;
-                    for (var x = 0; x < IA_KIMI_MODELS.length; x++) if (IA_KIMI_MODELS[x].id === km) kmMeta = IA_KIMI_MODELS[x];
-                    return {
-                        label: kmMeta ? kmMeta.label : ('Kimi (' + km + ')'), model: km, kind: 'openai',
-                        path: '/kimi/v1/chat/completions', keyHeader: 'x-kimi-key', reasoning_effort: 'high',
-                        keyLabel: IA_KIMI_KEYMETA.keyLabel, keyPlaceholder: IA_KIMI_KEYMETA.keyPlaceholder, keyHint: IA_KIMI_KEYMETA.keyHint
-                    };
-                }
+                /* Tout le reste passe par l'API Kimi officielle (Moonshot), route
+                   /kimi/v1/chat/completions du proxy. */
+                if (pk.indexOf('kimi:') !== 0) pk = IA_DEFAULT_PROVIDER;
+                var km = pk.slice(5) || 'kimi-k3.1-pro';
+                var kmMeta = null;
+                for (var x = 0; x < IA_KIMI_MODELS.length; x++) if (IA_KIMI_MODELS[x].id === km) kmMeta = IA_KIMI_MODELS[x];
                 return {
-                    label: iaModelLabel(pk), model: pk, kind: 'ollama',
-                    path: '/api/chat', keyHeader: 'x-ollama-key',
-                    think: iaThinkOff[pk] ? false : 'high',
-                    keyLabel: IA_OLLAMA_KEYMETA.keyLabel, keyPlaceholder: IA_OLLAMA_KEYMETA.keyPlaceholder, keyHint: IA_OLLAMA_KEYMETA.keyHint
+                    label: kmMeta ? kmMeta.label : ('Kimi (' + km + ')'), model: km, kind: 'openai',
+                    path: '/kimi/v1/chat/completions', keyHeader: 'x-kimi-key', reasoning_effort: 'high',
+                    keyLabel: IA_KIMI_KEYMETA.keyLabel, keyPlaceholder: IA_KIMI_KEYMETA.keyPlaceholder, keyHint: IA_KIMI_KEYMETA.keyHint
                 };
             }
-            /* Clés personnelles : une pour Anthropic, OpenAI, Kimi, UNE seule pour tous
-               les modèles Ollama (même compte). Reprend les anciens réglages : migration douce. */
+            /* Clés personnelles : une par fournisseur (Anthropic, OpenAI, Kimi).
+               Reprend les anciens réglages : migration douce. */
             function iaUserKey(pk) {
                 if (String(pk).indexOf('claude') === 0) return cfg('key_claude') || cfg('key');
-                if (String(pk).indexOf('kimi:') === 0) return cfg('key_kimi');
                 if (String(pk).indexOf('gpt:') === 0) return cfg('key_openai');
-                return cfg('key_ollama') || cfg('key_minimax');
-            }
-            /* Rafraîchit la liste des modèles Ollama Cloud via le proxy. */
-            function iaFetchModels(cb) {
-                try {
-                    var hdrs = {};
-                    var k = cfg('key_ollama') || cfg('key_minimax');
-                    if (k) hdrs['x-ollama-key'] = k; else hdrs['x-access-code'] = cfg('code') || IA_DHIS2_CODE;
-                    fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/api/tags', { headers: hdrs })
-                        .then(function (r) { return r.ok ? r.json() : null; })
-                        .then(function (d) {
-                            if (d && d.models && d.models.length) {
-                                IA_OLLAMA_MODELS = d.models.map(function (m) { return m.model || m.name; }).filter(Boolean).sort();
-                            }
-                            if (cb) cb();
-                        })
-                        .catch(function () { if (cb) cb(); });
-                } catch (e) { if (cb) cb(); }
+                return cfg('key_kimi');
             }
             /* Aucune limite globale de durée ou de tours : l'agent poursuit tant
                qu'il appelle des outils et s'arrête uniquement quand le modèle
@@ -10354,7 +10317,7 @@
                 ].join('\n');
             }
 
-            /* ── Outils exposés à l'IA (format natif Ollama /api/chat = format OpenAI :
+            /* ── Outils exposés à l'IA (format OpenAI function-calling :
                {type:'function', function:{name, description, parameters}}) ── */
             var IA_TOOLS = [
                 {
@@ -11047,11 +11010,11 @@
                 return r3;
             }
 
-            /* Un tool_call Ollama a la forme {function:{name, arguments}}. `arguments`
-               est un objet dans l'API native, une chaîne JSON en mode compatible
-               OpenAI : les deux cas sont acceptés. */
+            /* Un tool_call (format interne) a la forme {function:{name, arguments}}.
+               `arguments` est un objet ou une chaîne JSON (format OpenAI) : les deux
+               cas sont acceptés. */
             function iaToolName(tc) { return (tc && tc.function && tc.function.name) || ''; }
-            /* Ollama encode parfois les tableaux imbriqués des arguments en
+            /* Certains modèles encodent les tableaux imbriqués des arguments en
                {"item":[...]} (artefact de sérialisation). On les déballe
                récursivement, sinon les figures Plotly arrivent cassées. */
             function iaUnwrapArrays(v) {
@@ -11225,7 +11188,7 @@
                 a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
             }
             /* ── Normalisation des résultats d'affichage ──
-               Les modèles (surtout via Ollama) envoient parfois : des champs JSON en
+               Les modèles envoient parfois : des champs JSON en
                chaîne, une figure sans enveloppe {data:[...]}, une trace unique nue,
                un type absent… On répare tout ce qui est réparable au lieu d'afficher
                « Résultat incomplet ». */
@@ -11427,28 +11390,15 @@
                 msgsEl.appendChild(card); iaScroll(msgsEl);
             }
 
-            /* ── Conversion de l'historique (format interne = Ollama) ──
+            /* ── Conversion de l'historique (format interne {role, content, tool_calls}) ──
                Permet de basculer de fournisseur en pleine conversation. */
             function iaStripData(d) { return String(d).replace(/^data:[^,]+,/, ''); }
-            function iaMsgsToOllama(messages) {
-                return messages.map(function (m) {
-                    if (m.role === 'user' && m.images && m.images.length) {
-                        return { role: 'user', content: m.content || '', images: m.images.map(iaStripData) };
-                    }
-                    if (m.role === 'assistant' && (m._thinkBlocks || m._openaiOutput)) {
-                        /* Blocs internes signés/rejouables : ne pas les envoyer à Ollama. */
-                        var c = {}; for (var k in m) if (k !== '_thinkBlocks' && k !== '_openaiOutput') c[k] = m[k];
-                        return c;
-                    }
-                    return m;
-                });
-            }
-            /* Ollama -> Anthropic : blocs de contenu, tool_use/tool_result appariés
-               dans l'ordre (Ollama n'a pas d'identifiant de tool_call, on en forge un).
+            /* Interne -> Anthropic : blocs de contenu, tool_use/tool_result appariés
+               dans l'ordre (identifiant forgé quand le tool_call n'en a pas).
                Raisonnement : les blocs `thinking` SIGNÉS produits par Claude sont
                conservés dans m._thinkBlocks et rejoués tels quels — l'API l'exige
                quand le raisonnement étendu est actif et que le message assistant
-               contient un tool_use. Le raisonnement texte de MiniMax (sans
+               contient un tool_use. Le raisonnement texte de Kimi (sans
                signature) n'est jamais envoyé à Anthropic. */
             function iaMsgsToAnthropic(messages) {
                 var out = [], ids = [];
@@ -11468,7 +11418,7 @@
                         ids = [];
                         (m.tool_calls || []).forEach(function (tc, k) {
                             /* id NATIF du fournisseur conservé quand il existe (Kimi) ;
-                               sinon forgé (Ollama n'a pas d'identifiant de tool_call). */
+                               sinon forgé. */
                             var id = tc.id || ('call_' + i + '_' + k);
                             ids.push(id);
                             ab.push({ type: 'tool_use', id: id, name: iaToolName(tc), input: iaToolArgs(tc) });
@@ -11542,12 +11492,12 @@
                 }
                 return out;
             }
-            /* Ollama -> OpenAI (Kimi) : messages texte ou multimodaux, tool_calls
+            /* Interne -> OpenAI (Kimi) : messages texte ou multimodaux, tool_calls
                avec leurs identifiants NATIFS (tc.id renvoyé par Kimi — requis pour
-               l'appariement) ou forgés en secours (Ollama), arguments en chaîne
+               l'appariement) ou forgés en secours, arguments en chaîne
                JSON, résultats d'outils en messages role:'tool' appariés
                EXPLICITEMENT par tid (tool_call_id mémorisé à l'exécution).
-               Kimi K3 (modèle à raisonnement) EXIGE que le reasoning_content
+               Kimi K3.1 Pro (modèle à raisonnement) EXIGE que le reasoning_content
                d'un message assistant soit renvoyé tel quel au tour suivant —
                sinon erreur 400 (« reasoning_content … must be passed back »). */
             function iaMsgsToOpenAI(messages) {
@@ -11636,9 +11586,9 @@
                 return out;
             }
 
-            /* ── Appel API — Ollama Cloud (NDJSON) ou Anthropic (SSE) ──
-               Toujours via le proxy : ollama.com ne renvoie aucun en-tête CORS et
-               la clé du service doit rester côté serveur.
+            /* ── Appel API — Kimi (SSE OpenAI), OpenAI Responses ou Anthropic (SSE) ──
+               Toujours via le proxy : les API ne sont pas appelables directement
+               depuis un navigateur et la clé du service doit rester côté serveur.
                  mode 'code' → x-access-code (quota décompté par le proxy)
                  mode 'key'  → clé personnelle du fournisseur, simplement relayée. */
             async function iaCallAPI(messages, onText, onThink, provKey, _rs) {
@@ -11675,26 +11625,16 @@
                         tools: iaToolsResponses(), reasoning: { effort: prov.effort || 'medium' },
                         include: ['reasoning.encrypted_content']
                     };
-                } else if (prov.kind === 'openai') {
-                    /* Kimi (Moonshot) — format OpenAI : system en tête, outils au
-                       format function-calling, SSE en réponse. reasoning_effort est
-                       propre à K3 ('low'|'high'|'max') — ignoré sans gravité ailleurs. */
+                } else {
+                    /* Kimi K3.1 Pro (API Kimi, Moonshot) — format OpenAI : system en
+                       tête, outils au format function-calling, SSE en réponse.
+                       reasoning_effort : 'low' | 'high' | 'max' (défaut Kimi : max). */
                     body = {
                         model: prov.model, max_tokens: 16000, stream: true,
                         messages: [{ role: 'system', content: iaSystem() }].concat(iaMsgsToOpenAI(messages)),
                         tools: IA_TOOLS
                     };
                     if (prov.reasoning_effort) body.reasoning_effort = prov.reasoning_effort;
-                } else {
-                    /* Format natif Ollama : le prompt système est un message ordinaire
-                       en tête de liste (pas de champ `system` séparé).
-                       think accepte un niveau ('low'|'medium'|'high'|'max') ou true. */
-                    body = {
-                        model: prov.model, stream: true,
-                        messages: [{ role: 'system', content: iaSystem() }].concat(iaMsgsToOllama(messages)),
-                        tools: IA_TOOLS
-                    };
-                    if (prov.think) body.think = prov.think;
                 }
 
                 var resp, attempt = 0, netTries = 0;
@@ -11718,14 +11658,9 @@
                 }
                 if (!resp.ok) {
                     var t = await resp.text(); var msg = t;
-                    /* Ollama : {"error":"…"} · Anthropic et le proxy : {"error":{"message":"…"}} */
+                    /* Kimi, Anthropic et le proxy : {"error":{"message":"…"}} ou {"error":"…"} */
                     try { var j = JSON.parse(t); msg = (j.error && (j.error.message || j.error)) || t; } catch (e) { }
                     msg = String(msg);
-                    /* Le modèle refuse le mode raisonnement : mémoriser et réessayer sans. */
-                    if (resp.status === 400 && prov.think && /think/i.test(msg)) {
-                        iaThinkOff[prov.model] = true;
-                        return await iaCallAPI(messages, onText, onThink, pk);
-                    }
                     /* Erreur 400 liée à l'appariement des tool_calls (historique
                        corrompu : réponse tool manquante/orpheline, id non reconnu,
                        reasoning_content absent…) → UNE retry automatique sur une
@@ -11738,7 +11673,7 @@
                     if (resp.status === 401) msg = 'Authentification refusée — vérifiez votre ' + prov.keyLabel + ' (ou votre code d\'accès) dans ⚙ Accès. ' + msg;
                     if (resp.status === 402) msg = 'Crédits épuisés sur ce compte (' + prov.label + ').' + bascule + ' ' + msg;
                     if (resp.status === 503) msg = prov.label + ' n\'est pas disponible actuellement.' + bascule + ' ' + msg;
-                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + prov.model + ' » introuvable chez ' + prov.label + '.' + (prov.kind === 'ollama' ? ' Actualisez la liste et vérifiez que le modèle est accessible sur votre compte Ollama Cloud.' : '') + ' ' + msg;
+                    if (resp.status === 404 || /model.*not found/i.test(msg)) msg = 'Modèle « ' + prov.model + ' » introuvable chez ' + prov.label + '. ' + msg;
                     if (resp.status === 429) msg = 'Limite de débit atteinte (429) chez ' + prov.label + ' malgré plusieurs tentatives. Patientez une minute puis renvoyez votre message.' + bascule + ' ' + msg;
                     throw new Error(msg);
                 }
@@ -11746,44 +11681,12 @@
                     ? await iaReadAnthropicStream(resp, onText, onThink)
                     : (prov.kind === 'openai-responses'
                         ? await iaReadResponsesStream(resp, onText, onThink)
-                        : (prov.kind === 'openai'
-                            ? await iaReadOpenAIStream(resp, onText, onThink)
-                            : await iaReadOllamaStream(resp, onText, onThink)));
-            }
-
-            /* Flux Ollama — NDJSON, une ligne JSON par événement :
-               {"message":{"role":"assistant","content":"…","thinking":"…","tool_calls":[…]},"done":false}
-               puis une ligne finale {"done":true,"done_reason":"stop"}. */
-            async function iaReadOllamaStream(resp, onText, onThink) {
-                var reader = resp.body.getReader(), dec = new TextDecoder(), buf = '';
-                var text = '', thinking = '', toolCalls = [], doneReason = null;
-                function handleLine(line) {
-                    line = line.trim(); if (!line) return;
-                    var ev; try { ev = JSON.parse(line); } catch (e) { return; }
-                    if (ev.error) throw new Error(typeof ev.error === 'string' ? ev.error : (ev.error.message || 'Erreur API'));
-                    var m = ev.message;
-                    if (m) {
-                        if (m.thinking) { thinking += m.thinking; if (onThink) onThink(); }
-                        if (m.content) { text += m.content; if (onText) onText(m.content); }
-                        if (m.tool_calls && m.tool_calls.length) {
-                            for (var k = 0; k < m.tool_calls.length; k++) toolCalls.push(m.tool_calls[k]);
-                        }
-                    }
-                    if (ev.done) doneReason = ev.done_reason || 'stop';
-                }
-                while (true) {
-                    var chunk = await reader.read(); if (chunk.done) break;
-                    buf += dec.decode(chunk.value, { stream: true });
-                    var lines = buf.split('\n'); buf = lines.pop();
-                    for (var i = 0; i < lines.length; i++) handleLine(lines[i]);
-                }
-                handleLine(buf); /* dernière ligne éventuellement sans saut final */
-                return { content: text, thinking: thinking, tool_calls: toolCalls, done_reason: doneReason };
+                        : await iaReadOpenAIStream(resp, onText, onThink));
             }
 
             /* Flux Anthropic — SSE à événements nommés. Le résultat est normalisé
-               au même format que celui d'Ollama (tool_calls {function:{name,arguments}})
-               pour que la boucle agentique reste commune aux deux fournisseurs.
+               au format interne (tool_calls {function:{name,arguments}}) pour que la
+               boucle agentique reste commune à tous les fournisseurs.
                Les blocs `thinking`/`redacted_thinking` sont capturés AVEC leur
                signature (anthropic_thinking) pour être rejoués au tour suivant. */
             async function iaReadAnthropicStream(resp, onText, onThink) {
@@ -11885,7 +11788,7 @@
             }
 
             /* Flux OpenAI-compatible/Kimi — SSE « data: {json} » terminé par « data: [DONE] ».
-                 Deltas : choices[0].delta.content (texte), .reasoning_content (K3),
+                 Deltas : choices[0].delta.content (texte), .reasoning_content (K3.1 Pro),
                  .tool_calls (fragments accumulés par index : id et name au 1er
                  fragment, arguments ensuite). L'identifiant NATIF du tool_call
                  (tc.id, ex. « call_abc123 » chez Kimi) est capturé et propagé dans
@@ -11950,7 +11853,7 @@
                             txtDiv._raw += delta; txtDiv.innerHTML = md(txtDiv._raw); iaScroll(msgsEl);
                         }, function () { work.querySelector('span').textContent = 'Réflexion en cours…'; }, loopProv);
                     } finally { work.remove(); }
-                    /* Message assistant au format Ollama : contenu texte + éventuels
+                    /* Message assistant au format interne : contenu texte + éventuels
                        tool_calls ; le raisonnement est renvoyé tel quel au modèle.
                        Les blocs signés Anthropic sont gardés à part (_thinkBlocks). */
                     var am = { role: 'assistant', content: resp.content || '' };
@@ -11979,13 +11882,13 @@
 
             /* ── PDF joints ──
                Les images sont conservées en data URL (le type MIME est requis par
-               Anthropic ; il est retiré à l'envoi vers Ollama).
-               Un message Ollama n'accepte que du texte (`content`) et des images
+               Anthropic et par l'API Kimi).
+               Un message interne ne porte que du texte (`content`) et des images
                (`images`) : aucun champ document. Les PDF sont donc convertis ici,
                sans perte de fonctionnalité pour l'utilisateur :
                  • PDF texte  → texte extrait (précis, économe en tokens) ;
-                 • PDF scanné → pages rendues en images, lues par la vision de
-                   MiniMax M3 (modèle multimodal). */
+                 • PDF scanné → pages rendues en images, lues par la vision du
+                   modèle (Kimi K3.1 Pro est multimodal). */
             async function iaReadPdf(f) {
                 await iaEnsurePdfJs();
                 var pdf;
@@ -12108,8 +12011,8 @@
                 });
             }
 
-            /* pdf.js — extraction du texte des PDF joints (Ollama n'accepte pas les
-               documents binaires, seulement du texte et des images). */
+            /* pdf.js — extraction du texte des PDF joints (les modèles n'acceptent
+               pas les documents binaires, seulement du texte et des images). */
             function iaEnsurePdfJs() {
                 if (window.pdfjsLib) return Promise.resolve();
                 return iaLoadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js').then(function () {
@@ -14529,7 +14432,7 @@
                 if (mode === 'code' && !cfg('code')) { iaSettings(function () { iaSend(msgsEl, ta, sendBtn); }); return; }
                 var hero = document.getElementById('iaHero'); if (hero) hero.remove();
 
-                /* Message utilisateur au format Ollama : le texte des fichiers est
+                /* Message utilisateur au format interne : le texte des fichiers est
                    concaténé au contenu, les images vont dans le champ `images`. */
                 var parts = [], images = [];
                 var attNames = IA.files.map(function (f) { return f.name; });
@@ -14561,10 +14464,7 @@
                 }
             }
 
-            /* ── Modal réglages accès (modèle + mode d'accès) ──
-               La liste des modèles Ollama est rafraîchie depuis le proxy à chaque
-               ouverture : les modèles ajoutés/mis à jour chez Ollama apparaissent
-               automatiquement. */
+            /* ── Modal réglages accès (modèle + mode d'accès) ── */
             function iaSettings(onDone) {
                 var bg = E('div', 'ia-modal-bg'); var m = E('div', 'ia-modal'); bg.appendChild(m);
                 var hasProxy = !!IA_PROXY_URL;
@@ -14575,8 +14475,8 @@
                     '<label>Modèle</label>' +
                     '<select id="iaModelSel" style="width:100%;padding:10px;border:1px solid #dfe2ee;border-radius:10px;font-size:14px;background:#fff"></select>' +
                     (isAdm
-                        ? '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. La liste Ollama Cloud se met à jour automatiquement. Basculez librement — y compris en cours de conversation.</div>'
-                        : '<div class="ia-hint" style="margin-bottom:14px">L\'assistant fonctionne avec <b>Kimi K3</b>, servi par l\'<b>API Kimi</b> officielle, en <b>raisonnement étendu niveau HIGH</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails. Un seul code d\'accès suffit pour tout.</div>') +
+                        ? '<div class="ia-hint" style="margin-bottom:14px">Tous les modèles disposent des <b>mêmes compétences</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails, avec le <b>raisonnement étendu niveau HIGH</b> quand le modèle le supporte. Basculez librement — y compris en cours de conversation.</div>'
+                        : '<div class="ia-hint" style="margin-bottom:14px">L\'assistant fonctionne avec <b>Kimi K3.1 Pro</b>, servi par l\'<b>API Kimi</b> officielle, en <b>raisonnement étendu niveau HIGH</b> : analyses DHIS2, tableaux, graphiques, cartes interactives, rapports PDF/Word/PPTX, classeurs Excel, visuels (logo, affiche, infographie) et envoi d\'e-mails. Un seul code d\'accès suffit pour tout.</div>') +
                     (hasProxy && isAdm ?
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
@@ -14606,12 +14506,7 @@
                         if (!selEl.value) { selEl.value = IA_CLIENT_DEFAULT_PROVIDER; pk = IA_CLIENT_DEFAULT_PROVIDER; }
                         return;
                     }
-                    var models = IA_OLLAMA_MODELS.slice();
-                    if (pk.indexOf('claude') !== 0 && pk.indexOf('kimi:') !== 0 && pk.indexOf('gpt:') !== 0 && models.indexOf(pk) < 0) models.unshift(pk); /* modèle courant toujours listé */
-                    var html = '<optgroup label="Ollama Cloud — abonnement forfaitaire">' +
-                        models.map(function (id) { return '<option value="' + esc(id) + '">' + esc(iaModelLabel(id)) + '</option>'; }).join('') +
-                        '</optgroup>' +
-                        '<optgroup label="OpenAI — API à crédits (usage)">' +
+                    var html = '<optgroup label="OpenAI — API à crédits (usage)">' +
                         IA_OPENAI_MODELS.map(function (x) { return '<option value="gpt:' + esc(x.id) + '">' + esc(x.label) + '</option>'; }).join('') +
                         '</optgroup>' +
                         '<optgroup label="Moonshot AI — API à crédits (usage)">' +
@@ -14623,9 +14518,9 @@
                     if (!selEl.value) { selEl.value = IA_DEFAULT_PROVIDER; pk = IA_DEFAULT_PROVIDER; }
                 }
 
-                /* Une clé par fournisseur : Anthropic / OpenAI / Kimi / Ollama */
-                var keys = { claude: iaUserKey('claude'), openai: cfg('key_openai'), kimi: cfg('key_kimi'), ollama: cfg('key_ollama') || cfg('key_minimax') };
-                function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('gpt:') === 0 ? 'openai' : (String(p).indexOf('kimi:') === 0 ? 'kimi' : 'ollama')); }
+                /* Une clé par fournisseur : Anthropic / OpenAI / Kimi */
+                var keys = { claude: iaUserKey('claude'), openai: cfg('key_openai'), kimi: cfg('key_kimi') };
+                function keySlot(p) { return String(p).indexOf('claude') === 0 ? 'claude' : (String(p).indexOf('gpt:') === 0 ? 'openai' : 'kimi'); }
                 function setProv(np) {
                     keys[keySlot(pk)] = kEl.value.trim(); /* garde la saisie du fournisseur quitté */
                     pk = np;
@@ -14644,7 +14539,6 @@
                 }
                 renderModelOptions();
                 setProv(pk);
-                if (isAdm) iaFetchModels(function () { if (document.body.contains(bg)) renderModelOptions(); });
                 selEl.onchange = function () { setProv(selEl.value); };
                 if (hasProxy) {
                     if (isAdm) {
@@ -14679,7 +14573,7 @@
                 m.querySelector('#iaSave').onclick = function () {
                     keys[keySlot(pk)] = kEl.value.trim();
                     cfg('mode', mode); cfg('provider', pk);
-                    cfg('key_ollama', keys.ollama || ''); cfg('key_claude', keys.claude || ''); cfg('key_openai', keys.openai || ''); cfg('key_kimi', keys.kimi || '');
+                    cfg('key_claude', keys.claude || ''); cfg('key_openai', keys.openai || ''); cfg('key_kimi', keys.kimi || '');
                     /* le code vient du panneau actif : champ dédié en mode clé, champ code en mode code */
                     cfg('code', (mode === 'key' && c2El) ? c2El.value.trim() : (cEl ? cEl.value.trim() : ''));
                     bg.remove();

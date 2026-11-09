@@ -83,15 +83,15 @@ puis **supprimez `secrets.json`**. Aucun redéploiement nécessaire.
 | Nom | Rôle | Défaut |
 |---|---|---|
 | `AUTO_APPROVE` | `'0'` = approbation manuelle des commandes | auto |
-| `AI_HELPER_PROVIDER` | `ollama` · `claude` · `kimi` | `kimi` |
-| `AI_HELPER_MODEL` | modèle vision (défauts : `minimax-m3:cloud` · `claude-opus-4-8` · `kimi-k3`) | selon provider |
+| `AI_HELPER_PROVIDER` | `claude` · `kimi` | `kimi` |
+| `AI_HELPER_MODEL` | modèle vision (défauts : `claude-opus-4-8` · `kimi-k3`) | selon provider |
 | `KIMI_API_KEY` | requis si provider `kimi` (platform.kimi.ai) | — |
 | `KIMI_API_BASE` | `https://api.moonshot.cn` si clé de la plateforme chinoise | `.ai` |
 | `PAYMENT_PROVIDER` | `commande` · `whatsapp` · `cinetpay` (force le mode) | auto |
 | `OFFERS` (code) | offres et prix | 20/30/40/50/100 $ + montant libre dès 10 $ |
 
-⚠️ Pour Ollama, le modèle doit être **vision** — `minimax-m3:cloud` par défaut.
-`kimi-k3` est le modèle vedette actuel de Moonshot (vision native) ; épinglez une
-autre version via `AI_HELPER_MODEL` si besoin. Si le récap 🤖 n'apparaît pas sur
+`kimi-k3` (vision native) reste le défaut de cette lecture de captures : la réponse
+tient en 150 jetons, alors que Kimi K3.1 Pro (modèle de l'assistant) raisonne
+toujours avant de répondre ; épinglez une autre version via `AI_HELPER_MODEL` si besoin. Si le récap 🤖 n'apparaît pas sur
 une capture, essayez `AI_HELPER_PROVIDER` = `claude` (Opus 4.8, lecture la plus
 fiable, ~0,002 $/capture).
