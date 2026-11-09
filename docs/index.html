@@ -10070,15 +10070,12 @@
             /* Liste FIXE proposée aux clients : UN SEUL modèle — Kimi K3.1 Pro servi
                par l'API Kimi officielle (Moonshot / platform.kimi.ai), via la route
                proxy /kimi/v1/chat/completions. Aucun modèle OpenAI ni Claude n'est
-               proposé côté client. L'essai gratuit (7 jours, à raison d'1 analyse par
-               jour) donne accès à CE modèle ; au-delà du rythme ou après les 7 jours,
-               le proxy renvoie vers l'achat. (L'admin, lui, garde Kimi + OpenAI +
-               Claude.) */
+               proposé côté client. L'accès est PAYANT uniquement (code d'accès
+               acheté) : il n'y a plus d'essai gratuit. (L'admin, lui, garde Kimi +
+               OpenAI + Claude.) */
             var IA_CLIENT_MODELS = [
                 { v: 'kimi:kimi-k3.1-pro', label: 'Kimi K3.1 Pro — API Kimi (Moonshot) — raisonnement étendu HIGH' }
             ];
-            /* Identifiant d'appareil persistant (anti-renouvellement de l'essai gratuit). */
-            function iaDeviceId() { var d = cfg('devid'); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); cfg('devid', d); } return d; }
             function iaProvKey() {
                 var p = cfg('provider') || '';
                 /* Liste blanche client stricte : tout ancien réglage (Claude, OpenAI,
@@ -10156,8 +10153,8 @@
                précisément ce qui faisait que des clients ayant ouvert un jour un
                lien en ?admin=1 gardaient le drapeau en cache et voyaient TOUTE
                l'interface. Seul l'admin voit l'onglet « Ma clé API » et la liste
-               complète des modèles ; les clients ne voient que le code d'accès,
-               l'essai gratuit et l'achat d'un code.
+               complète des modèles ; les clients ne voient que le code d'accès
+               et l'achat d'un code (accès payant, plus d'essai gratuit).
                👉 Remplacez la valeur de IA_ADMIN_SECRET par un code à vous, puis
                   ouvrez votre dashboard avec ?admin=<ce-code> pour activer la vue
                   admin sur votre appareil. */
@@ -10863,11 +10860,20 @@
                 while (yy < ey || (yy === ey && mm <= em)) { out.push(String(yy) + String(mm).padStart(2, '0')); mm++; if (mm === 13) { mm = 1; yy++; } }
                 return out;
             }
+            var IA_PEV_NATIONAL = ['rdc', 'r d c', 'rd congo', 'congo', 'pays', 'tout le pays', 'ensemble du pays', 'national', 'nationale',
+                'niveau national', 'rdc national', 'republique democratique du congo', 'la republique democratique du congo'];
             async function iaPevResolveOu(entite, niveau) {
                 var q = String(entite || '').trim(), obj;
                 if (/^[A-Za-z][A-Za-z0-9]{10}$/.test(q)) {
                     obj = await iaDhis2('organisationUnits/' + q + '.json', 'fields=id,name,displayName,level,path');
                     if (!obj || !obj.id) throw new Error('Unité DHIS2 introuvable : ' + q);
+                } else if (Number(niveau) === 1 || IA_PEV_NATIONAL.indexOf(iaPevNormName(q)) >= 0) {
+                    /* Niveau national : « RDC », « pays », « national »… ne correspondent à
+                       aucun nom DHIS2 (« République Démocratique du Congo ») — on prend
+                       directement l'unité de niveau 1 au lieu d'échouer. */
+                    var lv1 = await iaDhis2('organisationUnits.json', 'filter=level:eq:1&fields=id,name,displayName,level,path&paging=false');
+                    obj = ((lv1 && lv1.organisationUnits) || [])[0];
+                    if (!obj || !obj.id) throw new Error('Unité nationale (niveau 1) introuvable dans DHIS2.');
                 } else {
                     var params = 'filter=name:ilike:' + encodeURIComponent(q) + '&fields=id,name,displayName,level,path&paging=false';
                     if (niveau) params += '&filter=level:eq:' + Number(niveau);
@@ -13711,6 +13717,12 @@
 
             /* HTML commun (PDF + Word). forWord=true → images référencées en
                fichiers MHTML ; sinon dataURL inline. */
+            /* Titre de section numéroté par le générateur : le numéro éventuellement
+               déjà saisi par le modèle (« 1. », « 2) », « 3 - ») est retiré pour
+               éviter « 1. 1. Titre ». Une année en tête (« 2025 : … ») est conservée. */
+            function iaSecTitre(i, titre) {
+                return (i + 1) + '. ' + String(titre || '').replace(/^\s*\d{1,2}(?:\.\d{1,2})*\s*[.)\-–:]\s*/, '');
+            }
             function iaRepHtml(inp, forWord) {
                 var st = inp.style || {};
                 var C = st.couleur_principale || '#0b5e8e';
@@ -13748,7 +13760,7 @@
                     '</div>';
                 (inp.sections || []).forEach(function (sec, i) {
                     h += '<div style="' + (i > 0 ? 'page-break-before:always;' : '') + 'padding:6px 0">' +
-                        '<h2 style="font-family:' + hfont + ';color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:19px">' + (i + 1) + '. ' + esc(sec.titre || '') + '</h2>';
+                        '<h2 style="font-family:' + hfont + ';color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:19px">' + esc(iaSecTitre(i, sec.titre)) + '</h2>';
                     if (sec.contenu) h += '<div>' + md(sec.contenu) + '</div>';
                     var tbls = [];
                     if (sec.tableau && sec.tableau.colonnes) tbls.push(sec.tableau);
@@ -13839,7 +13851,7 @@
                 h += '<main style="max-width:980px;margin:0 auto;padding:10px 24px 30px">';
                 (inp.sections || []).forEach(function (sec, i) {
                     h += '<section style="margin-top:30px">' +
-                        '<h2 style="font-family:' + hfont + ';color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:18px">' + (i + 1) + '. ' + escH(sec.titre || '') + '</h2>';
+                        '<h2 style="font-family:' + hfont + ';color:' + C + ';border-bottom:2px solid ' + C2 + ';padding-bottom:6px;font-size:18px">' + escH(iaSecTitre(i, sec.titre)) + '</h2>';
                     if (sec.contenu) h += '<div style="font-size:13px;line-height:1.6">' + md(sec.contenu) + '</div>';
                     var tbls = [];
                     if (sec.tableau && sec.tableau.colonnes) tbls.push(sec.tableau);
@@ -14025,7 +14037,7 @@
                 var secs = inp.sections || [];
                 for (var i = 0; i < secs.length; i++) {
                     var sec = secs[i];
-                    body += iaOoxP(iaOoxRun((i + 1) + '. ' + (sec.titre || ''), { b: true, sz: 30, color: C, font: hFont }), { style: 'Heading1', spacingBefore: i ? 360 : 80, spacingAfter: 140 });
+                    body += iaOoxP(iaOoxRun(iaSecTitre(i, sec.titre), { b: true, sz: 30, color: C, font: hFont }), { style: 'Heading1', spacingBefore: i ? 360 : 80, spacingAfter: 140 });
                     if (sec.contenu) body += iaOoxMdBlock(sec.contenu, base);
                     var tbls = [];
                     if (sec.tableau && sec.tableau.colonnes) tbls.push(sec.tableau);
@@ -14174,7 +14186,7 @@
                     });
                 }
                 (inp.sections || []).forEach(function (sec, i) {
-                    var titre = (i + 1) + '. ' + (sec.titre || '');
+                    var titre = iaSecTitre(i, sec.titre);
                     /* TOUS les tableaux de la section sont rendus (avant : le 1er seulement) */
                     var tbs = [];
                     if (sec.tableau && sec.tableau.colonnes) tbs.push(sec.tableau);
@@ -14489,9 +14501,8 @@
                         '<label>Mode d\'accès</label><div class="ia-radio"><label id="iaRadCode"><input type="radio" name="iamode" value="code">🎫 Code d\'accès</label>' +
                         '<label id="iaRadKey"><input type="radio" name="iamode" value="key">🔑 Ma clé API</label></div>' : '') +
                     '<div id="iaPaneCode" style="display:none"><label>Code d\'accès</label><input type="text" id="iaCode" placeholder="ex. PEV-XXXX-XXXX">' +
-                    '<div class="ia-hint">Nouveau ? <b>7 jours d\'essai gratuit, à raison d\'1 analyse par jour</b> — bouton « Essai gratuit » ci-dessous. Au-delà (2e analyse le même jour, ou après les 7 jours), achetez un code (mobile money) via « Obtenir un code ». Un même code fonctionne avec tous les modèles.</div>' +
-                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaTrial" style="background:#2e7d32;color:#fff;border-color:#2e7d32">🎁 Essai gratuit — 7 jours</button><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div>' +
-                    '<div class="ia-hint" id="iaTrialMsg" style="margin-top:6px"></div></div>' +
+                    '<div class="ia-hint">L\'accès à l\'assistant est <b>payant</b> : achetez un code d\'accès (mobile money) via « Obtenir un code », saisissez-le ci-dessus puis cliquez « Enregistrer ».</div>' +
+                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="ia-btn" id="iaBuy">💳 Obtenir un code</button></div></div>' +
                     '<div id="iaPaneKey"><label id="iaKeyLbl">Clé API</label><input type="password" id="iaKey" placeholder="">' +
                     '<div class="ia-hint" id="iaKeyHint"></div>' +
                     '<div class="ia-hint">Ne l\'utilisez pas sur un ordinateur partagé.</div>' +
@@ -14560,26 +14571,6 @@
                     setMode(mode);
                     var buy = m.querySelector('#iaBuy');
                     if (buy) buy.onclick = function () { window.open(IA_PROXY_URL.replace(/\/+$/, '') + '/acheter', '_blank'); };
-                    /* Essai gratuit : récupère (ou retrouve) le code d'essai de cet appareil */
-                    var tr = m.querySelector('#iaTrial'), trMsg = m.querySelector('#iaTrialMsg');
-                    if (tr) tr.onclick = function () {
-                        tr.disabled = true; if (trMsg) trMsg.textContent = 'Activation en cours…';
-                        fetch(IA_PROXY_URL.replace(/\/+$/, '') + '/essai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ deviceId: iaDeviceId() }) })
-                            .then(function (r) { return r.json(); })
-                            .then(function (j) {
-                                if (!j || !j.code) throw new Error((j && j.error && j.error.message) || (j && j.error) || 'Essai indisponible pour le moment.');
-                                if (cEl) cEl.value = j.code;
-                                if (trMsg) {
-                                    var d = j.expire ? new Date(j.expire).toLocaleDateString('fr-FR') : '';
-                                    trMsg.innerHTML = (j.deja
-                                        ? 'ℹ️ Essai déjà activé sur cet appareil — votre code (encore <b>' + j.restant + '</b> jour(s), jusqu\'au <b>' + d + '</b>, à raison d\'<b>1 analyse par jour</b>) a été replacé dans le champ.'
-                                        : '🎉 <b>Essai gratuit de 7 jours activé</b> : <b>1 analyse par jour</b>, jusqu\'au <b>' + d + '</b>. Pour une 2e analyse le même jour, achetez un code via « Obtenir un code ».') +
-                                        ' Cliquez « Enregistrer » pour terminer.';
-                                }
-                            })
-                            .catch(function (e) { if (trMsg) trMsg.textContent = '⚠ ' + (e.message || e); })
-                            .finally(function () { tr.disabled = false; });
-                    };
                 } else setMode(isAdm ? 'key' : 'code');
                 m.querySelector('#iaCancel').onclick = function () { bg.remove(); };
                 m.querySelector('#iaSave').onclick = function () {
